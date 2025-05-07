@@ -4,9 +4,6 @@ DerivedDataCache/
 Intermediate/
 Saved/
 
-# Content subfolder ignore
-Content/abandoned_city/
-
 *.sln
 *.suo
 *.xcodeproj
