@@ -4,6 +4,9 @@ DerivedDataCache/
 Intermediate/
 Saved/
 
+# Content subfolder ignore
+Content/LevelDesign/
+
 *.sln
 *.suo
 *.xcodeproj
