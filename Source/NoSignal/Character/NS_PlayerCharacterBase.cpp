@@ -1,125 +1,114 @@
 #include "Character/NS_PlayerCharacterBase.h"
 #include "EnhancedInputComponent.h"
-#include "GameFramework/SpringArmComponent.h"
+#include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "TimerManager.h"
-#include "NS_PlayerController.h"
-
 
 ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	DefaultWalkSpeed = 600.f; // 기본 속도 (에디터에서 조정 가능)
-	SprintSpeedMultiplier = 1.5f; // 스프린트 속도 배율
-	
-	SpringArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
-	SpringArmComp->SetupAttachment(RootComponent);
-	SpringArmComp->TargetArmLength = 0.0f;
-	SpringArmComp->bUsePawnControlRotation = true;
+	// 캐릭터 기본 속도 설정
+	DefaultWalkSpeed = 600.f;
+	// 캐릭터 달리기 배율
+	SprintSpeedMultiplier = 1.5f;
 
-	SpringArmComp->SetRelativeLocation(FVector(0.f, 0.f, 60.f));
+	// 1인칭 카메라 생성 및 Attach
+	CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
+	CameraComp->SetupAttachment(GetMesh(), CameraAttachSocketName);
+	CameraComp->bUsePawnControlRotation = true;
 
-	CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
-	CameraComp->SetupAttachment(SpringArmComp, USpringArmComponent::SocketName);
-	CameraComp->bUsePawnControlRotation = false;
+	// 컨트롤러 회전 방식 설정
+	bUseControllerRotationYaw                        = true;
+	GetCharacterMovement()->bOrientRotationToMovement = false;
 }
 
-// Called when the game starts or when spawned
 void ANS_PlayerCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	if (APlayerController* PC = Cast<APlayerController>(Controller))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Sub = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
+		{
+			Sub->AddMappingContext(DefaultMappingContext, 0);
+		}
+	}
+
+	if (GetCharacterMovement())
+	{
+		GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed;
+	}
 }
 
-// Called every frame
 void ANS_PlayerCharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
-// Called to bind functionality to input
 void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
 	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		if (ANS_PlayerController* PlayerController = Cast<ANS_PlayerController>(GetController()))
-		{
-			if (PlayerController->MoveAction)
-			{
-				EnhancedInput->BindAction(
-				PlayerController->MoveAction, 
-				ETriggerEvent::Triggered,     
-				this,                         
+		if (InputMoveAction)
+			EnhancedInput->BindAction(
+				InputMoveAction,
+				ETriggerEvent::Triggered,
+				this,
 				&ANS_PlayerCharacterBase::MoveAction
 				);
-			}
-			
-			if (PlayerController->JumpAction)
-			{
-				EnhancedInput->BindAction(
-					PlayerController->JumpAction, 
-					ETriggerEvent::Triggered,   
-					this,                       
-					&ANS_PlayerCharacterBase::JumpAction 
+
+		if (InputLookAction)
+			EnhancedInput->BindAction(
+				InputLookAction,
+				ETriggerEvent::Triggered,
+				this,
+				&ANS_PlayerCharacterBase::LookAction
 				);
-			}
-			
-			if (PlayerController->LookAction)
-			{
-				EnhancedInput->BindAction(
-					PlayerController->LookAction, 
-					ETriggerEvent::Triggered,    
-					this,                       
-					&ANS_PlayerCharacterBase::LookAction         
+
+		if (InputJumpAction)
+			EnhancedInput->BindAction(
+				InputJumpAction,
+				ETriggerEvent::Triggered,
+				this,
+				&ANS_PlayerCharacterBase::JumpAction
 				);
-			}
-			
-			if (PlayerController->SprintAction)
-			{
-				EnhancedInput->BindAction(
-					PlayerController->SprintAction,
-					ETriggerEvent::Triggered,    
-					this,                        
-					&ANS_PlayerCharacterBase::StartSprintAction   
-				);
-				EnhancedInput->BindAction(
-					PlayerController->SprintAction,
-					ETriggerEvent::Completed,    
-					this,                        
-					&ANS_PlayerCharacterBase::StopSprintAction   
-				);
-			}
-			
-			if (PlayerController->CrouchAction)
-			{
-				EnhancedInput->BindAction(
-					PlayerController->CrouchAction,
-					ETriggerEvent::Triggered,
-					this,
-					&ANS_PlayerCharacterBase::StartCrouchAction
-				);
-				EnhancedInput->BindAction(
-					PlayerController->CrouchAction,
-					ETriggerEvent::Completed,
-					this,
-					&ANS_PlayerCharacterBase::StopCrouchAction
-				);
-			}
+
+		if (InputCrouchAction)
+		{
+			EnhancedInput->BindAction(
+			InputCrouchAction,
+			ETriggerEvent::Triggered,
+			this,
+			&ANS_PlayerCharacterBase::StartCrouch
+			);
+			EnhancedInput->BindAction(
+			InputCrouchAction,
+			ETriggerEvent::Completed,
+			this,
+			&ANS_PlayerCharacterBase::StopCrouch
+			);
+		}
+
+		if (InputSprintAction)
+		{
+			EnhancedInput->BindAction(
+			InputSprintAction, ETriggerEvent::Triggered, this, &ANS_PlayerCharacterBase::StartSprint);
+			EnhancedInput->BindAction(
+			InputSprintAction, ETriggerEvent::Completed, this, &ANS_PlayerCharacterBase::StopSprint);
 		}
 	}
 }
 
-void ANS_PlayerCharacterBase::MoveAction(const FInputActionValue& value)
+void ANS_PlayerCharacterBase::MoveAction(const FInputActionValue& Value)
 {
 	// 에러방지용
 	if (!Controller) return;
 
 	// X축 이동
-	FVector2D MoveInput = value.Get<FVector2D>();
+	FVector2D MoveInput = Value.Get<FVector2D>();
 	if (!FMath::IsNearlyZero(MoveInput.X))
 	{
 		AddMovementInput(GetActorForwardVector(),MoveInput.X);
@@ -131,17 +120,17 @@ void ANS_PlayerCharacterBase::MoveAction(const FInputActionValue& value)
 	}
 }
 
-void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& value)
+void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
 {
-	FVector2D LookInput = value.Get<FVector2D>();
+	FVector2D LookInput = Value.Get<FVector2D>();
 
 	AddControllerYawInput(LookInput.X);
 	AddControllerPitchInput(LookInput.Y);
 }
 
-void ANS_PlayerCharacterBase::JumpAction(const FInputActionValue& value)
+void ANS_PlayerCharacterBase::JumpAction(const FInputActionValue& Value)
 {
-	bool IsJump = value.Get<bool>();
+	bool IsJump = Value.Get<bool>();
 	
 	if (IsJump && IsCanJump)
 	{
@@ -162,28 +151,24 @@ void ANS_PlayerCharacterBase::JumpAction(const FInputActionValue& value)
 	}	
 }
 
-void ANS_PlayerCharacterBase::StartCrouchAction(const FInputActionValue& value)
+void ANS_PlayerCharacterBase::StartCrouch(const FInputActionValue& Value)
 {
 	Crouch();
 }
 
-void ANS_PlayerCharacterBase::StopCrouchAction(const FInputActionValue& value)
+void ANS_PlayerCharacterBase::StopCrouch(const FInputActionValue& Value)
 {
 	UnCrouch();
 }
 
-void ANS_PlayerCharacterBase::StartSprintAction(const FInputActionValue& value)
+void ANS_PlayerCharacterBase::StartSprint(const FInputActionValue& Value)
 {
 	if (GetCharacterMovement())
-	{
 		GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier;
-	}
 }
 
-void ANS_PlayerCharacterBase::StopSprintAction(const FInputActionValue& value)
+void ANS_PlayerCharacterBase::StopSprint(const FInputActionValue& Value)
 {
 	if (GetCharacterMovement())
-	{
 		GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed;
-	}
 }
