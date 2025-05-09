@@ -38,7 +38,9 @@ public:
 	UFUNCTION()
 	void JumpAction(const FInputActionValue& value);
 	UFUNCTION()
-	void CrouchAction(const FInputActionValue& value);
+	void StartCrouchAction(const FInputActionValue& value);
+	UFUNCTION()
+	void StopCrouchAction(const FInputActionValue& value);
 	UFUNCTION()
 	void StartSprintAction(const FInputActionValue& value);
 	UFUNCTION()

@@ -86,14 +86,12 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
 					this,                        
 					&ANS_PlayerCharacterBase::StartSprintAction   
 				);
-
 				EnhancedInput->BindAction(
 					PlayerController->SprintAction,
 					ETriggerEvent::Completed,    
 					this,                        
 					&ANS_PlayerCharacterBase::StopSprintAction   
 				);
-				
 			}
 			
 			if (PlayerController->CrouchAction)
@@ -102,7 +100,13 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
 					PlayerController->CrouchAction,
 					ETriggerEvent::Triggered,
 					this,
-					&ANS_PlayerCharacterBase::CrouchAction
+					&ANS_PlayerCharacterBase::StartCrouchAction
+				);
+				EnhancedInput->BindAction(
+					PlayerController->CrouchAction,
+					ETriggerEvent::Completed,
+					this,
+					&ANS_PlayerCharacterBase::StopCrouchAction
 				);
 			}
 		}
@@ -158,11 +162,14 @@ void ANS_PlayerCharacterBase::JumpAction(const FInputActionValue& value)
 	}	
 }
 
-void ANS_PlayerCharacterBase::CrouchAction(const FInputActionValue& value)
+void ANS_PlayerCharacterBase::StartCrouchAction(const FInputActionValue& value)
 {
 	Crouch();
+}
 
-	UE_LOG(LogTemp, Warning, TEXT("IsCrouching: %d"), GetCharacterMovement()->IsCrouching());
+void ANS_PlayerCharacterBase::StopCrouchAction(const FInputActionValue& value)
+{
+	UnCrouch();
 }
 
 void ANS_PlayerCharacterBase::StartSprintAction(const FInputActionValue& value)
