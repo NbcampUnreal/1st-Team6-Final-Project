@@ -1,0 +1,22 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "{079CEA16-49D5-B76B-0974-448E8BA737FB}",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "TeamLunatic_NoSignal",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "ModelingToolsEditorMode",
+			"Enabled": true,
+			"TargetAllowList": [
+				"Editor"
+			]
+		}
+	]
+}
