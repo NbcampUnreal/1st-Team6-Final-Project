@@ -1,7 +1,8 @@
-﻿#include "NS_DebugStatusWidget.h"
-#include "Character/Components/NS_StatusComponent.h"
+﻿// NS_DebugStatusWidget.cpp
+#include "NS_DebugStatusWidget.h"
 #include "Components/ProgressBar.h"
 #include "Character/NS_PlayerCharacterBase.h"
+#include "Character/Components/NS_StatusComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 void UNS_DebugStatusWidget::NativeConstruct()
@@ -24,27 +25,27 @@ void UNS_DebugStatusWidget::NativeTick(const FGeometry& MyGeometry, float InDelt
 	if (!StatusComp) return;
 
 	// 체력
-	if (StatusComp && HealthBar)
+	if (HealthBar)
 	{
 		HealthBar->SetPercent(StatusComp->Health / StatusComp->MaxHealth);
 	}
 	// 스태미너
-	if (StatusComp && StaminaBar)
+	if (StaminaBar)
 	{
 		StaminaBar->SetPercent(StatusComp->Stamina / StatusComp->MaxStamina);
 	}
 	// 배고픔
-	if (StatusComp && HungerBar)
+	if (HungerBar)
 	{
 		HungerBar->SetPercent(StatusComp->Hunger / StatusComp->MaxHunger);
 	}
 	// 갈증
-	if (StatusComp && ThirstBar)
+	if (ThirstBar)
 	{
 		ThirstBar->SetPercent(StatusComp->Thirst / StatusComp->MaxThirst);
 	}
 	// 졸림(피로)
-	if (StatusComp && FatigueBar)
+	if (FatigueBar)
 	{
 		FatigueBar->SetPercent(StatusComp->Fatigue / StatusComp->MaxFatigue);
 	}
