@@ -1,4 +1,5 @@
-﻿#pragma once
+﻿// NS_DebugStatusWidget.h
+#pragma once
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"

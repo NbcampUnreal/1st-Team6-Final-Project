@@ -26,8 +26,7 @@ public:
     float MaxHealth = 100.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Status|Health")
     float Health;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Status|Stamina")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status|Stamina")
     float MaxStamina = 100.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Status|Stamina")
     float Stamina;
@@ -63,6 +62,8 @@ private:
     // 기본 Tick 내부 로직
     void UpdateAllStatus(float DeltaTime);
     void ApplyStageEffects(float DeltaTime);
+
+    void UpdateMaxStamina();
 
     // Clamp 처리용
     void DecreaseHealth(float Delta);

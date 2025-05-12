@@ -1,6 +1,6 @@
+// NS_PlayerCharacterBase.cpp
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Character/Debug/NS_DebugStatusWidget.h"  // 디버그용 차후 삭제 가능
-#include "Blueprint/UserWidget.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
@@ -10,7 +10,7 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
 {
     PrimaryActorTick.bCanEverTick = true;
 
-    DefaultWalkSpeed = 600.0f;
+    DefaultWalkSpeed = 600.f;
     SprintSpeedMultiplier = 1.5f;
 
     // 카메라 설정
@@ -108,7 +108,6 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                &ANS_PlayerCharacterBase::StopCrouch
                );
         }
-
         if (InputSprintAction)
         {
             EnhancedInput->BindAction(
@@ -129,6 +128,8 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
 void ANS_PlayerCharacterBase::MoveAction(const FInputActionValue& Value)
 {
     if (!Controller) return;
+
+    if (!GetCharacterMovement()) return;
 
     FVector2D MoveInput = Value.Get<FVector2D>();
     if (!FMath::IsNearlyZero(MoveInput.X))
@@ -181,6 +182,7 @@ void ANS_PlayerCharacterBase::StartSprint(const FInputActionValue& Value)
 
 void ANS_PlayerCharacterBase::StopSprint(const FInputActionValue& Value)
 {
+    GetCharacterMovement()->IsMovingOnGround();
     IsSprint = false;
     if (GetCharacterMovement())
         GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed;
