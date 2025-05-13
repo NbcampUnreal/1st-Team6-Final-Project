@@ -55,7 +55,7 @@ void UNS_StatusComponent::UpdateAllStatus(float DeltaTime)
         float Change = SprintStaminaDecreasePerSecond * DeltaTime;
 
         //점프, 숙이기 상태에선 무시
-        if (!PlayChar->GetMovementComponent()->IsMovingOnGround() && PlayChar->GetMovementComponent()->IsCrouching())
+        if (!PlayChar->GetMovementComponent()->IsMovingOnGround() || PlayChar->GetMovementComponent()->IsCrouching())
         {
             Change = 0.f;
         }
