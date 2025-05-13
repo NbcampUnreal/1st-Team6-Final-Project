@@ -58,6 +58,9 @@ public:
     UPROPERTY(EditDefaultsOnly, Category="Status|Config", meta=(ClampMin="0"))
     float SprintStaminaDecreasePerSecond = 10.f;
 
+    //Clamp처리용 + HP관련 
+    void ChangeHealthGauge(float Delta);
+
 private:
     // 기본 Tick 내부 로직
     void UpdateAllStatus(float DeltaTime);
@@ -65,8 +68,10 @@ private:
 
     void UpdateMaxStamina();
 
+    //사망시 처리
+    void OnDeath();
+
     // Clamp 처리용
-    void DecreaseHealth(float Delta);
     void DecreaseStamina(float Delta);
     void DecreaseHunger(float Delta);
     void DecreaseThirst(float Delta);

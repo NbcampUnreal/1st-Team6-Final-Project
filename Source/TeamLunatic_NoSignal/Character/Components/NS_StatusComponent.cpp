@@ -124,7 +124,7 @@ void UNS_StatusComponent::ApplyStageEffects(float DeltaTime)
     }
 
     // 체력 변화 적용 ==> 나중에 TakeDamage로 대체
-    DecreaseHealth(hpChange * DeltaTime);
+    ChangeHealthGauge(hpChange * DeltaTime);
 }
 
 
@@ -134,12 +134,24 @@ void UNS_StatusComponent::UpdateMaxStamina()
 	MaxStamina = FMath::Clamp((Health / MaxHealth) * 100, 0.f, 100.f);
 }
 
-// 각 스탯 감소 제한===============================================
-void UNS_StatusComponent::DecreaseHealth(float Delta)
+void UNS_StatusComponent::OnDeath()
+{
+	UE_LOG(LogTemp, Warning, TEXT("사망처리 필요"));
+}
+
+//체력 증감 처리
+void UNS_StatusComponent::ChangeHealthGauge(float Delta)
 {
     Health = FMath::Clamp(Health + Delta, 0.f, MaxHealth);
     UpdateMaxStamina();
+
+	if (Health <= 0.f)
+	{
+		OnDeath();
+	}
 }
+
+// 각 스탯 감소 제한===============================================
 
 void UNS_StatusComponent::DecreaseStamina(float Delta)
 {

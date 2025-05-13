@@ -79,6 +79,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputSprintAction;
 
+	//피격
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+	void OnDeath();
+
 	//////////////////////////////////액션 처리 함수들/////////////////////////////////// 
 	// 이동
 	void MoveAction(const FInputActionValue& Value);

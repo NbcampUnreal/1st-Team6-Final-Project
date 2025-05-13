@@ -125,6 +125,20 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
     }
 }
 
+float ANS_PlayerCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+    float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+    StatusComp->ChangeHealthGauge(-DamageAmount);
+
+
+    return ActualDamage;
+}
+
+void ANS_PlayerCharacterBase::OnDeath()
+{
+}
+
 void ANS_PlayerCharacterBase::MoveAction(const FInputActionValue& Value)
 {
     if (!Controller) return;
