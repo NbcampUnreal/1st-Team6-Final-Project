@@ -40,9 +40,9 @@ void UNS_StatusComponent::TickComponent(float DeltaTime,
 void UNS_StatusComponent::UpdateAllStatus(float DeltaTime)
 {
     // 1) Hunger,Thirst,Fatigue 분당 감소
-    const float HungerRate  = HungerDecreasePerMinute  / 1.f; // 60.0f 현재 디버그용으로 1로 설정
-    const float ThirstRate  = ThirstDecreasePerMinute  / 1.f; // 60.0f 현재 디버그용으로 1로 설정
-    const float FatigueRate = FatigueDecreasePerMinute / 1.f; // 60.0f 현재 디버그용으로 1로 설정
+    const float HungerRate  = HungerDecreasePerMinute  / 60.f; // 60.0f 현재 디버그용으로 1로 설정
+    const float ThirstRate  = ThirstDecreasePerMinute  / 60.f; // 60.0f 현재 디버그용으로 1로 설정
+    const float FatigueRate = FatigueDecreasePerMinute / 60.f; // 60.0f 현재 디버그용으로 1로 설정
 
     DecreaseHunger(-HungerRate  * DeltaTime);
     DecreaseThirst(-ThirstRate  * DeltaTime);
