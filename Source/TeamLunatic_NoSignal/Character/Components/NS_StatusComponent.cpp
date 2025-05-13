@@ -134,8 +134,6 @@ void UNS_StatusComponent::UpdateMaxStamina()
 	MaxStamina = FMath::Clamp((Health / MaxHealth) * 100, 0.f, 100.f);
 }
 
-
-
 // 각 스탯 감소 제한===============================================
 void UNS_StatusComponent::DecreaseHealth(float Delta)
 {
