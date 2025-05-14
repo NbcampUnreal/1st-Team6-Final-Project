@@ -62,6 +62,10 @@ public:
 	// 점프가 가능하게 하는 변수 
 	bool IsCanJump = true;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Kick")
+	// =========== 발차기 확인 변수 =============
+	bool IsKick = false;
+
 	
 	// IMC(입력 매핑 컨텍스트)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
@@ -78,6 +82,8 @@ public:
 	UInputAction* InputCrouchAction;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputSprintAction;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* InputKickAction;
 
 	//피격
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
@@ -96,4 +102,7 @@ public:
 	// 달리기
 	void StartSprint(const FInputActionValue& Value);
 	void StopSprint(const FInputActionValue& Value);
+	// 발차기
+	void KickAction(const FInputActionValue& Value);
+
 };
