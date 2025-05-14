@@ -4,6 +4,7 @@
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "Character/Components/NS_StatusComponent.h"
+#include "Interaction/Component/InteractionComponent.h"
 #include "NS_PlayerCharacterBase.generated.h"
 
 class UInputMappingContext;
@@ -51,7 +52,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
 	UNS_StatusComponent* StatusComp;
 
-	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interaction", meta = (AllowPrivateAccess = "true"))
+	UInteractionComponent* InteractionComponent;
+
 	// ========== 이동 관련 =============
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float DefaultWalkSpeed;

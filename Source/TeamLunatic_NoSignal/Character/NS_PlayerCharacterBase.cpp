@@ -24,6 +24,9 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
 
     // 스탯 컴포넌트 부착
     StatusComp = CreateDefaultSubobject<UNS_StatusComponent>(TEXT("StatusComponent"));
+    InteractionComponent = CreateDefaultSubobject<UInteractionComponent>(TEXT("InteractionComponent"));
+
+    BaseEyeHeight = 74.0f;
 }
 
 void ANS_PlayerCharacterBase::BeginPlay()
