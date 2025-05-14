@@ -16,9 +16,6 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_MainMode : public AGameModeBase
 	
 public:
 
-	AGM_MainMode();
-
-	virtual void BeginPlay() override;
 
 
 protected:
