@@ -21,7 +21,7 @@ ANS_AIController::ANS_AIController()
 
 	Perception-> ConfigureSense(*SightConfig);
 	Perception-> ConfigureSense(*HearingConfig);
-
+	
 	BehaviorTreeComp = CreateDefaultSubobject<UBehaviorTreeComponent>("BehaviorTreeComponent");
 	BlackboardComp = CreateDefaultSubobject<UBlackboardComponent>("BlackboardComponent");
 
@@ -54,6 +54,7 @@ void ANS_AIController::InitializingSightConfig()
 		SightConfig->DetectionByAffiliation.bDetectEnemies = true;
 		SightConfig->DetectionByAffiliation.bDetectNeutrals = true;
 		SightConfig->DetectionByAffiliation.bDetectFriendlies = false;
+		SightConfig->AutoSuccessRangeFromLastSeenLocation = 100.f;
 	}
 }
 

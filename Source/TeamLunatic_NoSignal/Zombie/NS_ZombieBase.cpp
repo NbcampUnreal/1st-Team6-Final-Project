@@ -7,8 +7,8 @@
 ANS_ZombieBase::ANS_ZombieBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
-	SkeletalMeshComp = CreateDefaultSubobject<USkeletalMeshComponent>("SkeletalMesh");
-	SkeletalMeshComp->SetupAttachment(GetMesh());
+	SkeletalMesh = CreateDefaultSubobject<USkeletalMeshComponent>("SkeletalMesh");
+	SkeletalMesh->SetupAttachment(GetMesh());
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> ZombieMeshAsset(TEXT("/Game/YI_ModularZombies/Meshes/ZombieF02/Zombie/SK_Zombie_F02_01"));
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> ManequineAsset(TEXT("/Game/YI_ModularZombies/Demo/Characters/Mannequins/Meshes/SKM_Manny"));
 	
@@ -20,7 +20,7 @@ ANS_ZombieBase::ANS_ZombieBase()
 	}
 	if (ZombieMeshAsset.Succeeded())
 	{
-		SkeletalMeshComp->SetSkeletalMesh(ZombieMeshAsset.Object);
+		SkeletalMesh->SetSkeletalMesh(ZombieMeshAsset.Object);
 	}
 	GetCharacterMovement()->MaxWalkSpeed = 200.f;
 
