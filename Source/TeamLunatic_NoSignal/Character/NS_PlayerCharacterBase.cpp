@@ -191,7 +191,7 @@ void ANS_PlayerCharacterBase::JumpAction(const FInputActionValue& Value)
 
 void ANS_PlayerCharacterBase::StartCrouch(const FInputActionValue& Value)
 {
-    if (GetCharacterMovement()->IsFalling()) {return;}
+    if (GetCharacterMovement()->IsFalling()) { return; }
     
     Crouch();
 }
