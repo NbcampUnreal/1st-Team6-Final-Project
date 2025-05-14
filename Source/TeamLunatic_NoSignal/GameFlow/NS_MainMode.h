@@ -16,22 +16,22 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_MainMode : public AGameModeBase
 	
 public:
 
-	AGM_MainMode();
+	//AGM_MainMode();
 
-	virtual void BeginPlay() override;
+//	virtual void BeginPlay() override;
 
 
 protected:
 
 	/*
 	UPROPERTY()
-	°ÔÀÓ ÀÎ½ºÅÏ½º
+	ï¿½ï¿½ï¿½ï¿½ ï¿½Î½ï¿½ï¿½Ï½ï¿½
 
 	UPROPERTY()
-	¸Þ´ºÄÁÆ®·Ñ·¯ 
+	ï¿½Þ´ï¿½ï¿½ï¿½Æ®ï¿½Ñ·ï¿½ 
 
 	UPROPERTY()
-	UI °ü¸®
+	UI ï¿½ï¿½ï¿½ï¿½
 	*/
 	
 	
