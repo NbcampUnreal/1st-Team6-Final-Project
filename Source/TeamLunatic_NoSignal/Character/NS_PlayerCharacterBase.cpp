@@ -108,6 +108,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                &ANS_PlayerCharacterBase::StopCrouch
                );
         }
+        
         if (InputSprintAction)
         {
             EnhancedInput->BindAction(
@@ -120,6 +121,16 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
              ETriggerEvent::Completed,
               this,
                &ANS_PlayerCharacterBase::StopSprint
+               );
+        }
+
+        if (InputKickAction)
+        {
+            EnhancedInput->BindAction(
+            InputKickAction,
+             ETriggerEvent::Triggered,
+              this,
+               &ANS_PlayerCharacterBase::KickAction
                );
         }
     }
@@ -162,6 +173,7 @@ void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
 void ANS_PlayerCharacterBase::JumpAction(const FInputActionValue& Value)
 {
     bool IsJump = Value.Get<bool>();
+    
     if (IsJump && IsCanJump)
     {
         Jump();
@@ -200,4 +212,20 @@ void ANS_PlayerCharacterBase::StopSprint(const FInputActionValue& Value)
     IsSprint = false;
     if (GetCharacterMovement())
         GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed;
+}
+
+void ANS_PlayerCharacterBase::KickAction(const FInputActionValue& Value)
+{
+    if (GetCharacterMovement()->IsFalling()) {return;}
+    
+    IsKick = true;
+
+    // 1.2초간 실 후 IsKick변수는 false로 변경
+    FTimerHandle RestKickTime;
+    GetWorldTimerManager().SetTimer(
+        RestKickTime,
+        FTimerDelegate::CreateLambda([this]() { IsKick = false; }),
+        1.2f,
+        false
+    );
 }
