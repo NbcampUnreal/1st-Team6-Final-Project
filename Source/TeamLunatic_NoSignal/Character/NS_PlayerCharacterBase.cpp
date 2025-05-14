@@ -10,7 +10,7 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
 {
     PrimaryActorTick.bCanEverTick = true;
 
-    DefaultWalkSpeed = 600.f;
+    DefaultWalkSpeed = 400.f;
     SprintSpeedMultiplier = 1.5f;
 
     // 카메라 설정
@@ -191,6 +191,8 @@ void ANS_PlayerCharacterBase::JumpAction(const FInputActionValue& Value)
 
 void ANS_PlayerCharacterBase::StartCrouch(const FInputActionValue& Value)
 {
+    if (GetCharacterMovement()->IsFalling()) {return;}
+    
     Crouch();
 }
 
