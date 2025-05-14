@@ -22,7 +22,6 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
@@ -84,6 +83,10 @@ public:
 	UInputAction* InputSprintAction;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputKickAction;
+
+	// 이동 입력 잠금 제어 함수 
+	UFUNCTION(BlueprintCallable, Category="Input")
+	void SetMovementLockState(bool bLock);
 
 	//피격
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;

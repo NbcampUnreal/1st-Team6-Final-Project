@@ -1,4 +1,3 @@
-// NS_PlayerCharacterBase.cpp
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Character/Debug/NS_DebugStatusWidget.h"  // 디버그용 차후 삭제 가능
 #include "EnhancedInputComponent.h"
@@ -133,6 +132,17 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                &ANS_PlayerCharacterBase::KickAction
                );
         }
+    }
+}
+
+void ANS_PlayerCharacterBase::SetMovementLockState(bool bLock)
+{
+    if (auto* MoveComp = GetCharacterMovement())
+    {
+        if (bLock)
+            MoveComp->DisableMovement();
+        else
+            MoveComp->SetMovementMode(EMovementMode::MOVE_Walking);
     }
 }
 
