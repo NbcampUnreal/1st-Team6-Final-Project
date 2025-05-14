@@ -57,13 +57,14 @@ public:
 	float DefaultWalkSpeed;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float SprintSpeedMultiplier;
-	// 달리고있는 상태확인 변수
-	bool IsSprint = false;
 	// 점프가 가능하게 하는 변수 
 	bool IsCanJump = true;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Kick")
+	// 달리고있는 상태확인 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Sprint")
+	bool IsSprint = false;
 	// =========== 발차기 확인 변수 =============
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Kick")
 	bool IsKick = false;
 
 	
@@ -85,11 +86,14 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputKickAction;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	//피격
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 	void OnDeath();
 
-	//////////////////////////////////액션 처리 함수들/////////////////////////////////// 
+	//////////////////////////////////액션 처리 함수들///////////////////////////////////
+	//////////////CharacterMovmentComponent를 사용함////////////////
 	// 이동
 	void MoveAction(const FInputActionValue& Value);
 	// 마우스 카메라 
@@ -99,10 +103,25 @@ public:
 	// 앉기
 	void StartCrouch(const FInputActionValue& Value);
 	void StopCrouch(const FInputActionValue& Value);
-	// 달리기
-	void StartSprint(const FInputActionValue& Value);
-	void StopSprint(const FInputActionValue& Value);
-	// 발차기
-	void KickAction(const FInputActionValue& Value);
 
+
+
+	//////////////CharacterMovmentComponent를 사용안함////////////////
+	// 달리기
+	UFUNCTION(server, Reliable)
+	void StartSprint_Server(const FInputActionValue& Value);
+	UFUNCTION(NetMulticast, Reliable)
+	void StartSprint_Multicast();
+
+	UFUNCTION(Server, Reliable)
+	void StopSprint_Server(const FInputActionValue& Value);
+	UFUNCTION(NetMulticast, Reliable)
+	void StopSprint_Multicast();
+
+	// 발차기
+	UFUNCTION(Server, Reliable)
+	void KickAction_Server(const FInputActionValue& Value);
+	UFUNCTION(NetMulticast, Reliable)
+	void KickAction_Multicast();
+	//////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
 };
