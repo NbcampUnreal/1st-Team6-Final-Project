@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
-#include "ItemDataStruct.generated.h"
+#include "NS_ItemDataStruct.generated.h"
 
 UENUM()
 enum class EItemType : uint8
@@ -104,7 +104,7 @@ struct FItemAssetData
 
 
 USTRUCT(BlueprintType)
-struct FItemDataStruct : public FTableRowBase
+struct FNS_ItemDataStruct : public FTableRowBase
 {
 public:
 	GENERATED_USTRUCT_BODY()
