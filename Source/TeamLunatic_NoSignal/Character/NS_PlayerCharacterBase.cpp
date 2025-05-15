@@ -173,7 +173,8 @@ void ANS_PlayerCharacterBase::SetMovementLockState(bool bLock)
         else
             MoveComp->SetMovementMode(EMovementMode::MOVE_Walking);
     }
-    
+}
+
 void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
