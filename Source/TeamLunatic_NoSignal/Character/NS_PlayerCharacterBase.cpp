@@ -175,14 +175,6 @@ void ANS_PlayerCharacterBase::SetMovementLockState(bool bLock)
     }
 }
 
-void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(ANS_PlayerCharacterBase, IsKick);    // 발차기 변수
-	DOREPLIFETIME(ANS_PlayerCharacterBase, IsSprint); // 달리기 변수
-
-}
-
 float ANS_PlayerCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
     float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);

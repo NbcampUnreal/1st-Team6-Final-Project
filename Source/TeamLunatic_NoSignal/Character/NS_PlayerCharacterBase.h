@@ -99,13 +99,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Input")
 	void SetMovementLockState(bool bLock);
 	
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
-	//////////////////////////////////액션 처리 함수들/////////////////////////////////// 
-	//피격
-	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
-	void OnDeath();
-
 	//////////////////////////////////액션 처리 함수들///////////////////////////////////
 	//////////////CharacterMovmentComponent를 사용함////////////////
 	// 이동
