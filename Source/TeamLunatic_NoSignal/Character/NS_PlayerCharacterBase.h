@@ -66,13 +66,14 @@ public:
 	float DefaultWalkSpeed;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float SprintSpeedMultiplier;
-	// 달리고있는 상태확인 변수
-	bool IsSprint = false;
 	// 점프가 가능하게 하는 변수 
 	bool IsCanJump = true;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Kick")
+	// 달리고있는 상태확인 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Sprint")
+	bool IsSprint = false;
 	// =========== 발차기 확인 변수 =============
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Kick")
 	bool IsKick = false;
 
 	
@@ -97,8 +98,16 @@ public:
 	// 이동 입력 잠금 제어 함수 
 	UFUNCTION(BlueprintCallable, Category="Input")
 	void SetMovementLockState(bool bLock);
+	
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	//////////////////////////////////액션 처리 함수들/////////////////////////////////// 
+	//피격
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+	void OnDeath();
+
+	//////////////////////////////////액션 처리 함수들///////////////////////////////////
+	//////////////CharacterMovmentComponent를 사용함////////////////
 	// 이동
 	void MoveAction(const FInputActionValue& Value);
 	// 마우스 카메라 
@@ -126,5 +135,4 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void KickAction_Multicast();
 	//////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
-
 };

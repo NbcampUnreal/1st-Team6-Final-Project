@@ -173,6 +173,13 @@ void ANS_PlayerCharacterBase::SetMovementLockState(bool bLock)
         else
             MoveComp->SetMovementMode(EMovementMode::MOVE_Walking);
     }
+    
+void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ANS_PlayerCharacterBase, IsKick);    // 발차기 변수
+	DOREPLIFETIME(ANS_PlayerCharacterBase, IsSprint); // 달리기 변수
+
 }
 
 float ANS_PlayerCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -256,8 +263,8 @@ void ANS_PlayerCharacterBase::StartSprint_Server_Implementation(const FInputActi
 void ANS_PlayerCharacterBase::StartSprint_Multicast_Implementation()
 {
     IsSprint = true;
-    if (GetCharacterMovement())
-        GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier;
+	if (GetCharacterMovement())
+		GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier;
 }
 
 void ANS_PlayerCharacterBase::StopSprint_Server_Implementation(const FInputActionValue& Value)
