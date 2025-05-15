@@ -21,7 +21,8 @@ enum class EWeaponType : uint8
 {
 	None,
 	Melee,
-	Ranged
+	Ranged,
+	Ammo
 };
 
 USTRUCT()
@@ -102,6 +103,21 @@ struct FItemAssetData
 	USoundBase* UseSound = nullptr;
 };
 
+USTRUCT()
+struct FWeaponData
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY(EditAnywhere)
+	int32 Damage;
+
+	UPROPERTY(EditAnywhere)
+	int32 Durability;
+
+	UPROPERTY(EditAnywhere)
+	int32 MaxAmmo;
+};
+
 
 USTRUCT(BlueprintType)
 struct FNS_ItemDataStruct : public FTableRowBase
@@ -118,6 +134,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	FItemTextData ItemTextData;
+
+	UPROPERTY(EditAnywhere)
+	FWeaponData WeaponData;
 
 	UPROPERTY(EditAnywhere)
 	FItemStates ItemStates;
