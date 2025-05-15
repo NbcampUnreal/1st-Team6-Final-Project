@@ -69,6 +69,7 @@ public:
 	// 점프가 가능하게 하는 변수 
 	bool IsCanJump = true;
 
+	/////////////////////////////// 리플리케이션용 변수들////////////////////////////////
 	// 달리고있는 상태인지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsSprint = false;
@@ -78,7 +79,12 @@ public:
 	// 공격중인지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsAttack = false;
-
+	// 아이템을 줍고있는지 확인 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool IsPickUp = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	int32 IsChange = 0;
+	//////////////////////////////////////////////////////////////////////////////////////
 	
 	// IMC(입력 매핑 컨텍스트)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
@@ -99,7 +105,9 @@ public:
 	UInputAction* InputKickAction;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputAttackAction;
-
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* InputPickUpAction;
+	
 	// 이동 입력 잠금 제어 함수 
 	UFUNCTION(BlueprintCallable, Category="Input")
 	void SetMovementLockState(bool bLock);
@@ -139,5 +147,11 @@ public:
 	void AttackAction_Server(const FInputActionValue& Value);
 	UFUNCTION(NetMulticast, Reliable)
 	void AttackAction_Multicast();
+
+	// 아이템 줍기
+	UFUNCTION(Server, Reliable)
+	void PickUpAction_Server(const FInputActionValue& Value);
+	UFUNCTION(NetMulticast, Reliable)
+	void PickUpAction_Multicast();
 	//////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
 };

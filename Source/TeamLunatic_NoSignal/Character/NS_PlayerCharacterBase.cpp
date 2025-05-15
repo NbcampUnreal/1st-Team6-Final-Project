@@ -162,6 +162,15 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
               this,
                &ANS_PlayerCharacterBase::AttackAction_Server);
         }
+
+        if (InputPickUpAction)
+        {
+            EnhancedInput->BindAction(
+            InputPickUpAction,
+             ETriggerEvent::Triggered,
+              this,
+               &ANS_PlayerCharacterBase::PickUpAction_Server);
+        }
     }
 }
 
@@ -171,6 +180,8 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsKick);    // 발차기 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsSprint);  // 달리기 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsAttack);  // 공격 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsPickUp);  // 공격 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsChange);  // 공격 변수
 }
 
 void ANS_PlayerCharacterBase::SetMovementLockState(bool bLock)
@@ -288,39 +299,59 @@ void ANS_PlayerCharacterBase::KickAction_Server_Implementation(const FInputActio
 }
 void ANS_PlayerCharacterBase::KickAction_Multicast_Implementation()
 {
-    if(HasAuthority())
-    {
         IsKick = true;
 
-        // 1.2초간 실 후 IsKick변수는 false로 변경
-        FTimerHandle RestKickTime;
+        // 1.2초간 실행 후 IsKick변수는 false로 변경
+        FTimerHandle ResettKickTime;
         GetWorldTimerManager().SetTimer(
-            RestKickTime,
+            ResettKickTime,
             FTimerDelegate::CreateLambda([this]() { IsKick = false; }),
             1.2f,
             false
         );
-    }
 }
 
-void ANS_PlayerCharacterBase::AttackAction_Multicast_Implementation()
+void ANS_PlayerCharacterBase::AttackAction_Server_Implementation(const FInputActionValue& Value)
 {
     if (GetCharacterMovement()->IsFalling()) {return;}
 
     AttackAction_Multicast();
 }
 
-void ANS_PlayerCharacterBase::AttackAction_Server_Implementation(const FInputActionValue& Value)
+void ANS_PlayerCharacterBase::AttackAction_Multicast_Implementation()
 {
-    IsAttack = true;
-
-    // 1.2초간 실 후 IsKick변수는 false로 변경
-    FTimerHandle RestAttackTime;
-    GetWorldTimerManager().SetTimer(
-    RestAttackTime,
-    FTimerDelegate::CreateLambda([this]() { IsAttack = false; }),
-    1.0f,
-    false
-    );
     
+        IsAttack = true;
+
+        // 1.0초간 실행 후 IsAttack변수는 false로 변경
+        FTimerHandle ResetAttackTime;
+        GetWorldTimerManager().SetTimer(
+        ResetAttackTime,
+        FTimerDelegate::CreateLambda([this]() { IsAttack = false; }),
+        1.0f,
+        false
+        );
+   
 }
+
+void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputActionValue& Value)
+{
+    if (GetCharacterMovement()->IsFalling()) {return;}
+
+    PickUpAction_Multicast();
+}
+
+void ANS_PlayerCharacterBase::PickUpAction_Multicast_Implementation()
+{
+        IsPickUp = true;
+
+        // 1.5초간 실행 후 IsPickUp변수는 false로 변경
+        FTimerHandle ResetPickUpTime;
+        GetWorldTimerManager().SetTimer(
+        ResetPickUpTime,
+        FTimerDelegate::CreateLambda([this]() { IsPickUp = false; }),
+        1.5f,
+        false
+        );
+}
+
