@@ -153,6 +153,15 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
               this,
                &ANS_PlayerCharacterBase::KickAction_Server);
         }
+
+        if (InputAttackAction)
+        {
+            EnhancedInput->BindAction(
+            InputAttackAction,
+             ETriggerEvent::Triggered,
+              this,
+               &ANS_PlayerCharacterBase::AttackAction_Server);
+        }
     }
 }
 
@@ -160,8 +169,8 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsKick);    // 발차기 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsSprint); // 달리기 변수
-
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsSprint);  // 달리기 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsAttack);  // 공격 변수
 }
 
 void ANS_PlayerCharacterBase::SetMovementLockState(bool bLock)
@@ -292,4 +301,26 @@ void ANS_PlayerCharacterBase::KickAction_Multicast_Implementation()
             false
         );
     }
+}
+
+void ANS_PlayerCharacterBase::AttackAction_Multicast_Implementation()
+{
+    if (GetCharacterMovement()->IsFalling()) {return;}
+
+    AttackAction_Multicast();
+}
+
+void ANS_PlayerCharacterBase::AttackAction_Server_Implementation(const FInputActionValue& Value)
+{
+    IsAttack = true;
+
+    // 1.2초간 실 후 IsKick변수는 false로 변경
+    FTimerHandle RestAttackTime;
+    GetWorldTimerManager().SetTimer(
+    RestAttackTime,
+    FTimerDelegate::CreateLambda([this]() { IsAttack = false; }),
+    1.0f,
+    false
+    );
+    
 }

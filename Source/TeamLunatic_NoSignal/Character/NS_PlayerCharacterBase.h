@@ -69,12 +69,15 @@ public:
 	// 점프가 가능하게 하는 변수 
 	bool IsCanJump = true;
 
-	// 달리고있는 상태확인 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Sprint")
+	// 달리고있는 상태인지 확인 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsSprint = false;
-	// =========== 발차기 확인 변수 =============
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Kick")
+	// 발차기 확인 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsKick = false;
+	// 공격중인지 확인 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool IsAttack = false;
 
 	
 	// IMC(입력 매핑 컨텍스트)
@@ -94,6 +97,8 @@ public:
 	UInputAction* InputSprintAction;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputKickAction;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* InputAttackAction;
 
 	// 이동 입력 잠금 제어 함수 
 	UFUNCTION(BlueprintCallable, Category="Input")
@@ -111,6 +116,7 @@ public:
 	void StartCrouch(const FInputActionValue& Value);
 	void StopCrouch(const FInputActionValue& Value);
 	//////////////CharacterMovmentComponent를 사용안함////////////////
+	
 	// 달리기
 	UFUNCTION(server, Reliable)
 	void StartSprint_Server(const FInputActionValue& Value);
@@ -127,5 +133,11 @@ public:
 	void KickAction_Server(const FInputActionValue& Value);
 	UFUNCTION(NetMulticast, Reliable)
 	void KickAction_Multicast();
+
+	// 공격
+	UFUNCTION(Server, Reliable)
+	void AttackAction_Server(const FInputActionValue& Value);
+	UFUNCTION(NetMulticast, Reliable)
+	void AttackAction_Multicast();
 	//////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
 };
