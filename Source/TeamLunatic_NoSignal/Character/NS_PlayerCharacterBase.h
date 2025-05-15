@@ -22,7 +22,6 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
@@ -51,6 +50,11 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
 	UNS_StatusComponent* StatusComp;
 
+	
+	// 캐릭터 이동 중 바라보는 곳으로 몸 회전 속도 (1 ~ 10까지 해봤는데 5가 가장 적당함)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float CharacterTurnSpeed = 5.0f;
+	
 	
 	// ========== 이동 관련 =============
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
@@ -86,6 +90,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputKickAction;
 
+	// 이동 입력 잠금 제어 함수 
+	UFUNCTION(BlueprintCallable, Category="Input")
+	void SetMovementLockState(bool bLock);
+	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	//피격
