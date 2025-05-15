@@ -3,6 +3,7 @@
 #include "TimerManager.h"
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
+#include "Inventory UI/NS_InventoryHUD.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/PlayerController.h"
 
@@ -14,6 +15,8 @@ UInteractionComponent::UInteractionComponent()
 void UInteractionComponent::BeginPlay()
 {
 	Super::BeginPlay();
+
+	HUD = Cast<ANS_InventoryHUD>(GetWorld()->GetFirstPlayerController()->GetHUD());
 }
 
 void UInteractionComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -98,6 +101,8 @@ void UInteractionComponent::FoundInteractable(AActor* NewInteractable)
 	InteractionData.CurrentInteractable = NewInteractable;
 	TargetInteractable = NewInteractable;
 
+	HUD->UpdateInteractionWidget(&TargetInteractable->InteractableData);
+
 	TargetInteractable->BeginFocus();
 }
 
@@ -114,6 +119,8 @@ void UInteractionComponent::NoInteractableFound()
 		{
 			TargetInteractable->EndFocus();
 		}
+
+		HUD->HideInteractionWidget();
 
 		InteractionData.CurrentInteractable = nullptr;
 		TargetInteractable = nullptr;

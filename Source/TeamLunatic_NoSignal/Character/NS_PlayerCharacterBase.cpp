@@ -136,6 +136,23 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                &ANS_PlayerCharacterBase::KickAction
                );
         }
+
+        if (InteractAction)
+        {
+            EnhancedInput->BindAction(
+                InteractAction,
+                ETriggerEvent::Started,
+                InteractionComponent,
+                &UInteractionComponent::BeginInteract
+            );
+
+            EnhancedInput->BindAction(
+                InteractAction,
+                ETriggerEvent::Completed,
+                InteractionComponent,
+                &UInteractionComponent::EndInteract
+            );
+        }
     }
 }
 
@@ -232,3 +249,4 @@ void ANS_PlayerCharacterBase::KickAction(const FInputActionValue& Value)
         false
     );
 }
+

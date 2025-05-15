@@ -9,6 +9,7 @@
 class UInputAction;
 class UInputMappingContext;
 class UCameraComponent;
+class ANS_InventoryHUD;
 
 USTRUCT(BlueprintType)
 struct FInteractionData
@@ -46,6 +47,8 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	UPROPERTY()
+	ANS_InventoryHUD* HUD;
 private:
 	FInteractionData InteractionData;
 
