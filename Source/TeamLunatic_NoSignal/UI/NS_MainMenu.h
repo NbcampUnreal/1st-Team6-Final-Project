@@ -18,8 +18,7 @@ public:
 	virtual void NativeConstruct() override;
 
 public:
-	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite, Category = "Widget")
-	TArray<UNS_MasterMenuPanel*>  MainMenuWidgets;
+
 
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* ShowR;
@@ -27,7 +26,20 @@ public:
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* ShowL;
 
+	UFUNCTION(BlueprintCallable, Category = "Animation")
+	void PlayAnimationShowR();
+	UFUNCTION(BlueprintCallable, Category = "Animation")
+	void PlayAnimationShowL();
+
+
 	UFUNCTION(BlueprintCallable, Category = "Widget")
 	void SelectWidget(EWidgetToggleType ToggleType);
 
+	UNS_MasterMenuPanel* GetWidget(EWidgetToggleType ToggleType);
+
+	void QuitNSGame();
+
+private:
+	//UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Widget")
+	TMap<EWidgetToggleType, UNS_MasterMenuPanel*> WidgetMap;
 };

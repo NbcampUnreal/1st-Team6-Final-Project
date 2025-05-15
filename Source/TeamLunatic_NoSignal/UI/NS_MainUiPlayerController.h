@@ -17,11 +17,11 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_MainUiPlayerController : public APlayerContro
 protected:
     virtual void BeginPlay() override;
 
-    UPROPERTY(EditDefaultsOnly, Category = "UI")
-    TSubclassOf<class UUserWidget> NS_MainMenuWidgetClass;
+    //UPROPERTY(EditDefaultsOnly, Category = "UI")
+    //TSubclassOf<class UUserWidget> NS_MainMenuWidgetClass;
 
-    UPROPERTY()
-    UNS_MainMenu* NS_MainMenuWidget;
+    //UPROPERTY()
+    //UNS_MainMenu* NS_MainMenuWidget;
 
     UPROPERTY(EditDefaultsOnly, Category = "Input")
     UInputMappingContext* NS_SGKCharacterInputs;

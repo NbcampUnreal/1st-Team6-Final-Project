@@ -6,10 +6,13 @@
 
 UTempGameInstance::UTempGameInstance()
 {
-	/// Script / Engine.Blueprint'/Game/UI/Blueprints/BP_NS_UIManager.BP_NS_UIManager'
-	//static ConstructorHelpers::FClassFinder<UNS_UIManager> BP_UIManager(TEXT("/Game/UI/Blueprints/BP_NS_UIManager"));
-	//if (BP_UIManager.Succeeded())
-	//	UIManagerClass = BP_UIManager.Class;
+	//2025/0514 5분기록보드 문제 아직 해결안됌. 
+	//if (!UIManagerClass)
+	//{
+	//	static ConstructorHelpers::FClassFinder<UNS_UIManager> BP_UIManager(TEXT("/Game/UI/Blueprints/BP_NS_UIManager"));
+	//	if (BP_UIManager.Succeeded())										      
+	//		UIManagerClass = BP_UIManager.Class;
+	//}
 }
 
 void UTempGameInstance::Init()

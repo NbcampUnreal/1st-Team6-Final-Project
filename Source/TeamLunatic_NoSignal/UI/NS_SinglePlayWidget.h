@@ -5,21 +5,29 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "UI/NS_CommonType.h"
-#include "UI/NS_BaseWidgetInterface.h"
+#include "UI/NS_MasterMenuPanel.h"
 #include "NS_SinglePlayWidget.generated.h"
 
-class UButton;
+//class UButton;
+class UNS_MenuButtonWidget;
+class UNS_MainMenu;
 UCLASS()
-class TEAMLUNATIC_NOSIGNAL_API UNS_SinglePlayWidget : public UUserWidget, public INS_BaseWidgetInterface
+class TEAMLUNATIC_NOSIGNAL_API UNS_SinglePlayWidget : public UNS_MasterMenuPanel
 {
 	GENERATED_BODY()
 public:
     virtual void NativeConstruct() override;
-
+    virtual void Init(UNS_MainMenu* NsMainMenu) override;
 protected:
 
-   UFUNCTION()
-   void HandleButtonClicked(EWidgetToggleType ToggleType);
+    UPROPERTY(meta = (BindWidget))
+    UNS_MenuButtonWidget* BP_WidgetToggleButton_NewGame;
+
+    UPROPERTY(meta = (BindWidget))
+    UNS_MenuButtonWidget* BP_WidgetToggleButton_LoadGame;
+
+    UPROPERTY(meta = (BindWidget))
+    UNS_MenuButtonWidget* BP_WidgetToggleButton_MainMenu;
 
    UFUNCTION()
    void OnNewGameClicked();
@@ -27,15 +35,4 @@ protected:
    void OnLoadGameClicked();
    UFUNCTION()
    void OnMainMenuClicked();
-
-    //// 각각 블루프린트에서 이름 매칭
-    UPROPERTY(meta = (BindWidget))
-    UButton* BP_WidgetToggleButton_NewGame;
-
-    UPROPERTY(meta = (BindWidget))
-    UButton* BP_WidgetToggleButton_LoadGame;
-
-    UPROPERTY(meta = (BindWidget))
-    UButton* BP_WidgetToggleButton_MainMenu;
-
 };
