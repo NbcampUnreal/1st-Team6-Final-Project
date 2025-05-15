@@ -24,6 +24,11 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	//피격
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+	void OnDeath();
+
 
 public:
 	// 카메라를 붙일 소켓 이름 [에디터에서 변경 가능함] 
@@ -93,10 +98,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Input")
 	void SetMovementLockState(bool bLock);
 
-	//피격
-	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
-	void OnDeath();
-
 	//////////////////////////////////액션 처리 함수들/////////////////////////////////// 
 	// 이동
 	void MoveAction(const FInputActionValue& Value);
@@ -107,10 +108,23 @@ public:
 	// 앉기
 	void StartCrouch(const FInputActionValue& Value);
 	void StopCrouch(const FInputActionValue& Value);
+	//////////////CharacterMovmentComponent를 사용안함////////////////
 	// 달리기
-	void StartSprint(const FInputActionValue& Value);
-	void StopSprint(const FInputActionValue& Value);
+	UFUNCTION(server, Reliable)
+	void StartSprint_Server(const FInputActionValue& Value);
+	UFUNCTION(NetMulticast, Reliable)
+	void StartSprint_Multicast();
+
+	UFUNCTION(Server, Reliable)
+	void StopSprint_Server(const FInputActionValue& Value);
+	UFUNCTION(NetMulticast, Reliable)
+	void StopSprint_Multicast();
+
 	// 발차기
-	void KickAction(const FInputActionValue& Value);
+	UFUNCTION(Server, Reliable)
+	void KickAction_Server(const FInputActionValue& Value);
+	UFUNCTION(NetMulticast, Reliable)
+	void KickAction_Multicast();
+	//////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
 
 };

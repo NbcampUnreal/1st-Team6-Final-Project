@@ -4,6 +4,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include <Net/UnrealNetwork.h>
 
 ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
 {
@@ -136,12 +137,12 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
             InputSprintAction,
              ETriggerEvent::Triggered,
               this,
-               &ANS_PlayerCharacterBase::StartSprint);
+               &ANS_PlayerCharacterBase::StartSprint_Server);
             EnhancedInput->BindAction(
             InputSprintAction,
              ETriggerEvent::Completed,
               this,
-               &ANS_PlayerCharacterBase::StopSprint);
+               &ANS_PlayerCharacterBase::StopSprint_Server);
         }
 
         if (InputKickAction)
@@ -150,9 +151,17 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
             InputKickAction,
              ETriggerEvent::Triggered,
               this,
-               &ANS_PlayerCharacterBase::KickAction);
+               &ANS_PlayerCharacterBase::KickAction_Server);
         }
     }
+}
+
+void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsKick);    // 발차기 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsSprint); // 달리기 변수
+
 }
 
 void ANS_PlayerCharacterBase::SetMovementLockState(bool bLock)
@@ -240,32 +249,47 @@ void ANS_PlayerCharacterBase::StopCrouch(const FInputActionValue& Value)
     UnCrouch();
 }
 
-void ANS_PlayerCharacterBase::StartSprint(const FInputActionValue& Value)
+void ANS_PlayerCharacterBase::StartSprint_Server_Implementation(const FInputActionValue& Value)
+{
+    StartSprint_Multicast_Implementation();
+}
+void ANS_PlayerCharacterBase::StartSprint_Multicast_Implementation()
 {
     IsSprint = true;
     if (GetCharacterMovement())
         GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier;
 }
 
-void ANS_PlayerCharacterBase::StopSprint(const FInputActionValue& Value)
+void ANS_PlayerCharacterBase::StopSprint_Server_Implementation(const FInputActionValue& Value)
+{
+    StopSprint_Multicast();
+}
+void ANS_PlayerCharacterBase::StopSprint_Multicast_Implementation()
 {
     IsSprint = false;
     if (GetCharacterMovement())
         GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed;
 }
 
-void ANS_PlayerCharacterBase::KickAction(const FInputActionValue& Value)
+
+void ANS_PlayerCharacterBase::KickAction_Server_Implementation(const FInputActionValue& Value)
 {
     if (GetCharacterMovement()->IsFalling()) {return;}
-    
-    IsKick = true;
+    KickAction_Multicast();
+}
+void ANS_PlayerCharacterBase::KickAction_Multicast_Implementation()
+{
+    if(HasAuthority())
+    {
+        IsKick = true;
 
-    // 1.2초간 실 후 IsKick변수는 false로 변경
-    FTimerHandle RestKickTime;
-    GetWorldTimerManager().SetTimer(
-        RestKickTime,
-        FTimerDelegate::CreateLambda([this]() { IsKick = false; }),
-        1.2f,
-        false
-    );
+        // 1.2초간 실 후 IsKick변수는 false로 변경
+        FTimerHandle RestKickTime;
+        GetWorldTimerManager().SetTimer(
+            RestKickTime,
+            FTimerDelegate::CreateLambda([this]() { IsKick = false; }),
+            1.2f,
+            false
+        );
+    }
 }
