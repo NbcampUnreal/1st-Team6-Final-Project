@@ -4,6 +4,7 @@
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "Character/Components/NS_StatusComponent.h"
+#include "Interaction/Component/InteractionComponent.h"
 #include "NS_PlayerCharacterBase.generated.h"
 
 class UInputMappingContext;
@@ -25,7 +26,6 @@ protected:
 
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
-
 public:
 	// 카메라를 붙일 소켓 이름 [에디터에서 변경 가능함] 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera")
@@ -51,7 +51,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
 	UNS_StatusComponent* StatusComp;
 
-	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interaction", meta = (AllowPrivateAccess = "true"))
+	UInteractionComponent* InteractionComponent;
+
 	// ========== 이동 관련 =============
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float DefaultWalkSpeed;
@@ -84,6 +86,8 @@ public:
 	UInputAction* InputSprintAction;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputKickAction;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* InteractAction;
 
 	//피격
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
@@ -104,5 +108,4 @@ public:
 	void StopSprint(const FInputActionValue& Value);
 	// 발차기
 	void KickAction(const FInputActionValue& Value);
-
 };
