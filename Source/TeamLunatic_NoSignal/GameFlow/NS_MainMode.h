@@ -34,7 +34,7 @@ protected:
 	
 };
 
-inline void ANS_MainMode::BeginPlay()
-{
-	Super::BeginPlay();
-}
+//inline void ANS_MainMode::BeginPlay()
+//{
+//	Super::BeginPlay();
+//}
