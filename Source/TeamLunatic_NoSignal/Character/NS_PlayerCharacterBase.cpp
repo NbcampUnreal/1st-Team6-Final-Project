@@ -68,6 +68,8 @@ void ANS_PlayerCharacterBase::Tick(float DeltaTime)
         return;
 
     // 이동 중인지를 Velocity로 체크하고 이동중이 아니면 실행안함
+    // 이코드로 움직이지 않으면 몸이 안돌아감
+    // 여기 수정하면 원하는 각도만큼 목꺾으면 돌아가게끔 될까
     if (GetCharacterMovement()->Velocity.IsNearlyZero())
         return;
 
@@ -245,7 +247,8 @@ void ANS_PlayerCharacterBase::JumpAction(const FInputActionValue& Value)
 
 void ANS_PlayerCharacterBase::StartCrouch(const FInputActionValue& Value)
 {
-    if (GetCharacterMovement()->IsFalling()) { return; }
+	//점프 중이거나 발차기 중일 때는 앉지 않음
+    if (GetCharacterMovement()->IsFalling() || IsKick) { return; }
     
     Crouch();
 }
@@ -281,6 +284,7 @@ void ANS_PlayerCharacterBase::StopSprint_Multicast_Implementation()
 void ANS_PlayerCharacterBase::KickAction_Server_Implementation(const FInputActionValue& Value)
 {
     if (GetCharacterMovement()->IsFalling()) {return;}
+
     KickAction_Multicast();
 }
 void ANS_PlayerCharacterBase::KickAction_Multicast_Implementation()
