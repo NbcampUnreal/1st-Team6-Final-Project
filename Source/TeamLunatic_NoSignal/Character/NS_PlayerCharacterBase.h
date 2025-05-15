@@ -96,8 +96,10 @@ public:
 	UInputAction* InputKickAction;
 
 	// 이동 입력 잠금 제어 함수 
-	UFUNCTION(BlueprintCallable, Category="Input")
-	void SetMovementLockState(bool bLock);
+	UFUNCTION(BlueprintCallable, Server, Reliable, Category="Input")
+	void SetMovementLockState_Server(bool bLock);
+	UFUNCTION(NetMulticast, Reliable)
+	void SetMovementLockState_Multicast(bool bLock);
 	
 	//////////////////////////////////액션 처리 함수들///////////////////////////////////
 	//////////////CharacterMovmentComponent를 사용함////////////////

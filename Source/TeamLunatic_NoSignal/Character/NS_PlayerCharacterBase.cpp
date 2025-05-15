@@ -164,7 +164,12 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 
 }
 
-void ANS_PlayerCharacterBase::SetMovementLockState(bool bLock)
+void ANS_PlayerCharacterBase::SetMovementLockState_Server_Implementation(bool bLock)
+{
+	SetMovementLockState_Multicast(bLock);
+}
+
+void ANS_PlayerCharacterBase::SetMovementLockState_Multicast_Implementation(bool bLock)
 {
     if (auto* MoveComp = GetCharacterMovement())
     {
@@ -188,6 +193,7 @@ float ANS_PlayerCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const
 void ANS_PlayerCharacterBase::OnDeath()
 {
 }
+
 
 void ANS_PlayerCharacterBase::MoveAction(const FInputActionValue& Value)
 {
