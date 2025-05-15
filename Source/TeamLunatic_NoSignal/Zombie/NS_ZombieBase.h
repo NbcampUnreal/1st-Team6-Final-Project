@@ -22,7 +22,8 @@ protected:
 	virtual void BeginPlay() override;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	USphereComponent* SphereComp;
-	USkeletalMeshComponent* SkeletalMeshComp;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	USkeletalMeshComponent* SkeletalMesh;
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
