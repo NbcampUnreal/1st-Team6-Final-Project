@@ -23,9 +23,13 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	// 피격
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+	void OnDeath();
+
 public:
 	// 카메라를 붙일 소켓 이름 [에디터에서 변경 가능함] 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera")
@@ -51,23 +55,40 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
 	UNS_StatusComponent* StatusComp;
 
+	// 인터렉션 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interaction", meta = (AllowPrivateAccess = "true"))
 	UInteractionComponent* InteractionComponent;
-
+	
+	// 캐릭터 이동 중 바라보는 곳으로 몸 회전 속도 (1 ~ 10까지 해봤는데 5가 가장 적당함)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float CharacterTurnSpeed = 5.0f;
+	
+	
 	// ========== 이동 관련 =============
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float DefaultWalkSpeed;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float SprintSpeedMultiplier;
-	// 달리고있는 상태확인 변수
-	bool IsSprint = false;
 	// 점프가 가능하게 하는 변수 
 	bool IsCanJump = true;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Kick")
-	// =========== 발차기 확인 변수 =============
+	/////////////////////////////// 리플리케이션용 변수들////////////////////////////////
+	// 달리고있는 상태인지 확인 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool IsSprint = false;
+	// 발차기 확인 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsKick = false;
-
+	// 공격중인지 확인 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool IsAttack = false;
+	// 아이템을 줍고있는지 확인 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool IsPickUp = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	int32 IsChange = 0;
+	//////////////////////////////////////////////////////////////////////////////////////
+	
 	
 	// IMC(입력 매핑 컨텍스트)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
@@ -87,13 +108,16 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputKickAction;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-	UInputAction* InteractAction;
-
-	//피격
-	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
-	void OnDeath();
-
-	//////////////////////////////////액션 처리 함수들/////////////////////////////////// 
+	UInputAction* InputAttackAction;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* InputPickUpAction;
+	
+	// 이동 입력 잠금 제어 함수 
+	UFUNCTION(BlueprintCallable, Category="Input")
+	void SetMovementLockState(bool bLock);
+	
+	//////////////////////////////////액션 처리 함수들///////////////////////////////////
+	//////////////CharacterMovmentComponent를 사용함////////////////
 	// 이동
 	void MoveAction(const FInputActionValue& Value);
 	// 마우스 카메라 
@@ -103,9 +127,35 @@ public:
 	// 앉기
 	void StartCrouch(const FInputActionValue& Value);
 	void StopCrouch(const FInputActionValue& Value);
+	//////////////CharacterMovmentComponent를 사용안함////////////////
+	
 	// 달리기
-	void StartSprint(const FInputActionValue& Value);
-	void StopSprint(const FInputActionValue& Value);
+	UFUNCTION(server, Reliable)
+	void StartSprint_Server(const FInputActionValue& Value);
+	UFUNCTION(NetMulticast, Reliable)
+	void StartSprint_Multicast();
+
+	UFUNCTION(Server, Reliable)
+	void StopSprint_Server(const FInputActionValue& Value);
+	UFUNCTION(NetMulticast, Reliable)
+	void StopSprint_Multicast();
+
 	// 발차기
-	void KickAction(const FInputActionValue& Value);
+	UFUNCTION(Server, Reliable)
+	void KickAction_Server(const FInputActionValue& Value);
+	UFUNCTION(NetMulticast, Reliable)
+	void KickAction_Multicast();
+
+	// 공격
+	UFUNCTION(Server, Reliable)
+	void AttackAction_Server(const FInputActionValue& Value);
+	UFUNCTION(NetMulticast, Reliable)
+	void AttackAction_Multicast();
+
+	// 아이템 줍기
+	UFUNCTION(Server, Reliable)
+	void PickUpAction_Server(const FInputActionValue& Value);
+	UFUNCTION(NetMulticast, Reliable)
+	void PickUpAction_Multicast();
+	//////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
 };
