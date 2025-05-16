@@ -26,52 +26,63 @@ void UNS_StartMenu::NativeConstruct()
 void UNS_StartMenu::OnSinglePlayerClicked()
 {
     HideWidget();
-    UTempGameInstance* GS = Cast< UTempGameInstance>(GetGameInstance());
-    if (GS)
-    {
-        //UGameplayStatics::OpenLevel(this, FName("NoSignalEntry"));
-        GS->GetUIManager()->GetNS_MainMenuWidget()->SelectWidget(EWidgetToggleType::SinglePlayer);
-        UE_LOG(LogTemp, Warning, TEXT("OnSinglePlayerClicked"));
-    }
-    else
-        UE_LOG(LogTemp, Warning, TEXT("Error!! Empty GameInstance / OnSinglePlayerClicked"));
+    if (UNS_MasterMenuPanel* Widget = MainMenu->GetWidget(EWidgetToggleType::SinglePlayer))
+        Widget->ShowWidget();
+    
+    //UTempGameInstance* GS = Cast< UTempGameInstance>(GetGameInstance());
+    //if (GS)
+    //{
+    //    //UGameplayStatics::OpenLevel(this, FName("NoSignalEntry"));
+    //    GS->GetUIManager()->GetNS_MainMenuWidget()->SelectWidget(EWidgetToggleType::SinglePlayer);
+    //    UE_LOG(LogTemp, Warning, TEXT("OnSinglePlayerClicked"));
+    //}
+    //else
+    //    UE_LOG(LogTemp, Warning, TEXT("Error!! Empty GameInstance / OnSinglePlayerClicked"));
 }
 
 void UNS_StartMenu::OnSettingsClicked()
 {
     HideWidget();//SetVisibility(ESlateVisibility::Hidden);
-    UTempGameInstance* GS = Cast< UTempGameInstance>(GetGameInstance());
-    if (GS)
-    {
-        GS->GetUIManager()->GetNS_MainMenuWidget()->SelectWidget(EWidgetToggleType::Settings);
-        UE_LOG(LogTemp, Warning, TEXT("OnSettingsClicked"));
-    }
-    else
-         UE_LOG(LogTemp, Warning, TEXT("Error!! Empty GameInstance /OnSettingsClicked"));
+    if (UNS_MasterMenuPanel* Widget = MainMenu->GetWidget(EWidgetToggleType::Settings))
+        Widget->ShowWidget();
+
+    //UTempGameInstance* GS = Cast< UTempGameInstance>(GetGameInstance());
+    //if (GS)
+    //{
+    //    GS->GetUIManager()->GetNS_MainMenuWidget()->SelectWidget(EWidgetToggleType::Settings);
+    //    UE_LOG(LogTemp, Warning, TEXT("OnSettingsClicked"));
+    //}
+    //else
+    //     UE_LOG(LogTemp, Warning, TEXT("Error!! Empty GameInstance /OnSettingsClicked"));
 }
 
 void UNS_StartMenu::OnQuitClicked()
 {
     HideWidget();//SetVisibility(ESlateVisibility::Hidden);
-    UTempGameInstance* GS = Cast< UTempGameInstance>(GetGameInstance());
-    if (GS)
-    {
-        GS->GetUIManager()->GetNS_MainMenuWidget()->SelectWidget(EWidgetToggleType::Quit);
-        UE_LOG(LogTemp, Warning, TEXT("OnQuitClicked"));
-    }
-    else
-       UE_LOG(LogTemp, Warning, TEXT("Error!! Empty GameInstance /OnQuitClicked"));
+    MainMenu->SelectWidget(EWidgetToggleType::Quit);
+   
+    //UTempGameInstance* GS = Cast< UTempGameInstance>(GetGameInstance());
+    //if (GS)
+    //{
+    //    GS->GetUIManager()->GetNS_MainMenuWidget()->SelectWidget(EWidgetToggleType::Quit);
+    //    UE_LOG(LogTemp, Warning, TEXT("OnQuitClicked"));
+    //}
+    //else
+    //   UE_LOG(LogTemp, Warning, TEXT("Error!! Empty GameInstance /OnQuitClicked"));
 }
 
 void UNS_StartMenu::OnMultiPlayerClicked()
 {
     HideWidget();//SetVisibility(ESlateVisibility::Hidden);
-    UTempGameInstance* GS = Cast< UTempGameInstance>(GetGameInstance());
-    if (GS)
-    {
-        GS->GetUIManager()->GetNS_MainMenuWidget()->SelectWidget(EWidgetToggleType::MultiPlayer);
-        UE_LOG(LogTemp, Warning, TEXT("OnMultiPlayerClicked"));
-    }
-    else
-        UE_LOG(LogTemp, Warning, TEXT("Error!! Empty GameInstance /OnMultiPlayerClicked"));
+    if (UNS_MasterMenuPanel* Widget = MainMenu->GetWidget(EWidgetToggleType::MultiPlayer))
+        Widget->ShowWidget();
+
+    //UTempGameInstance* GS = Cast< UTempGameInstance>(GetGameInstance());
+    //if (GS)
+    //{
+    //    GS->GetUIManager()->GetNS_MainMenuWidget()->SelectWidget(EWidgetToggleType::MultiPlayer);
+    //    UE_LOG(LogTemp, Warning, TEXT("OnMultiPlayerClicked"));
+    //}
+    //else
+    //    UE_LOG(LogTemp, Warning, TEXT("Error!! Empty GameInstance /OnMultiPlayerClicked"));
 }
