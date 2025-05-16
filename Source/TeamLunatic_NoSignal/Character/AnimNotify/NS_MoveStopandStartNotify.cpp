@@ -6,12 +6,12 @@ void UNS_MoveStopandStartNotify::NotifyBegin(USkeletalMeshComponent* MeshComp,
 											  float TotalDuration)
 {
 	if (auto* Char = Cast<ANS_PlayerCharacterBase>(MeshComp->GetOwner()))
-		Char->SetMovementLockState(true);
+		Char->SetMovementLockState_Server(true);
 }
 
 void UNS_MoveStopandStartNotify::NotifyEnd(USkeletalMeshComponent* MeshComp,
 											UAnimSequenceBase* Animation)
 {
 	if (auto* Char = Cast<ANS_PlayerCharacterBase>(MeshComp->GetOwner()))
-		Char->SetMovementLockState(false);
+		Char->SetMovementLockState_Server(false);
 }

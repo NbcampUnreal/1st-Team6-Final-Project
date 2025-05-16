@@ -4,7 +4,22 @@
 #include "UI/NS_MasterMenuPanel.h"
 #include "NS_MainUiPlayerController.h"
 #include "Kismet/GameplayStatics.h"
+#include "UI/NS_MainMenu.h"
 
+void UNS_MasterMenuPanel::NativeConstruct()
+{
+    Super::NativeConstruct();
+
+  //  bool bIsRightPosMotionStart = (MyToggleType > EWidgetToggleType::Settings);
+ //   MotionID = bIsRightPosMotionStart ? 1 : 0;
+}
+
+void UNS_MasterMenuPanel::SetToggleType()
+{
+   bool bIsRightPosMotionStart = (MyToggleType > EWidgetToggleType::Settings);
+   MotionID = bIsRightPosMotionStart ? 1 : 0;
+}
+/*
 void UNS_MasterMenuPanel::SelectWidget(EWidgetToggleType ToggleType)
 {
     switch (ToggleType)
@@ -62,7 +77,7 @@ void UNS_MasterMenuPanel::SelectWidget(EWidgetToggleType ToggleType)
         break;
     }
 }
-
+*/
 void UNS_MasterMenuPanel::SinglePlayer()
 {
 
@@ -99,7 +114,7 @@ void UNS_MasterMenuPanel::Back()
 {
 
 }
-void UNS_MasterMenuPanel::MainMenu()
+void UNS_MasterMenuPanel::MainMenu1()
 {
 
 }
@@ -132,6 +147,36 @@ void UNS_MasterMenuPanel::SaveGame()
 {
 
 }
+
+void UNS_MasterMenuPanel::ShowWidget()
+{
+    SetVisibility(ESlateVisibility::Visible);
+    if (MotionID == 0) 
+        MainMenu->PlayAnimationShowL();
+    else
+        MainMenu->PlayAnimationShowR();
+}
+
+void UNS_MasterMenuPanel::HideWidget()
+{
+    SetVisibility(ESlateVisibility::Hidden);
+}
+
+void UNS_MasterMenuPanel::HideSubMenuWidget()
+{
+    for (const TPair<EWidgetToggleType, UNS_MasterMenuPanel*>& Elem : SubMenus)
+    {
+        if (Elem.Value)
+            Elem.Value->HideWidget();
+    }
+}
+
+void UNS_MasterMenuPanel::Init(UNS_MainMenu* NsMainMenu)
+{
+    MainMenu = NsMainMenu;
+    SetToggleType();
+}
+
 
 void UNS_MasterMenuPanel::SetBlockInput(ANS_MainUiPlayerController* Player, bool bBlock)
 {
