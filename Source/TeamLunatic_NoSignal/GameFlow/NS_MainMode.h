@@ -34,7 +34,3 @@ protected:
 	
 };
 
-inline void ANS_MainMode::BeginPlay()
-{
-	Super::BeginPlay();
-}
