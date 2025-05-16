@@ -345,12 +345,12 @@ void ANS_PlayerCharacterBase::PickUpAction_Multicast_Implementation()
 {
         IsPickUp = true;
 
-        // 1.5초간 실행 후 IsPickUp변수는 false로 변경
+        // 1.0초간 실행 후 IsPickUp변수는 false로 변경
         FTimerHandle ResetPickUpTime;
         GetWorldTimerManager().SetTimer(
         ResetPickUpTime,
         FTimerDelegate::CreateLambda([this]() { IsPickUp = false; }),
-        1.5f,
+        1.0f,
         false
         );
 }
