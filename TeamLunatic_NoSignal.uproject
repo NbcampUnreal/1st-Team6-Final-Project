@@ -10,6 +10,8 @@
 			"LoadingPhase": "Default",
 			"AdditionalDependencies": [
 				"AIModule",
+				"Engine",
+				"CoreUObject",
 				"UMG"
 			]
 		}
@@ -24,14 +26,6 @@
 		},
 		{
 			"Name": "Landmass",
-			"Enabled": true
-		},
-		{
-			"Name": "PCG",
-			"Enabled": true
-		},
-		{
-			"Name": "PCGGeometryScriptInterop",
 			"Enabled": true
 		}
 	]

@@ -28,7 +28,6 @@ void UNS_Service_CalculateDistance::TickNode(UBehaviorTreeComponent& OwnerComp, 
 					Distance = FVector::Dist(Pawn->GetActorLocation(), TargetActor->GetActorLocation());
 					BlackboardComponent->SetValueAsFloat("Distance", Distance);
 				}
-				else BlackboardComponent->SetValueAsFloat("Distance", 10000.f);
 			}
 		}
 	}
