@@ -24,6 +24,9 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
 
     // 스탯 컴포넌트 부착
     StatusComp = CreateDefaultSubobject<UNS_StatusComponent>(TEXT("StatusComponent"));
+    InteractionComponent = CreateDefaultSubobject<UInteractionComponent>(TEXT("InteractionComponent"));
+
+    BaseEyeHeight = 74.0f;
 }
 
 void ANS_PlayerCharacterBase::BeginPlay()
@@ -133,6 +136,23 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                &ANS_PlayerCharacterBase::KickAction
                );
         }
+
+        if (InteractAction)
+        {
+            EnhancedInput->BindAction(
+                InteractAction,
+                ETriggerEvent::Started,
+                InteractionComponent,
+                &UInteractionComponent::BeginInteract
+            );
+
+            EnhancedInput->BindAction(
+                InteractAction,
+                ETriggerEvent::Completed,
+                InteractionComponent,
+                &UInteractionComponent::EndInteract
+            );
+        }
     }
 }
 
@@ -231,3 +251,4 @@ void ANS_PlayerCharacterBase::KickAction(const FInputActionValue& Value)
         false
     );
 }
+
