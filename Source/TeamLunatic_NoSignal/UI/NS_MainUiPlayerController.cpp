@@ -35,22 +35,27 @@ void ANS_MainUiPlayerController::BeginPlay()
     //}
     //if (NS_MainMenuWidgetClass)
     //{
-    //    NS_MainMenuWidget = CreateWidget(this, NS_MainMenuWidgetClass);
+    //    NS_MainMenuWidget = Cast<UNS_MainMenu>(CreateWidget(this, NS_MainMenuWidgetClass));
     //    if (NS_MainMenuWidget)
     //        NS_MainMenuWidget->AddToViewport();
     //}
-     UNS_MainMenu* MainMenuWidget = nullptr;
+
+    NS_MainMenuWidget = CreateWidget<UNS_MainMenu>(GetWorld(), NS_MainMenuWidgetClass);
+    if (NS_MainMenuWidget)
+         NS_MainMenuWidget->AddToViewport();
+
+   /*  UNS_MainMenu* MainMenuWidget = nullptr;
      if (UTempGameInstance* TempGameInstance = Cast<UTempGameInstance>(GetGameInstance()))
      {
          TempGameInstance->GetUIManager()->ShowMainMenuWidget(GetWorld());
          MainMenuWidget = TempGameInstance->GetUIManager()->GetNS_MainMenuWidget();
-     }
+     }*/
 
     // 4. 마우스 커서 표시 및 입력 모드 설정
     bShowMouseCursor = true;
 
     FInputModeUIOnly InputMode;
-    InputMode.SetWidgetToFocus(MainMenuWidget->TakeWidget());
+    InputMode.SetWidgetToFocus(NS_MainMenuWidget->TakeWidget());
     InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
     SetInputMode(InputMode);
 

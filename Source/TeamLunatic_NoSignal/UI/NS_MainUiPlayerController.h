@@ -18,7 +18,7 @@ protected:
     virtual void BeginPlay() override;
 
     UPROPERTY(EditDefaultsOnly, Category = "UI")
-    TSubclassOf<class UUserWidget> NS_MainMenuWidgetClass;
+    TSubclassOf<class UNS_MainMenu> NS_MainMenuWidgetClass;
 
     UPROPERTY()
     UNS_MainMenu* NS_MainMenuWidget;
