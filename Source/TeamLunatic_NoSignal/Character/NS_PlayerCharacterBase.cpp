@@ -203,6 +203,7 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsSprint);  // 달리기 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsAttack);  // 공격 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsPickUp);  // 아이템줍기 변수
+	DOREPLIFETIME(ANS_PlayerCharacterBase, CameraLookDirection);  // 점프 가능 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsChange);  // ================================= 나중에에 삭제해야함
 }
 
@@ -264,7 +265,37 @@ void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
     ControlRot.Yaw = ActorYaw + RelativeYaw;
 
     Controller->SetControlRotation(ControlRot);
+
+    CameraLooking_Server(RelativeYaw, ControlRot.Pitch);
+
+
+    UE_LOG(LogTemp, Warning, TEXT("---------------------------------------------"));
+	UE_LOG(LogTemp, Warning, TEXT("CameraLookDirection.X : %f"), CameraLookDirection.X);
+	UE_LOG(LogTemp, Warning, TEXT("CameraLookDirection.Y : %f"), CameraLookDirection.Y);
+    UE_LOG(LogTemp, Warning, TEXT(" "));
 }
+
+
+void ANS_PlayerCharacterBase::CameraLooking_Server_Implementation(float LookingX, double LookingY)
+{
+    CameraLooking_Multicast(LookingX, LookingY);
+}
+
+void ANS_PlayerCharacterBase::CameraLooking_Multicast_Implementation(float LookingX, double LookingY)
+{
+	// 카메라 회전값을 저장
+	if (LookingY > 90.f) // 피치가 0 ~ 270인 수평기준 아래(고개숙임)일때 값을 보정해야함 : AM이 -90 ~ 90으로 고개를 조정하기 때문
+	{
+        CameraLookDirection.Y = LookingY - 360.f;
+	}
+	else
+	{
+       CameraLookDirection.Y = LookingY;
+	}
+    CameraLookDirection.X = LookingX;
+	
+}
+
 
 void ANS_PlayerCharacterBase::JumpAction(const FInputActionValue& Value)
 {

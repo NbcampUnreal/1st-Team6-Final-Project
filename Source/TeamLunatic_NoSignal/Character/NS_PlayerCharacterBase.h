@@ -87,6 +87,8 @@ public:
 	bool IsPickUp = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	int32 IsChange = 0;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	FVector2D CameraLookDirection = FVector2D(0.f, 0.f);
 	//////////////////////////////////////////////////////////////////////////////////////
 	
 	
@@ -131,6 +133,11 @@ public:
 	void StopCrouch(const FInputActionValue& Value);
 	//////////////CharacterMovmentComponent를 사용안함////////////////
 	
+	//카메라 룩킹만
+	UFUNCTION(Server, Reliable, Category = "Look")
+	void CameraLooking_Server(float LookingX, double LookingY);
+	UFUNCTION(NetMulticast, Reliable, Category = "Look")
+	void CameraLooking_Multicast(float LookingX, double LookingY);
 	// 달리기
 	UFUNCTION(server, Reliable)
 	void StartSprint_Server(const FInputActionValue& Value);
