@@ -16,7 +16,7 @@ protected:
 	virtual void BeginPlay() override;
 
 	// 플레이어 스폰
-	void SpawnPlayer();
+	//void SpawnPlayer();
 
 	// 좀비/아이템 스폰
 	void SpawnZombies();
