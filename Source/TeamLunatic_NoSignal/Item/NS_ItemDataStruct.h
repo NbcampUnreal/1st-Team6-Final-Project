@@ -25,14 +25,6 @@ enum class EWeaponType : uint8
 	Ammo
 };
 
-UENUM()
-enum class EWeaponMeshType : uint8
-{
-	None,
-	Static,
-	Skeletal
-};
-
 USTRUCT()
 struct FItemTextData
 {
@@ -142,9 +134,6 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	EWeaponType WeaponType;
-
-	UPROPERTY(EditAnywhere)
-	EWeaponMeshType WeaponMeshType;
 
 	UPROPERTY(EditAnywhere)
 	FItemTextData ItemTextData;
