@@ -2,26 +2,49 @@
 
 
 #include "World/Pickup.h"
+#include "Item/NS_ItemDataStruct.h"
 
-// Sets default values
 APickup::APickup()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
+	PickupMesh = CreateDefaultSubobject<UStaticMeshComponent>("PickupMesh");
+	PickupMesh->SetSimulatePhysics(true);
+	SetRootComponent(PickupMesh);
 }
 
-// Called when the game starts or when spawned
 void APickup::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	//InitializePickup(UItemBase :: StaticClass(), ItemQuantity);
 }
 
-// Called every frame
-void APickup::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
+//void APickup::InitializePickup(const TSubclassOf<UItemBase> BaseClass, const int32 InQuantity)
+//{
+	//if (ItemDataTable && !DesiredItemID.IsNone())
+	//{
+		//const FItemData* ItemData = ItemDataTable->FindRow<FItemData>()
+	//}
+//}
 
+//void APickup::InitializeDrop(UItemBase* ItemToDrop, const int32 InQuantity)
+//{
+//}
+
+void APickup::BeginFocus()
+{
+}
+
+void APickup::EndFocus()
+{
+}
+
+void APickup::Interact()
+{
+}
+
+void APickup::TakePickup(const ANS_PlayerCharacter* Taker)
+{
 }
 
