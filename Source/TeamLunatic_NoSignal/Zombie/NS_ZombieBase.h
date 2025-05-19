@@ -24,17 +24,22 @@ protected:
 	USphereComponent* SphereComp;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	USkeletalMeshComponent* SkeletalMesh;
-	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	
+	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite, Category = "Stat")
 	float MaxHealth;
-	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Replicated, Category = "Stat")
 	float CurrentHealth;
 
 public:	
-	// Called every frame
+
 	virtual void Tick(float DeltaTime) override;
 
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+	
+	UFUNCTION()
 	virtual void Die();
+
+	UFUNCTION(NetMulticast, Unreliable)
+	virtual void OnDeath();
 };
