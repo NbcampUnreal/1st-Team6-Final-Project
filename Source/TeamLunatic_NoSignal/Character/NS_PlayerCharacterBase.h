@@ -5,6 +5,7 @@
 #include "InputActionValue.h"
 #include "Character/Components/NS_StatusComponent.h"
 #include "Interaction/Component/InteractionComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "NS_PlayerCharacterBase.generated.h"
 
 class UInputMappingContext;
