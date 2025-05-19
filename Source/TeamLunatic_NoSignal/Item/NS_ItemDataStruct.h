@@ -25,6 +25,14 @@ enum class EWeaponType : uint8
 	Ammo
 };
 
+UENUM()
+enum class EWeaponMeshType : uint8
+{
+	None,
+	Static,
+	Skeletal
+};
+
 USTRUCT()
 struct FItemTextData
 {
@@ -97,7 +105,10 @@ struct FItemAssetData
 	UTexture2D* Icon;
 
 	UPROPERTY(EditAnywhere)
-	UStaticMesh* Mesh;
+	UStaticMesh* StaticMesh;
+
+	UPROPERTY(EditAnywhere)
+	USkeletalMesh* SkeletalMesh;
 
 	UPROPERTY(EditAnywhere)
 	USoundBase* UseSound = nullptr;
@@ -112,7 +123,7 @@ struct FWeaponData
 	int32 Damage;
 
 	UPROPERTY(EditAnywhere)
-	int32 Durability;
+	float Durability;
 
 	UPROPERTY(EditAnywhere)
 	int32 MaxAmmo;
@@ -131,6 +142,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	EWeaponType WeaponType;
+
+	UPROPERTY(EditAnywhere)
+	EWeaponMeshType WeaponMeshType;
 
 	UPROPERTY(EditAnywhere)
 	FItemTextData ItemTextData;
