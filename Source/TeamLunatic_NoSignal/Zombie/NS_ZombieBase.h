@@ -36,10 +36,11 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
-	
+	virtual void  GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	UFUNCTION()
 	virtual void Die();
-
-	UFUNCTION(NetMulticast, Unreliable)
-	virtual void OnDeath();
+	
+	//사망 시 멀티캐스팅. ex)사운드, 등등
+	//UFUNCTION(NetMulticast, Unreliable)
+	//void OnDeath();
 };

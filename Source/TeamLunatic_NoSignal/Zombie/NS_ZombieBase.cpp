@@ -4,6 +4,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Net/UnrealNetwork.h"
 
 ANS_ZombieBase::ANS_ZombieBase()
 {
@@ -57,6 +58,13 @@ float ANS_ZombieBase::TakeDamage(float DamageAmount, struct FDamageEvent const& 
 	return ActualDamage;
 }
 
+void ANS_ZombieBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ANS_ZombieBase, CurrentHealth);
+}
+
 void ANS_ZombieBase::Die()
 {
 	
@@ -69,13 +77,13 @@ void ANS_ZombieBase::Die()
 	GetMesh()->SetAllBodiesSimulatePhysics(true);
 	GetMesh()->WakeAllRigidBodies();
 	GetMesh()->bBlendPhysics = true;
-	OnDeath_Implementation();
+	//OnDeath_Implementation();
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	SetLifeSpan(5.f);
 }
 
-void ANS_ZombieBase::OnDeath_Implementation()
+/*void ANS_ZombieBase::OnDeath_Implementation()
 {
 	// 사망시 멀티캐스트로 처리할 것들.
 }
-
+*/
