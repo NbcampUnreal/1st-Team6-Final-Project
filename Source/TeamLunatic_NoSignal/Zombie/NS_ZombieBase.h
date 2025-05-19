@@ -24,6 +24,10 @@ protected:
 	USphereComponent* SphereComp;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	USkeletalMeshComponent* SkeletalMesh;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	float MaxHealth;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	float CurrentHealth;
 
 public:	
 	// Called every frame
@@ -31,4 +35,6 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+	virtual void Die();
 };
