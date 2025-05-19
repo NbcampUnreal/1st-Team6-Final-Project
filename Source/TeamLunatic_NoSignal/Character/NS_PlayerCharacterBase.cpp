@@ -204,6 +204,8 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsAttack);  // 공격 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsPickUp);  // 아이템줍기 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsChange);  // ================================= 나중에에 삭제해야함
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsHit);     // 맞는지 확인 변수
+
 }
 
 void ANS_PlayerCharacterBase::SetMovementLockState_Server_Implementation(bool bLock)
@@ -222,12 +224,36 @@ void ANS_PlayerCharacterBase::SetMovementLockState_Multicast_Implementation(bool
     }
 }
 
-float ANS_PlayerCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+float ANS_PlayerCharacterBase::TakeDamage(
+    float DamageAmount,
+    FDamageEvent const& DamageEvent,
+    AController* EventInstigator,
+    AActor* DamageCauser
+)
 {
     float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+    if (!HasAuthority() || ActualDamage <= 0.f)
+        return ActualDamage;
 
-    StatusComp->ChangeHealthGauge(-DamageAmount);
+    // 캐릭터 체력 감소
+    StatusComp->ChangeHealthGauge(-ActualDamage);
 
+    IsHit = true;
+    
+    // IsHit 타이머핸들 람다로 0.5초간 실행
+    FTimerHandle ResetHitTime;
+    GetWorldTimerManager().SetTimer(
+        ResetHitTime,
+        [this]() { IsHit = false;},
+        0.5f,
+        false
+        );
+
+    // 캐릭터 체력이 0이면 죽음 애니메이션 실행
+    if (StatusComp->Health <= 0.f)
+    {
+        MulticastPlayDeath();
+    }
 
     return ActualDamage;
 }
@@ -383,4 +409,27 @@ void ANS_PlayerCharacterBase::PickUpAction_Multicast_Implementation()
         1.0f,
         false
         );
+}
+
+void ANS_PlayerCharacterBase::MulticastPlayDeath_Implementation()
+{
+    // 캐릭터에 UAnimMontage* DeathMontage;에 들어가있는 몽타주 재생
+    if (DeathMontage)
+    {
+        if (UAnimInstance* Anim = GetMesh()->GetAnimInstance())
+            Anim->Montage_Play(DeathMontage);
+    }
+
+    // 이동/입력 비활성화
+    if (auto* Move = GetCharacterMovement())
+        Move->DisableMovement();
+    if (AController* C = GetController())
+        C->DisableInput(nullptr);
+
+    // 몽타주 길이만큼 재생되고 Destroy됨
+    float Delay = DeathMontage ? DeathMontage->GetPlayLength() : 0.1f;
+    FTimerHandle TH_Destroy;
+    GetWorldTimerManager().SetTimer(TH_Destroy, [this]() {
+        Destroy();
+    }, Delay, false);
 }

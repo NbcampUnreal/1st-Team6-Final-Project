@@ -63,7 +63,10 @@ public:
 	// 캐릭터 이동 중 바라보는 곳으로 몸 회전 속도 (1 ~ 10까지 해봤는데 5가 가장 적당함)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float CharacterTurnSpeed = 5.0f;
-	
+
+	// 캐릭터 죽음 애니메이션
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Animation")
+	UAnimMontage* DeathMontage;
 	
 	// ========== 이동 관련 =============
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
@@ -86,8 +89,12 @@ public:
 	// 아이템을 줍고있는지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsPickUp = false;
+	// 차후에 지워야함
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	int32 IsChange = 0;
+	// 캐릭터가 맞고있는지 확인 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool IsHit = false;
 	//////////////////////////////////////////////////////////////////////////////////////
 	
 	
@@ -161,4 +168,8 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void PickUpAction_Multicast();
 	//////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
+
+	// 캐릭터 죽는 애니메이션 멀티캐스트
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastPlayDeath();
 };
