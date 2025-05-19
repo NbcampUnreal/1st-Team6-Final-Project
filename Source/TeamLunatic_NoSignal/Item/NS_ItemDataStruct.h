@@ -21,7 +21,8 @@ enum class EWeaponType : uint8
 {
 	None,
 	Melee,
-	Ranged
+	Ranged,
+	Ammo
 };
 
 USTRUCT()
@@ -96,10 +97,28 @@ struct FItemAssetData
 	UTexture2D* Icon;
 
 	UPROPERTY(EditAnywhere)
-	UStaticMesh* Mesh;
+	UStaticMesh* StaticMesh;
+
+	UPROPERTY(EditAnywhere)
+	USkeletalMesh* SkeletalMesh;
 
 	UPROPERTY(EditAnywhere)
 	USoundBase* UseSound = nullptr;
+};
+
+USTRUCT()
+struct FWeaponData
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY(EditAnywhere)
+	int32 Damage;
+
+	UPROPERTY(EditAnywhere)
+	float Durability;
+
+	UPROPERTY(EditAnywhere)
+	int32 MaxAmmo;
 };
 
 
@@ -118,6 +137,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	FItemTextData ItemTextData;
+
+	UPROPERTY(EditAnywhere)
+	FWeaponData WeaponData;
 
 	UPROPERTY(EditAnywhere)
 	FItemStates ItemStates;
