@@ -21,7 +21,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Equipcheck")
 	bool isequip;
 
-protected:
 	virtual void BeginPlay() override;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config")
@@ -60,10 +59,31 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 	FName AttachSocketName;
 
+	UPROPERTY(EditAnywhere, Category = "WeaponData")
+	FItemTextData ItemTextData;
+
+	UPROPERTY(EditAnywhere, Category = "WeaponData")
+	FItemNumericData ItemNumericData;
+
+	UPROPERTY(EditAnywhere, Category = "WeaponData")
+	FItemAssetData ItemAssetData;
+
+	UFUNCTION(BlueprintCallable, Category = "WeaponData")
+	float GetItemSigleWeight() const;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item")
+	float ItemSingleWeight = 1.0f;
+
+	UFUNCTION(BlueprintCallable, Category = "WeaponData")
+	void SetQuantity(int32 NewQuantity);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
+	int32 Quantity;
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 	//UStaticMeshComponent* 
 
 public:	
 	virtual void Tick(float DeltaTime) override;
+
 
 };

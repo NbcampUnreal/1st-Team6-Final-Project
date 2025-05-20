@@ -34,6 +34,16 @@ void ANS_BaseWeapon::BeginPlay()
 	}
 }
 
+float ANS_BaseWeapon::GetItemSigleWeight() const
+{
+	return ItemSingleWeight;
+}
+
+void ANS_BaseWeapon::SetQuantity(int32 NewQuantity)
+{
+	Quantity = FMath::Clamp(NewQuantity, 1, 999);
+}
+
 // Called every frame
 void ANS_BaseWeapon::Tick(float DeltaTime)
 {

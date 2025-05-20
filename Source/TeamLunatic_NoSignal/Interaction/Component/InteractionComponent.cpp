@@ -162,7 +162,7 @@ void UInteractionComponent::Interact()
 
 	if (IsValid(TargetInteractable.GetObject()))
 	{
-		TargetInteractable->Interact();
+		TargetInteractable->Interact(GetOwner());
 	}
 }
 

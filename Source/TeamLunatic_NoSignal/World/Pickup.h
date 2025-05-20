@@ -8,8 +8,8 @@
 #include "Pickup.generated.h"
 
 class UDataTable;
-class UItemBase;
-class ANS_PlayerCharacter;
+class ANS_BaseWeapon;
+class ANS_PlayerCharacterBase;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API APickup : public AActor, public IInteractionInterface
@@ -19,10 +19,10 @@ class TEAMLUNATIC_NOSIGNAL_API APickup : public AActor, public IInteractionInter
 public:	
 	APickup();
 
-	//void InitializePickup(const TSubclassOf<UItemBase> BaseClass, const int32 InQuantity);
-	//void InitializeDrop(UItemBase* ItemToDrop, const int32 InQuantity);
+	void InitializePickup(const TSubclassOf<ANS_BaseWeapon> BaseClass, const int32 InQuantity);
+	void InitializeDrop(ANS_BaseWeapon* ItemToDrop, const int32 InQuantity);
 
-	//FORCEINLINE UItemBase* GetItemData() { return ItemReference; };
+	FORCEINLINE ANS_BaseWeapon* GetItemData() { return ItemReference; };
 
 	virtual void BeginFocus() override;
 	virtual void EndFocus() override;
@@ -30,22 +30,27 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Pickup | Components")
 	UStaticMeshComponent* PickupMesh;
 	
-	UPROPERTY(EditInstanceOnly, Category = "Pickup | ItemDataBase")
+	UPROPERTY(EditInstanceOnly, Category = "Pickup | ItemInitialization")
 	UDataTable* ItemDataTable;
 	
-	UPROPERTY(EditInstanceOnly, Category = "Pickup | ItemDataBase")
+	UPROPERTY(EditInstanceOnly, Category = "Pickup | ItemInitialization")
 	FName DesiredItemID;
 	
-	//UPROPERTY(VisibleAnywhere, Category = "Pickup | ItemReference")
-	//UItemBase* ItemReference;
+	UPROPERTY(VisibleAnywhere, Category = "Pickup | ItemReference")
+	ANS_BaseWeapon* ItemReference;
 	
-	UPROPERTY(EditInstanceOnly, Category = "Pickup | ItemReference")
+	UPROPERTY(EditInstanceOnly, Category = "Pickup | ItemInitialization")
 	int32 ItemQuantity;
 	
 	UPROPERTY(VisibleInstanceOnly, Category = "Pickup | Interaction")
 	FInteractableData InstanceInteractableData;
 	
 	virtual void BeginPlay() override;
-	virtual void Interact() override;
-	void TakePickup(const ANS_PlayerCharacter* Taker);
+	virtual void Interact(AActor* InteractingActor) override;
+	void UpdateInteractableData();
+	void TakePickup(ANS_PlayerCharacterBase* Taker);
+
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
 };
