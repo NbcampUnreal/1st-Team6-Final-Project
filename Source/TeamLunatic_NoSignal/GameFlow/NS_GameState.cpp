@@ -16,13 +16,13 @@ void ANS_GameState::BeginPlay()
 	for (TActorIterator<ADirectionalLight> It(GetWorld()); It; ++It)
 	{
 		DirectionalLight = *It;
-		UE_LOG(LogTemp, Warning, TEXT("[DayNight] Directional Light Found: %s"), *DirectionalLight->GetName());
+		//UE_LOG(LogTemp, Warning, TEXT("[DayNight] Directional Light Found: %s"), *DirectionalLight->GetName());
 		break;
 	}
 
 	if (!DirectionalLight)
 	{
-		UE_LOG(LogTemp, Error, TEXT("[DayNight] No Directional Light found in level!"));
+		//UE_LOG(LogTemp, Error, TEXT("[DayNight] No Directional Light found in level!"));
 	}
 }
 
@@ -32,7 +32,7 @@ void ANS_GameState::Tick(float DeltaTime)
 
     if (!DirectionalLight)
     {
-        UE_LOG(LogTemp, Error, TEXT("[DayNight] DirectionalLight is null in Tick()"));
+       //UE_LOG(LogTemp, Error, TEXT("[DayNight] DirectionalLight is null in Tick()"));
         return;
     }
 
@@ -45,6 +45,6 @@ void ANS_GameState::Tick(float DeltaTime)
 	FRotator NewRotation = FRotator(AccumulatedPitch, 0.f, 0.f);
 	DirectionalLight->SetActorRotation(NewRotation);
 
-	UE_LOG(LogTemp, Warning, TEXT("FORCED ROTATION -> Pitch = %.2f"), AccumulatedPitch);
+	//UE_LOG(LogTemp, Warning, TEXT("FORCED ROTATION -> Pitch = %.2f"), AccumulatedPitch);
 
 }
