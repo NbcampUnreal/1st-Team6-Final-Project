@@ -91,10 +91,10 @@ void ANS_PlayerCharacterBase::Tick(float DeltaTime)
     {
         // 컨트롤러가 바라보는 회전
         const FRotator ControlRot = Controller->GetControlRotation();
-        // 캐릭터 본체 Yaw 로컬 오프셋 (–90 ~ +90 제한)
-        const float NewCamYaw   = FMath::ClampAngle(ControlRot.Yaw   - GetActorRotation().Yaw,   -90.f, 90.f);
+        // 캐릭터 본체 Yaw 로컬 오프셋 –90 ~ +90 제한
+        const float NewCamYaw   = FMath::ClampAngle(ControlRot.Yaw - GetActorRotation().Yaw,-90.f, 90.f);
         // Pitch 도 –90 ~ +90 제한
-        const float NewCamPitch = FMath::ClampAngle(ControlRot.Pitch,                         -90.f, 90.f);
+        const float NewCamPitch = FMath::ClampAngle(ControlRot.Pitch,-90.f, 90.f);
 
         if (HasAuthority())
         {
@@ -215,6 +215,21 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
               this,
                &ANS_PlayerCharacterBase::PickUpAction_Server);
         }
+
+        if (InputAimingAction)
+        {
+            EnhancedInput->BindAction(
+            InputAimingAction,
+             ETriggerEvent::Triggered,
+              this,
+               &ANS_PlayerCharacterBase::StartAimingAction_Server);
+            
+            EnhancedInput->BindAction(
+           InputAimingAction,
+            ETriggerEvent::Completed,
+             this,
+              &ANS_PlayerCharacterBase::StopAimingAction_Server);
+        } 
     }
 }
 
@@ -229,6 +244,7 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsHit);     // 맞는지 확인 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, CamYaw);    // 카메라 좌/우 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, CamPitch);  // 카메라 상/하 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsAiming);  // 조준중인지 확인 변수
 }
 
 void ANS_PlayerCharacterBase::SetMovementLockState_Server_Implementation(bool bLock)
@@ -281,6 +297,7 @@ float ANS_PlayerCharacterBase::TakeDamage(
     return ActualDamage;
 }
 
+//////////////////////////////////액션 처리 함수들///////////////////////////////////
 void ANS_PlayerCharacterBase::MoveAction(const FInputActionValue& Value)
 {
     if (!Controller) return;
@@ -429,6 +446,26 @@ void ANS_PlayerCharacterBase::PickUpAction_Multicast_Implementation()
         );
 }
 
+void ANS_PlayerCharacterBase::StartAimingAction_Server_Implementation(const FInputActionValue& Value)
+{
+    StartAimingAction_Multicast();
+}
+
+void ANS_PlayerCharacterBase::StartAimingAction_Multicast_Implementation()
+{
+    IsAiming = true;
+}
+
+void ANS_PlayerCharacterBase::StopAimingAction_Server_Implementation(const FInputActionValue& Value)
+{
+    StopAimingAction_Multicast();
+}
+
+void ANS_PlayerCharacterBase::StopAimingAction_Multicast_Implementation()
+{
+    IsAiming = false;
+}
+//////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
 void ANS_PlayerCharacterBase::PlayDeath_Multicast_Implementation()
 {
     DetachFromControllerPendingDestroy();

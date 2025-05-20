@@ -72,6 +72,13 @@ public:
 	bool IsCanJump = true;
 
 	/////////////////////////////// 리플리케이션용 변수들////////////////////////////////
+	// 캐릭터가 바라보고있는 좌/우 값
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Replicated Variables")
+	float CamYaw;
+	// 캐릭터가 바라보고있는 상/하 값
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Replicated Variables")
+	float CamPitch;
+	
 	// 달리고있는 상태인지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsSprint = false;
@@ -90,13 +97,9 @@ public:
 	// 캐릭터가 맞고있는지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsHit = false;
-
-	// 캐릭터가 바라보고있는 좌/우 값
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Replicated Variables")
-	float CamYaw;
-	// 캐릭터가 바라보고있는 상/하 값
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Replicated Variables")
-	float CamPitch;
+	// 조준중인지 확인 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool IsAiming = false;
 	//////////////////////////////////////////////////////////////////////////////////////
 	
 	
@@ -121,6 +124,8 @@ public:
 	UInputAction* InputAttackAction;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputPickUpAction;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* InputAimingAction;
 	
 	// 이동 입력 잠금 제어 함수 
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category="Input")
@@ -146,7 +151,6 @@ public:
 	void StartSprint_Server(const FInputActionValue& Value);
 	UFUNCTION(NetMulticast, Reliable)
 	void StartSprint_Multicast();
-
 	UFUNCTION(Server, Reliable)
 	void StopSprint_Server(const FInputActionValue& Value);
 	UFUNCTION(NetMulticast, Reliable)
@@ -169,6 +173,16 @@ public:
 	void PickUpAction_Server(const FInputActionValue& Value);
 	UFUNCTION(NetMulticast, Reliable)
 	void PickUpAction_Multicast();
+
+	// 조준 
+	UFUNCTION(Server, Reliable)
+	void StartAimingAction_Server(const FInputActionValue& Value);
+	UFUNCTION(NetMulticast, Reliable)
+	void StartAimingAction_Multicast();
+	UFUNCTION(Server, Reliable)
+	void StopAimingAction_Server(const FInputActionValue& Value);
+	UFUNCTION(NetMulticast, Reliable)
+	void StopAimingAction_Multicast();
 	//////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
 	
 	// 캐릭터 죽는 애니메이션 멀티캐스트
