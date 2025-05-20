@@ -70,9 +70,7 @@ void ANS_PlayerCharacterBase::Tick(float DeltaTime)
     if (!Controller)
         return;
 
-    // 이동 중인지를 Velocity로 체크하고 이동중이 아니면 실행안함
-    // 이코드로 움직이지 않으면 몸이 안돌아감
-    // 여기 수정하면 원하는 각도만큼 목꺾으면 돌아가게끔 될까
+    // 캐릭터가 이동중이라면 몸체회전시키는변수인 CharacterTurnSpeed = 5값으로 카메라가 바라보는 중앙으로 몸을 회전시킴
     if (!GetCharacterMovement()->Velocity.IsNearlyZero())
     {
         // 캐릭터가 바라봐야 할 목표 방향
@@ -87,22 +85,24 @@ void ANS_PlayerCharacterBase::Tick(float DeltaTime)
         SetActorRotation(NewRot);
     }
 
+    // 로컬 컨트롤러인 경우 Aim값을 전송
     if (IsLocallyControlled() && Controller)
     {
-        // 컨트롤러가 바라보는 회전
+        // 현재 컨트롤러 축 회전 가져와서
         const FRotator ControlRot = Controller->GetControlRotation();
-        // 캐릭터 본체 Yaw 로컬 오프셋 –90 ~ +90 제한
+        // 캐릭터 몸체를 기준으로 Yaw와 Pitch값을 한번더 -90 ~ 90까지 제한을 둠
+        // ----------- 2중으로 안전한게 최대각도를 막아둔거라서 ClampAngle로 최대각도 지정부분은 제거해도 이상없을것같긴한데 우선 넣어 둠----------
         const float NewCamYaw   = FMath::ClampAngle(ControlRot.Yaw - GetActorRotation().Yaw,-90.f, 90.f);
-        // Pitch 도 –90 ~ +90 제한
         const float NewCamPitch = FMath::ClampAngle(ControlRot.Pitch,-90.f, 90.f);
 
+        // 서버라면
         if (HasAuthority())
         {
-            // 서버 권한이면 바로 세팅
+            // 서버라면 Yaw값과 Pitch값을 저장
             CamYaw   = NewCamYaw;
             CamPitch = NewCamPitch;
         }
-        else
+        else // 서버가 아니면
         {
             // 클라이언트면 서버에 전송
             Server_UpdateAim(NewCamYaw, NewCamPitch);
@@ -314,16 +314,20 @@ void ANS_PlayerCharacterBase::MoveAction(const FInputActionValue& Value)
 void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
 {
     FVector2D LookInput = Value.Get<FVector2D>();
-    FRotator ControlRot = Controller->GetControlRotation();
+
+    // 상/하 회전
     AddControllerPitchInput(LookInput.Y);
-    
+
+    // 좌/우 회전
+    FRotator ControlRot = Controller->GetControlRotation();
     float ActorYaw = GetActorRotation().Yaw;
     float NewYaw = ControlRot.Yaw + LookInput.X;
 
-    // 좌/우(Yaw값) 각독 제한 -90 ~ +90까지 허용
+    // 좌/우(Yaw값) 각도 제한 -90 ~ +90까지 허용
     float RelativeYaw = FMath::ClampAngle(NewYaw - ActorYaw, -90.f, 90.f);
     ControlRot.Yaw = ActorYaw + RelativeYaw;
 
+    // 컨트롤러 회전에 반영하여 카메라와 캐릭터 조준 축 업데이트 ------------- (자세한 원리 부가 설명 필요)
     Controller->SetControlRotation(ControlRot);
 }
 
@@ -480,6 +484,7 @@ void ANS_PlayerCharacterBase::PlayDeath_Multicast_Implementation()
     SetLifeSpan(5.f);
 }
 
+// 클라이언트면 서버로 클라이언트 자신에 Yaw값과 Pitch값을 서버로 전송
 void ANS_PlayerCharacterBase::Server_UpdateAim_Implementation(float NewCamYaw, float NewCamPitch)
 {
     CamYaw   = NewCamYaw;
