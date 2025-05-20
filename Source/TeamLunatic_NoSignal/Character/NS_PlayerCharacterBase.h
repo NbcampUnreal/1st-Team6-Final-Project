@@ -90,6 +90,13 @@ public:
 	// 캐릭터가 맞고있는지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsHit = false;
+
+	// 캐릭터가 바라보고있는 좌/우 값
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Replicated Variables")
+	float CamYaw;
+	// 캐릭터가 바라보고있는 상/하 값
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Replicated Variables")
+	float CamPitch;
 	//////////////////////////////////////////////////////////////////////////////////////
 	
 	
@@ -125,7 +132,7 @@ public:
 	//////////////CharacterMovmentComponent를 사용함////////////////
 	// 이동
 	void MoveAction(const FInputActionValue& Value);
-	// 마우스 카메라 
+	// 마우스 카메라
 	void LookAction(const FInputActionValue& Value);
 	// 점프
 	void JumpAction(const FInputActionValue& Value);
@@ -167,4 +174,7 @@ public:
 	// 캐릭터 죽는 애니메이션 멀티캐스트
 	UFUNCTION(BlueprintCallable, NetMulticast, Reliable)
 	void PlayDeath_Multicast();
+
+	UFUNCTION(BlueprintCallable, Server, Unreliable)
+	void Server_UpdateAim(float NewAimYaw, float NewAimPitch);
 };

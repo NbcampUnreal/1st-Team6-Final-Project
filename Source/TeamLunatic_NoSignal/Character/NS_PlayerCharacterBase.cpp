@@ -73,19 +73,41 @@ void ANS_PlayerCharacterBase::Tick(float DeltaTime)
     // 이동 중인지를 Velocity로 체크하고 이동중이 아니면 실행안함
     // 이코드로 움직이지 않으면 몸이 안돌아감
     // 여기 수정하면 원하는 각도만큼 목꺾으면 돌아가게끔 될까
-    if (GetCharacterMovement()->Velocity.IsNearlyZero())
-        return;
+    if (!GetCharacterMovement()->Velocity.IsNearlyZero())
+    {
+        // 캐릭터가 바라봐야 할 목표 방향
+        const float TargetYaw = Controller->GetControlRotation().Yaw;
+        // 캐릭터가 회전하는 값
+        const FRotator Current = GetActorRotation();
+        // 캐릭터가 최종적으로 회전해야하는 목표 값
+        const FRotator Desired(0.f, TargetYaw, 0.f);
+        // 현재 캐릭터의 회전 값인 Current에서 목표 값인 Desired으로 CharacterTurnSpeed에 저장된 회전 속도로 회전함 
+        const FRotator NewRot = FMath::RInterpTo(Current, Desired, DeltaTime, CharacterTurnSpeed);
+        // 계산된 NewRot값을 캐릭터에 실제로 적용시켜 회전
+        SetActorRotation(NewRot);
+    }
 
-    // 캐릭터가 바라봐야 할 목표 방향
-    const float TargetYaw = Controller->GetControlRotation().Yaw;
-    // 캐릭터가 회전하는 값
-    const FRotator Current = GetActorRotation();
-    // 캐릭터가 최종적으로 회전해야하는 목표 값
-    const FRotator Desired(0.f, TargetYaw, 0.f);
-    // 현재 캐릭터의 회전 값인 Current에서 목표 값인 Desired으로 CharacterTurnSpeed에 저장된 회전 속도로 회전함 
-    const FRotator NewRot = FMath::RInterpTo(Current, Desired, DeltaTime, CharacterTurnSpeed);
-    // 계산된 NewRot값을 캐릭터에 실제로 적용시켜 회전
-    SetActorRotation(NewRot);
+    if (IsLocallyControlled() && Controller)
+    {
+        // 컨트롤러가 바라보는 회전
+        const FRotator ControlRot = Controller->GetControlRotation();
+        // 캐릭터 본체 Yaw 로컬 오프셋 (–90 ~ +90 제한)
+        const float NewCamYaw   = FMath::ClampAngle(ControlRot.Yaw   - GetActorRotation().Yaw,   -90.f, 90.f);
+        // Pitch 도 –90 ~ +90 제한
+        const float NewCamPitch = FMath::ClampAngle(ControlRot.Pitch,                         -90.f, 90.f);
+
+        if (HasAuthority())
+        {
+            // 서버 권한이면 바로 세팅
+            CamYaw   = NewCamYaw;
+            CamPitch = NewCamPitch;
+        }
+        else
+        {
+            // 클라이언트면 서버에 전송
+            Server_UpdateAim(NewCamYaw, NewCamPitch);
+        }
+    }
 }
 
 void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -205,6 +227,8 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsPickUp);  // 아이템줍기 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsChange);  // ================================= 나중에에 삭제해야함
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsHit);     // 맞는지 확인 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, CamYaw);    // 카메라 좌/우 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, CamPitch);  // 카메라 상/하 변수
 }
 
 void ANS_PlayerCharacterBase::SetMovementLockState_Server_Implementation(bool bLock)
@@ -417,4 +441,10 @@ void ANS_PlayerCharacterBase::PlayDeath_Multicast_Implementation()
     GetMesh()->WakeAllRigidBodies();
     GetMesh()->bBlendPhysics = true;
     SetLifeSpan(5.f);
+}
+
+void ANS_PlayerCharacterBase::Server_UpdateAim_Implementation(float NewCamYaw, float NewCamPitch)
+{
+    CamYaw   = NewCamYaw;
+    CamPitch = NewCamPitch;
 }
