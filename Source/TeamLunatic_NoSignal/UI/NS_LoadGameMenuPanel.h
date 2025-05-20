@@ -20,8 +20,9 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_LoadGameMenuPanel : public UNS_MasterMenuPane
 
 public:
 	virtual void NativeConstruct() override;
-	
-	FString SaveSlotName;
+
+	//ex) "SaveSlot_01" / Map : "Map_01"  => SaveSlotName = SaveSlot_01
+	FString SaveSlotName; // 문자열뒤에 Map(Level)명은 빠진거임. 일단 이것으로 비교검색할것! 
 	
 	
 	UPROPERTY(BlueprintAssignable)

@@ -77,7 +77,7 @@ void UNS_SinglePlayLoadGameR::OnClickedDeleteSlot(UNS_LoadGameMenuPanel* ChidPan
 	SaveVerticalBox->RemoveChild(ChidPanel);
 	if (ChidPanel)
 	{
-		FString SlotName = ChidPanel->SaveNameText->GetText().ToString();
+        FString SlotName = ChidPanel->SaveSlotName;//SaveNameText->GetText().ToString();
         NS_SaveLoadHelper::DeleteExistingSave(SlotName);
 	}
 }
