@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -40,7 +40,6 @@ public:
 	UFUNCTION()
 	virtual void Die();
 	
-	//»ç¸Á ½Ã ¸ÖÆ¼Ä³½ºÆÃ. ex)»ç¿îµå, µîµî
 	//UFUNCTION(NetMulticast, Unreliable)
 	//void OnDeath();
 };

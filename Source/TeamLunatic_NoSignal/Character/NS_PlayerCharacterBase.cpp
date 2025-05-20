@@ -205,7 +205,6 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsPickUp);  // 아이템줍기 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsChange);  // ================================= 나중에에 삭제해야함
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsHit);     // 맞는지 확인 변수
-
 }
 
 void ANS_PlayerCharacterBase::SetMovementLockState_Server_Implementation(bool bLock)
@@ -252,16 +251,11 @@ float ANS_PlayerCharacterBase::TakeDamage(
     // 캐릭터 체력이 0이면 죽음 애니메이션 실행
     if (StatusComp->Health <= 0.f)
     {
-        MulticastPlayDeath();
+        PlayDeath_Multicast();
     }
 
     return ActualDamage;
 }
-
-void ANS_PlayerCharacterBase::OnDeath()
-{
-}
-
 
 void ANS_PlayerCharacterBase::MoveAction(const FInputActionValue& Value)
 {
@@ -411,25 +405,16 @@ void ANS_PlayerCharacterBase::PickUpAction_Multicast_Implementation()
         );
 }
 
-void ANS_PlayerCharacterBase::MulticastPlayDeath_Implementation()
+void ANS_PlayerCharacterBase::PlayDeath_Multicast_Implementation()
 {
-    // 캐릭터에 UAnimMontage* DeathMontage;에 들어가있는 몽타주 재생
-    if (DeathMontage)
-    {
-        if (UAnimInstance* Anim = GetMesh()->GetAnimInstance())
-            Anim->Montage_Play(DeathMontage);
-    }
+    DetachFromControllerPendingDestroy();
+	
+    GetCharacterMovement()->DisableMovement();
 
-    // 이동/입력 비활성화
-    if (auto* Move = GetCharacterMovement())
-        Move->DisableMovement();
-    if (AController* C = GetController())
-        C->DisableInput(nullptr);
-
-    // 몽타주 길이만큼 재생되고 Destroy됨
-    float Delay = DeathMontage ? DeathMontage->GetPlayLength() : 0.1f;
-    FTimerHandle TH_Destroy;
-    GetWorldTimerManager().SetTimer(TH_Destroy, [this]() {
-        Destroy();
-    }, Delay, false);
+    GetMesh()->SetCollisionProfileName("Ragdoll");
+    GetMesh()->SetSimulatePhysics(true);
+    GetMesh()->SetAllBodiesSimulatePhysics(true);
+    GetMesh()->WakeAllRigidBodies();
+    GetMesh()->bBlendPhysics = true;
+    SetLifeSpan(5.f);
 }
