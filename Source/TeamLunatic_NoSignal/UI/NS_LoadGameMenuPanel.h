@@ -9,6 +9,10 @@
 class UTextBlock;
 class UButton;
 class UImage;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSlotClicked, UNS_LoadGameMenuPanel*, ClickedPanel);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSlotClickedDelete, UNS_LoadGameMenuPanel*, ClickedPanel);
+
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UNS_LoadGameMenuPanel : public UNS_MasterMenuPanel
 {
@@ -16,6 +20,21 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_LoadGameMenuPanel : public UNS_MasterMenuPane
 
 public:
 	virtual void NativeConstruct() override;
+	
+	FString SaveSlotName;
+	
+	
+	UPROPERTY(BlueprintAssignable)
+	FOnSlotClicked OnSlotClicked;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnSlotClickedDelete OnDeleteSlotClicked;
+
+	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
+	UImage* Image_Select;
+
+	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
+	UButton* LoadSaveButton;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
 	UTextBlock* SaveNameText;
@@ -32,4 +51,14 @@ public:
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
 	UImage* Image_DeleteIcon;
 
+	void SetSlotInfo(const FString& SlotName, const FString& LevelName, const FDateTime& SaveTime);
+
+	UFUNCTION()
+	void OnDeleteSaveButtonClicked();
+
+	UFUNCTION()
+	void OnClickedSelectPanel();
+
+	void SelectedCheck();
+	void UnSelectedCheck();
 };
