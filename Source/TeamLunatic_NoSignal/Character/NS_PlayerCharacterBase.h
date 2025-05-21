@@ -100,6 +100,9 @@ public:
 	// 조준중인지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsAiming = false;
+	// 장전중인지 확인 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool IsReload = false;
 	//////////////////////////////////////////////////////////////////////////////////////
 	
 	
@@ -126,6 +129,8 @@ public:
 	UInputAction* InputPickUpAction;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputAimingAction;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* InputReloadAction;
 	
 	// 이동 입력 잠금 제어 함수 
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category="Input")
@@ -149,40 +154,32 @@ public:
 	// 달리기
 	UFUNCTION(server, Reliable)
 	void StartSprint_Server(const FInputActionValue& Value);
-	UFUNCTION(NetMulticast, Reliable)
-	void StartSprint_Multicast();
 	UFUNCTION(Server, Reliable)
 	void StopSprint_Server(const FInputActionValue& Value);
-	UFUNCTION(NetMulticast, Reliable)
-	void StopSprint_Multicast();
-
+	
 	// 발차기
 	UFUNCTION(Server, Reliable)
 	void KickAction_Server(const FInputActionValue& Value);
-	UFUNCTION(NetMulticast, Reliable)
-	void KickAction_Multicast();
 
 	// 공격
 	UFUNCTION(Server, Reliable)
-	void AttackAction_Server(const FInputActionValue& Value);
-	UFUNCTION(NetMulticast, Reliable)
-	void AttackAction_Multicast();
+	void StartAttackAction_Server(const FInputActionValue& Value);
+	UFUNCTION(Server, Reliable)
+	void StopAttackAction_Server(const FInputActionValue& Value);
 
 	// 아이템 줍기
 	UFUNCTION(Server, Reliable)
 	void PickUpAction_Server(const FInputActionValue& Value);
-	UFUNCTION(NetMulticast, Reliable)
-	void PickUpAction_Multicast();
 
 	// 조준 
 	UFUNCTION(Server, Reliable)
 	void StartAimingAction_Server(const FInputActionValue& Value);
-	UFUNCTION(NetMulticast, Reliable)
-	void StartAimingAction_Multicast();
 	UFUNCTION(Server, Reliable)
 	void StopAimingAction_Server(const FInputActionValue& Value);
-	UFUNCTION(NetMulticast, Reliable)
-	void StopAimingAction_Multicast();
+
+	// 재장전
+	UFUNCTION(Server, Reliable)
+	void ReloadAction_Server(const FInputActionValue& Value);
 	//////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
 	
 	// 캐릭터 죽는 애니메이션 멀티캐스트

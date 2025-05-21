@@ -204,7 +204,12 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
             InputAttackAction,
              ETriggerEvent::Triggered,
               this,
-               &ANS_PlayerCharacterBase::AttackAction_Server);
+               &ANS_PlayerCharacterBase::StartAttackAction_Server);
+            EnhancedInput->BindAction(
+            InputAttackAction,
+             ETriggerEvent::Completed,
+              this,
+               &ANS_PlayerCharacterBase::StopAttackAction_Server);
         }
 
         if (InputPickUpAction)
@@ -229,7 +234,16 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
             ETriggerEvent::Completed,
              this,
               &ANS_PlayerCharacterBase::StopAimingAction_Server);
-        } 
+        }
+
+        if (InputReloadAction)
+        {
+            EnhancedInput->BindAction(
+            InputReloadAction,
+             ETriggerEvent::Triggered,
+              this,
+               &ANS_PlayerCharacterBase::ReloadAction_Server);
+        }
     }
 }
 
@@ -245,6 +259,7 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
     DOREPLIFETIME(ANS_PlayerCharacterBase, CamYaw);    // 카메라 좌/우 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, CamPitch);  // 카메라 상/하 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsAiming);  // 조준중인지 확인 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsReload);  // 장전중인지 확인 변수
 }
 
 void ANS_PlayerCharacterBase::SetMovementLockState_Server_Implementation(bool bLock)
@@ -365,20 +380,12 @@ void ANS_PlayerCharacterBase::StopCrouch(const FInputActionValue& Value)
 
 void ANS_PlayerCharacterBase::StartSprint_Server_Implementation(const FInputActionValue& Value)
 {
-    StartSprint_Multicast_Implementation();
-}
-void ANS_PlayerCharacterBase::StartSprint_Multicast_Implementation()
-{
     IsSprint = true;
-	if (GetCharacterMovement())
-		GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier;
+    if (GetCharacterMovement())
+        GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier;
 }
 
 void ANS_PlayerCharacterBase::StopSprint_Server_Implementation(const FInputActionValue& Value)
-{
-    StopSprint_Multicast();
-}
-void ANS_PlayerCharacterBase::StopSprint_Multicast_Implementation()
 {
     IsSprint = false;
     if (GetCharacterMovement())
@@ -389,85 +396,69 @@ void ANS_PlayerCharacterBase::KickAction_Server_Implementation(const FInputActio
 {
     if (GetCharacterMovement()->IsFalling()) {return;}
 
-    KickAction_Multicast();
+    IsKick = true;
+
+    // 1.2초간 실행 후 IsKick변수는 false로 변경
+    FTimerHandle ResettKickTime;
+    GetWorldTimerManager().SetTimer(
+        ResettKickTime,
+        FTimerDelegate::CreateLambda([this]() { IsKick = false; }),
+        1.2f,
+        false
+    );
 }
 
-void ANS_PlayerCharacterBase::KickAction_Multicast_Implementation()
-{
-        IsKick = true;
-
-        // 1.2초간 실행 후 IsKick변수는 false로 변경
-        FTimerHandle ResettKickTime;
-        GetWorldTimerManager().SetTimer(
-            ResettKickTime,
-            FTimerDelegate::CreateLambda([this]() { IsKick = false; }),
-            1.2f,
-            false
-        );
-}
-
-void ANS_PlayerCharacterBase::AttackAction_Server_Implementation(const FInputActionValue& Value)
+void ANS_PlayerCharacterBase::StartAttackAction_Server_Implementation(const FInputActionValue& Value)
 {
     if (GetCharacterMovement()->IsFalling()) {return;}
 
-    AttackAction_Multicast();
+    IsAttack = true;
 }
 
-void ANS_PlayerCharacterBase::AttackAction_Multicast_Implementation()
+void ANS_PlayerCharacterBase::StopAttackAction_Server_Implementation(const FInputActionValue& Value)
 {
-    
-        IsAttack = true;
-
-        // 1.0초간 실행 후 IsAttack변수는 false로 변경
-        FTimerHandle ResetAttackTime;
-        GetWorldTimerManager().SetTimer(
-        ResetAttackTime,
-        FTimerDelegate::CreateLambda([this]() { IsAttack = false; }),
-        1.0f,
-        false
-        );
-   
+    IsAttack = false;
 }
 
 void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputActionValue& Value)
 {
     if (GetCharacterMovement()->IsFalling()) {return;}
 
-    PickUpAction_Multicast();
-}
+    IsPickUp = true;
 
-void ANS_PlayerCharacterBase::PickUpAction_Multicast_Implementation()
-{
-        IsPickUp = true;
-
-        // 1.0초간 실행 후 IsPickUp변수는 false로 변경
-        FTimerHandle ResetPickUpTime;
-        GetWorldTimerManager().SetTimer(
-        ResetPickUpTime,
-        FTimerDelegate::CreateLambda([this]() { IsPickUp = false; }),
-        1.0f,
-        false
-        );
+    // 1.0초간 실행 후 IsPickUp변수는 false로 변경
+    FTimerHandle ResetPickUpTime;
+    GetWorldTimerManager().SetTimer(
+    ResetPickUpTime,
+    FTimerDelegate::CreateLambda([this]() { IsPickUp = false; }),
+    1.0f,
+    false
+    );
 }
 
 void ANS_PlayerCharacterBase::StartAimingAction_Server_Implementation(const FInputActionValue& Value)
 {
-    StartAimingAction_Multicast();
-}
-
-void ANS_PlayerCharacterBase::StartAimingAction_Multicast_Implementation()
-{
     IsAiming = true;
 }
 
+
 void ANS_PlayerCharacterBase::StopAimingAction_Server_Implementation(const FInputActionValue& Value)
 {
-    StopAimingAction_Multicast();
+    IsAiming = false;
 }
 
-void ANS_PlayerCharacterBase::StopAimingAction_Multicast_Implementation()
+void ANS_PlayerCharacterBase::ReloadAction_Server_Implementation(const FInputActionValue& Value)
 {
-    IsAiming = false;
+    IsReload = true;
+
+    // 2.5초간 실행 후 IsReload변수는 false로 변경
+    FTimerHandle ResetPickUpTime;
+    GetWorldTimerManager().SetTimer(
+    ResetPickUpTime,
+    FTimerDelegate::CreateLambda([this]() { IsReload = false; }),
+    2.5f,
+    false
+    );
 }
 //////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
 void ANS_PlayerCharacterBase::PlayDeath_Multicast_Implementation()
