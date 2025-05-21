@@ -105,7 +105,7 @@ void ANS_PlayerCharacterBase::Tick(float DeltaTime)
         else // 서버가 아니면
         {
             // 클라이언트면 서버에 전송
-            Server_UpdateAim(NewCamYaw, NewCamPitch);
+            UpdateAim_Server(NewCamYaw, NewCamPitch);
         }
     }
 }
@@ -306,7 +306,7 @@ float ANS_PlayerCharacterBase::TakeDamage(
     // 캐릭터 체력이 0이면 죽음 애니메이션 실행
     if (StatusComp->Health <= 0.f)
     {
-        PlayDeath_Multicast();
+        PlayDeath_Server();
     }
 
     return ActualDamage;
@@ -461,6 +461,12 @@ void ANS_PlayerCharacterBase::ReloadAction_Server_Implementation(const FInputAct
     );
 }
 //////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
+
+void ANS_PlayerCharacterBase::PlayDeath_Server_Implementation()
+{
+    PlayDeath_Multicast();
+}
+
 void ANS_PlayerCharacterBase::PlayDeath_Multicast_Implementation()
 {
     DetachFromControllerPendingDestroy();
@@ -476,7 +482,7 @@ void ANS_PlayerCharacterBase::PlayDeath_Multicast_Implementation()
 }
 
 // 클라이언트면 서버로 클라이언트 자신에 Yaw값과 Pitch값을 서버로 전송
-void ANS_PlayerCharacterBase::Server_UpdateAim_Implementation(float NewCamYaw, float NewCamPitch)
+void ANS_PlayerCharacterBase::UpdateAim_Server_Implementation(float NewCamYaw, float NewCamPitch)
 {
     CamYaw   = NewCamYaw;
     CamPitch = NewCamPitch;

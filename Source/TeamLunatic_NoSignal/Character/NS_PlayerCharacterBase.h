@@ -183,9 +183,12 @@ public:
 	//////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
 	
 	// 캐릭터 죽는 애니메이션 멀티캐스트
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void PlayDeath_Server();
 	UFUNCTION(BlueprintCallable, NetMulticast, Reliable)
 	void PlayDeath_Multicast();
 
-	UFUNCTION(BlueprintCallable, Server, Unreliable)
-	void Server_UpdateAim(float NewAimYaw, float NewAimPitch);
+	// 카메라 Yaw값, Pitch값 서버로 전송
+	UFUNCTION(Server, Unreliable)
+	void UpdateAim_Server(float NewAimYaw, float NewAimPitch);
 };
