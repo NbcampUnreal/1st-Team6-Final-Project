@@ -36,7 +36,7 @@ void ANS_GameState::Tick(float DeltaTime)
         return;
     }
 
-	static float AccumulatedPitch = 90.0f; // ½ÃÀÛ °¢µµ °íÁ¤
+	static float AccumulatedPitch = 90.0f; // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 
 	AccumulatedPitch += RotationSpeedDegreesPerSec * DeltaTime;
 	if (AccumulatedPitch >= 360.f)

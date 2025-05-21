@@ -19,7 +19,7 @@ protected:
 	ADirectionalLight* DirectionalLight = nullptr;
 
 	UPROPERTY(EditAnywhere, Category = "DayNight")
-	float RotationSpeedDegreesPerSec = 6.0f; // 24분 기준 (360도 / 1440초)
+	float RotationSpeedDegreesPerSec = 6.0f; // 
 
 private:
 	float TimeAccumulator = 0.0f;
