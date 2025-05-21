@@ -70,22 +70,44 @@ void ANS_PlayerCharacterBase::Tick(float DeltaTime)
     if (!Controller)
         return;
 
-    // 이동 중인지를 Velocity로 체크하고 이동중이 아니면 실행안함
-    // 이코드로 움직이지 않으면 몸이 안돌아감
-    // 여기 수정하면 원하는 각도만큼 목꺾으면 돌아가게끔 될까
-    if (GetCharacterMovement()->Velocity.IsNearlyZero())
-        return;
+    // 캐릭터가 이동중이라면 몸체회전시키는변수인 CharacterTurnSpeed = 5값으로 카메라가 바라보는 중앙으로 몸을 회전시킴
+    if (!GetCharacterMovement()->Velocity.IsNearlyZero())
+    {
+        // 캐릭터가 바라봐야 할 목표 방향
+        const float TargetYaw = Controller->GetControlRotation().Yaw;
+        // 캐릭터가 회전하는 값
+        const FRotator Current = GetActorRotation();
+        // 캐릭터가 최종적으로 회전해야하는 목표 값
+        const FRotator Desired(0.f, TargetYaw, 0.f);
+        // 현재 캐릭터의 회전 값인 Current에서 목표 값인 Desired으로 CharacterTurnSpeed에 저장된 회전 속도로 회전함 
+        const FRotator NewRot = FMath::RInterpTo(Current, Desired, DeltaTime, CharacterTurnSpeed);
+        // 계산된 NewRot값을 캐릭터에 실제로 적용시켜 회전
+        SetActorRotation(NewRot);
+    }
 
-    // 캐릭터가 바라봐야 할 목표 방향
-    const float TargetYaw = Controller->GetControlRotation().Yaw;
-    // 캐릭터가 회전하는 값
-    const FRotator Current = GetActorRotation();
-    // 캐릭터가 최종적으로 회전해야하는 목표 값
-    const FRotator Desired(0.f, TargetYaw, 0.f);
-    // 현재 캐릭터의 회전 값인 Current에서 목표 값인 Desired으로 CharacterTurnSpeed에 저장된 회전 속도로 회전함 
-    const FRotator NewRot = FMath::RInterpTo(Current, Desired, DeltaTime, CharacterTurnSpeed);
-    // 계산된 NewRot값을 캐릭터에 실제로 적용시켜 회전
-    SetActorRotation(NewRot);
+    // 로컬 컨트롤러인 경우 Aim값을 전송
+    if (IsLocallyControlled() && Controller)
+    {
+        // 현재 컨트롤러 축 회전 가져와서
+        const FRotator ControlRot = Controller->GetControlRotation();
+        // 캐릭터 몸체를 기준으로 Yaw와 Pitch값을 한번더 -90 ~ 90까지 제한을 둠
+        // ----------- 2중으로 안전한게 최대각도를 막아둔거라서 ClampAngle로 최대각도 지정부분은 제거해도 이상없을것같긴한데 우선 넣어 둠----------
+        const float NewCamYaw   = FMath::ClampAngle(ControlRot.Yaw - GetActorRotation().Yaw,-90.f, 90.f);
+        const float NewCamPitch = FMath::ClampAngle(ControlRot.Pitch,-90.f, 90.f);
+
+        // 서버라면
+        if (HasAuthority())
+        {
+            // 서버라면 Yaw값과 Pitch값을 저장
+            CamYaw   = NewCamYaw;
+            CamPitch = NewCamPitch;
+        }
+        else // 서버가 아니면
+        {
+            // 클라이언트면 서버에 전송
+            Server_UpdateAim(NewCamYaw, NewCamPitch);
+        }
+    }
 }
 
 void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -182,7 +204,12 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
             InputAttackAction,
              ETriggerEvent::Triggered,
               this,
-               &ANS_PlayerCharacterBase::AttackAction_Server);
+               &ANS_PlayerCharacterBase::StartAttackAction_Server);
+            EnhancedInput->BindAction(
+            InputAttackAction,
+             ETriggerEvent::Completed,
+              this,
+               &ANS_PlayerCharacterBase::StopAttackAction_Server);
         }
 
         if (InputPickUpAction)
@@ -192,6 +219,30 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
              ETriggerEvent::Triggered,
               this,
                &ANS_PlayerCharacterBase::PickUpAction_Server);
+        }
+
+        if (InputAimingAction)
+        {
+            EnhancedInput->BindAction(
+            InputAimingAction,
+             ETriggerEvent::Triggered,
+              this,
+               &ANS_PlayerCharacterBase::StartAimingAction_Server);
+            
+            EnhancedInput->BindAction(
+           InputAimingAction,
+            ETriggerEvent::Completed,
+             this,
+              &ANS_PlayerCharacterBase::StopAimingAction_Server);
+        }
+
+        if (InputReloadAction)
+        {
+            EnhancedInput->BindAction(
+            InputReloadAction,
+             ETriggerEvent::Triggered,
+              this,
+               &ANS_PlayerCharacterBase::ReloadAction_Server);
         }
     }
 }
@@ -204,6 +255,11 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsAttack);  // 공격 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsPickUp);  // 아이템줍기 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsChange);  // ================================= 나중에에 삭제해야함
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsHit);     // 맞는지 확인 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, CamYaw);    // 카메라 좌/우 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, CamPitch);  // 카메라 상/하 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsAiming);  // 조준중인지 확인 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsReload);  // 장전중인지 확인 변수
 }
 
 void ANS_PlayerCharacterBase::SetMovementLockState_Server_Implementation(bool bLock)
@@ -222,21 +278,41 @@ void ANS_PlayerCharacterBase::SetMovementLockState_Multicast_Implementation(bool
     }
 }
 
-float ANS_PlayerCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+float ANS_PlayerCharacterBase::TakeDamage(
+    float DamageAmount,
+    FDamageEvent const& DamageEvent,
+    AController* EventInstigator,
+    AActor* DamageCauser
+)
 {
     float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+    if (!HasAuthority() || ActualDamage <= 0.f)
+        return ActualDamage;
 
-    StatusComp->ChangeHealthGauge(-DamageAmount);
+    // 캐릭터 체력 감소
+    StatusComp->ChangeHealthGauge(-ActualDamage);
 
+    IsHit = true;
+    
+    // IsHit 타이머핸들 람다로 0.5초간 실행
+    FTimerHandle ResetHitTime;
+    GetWorldTimerManager().SetTimer(
+        ResetHitTime,
+        [this]() { IsHit = false;},
+        0.5f,
+        false
+        );
+
+    // 캐릭터 체력이 0이면 죽음 애니메이션 실행
+    if (StatusComp->Health <= 0.f)
+    {
+        PlayDeath_Multicast();
+    }
 
     return ActualDamage;
 }
 
-void ANS_PlayerCharacterBase::OnDeath()
-{
-}
-
-
+//////////////////////////////////액션 처리 함수들///////////////////////////////////
 void ANS_PlayerCharacterBase::MoveAction(const FInputActionValue& Value)
 {
     if (!Controller) return;
@@ -253,16 +329,20 @@ void ANS_PlayerCharacterBase::MoveAction(const FInputActionValue& Value)
 void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
 {
     FVector2D LookInput = Value.Get<FVector2D>();
-    FRotator ControlRot = Controller->GetControlRotation();
+
+    // 상/하 회전
     AddControllerPitchInput(LookInput.Y);
-    
+
+    // 좌/우 회전
+    FRotator ControlRot = Controller->GetControlRotation();
     float ActorYaw = GetActorRotation().Yaw;
     float NewYaw = ControlRot.Yaw + LookInput.X;
 
-    // 좌/우(Yaw값) 각독 제한 -90 ~ +90까지 허용
+    // 좌/우(Yaw값) 각도 제한 -90 ~ +90까지 허용
     float RelativeYaw = FMath::ClampAngle(NewYaw - ActorYaw, -90.f, 90.f);
     ControlRot.Yaw = ActorYaw + RelativeYaw;
 
+    // 컨트롤러 회전에 반영하여 카메라와 캐릭터 조준 축 업데이트 ------------- (자세한 원리 부가 설명 필요)
     Controller->SetControlRotation(ControlRot);
 }
 
@@ -300,20 +380,12 @@ void ANS_PlayerCharacterBase::StopCrouch(const FInputActionValue& Value)
 
 void ANS_PlayerCharacterBase::StartSprint_Server_Implementation(const FInputActionValue& Value)
 {
-    StartSprint_Multicast_Implementation();
-}
-void ANS_PlayerCharacterBase::StartSprint_Multicast_Implementation()
-{
     IsSprint = true;
-	if (GetCharacterMovement())
-		GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier;
+    if (GetCharacterMovement())
+        GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier;
 }
 
 void ANS_PlayerCharacterBase::StopSprint_Server_Implementation(const FInputActionValue& Value)
-{
-    StopSprint_Multicast();
-}
-void ANS_PlayerCharacterBase::StopSprint_Multicast_Implementation()
 {
     IsSprint = false;
     if (GetCharacterMovement())
@@ -324,64 +396,88 @@ void ANS_PlayerCharacterBase::KickAction_Server_Implementation(const FInputActio
 {
     if (GetCharacterMovement()->IsFalling()) {return;}
 
-    KickAction_Multicast();
+    IsKick = true;
+
+    // 1.2초간 실행 후 IsKick변수는 false로 변경
+    FTimerHandle ResettKickTime;
+    GetWorldTimerManager().SetTimer(
+        ResettKickTime,
+        FTimerDelegate::CreateLambda([this]() { IsKick = false; }),
+        1.2f,
+        false
+    );
 }
 
-void ANS_PlayerCharacterBase::KickAction_Multicast_Implementation()
-{
-        IsKick = true;
-
-        // 1.2초간 실행 후 IsKick변수는 false로 변경
-        FTimerHandle ResettKickTime;
-        GetWorldTimerManager().SetTimer(
-            ResettKickTime,
-            FTimerDelegate::CreateLambda([this]() { IsKick = false; }),
-            1.2f,
-            false
-        );
-}
-
-void ANS_PlayerCharacterBase::AttackAction_Server_Implementation(const FInputActionValue& Value)
+void ANS_PlayerCharacterBase::StartAttackAction_Server_Implementation(const FInputActionValue& Value)
 {
     if (GetCharacterMovement()->IsFalling()) {return;}
 
-    AttackAction_Multicast();
+    IsAttack = true;
 }
 
-void ANS_PlayerCharacterBase::AttackAction_Multicast_Implementation()
+void ANS_PlayerCharacterBase::StopAttackAction_Server_Implementation(const FInputActionValue& Value)
 {
-    
-        IsAttack = true;
-
-        // 1.0초간 실행 후 IsAttack변수는 false로 변경
-        FTimerHandle ResetAttackTime;
-        GetWorldTimerManager().SetTimer(
-        ResetAttackTime,
-        FTimerDelegate::CreateLambda([this]() { IsAttack = false; }),
-        1.0f,
-        false
-        );
-   
+    IsAttack = false;
 }
 
 void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputActionValue& Value)
 {
     if (GetCharacterMovement()->IsFalling()) {return;}
 
-    PickUpAction_Multicast();
+    IsPickUp = true;
+
+    // 1.0초간 실행 후 IsPickUp변수는 false로 변경
+    FTimerHandle ResetPickUpTime;
+    GetWorldTimerManager().SetTimer(
+    ResetPickUpTime,
+    FTimerDelegate::CreateLambda([this]() { IsPickUp = false; }),
+    1.0f,
+    false
+    );
 }
 
-void ANS_PlayerCharacterBase::PickUpAction_Multicast_Implementation()
+void ANS_PlayerCharacterBase::StartAimingAction_Server_Implementation(const FInputActionValue& Value)
 {
-        IsPickUp = true;
-
-        // 1.0초간 실행 후 IsPickUp변수는 false로 변경
-        FTimerHandle ResetPickUpTime;
-        GetWorldTimerManager().SetTimer(
-        ResetPickUpTime,
-        FTimerDelegate::CreateLambda([this]() { IsPickUp = false; }),
-        1.0f,
-        false
-        );
+    IsAiming = true;
 }
 
+
+void ANS_PlayerCharacterBase::StopAimingAction_Server_Implementation(const FInputActionValue& Value)
+{
+    IsAiming = false;
+}
+
+void ANS_PlayerCharacterBase::ReloadAction_Server_Implementation(const FInputActionValue& Value)
+{
+    IsReload = true;
+
+    // 2.5초간 실행 후 IsReload변수는 false로 변경
+    FTimerHandle ResetPickUpTime;
+    GetWorldTimerManager().SetTimer(
+    ResetPickUpTime,
+    FTimerDelegate::CreateLambda([this]() { IsReload = false; }),
+    2.5f,
+    false
+    );
+}
+//////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
+void ANS_PlayerCharacterBase::PlayDeath_Multicast_Implementation()
+{
+    DetachFromControllerPendingDestroy();
+	
+    GetCharacterMovement()->DisableMovement();
+
+    GetMesh()->SetCollisionProfileName("Ragdoll");
+    GetMesh()->SetSimulatePhysics(true);
+    GetMesh()->SetAllBodiesSimulatePhysics(true);
+    GetMesh()->WakeAllRigidBodies();
+    GetMesh()->bBlendPhysics = true;
+    SetLifeSpan(5.f);
+}
+
+// 클라이언트면 서버로 클라이언트 자신에 Yaw값과 Pitch값을 서버로 전송
+void ANS_PlayerCharacterBase::Server_UpdateAim_Implementation(float NewCamYaw, float NewCamPitch)
+{
+    CamYaw   = NewCamYaw;
+    CamPitch = NewCamPitch;
+}

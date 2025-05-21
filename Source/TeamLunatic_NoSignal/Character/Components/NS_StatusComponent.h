@@ -24,7 +24,7 @@ public:
     // --- Health & Stamina ---
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Status|Health")
     float MaxHealth = 100.f;
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Status|Health")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Status|Health")
     float Health;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status|Stamina")
     float MaxStamina = 100.f;
@@ -67,9 +67,6 @@ private:
     void ApplyStageEffects(float DeltaTime);
 
     void UpdateMaxStamina();
-
-    //사망시 처리
-    void OnDeath();
 
     // Clamp 처리용
     void DecreaseStamina(float Delta);
