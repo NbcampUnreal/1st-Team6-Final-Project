@@ -32,11 +32,13 @@ void UNS_LoadGameMenuPanel::SetSlotInfo(const FString& SlotName, const FString& 
 {
     if (SaveNameText)
     {
+		/*
 		SaveSlotName = SlotName;
-
 		FString SlotTitle = FString::Printf(
-            TEXT("%s / Map : %s"), *SlotName, *LevelName);
-        SaveNameText->SetText(FText::FromString(SlotTitle));
+            TEXT("%s / Map : %s"), *SlotName, *LevelName);*/
+		Image_Select->SetVisibility(ESlateVisibility::Hidden);
+
+        SaveNameText->SetText(FText::FromString(SlotName));
 
         FString Time = FString::Printf(TEXT(" %02d:%02d"), SaveTime.GetHour(), SaveTime.GetMinute());
         TimeText->SetText(FText::FromString(Time));

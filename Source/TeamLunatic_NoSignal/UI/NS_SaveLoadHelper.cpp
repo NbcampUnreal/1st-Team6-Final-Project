@@ -142,15 +142,3 @@ UNS_SaveGameMetaData* NS_SaveLoadHelper::LoadSaveMetaData()
 
     return Cast<UNS_SaveGameMetaData>(UGameplayStatics::LoadGameFromSlot(NS_SaveLoadHelper::MetaSlotName, 0));
 }
-
-FString NS_SaveLoadHelper::FormatDateTime_YMDHM(const FDateTime& InDateTime)
-{
-    return FString::Printf(
-        TEXT("%04d-%02d-%02d %02d:%02d"),
-        InDateTime.GetYear(),
-        InDateTime.GetMonth(),
-        InDateTime.GetDay(),
-        InDateTime.GetHour(),
-        InDateTime.GetMinute()
-    );
-}

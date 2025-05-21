@@ -29,8 +29,6 @@ public:
     UFUNCTION()
     void OnNoSelected();
 
-    virtual void Init(UNS_MainMenu* NsMainMenu) override;
-
 protected:
     virtual void NativeConstruct() override;
 
@@ -55,8 +53,4 @@ private:
     void StartGame();
     void ShowConfirmationMenu();//덮허쓰기할지 선택하는 메세지창 
     void HideConfirmationMenu(); // 덮허쓰기 창 닫기/캔슬
-    FString FormatDateTime_YMDHM(const FDateTime& InDateTime);
-
-   
-
 };

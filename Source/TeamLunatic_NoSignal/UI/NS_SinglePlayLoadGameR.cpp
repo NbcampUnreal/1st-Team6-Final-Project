@@ -10,7 +10,7 @@
 #include "UI/NS_MenuButtonWidget.h"
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
-#include "UI/TempGameInstance.h"
+#include "GameFlow/NS_GameInstance.h"
 #include "UI/NS_SaveLoadHelper.h"
 
 UNS_SinglePlayLoadGameR::UNS_SinglePlayLoadGameR(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -34,7 +34,7 @@ void UNS_SinglePlayLoadGameR::StartGame()
         return;
     }
 
-	FString SlotName = SelectChildPanel->SaveSlotName;
+	FString SlotName = SelectChildPanel->SaveNameText->GetText().ToString();
 
     if (!UGameplayStatics::DoesSaveGameExist(SlotName, 0))
     {
@@ -63,13 +63,13 @@ void UNS_SinglePlayLoadGameR::StartGame()
     FString LevelName = LoadedGame->LevelSaves[0].LevelName;
 
     // GameInstance에 슬롯 이름 등록 (선택사항)
-    if (UTempGameInstance* GI = Cast<UTempGameInstance>(GetGameInstance()))
+    if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
+        GI->SetGameModeType(EGameModeType::SinglePlayMode);
         GI->SetCurrentSaveSlot(SlotName);
+       
+        UGameplayStatics::OpenLevel(this, FName(*LevelName));
     }
-
-    // 맵 이동
-    UGameplayStatics::OpenLevel(this, FName(*LevelName));
 }
 void UNS_SinglePlayLoadGameR::OnClickedDeleteSlot(UNS_LoadGameMenuPanel* ChidPanel)
 {
@@ -77,7 +77,7 @@ void UNS_SinglePlayLoadGameR::OnClickedDeleteSlot(UNS_LoadGameMenuPanel* ChidPan
 	SaveVerticalBox->RemoveChild(ChidPanel);
 	if (ChidPanel)
 	{
-        FString SlotName = ChidPanel->SaveSlotName;//SaveNameText->GetText().ToString();
+        FString SlotName = ChidPanel->SaveNameText->GetText().ToString();
         NS_SaveLoadHelper::DeleteExistingSave(SlotName);
 	}
 }

@@ -22,7 +22,7 @@ public:
 	virtual void NativeConstruct() override;
 
 	//ex) "SaveSlot_01" / Map : "Map_01"  => SaveSlotName = SaveSlot_01
-	FString SaveSlotName; // 문자열뒤에 Map(Level)명은 빠진거임. 일단 이것으로 비교검색할것! 
+	//FString SaveSlotName; // 문자열뒤에 Map(Level)명은 빠진거임. 일단 이것으로 비교검색할것! 
 	
 	
 	UPROPERTY(BlueprintAssignable)
@@ -53,7 +53,7 @@ public:
 	UImage* Image_DeleteIcon;
 
 	void SetSlotInfo(const FString& SlotName, const FString& LevelName, const FDateTime& SaveTime);
-
+	
 	UFUNCTION()
 	void OnDeleteSaveButtonClicked();
 

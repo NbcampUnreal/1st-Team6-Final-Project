@@ -29,6 +29,8 @@ enum class EWidgetToggleType : uint8
     Back,
     ServerBrowser,
     HostServer,
+	HostNewGame,
+	HostLoadGame,
     Disconnect,
     Resume,
     NewGame,

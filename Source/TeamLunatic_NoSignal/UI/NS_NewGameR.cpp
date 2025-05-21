@@ -21,13 +21,25 @@ void UNS_NewGameR::OnStartGameClicked()
 
     if (NS_SaveLoadHelper::FindExistingSave(SaveName))
     {
-        // UI에 확인창 띄우기
-        ShowConfirmationMenu();
+        if (!AreYouSureMenu)
+        {
+            UNS_MasterMenuPanel* WidgetA = MainMenu->GetWidget(EWidgetToggleType::AreYouSureMenu);
+            AreYouSureMenu = Cast<UNS_AreYouSureMenu>(WidgetA);
+        }
+        if (AreYouSureMenu)
+        {
+            AreYouSureMenu->YesButton->OnClicked.RemoveAll(this);
+            AreYouSureMenu->NoButton->OnClicked.RemoveAll(this);
+            AreYouSureMenu->YesButton->OnClicked.AddDynamic(this, &UNS_NewGameR::OnYesSelected);
+            AreYouSureMenu->NoButton->OnClicked.AddDynamic(this, &UNS_NewGameR::OnNoSelected);
+            // UI에 확인창 띄우기
+            ShowConfirmationMenu();
+        }
+        else
+            UE_LOG(LogTemp, Warning, TEXT("AreYouSureMenu is null"));
     }
     else
-    {
         StartGame(); 
-    }
 }
 
 void UNS_NewGameR::OnYesSelected()//덮어쓰기 메세지 동의선택
@@ -44,35 +56,22 @@ void UNS_NewGameR::OnNoSelected() //덮허쓰기 취소 석택
 {
     HideConfirmationMenu();//창닫기
 }
-void UNS_NewGameR::Init(UNS_MainMenu* NsMainMenu)
-{
-    Super::Init(NsMainMenu);
-    UNS_MasterMenuPanel* WidgetA = MainMenu->GetWidget(EWidgetToggleType::AreYouSureMenu);
-    AreYouSureMenu = Cast<UNS_AreYouSureMenu>(WidgetA);
-    if (AreYouSureMenu)
-    {
-        AreYouSureMenu->YesButton->OnClicked.AddDynamic(this, &UNS_NewGameR::OnYesSelected);
-        AreYouSureMenu->NoButton->OnClicked.AddDynamic(this, &UNS_NewGameR::OnNoSelected);
-
-        StartGameButton->OnClicked.AddDynamic(this, &UNS_NewGameR::OnStartGameClicked);
-    }
-}
 
 void UNS_NewGameR::NativeConstruct()
 {
     Super::NativeConstruct();
+
+	StartGameButton->OnClicked.AddDynamic(this, &UNS_NewGameR::OnStartGameClicked);
+
   // UGameplayStatics::DeleteGameInSlot("SaveGameMetaData", 0);
 
-   
     //UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance());
     //if (GI)
     //    GI->SetGameModeType(EGameModeType::SingleplayMode);
     
-
     //UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance());
     //if (GI)
     //    GI->SetGameModeType(EGameModeType::MultiplayMode);
-
 }
 
 FString UNS_NewGameR::GetSaveSlotName() const

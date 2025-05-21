@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UI/NS_MasterMenuPanel.h"
-#include "NS_HostNewGameServerR.generated.h"
+#include "NS_HostLoadGameServerR.generated.h"
 
 class UTextBlock;
 class UTitle;
@@ -13,34 +13,23 @@ class UCheckBox;
 class UEditableTextBox;
 class USpacer;
 class UBorder;
-class UComboBoxString;
-class UNS_AreYouSureMenu;
 
 UCLASS()
-class TEAMLUNATIC_NOSIGNAL_API UNS_HostNewGameServerR : public UNS_MasterMenuPanel
+class TEAMLUNATIC_NOSIGNAL_API UNS_HostLoadGameServerR : public UNS_MasterMenuPanel
 {
 	GENERATED_BODY()
-	
+
 public:
-	FString LoadMapName;
+    FString LoadSlotName;
 
     UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
     UBorder* Backround;
 
     UPROPERTY(meta = (BindWidget), BlueprintReadWrite) //, BlueprintReadOnly / BlueprintReadWrite
-    UTextBlock* Subtitle;
+        UTextBlock* Subtitle;
 
     UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
     UTextBlock* Title;
-
-    UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-    UEditableTextBox* SaveNameEntryBox;
-
-	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-    USpacer* SelectMapSpacer_1;
-
-    UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-    UComboBoxString* ComboBoxString;
 
     UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
     USpacer* SelectMapSpacer;
@@ -49,28 +38,14 @@ public:
     UEditableTextBox* EditableTextBox_MaxPlayers;
 
     UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-    UCheckBox* CheckBox_UseLAN;
+    UCheckBox* CheckBox_Use_LAN;
 
-	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
+    UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
     UButton* CreateServerButton;
 
 protected:
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "PopUp")
-    UNS_AreYouSureMenu* AreYouSureMenu;
-
     virtual void NativeConstruct() override;
 
     UFUNCTION()
-    void OnYesSelected();
-    UFUNCTION()
-    void OnNoSelected();
-
-    FString GetSaveSlotName() const;
-
-    void ShowConfirmationMenu();
-
-    void StartGame();
-
-	UFUNCTION()
     void OnCreateServerButtonClicked();
 };
