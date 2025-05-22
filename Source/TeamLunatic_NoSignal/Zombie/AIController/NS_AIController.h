@@ -34,6 +34,7 @@ protected:
 	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "AI")
 	UBlackboardComponent* BlackboardComp;
 	
+	bool bCanSeeTarget;
 public:
 	virtual void BeginPlay() override;
 	void InitializingSightConfig();

@@ -74,6 +74,8 @@ void ANS_AIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulus)
 {
 	if (Stimulus.WasSuccessfullySensed())
 	{
+		AActor* CloseActor = nullptr;
+		float Distance = TNumericLimits<float>::Max();
 		if (Actor->ActorHasTag(TEXT("Player")))
 		{
 			GetBlackboardComponent()->SetValueAsObject("TargetActor", Actor);

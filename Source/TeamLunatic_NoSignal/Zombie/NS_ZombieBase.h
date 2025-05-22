@@ -6,6 +6,8 @@
 #include "GameFramework/Character.h"
 #include "NS_ZombieBase.generated.h"
 
+
+enum class Enum_ZombieState : uint8;
 class USphereComponent;
 
 UCLASS()
@@ -14,22 +16,22 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_ZombieBase : public ACharacter
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
 	ANS_ZombieBase();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	USphereComponent* SphereComp;
-	UPROPERTY(EditAnywhere,BlueprintReadWrite)
-	USkeletalMeshComponent* SkeletalMesh;
 	
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite, Category = "Stat")
 	float MaxHealth;
 	
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Replicated, Category = "Stat")
 	float CurrentHealth;
+
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Replicated, Category = "Stat")
+	Enum_ZombieState CurrentState;
 
 public:	
 
@@ -39,8 +41,9 @@ public:
 	virtual void  GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	UFUNCTION()
 	virtual void Die();
-	
-	//»ç¸Á ½Ã ¸ÖÆ¼Ä³½ºÆÃ. ex)»ç¿îµå, µîµî
+
+	void SetState(Enum_ZombieState NewState);
+	//ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½Æ¼Ä³ï¿½ï¿½ï¿½ï¿½. ex)ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½
 	//UFUNCTION(NetMulticast, Unreliable)
 	//void OnDeath();
 };

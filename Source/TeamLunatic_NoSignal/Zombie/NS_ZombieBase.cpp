@@ -1,17 +1,16 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 #include "Zombie/NS_ZombieBase.h"
-
+#include "Enum_ZombieState.h"
+#include "AIController/NS_AIController.h"
+#include "BehaviorTree/BlackboardComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 
-ANS_ZombieBase::ANS_ZombieBase()
+ANS_ZombieBase::ANS_ZombieBase() : CurrentState(Enum_ZombieState::PATROLL), MaxHealth(100.f), CurrentHealth(MaxHealth)
 {
 	PrimaryActorTick.bCanEverTick = true;
-	SkeletalMesh = CreateDefaultSubobject<USkeletalMeshComponent>("SkeletalMesh");
-	SkeletalMesh->SetupAttachment(GetMesh());
-	static ConstructorHelpers::FObjectFinder<USkeletalMesh> ZombieMeshAsset(TEXT("/Game/YI_ModularZombies/Meshes/ZombieF02/Zombie/SK_Zombie_F02_01"));
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> ManequineAsset(TEXT("/Game/YI_ModularZombies/Demo/Characters/Mannequins/Meshes/SKM_Manny"));
 	
 	if (ManequineAsset.Succeeded())
@@ -20,22 +19,17 @@ ANS_ZombieBase::ANS_ZombieBase()
 		GetMesh()->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
 		GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, -90.f));
 	}
-	if (ZombieMeshAsset.Succeeded())
-	{
-		SkeletalMesh->SetSkeletalMesh(ZombieMeshAsset.Object);
-	}
+
 	GetCharacterMovement()->MaxWalkSpeed = 200.f;
 
 	SphereComp = CreateDefaultSubobject<USphereComponent>("AttackRagne");
-
-	MaxHealth = 100;
-	CurrentHealth = MaxHealth;
+	SphereComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void ANS_ZombieBase::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	SetState(CurrentState);
 }
 
 void ANS_ZombieBase::Tick(float DeltaTime)
@@ -67,7 +61,6 @@ void ANS_ZombieBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 
 void ANS_ZombieBase::Die()
 {
-	
 	DetachFromControllerPendingDestroy();
 	
 	GetCharacterMovement()->DisableMovement();
@@ -80,6 +73,26 @@ void ANS_ZombieBase::Die()
 	//OnDeath_Implementation();
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	SetLifeSpan(5.f);
+}
+
+void ANS_ZombieBase::SetState(Enum_ZombieState NewState)
+{
+	CurrentState = NewState;
+	switch (CurrentState)
+	{
+	case Enum_ZombieState::DEAD:
+	case Enum_ZombieState::ATTACK:
+		GetCharacterMovement()->MaxWalkSpeed = 0.f;
+		break;
+	case Enum_ZombieState::PATROLL:
+		GetCharacterMovement()->MaxWalkSpeed = 20.f;
+		break;
+	case Enum_ZombieState::DETECTING:
+		GetCharacterMovement()->MaxWalkSpeed = 400.f;
+		break;
+	default:
+		break;
+	}
 }
 
 /*void ANS_ZombieBase::OnDeath_Implementation()
