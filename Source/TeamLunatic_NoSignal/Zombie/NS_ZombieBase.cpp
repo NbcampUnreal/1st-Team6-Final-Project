@@ -67,8 +67,6 @@ void ANS_ZombieBase::Die()
 
 	GetMesh()->SetCollisionProfileName("Ragdoll");
 	GetMesh()->SetSimulatePhysics(true);
-	GetMesh()->SetAllBodiesSimulatePhysics(true);
-	GetMesh()->WakeAllRigidBodies();
 	GetMesh()->bBlendPhysics = true;
 	//OnDeath_Implementation();
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);

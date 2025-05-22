@@ -20,7 +20,6 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	USphereComponent* SphereComp;
 	
@@ -36,7 +35,6 @@ protected:
 public:	
 
 	virtual void Tick(float DeltaTime) override;
-
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 	virtual void  GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	UFUNCTION()
