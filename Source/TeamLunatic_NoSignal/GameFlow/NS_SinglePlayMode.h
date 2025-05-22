@@ -15,16 +15,20 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	//void SpawnPlayer();
+	// 플레이어 스폰
+	void SpawnPlayer();
 
+	// 좀비/아이템 스폰
 	void SpawnZombies();
 	void SpawnItems();
 
+	// 게임 오버
 	void HandleGameOver(bool bPlayerSurvived);
 
 private:
 	bool bIsGameOver = false;
 
+	// 스폰 설정
 	UPROPERTY(EditAnywhere, Category = "Spawn")
 	TSubclassOf<APawn> PlayerPawnClass;
 
