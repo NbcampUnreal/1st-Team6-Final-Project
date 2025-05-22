@@ -12,6 +12,14 @@ UInteractionComponent::UInteractionComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
+void UInteractionComponent::UpdateInteractionWidget()
+{
+	if (IsValid(TargetInteractable.GetObject()))
+	{
+		HUD->UpdateInteractionWidget(&TargetInteractable->InteractableData);
+	}
+}
+
 void UInteractionComponent::BeginPlay()
 {
 	Super::BeginPlay();

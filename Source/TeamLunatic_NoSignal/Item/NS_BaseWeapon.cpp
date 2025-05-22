@@ -1,8 +1,8 @@
 #include "Item/NS_BaseWeapon.h"
+#include "Inventory/InventoryComponent.h"
 
-ANS_BaseWeapon::ANS_BaseWeapon()
+ANS_BaseWeapon::ANS_BaseWeapon() : bisCopy(false), bisPickup(false)
 {
-	PrimaryActorTick.bCanEverTick = true;
 }
 
 void ANS_BaseWeapon::Attack()
@@ -34,22 +34,41 @@ void ANS_BaseWeapon::BeginPlay()
 	}
 }
 
-float ANS_BaseWeapon::GetItemSigleWeight() const
-{
-	return ItemSingleWeight;
-}
-
 void ANS_BaseWeapon::SetQuantity(int32 NewQuantity)
 {
-	Quantity = FMath::Clamp(NewQuantity, 1, 999);
+	if (NewQuantity != Quantity)
+	{
+		Quantity = FMath::Clamp(NewQuantity, 0, ItemNumericData.isStackable ? ItemNumericData.MaxStack : 1);
+
+		if (OwingInventory)
+		{
+			if (Quantity <= 0)
+			{
+				OwingInventory->RemoveSingleInstanceOfItem(this);
+			}
+		}
+	}
 }
 
-// Called every frame
-void ANS_BaseWeapon::Tick(float DeltaTime)
+void ANS_BaseWeapon::ResetItemFlags()
 {
-	Super::Tick(DeltaTime);
+	bisCopy = false;
+	bisPickup = false;
+}
 
+ANS_BaseWeapon* ANS_BaseWeapon::CreateItemCopy() const
+{
+	ANS_BaseWeapon* ItemCopy = NewObject<ANS_BaseWeapon>(StaticClass());
 
+	ItemCopy->WeaponDataRowName = this->WeaponDataRowName;
+	ItemCopy->Quantity = this->Quantity;
+	ItemCopy->ItemNumericData = this->ItemNumericData;
+	ItemCopy->ItemAssetData = this->ItemAssetData;
+	ItemCopy->ItemTextData = this->ItemTextData;
+	ItemCopy->bisCopy = true;
+	ItemCopy->StaticMesh = this->ItemAssetData.StaticMesh;
+
+	return ItemCopy;
 }
 
 

@@ -7,6 +7,7 @@
 #include "NS_BaseWeapon.generated.h"
 
 class ANS_PlayerCharacterBase;
+class UInventoryComponent;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_BaseWeapon : public AActor
@@ -15,6 +16,9 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_BaseWeapon : public AActor
 	
 public:	
 	ANS_BaseWeapon();
+
+	UPROPERTY()
+	UInventoryComponent* OwingInventory;
 
 	virtual void Attack();
 
@@ -68,11 +72,11 @@ public:
 	UPROPERTY(EditAnywhere, Category = "WeaponData")
 	FItemAssetData ItemAssetData;
 
-	UFUNCTION(BlueprintCallable, Category = "WeaponData")
-	float GetItemSigleWeight() const;
+	UFUNCTION(Category = "WeaponData")
+	FORCEINLINE float GetItemStackWeight() const { return Quantity * ItemNumericData.Weight; };
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item")
-	float ItemSingleWeight = 1.0f;
+	UFUNCTION(Category = "WeaponData")
+	FORCEINLINE float GetItemSingleWeight() const { return ItemNumericData.Weight; };
 
 	UFUNCTION(BlueprintCallable, Category = "WeaponData")
 	void SetQuantity(int32 NewQuantity);
@@ -82,8 +86,18 @@ public:
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 	//UStaticMeshComponent* 
 
-public:	
-	virtual void Tick(float DeltaTime) override;
+	UFUNCTION(Category = "Inventory")
+	FORCEINLINE bool IsFullItemStack() const { return Quantity == ItemNumericData.MaxStack; };
 
+	bool bisCopy;
+	bool bisPickup;
 
+	void ResetItemFlags();
+
+	ANS_BaseWeapon* CreateItemCopy() const;
+protected:
+	bool operator==(const FName& OtherID) const
+	{
+		return this->WeaponDataRowName == OtherID;
+	}
 };

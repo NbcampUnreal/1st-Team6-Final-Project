@@ -5,6 +5,7 @@
 #include "Engine/DataTable.h"
 #include "Item/NS_ItemDataStruct.h"
 #include "Item/NS_BaseWeapon.h"
+#include "Inventory/InventoryComponent.h"
 #include "Character/NS_PlayerCharacterBase.h"
 
 
@@ -49,7 +50,7 @@ void APickup::InitializeDrop(ANS_BaseWeapon* ItemToDrop, const int32 InQuantity)
 {
 	ItemReference = ItemToDrop;
 	InQuantity <= 0 ? ItemReference->SetQuantity(1) : ItemReference->SetQuantity(InQuantity);
-	ItemReference->ItemNumericData.Weight = ItemToDrop->GetItemSigleWeight();
+	ItemReference->ItemNumericData.Weight = ItemToDrop->GetItemSingleWeight();
 	PickupMesh->SetStaticMesh(ItemToDrop->ItemAssetData.StaticMesh);
 
 	UpdateInteractableData();
@@ -94,11 +95,36 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 	{
 		if (ItemReference)
 		{
-			//if(UInventoryComponent* PlayerInventory = Taker->GetInventory())
+			if (UInventoryComponent* PlayerInventory = Taker->GetInventory())
+			{
+				const FItemAddResult AddResult = PlayerInventory->HandleAddItem(ItemReference);
 
-				//try to add Item to player Inventory
-				//based on result of the add operation
-				//adjust or destroy the pick up
+				switch (AddResult.OperationResult)
+				{
+				case EItemAddResult::TAR_NoItemAdded:
+					break;
+				case EItemAddResult::TAR_PartialAmountItemAdded:
+					UpdateInteractableData();
+					if (UInteractionComponent* InteractionComp = Taker->GetInteractionComponent())
+					{
+						InteractionComp->UpdateInteractionWidget();
+					}
+					break;
+				case EItemAddResult::TAR_AllItemAdded:
+					Destroy();
+					break;
+				}
+
+				UE_LOG(LogTemp, Warning, TEXT("%s"), *AddResult.ResultMessage.ToString());
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Player Inventory Component is null"));
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Pickup internal Item reference was somehow null"));
 		}
 	}
 }

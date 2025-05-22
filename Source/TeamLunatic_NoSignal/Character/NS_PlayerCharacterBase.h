@@ -12,6 +12,7 @@ class UInputAction;
 class UCameraComponent;
 class UNS_DebugStatusWidget;  // 디버그용 위젯 차후 삭제해야함
 class UNS_StatusComponent;
+class UInventoryComponent;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
@@ -21,6 +22,9 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
 public:
 	ANS_PlayerCharacterBase();
 
+	FORCEINLINE UInventoryComponent* GetInventory() const { return PlayerInventory; };
+
+	UInteractionComponent* GetInteractionComponent() const { return InteractionComponent; }
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
@@ -58,7 +62,10 @@ public:
 	// 인터렉션 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interaction", meta = (AllowPrivateAccess = "true"))
 	UInteractionComponent* InteractionComponent;
-	
+
+	UPROPERTY(VisibleAnywhere, Category = "Inventory")
+	UInventoryComponent* PlayerInventory;
+
 	// 캐릭터 이동 중 바라보는 곳으로 몸 회전 속도 (1 ~ 10까지 해봤는데 5가 가장 적당함)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float CharacterTurnSpeed = 5.0f;
@@ -111,6 +118,8 @@ public:
 	UInputAction* InputAttackAction;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputPickUpAction;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* InteractAction;
 	
 	// 이동 입력 잠금 제어 함수 
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category="Input")
