@@ -16,8 +16,13 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_BaseWeapon : public ANS_BaseItem
 public:
 	ANS_BaseWeapon();
 
-protected:
 	virtual void BeginPlay() override;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
+	EWeaponType WeaponType;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
+	FName WeaponSocketName;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	float Durability;
@@ -51,6 +56,8 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|HitDetection")
 	bool bUseCapsuleComponent;
+
+	EWeaponType GetWeaponType() const { return WeaponType; }
 
 public:
 };

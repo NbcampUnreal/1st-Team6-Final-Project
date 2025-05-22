@@ -6,6 +6,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Interaction/InteractionInterface.h"
 #include "Inventory/InventoryComponent.h"
+#include "Components/NS_EquipedWeaponComponent.h"
 #include "Interaction/Component/InteractionComponent.h"
 
 #include <Net/UnrealNetwork.h>
@@ -36,6 +37,8 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     PlayerInventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("PlayerInventory"));
     PlayerInventory->SetSlotsCapacity(20);
     PlayerInventory->SetWeightCapacity(50.0f);
+
+    EquipedWeaponComp = CreateDefaultSubobject<UNS_EquipedWeaponComponent>(TEXT("EquipedWeaponComponent"));
 }
 
 void ANS_PlayerCharacterBase::BeginPlay()
@@ -485,4 +488,9 @@ void ANS_PlayerCharacterBase::UpdateAim_Server_Implementation(float NewCamYaw, f
 {
     CamYaw   = NewCamYaw;
     CamPitch = NewCamPitch;
+}
+
+void ANS_PlayerCharacterBase::SwapWeapon(TSubclassOf<ANS_BaseMeleeWeapon> WeaponClass)
+{
+    EquipedWeaponComp->SwapWeapon(WeaponClass);
 }

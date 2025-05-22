@@ -1,9 +1,10 @@
 ﻿#include "NS_EquipedWeaponComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Character/NS_PlayerCharacterBase.h"
-#include "WeaponBase.h"  // AWeaponBase 헤더
+#include "Item/NS_BaseWeapon.h" 
 #include "GameFramework/Character.h"
 #include "Engine/World.h"
+#include "Item/NS_BaseMeleeWeapon.h"
 
 UNS_EquipedWeaponComponent::UNS_EquipedWeaponComponent()
 {
@@ -22,51 +23,61 @@ void UNS_EquipedWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProp
     DOREPLIFETIME(UNS_EquipedWeaponComponent, CurrentWeapon);
 }
 
-void UNS_EquipedWeaponComponent::SwapWeapon(int32 SlotIndex)
+void UNS_EquipedWeaponComponent::SwapWeapon(TSubclassOf<ANS_BaseMeleeWeapon> WeaponClass)
 {
     if (!GetOwner()->HasAuthority())
         return;
 
     // 슬롯 → 무기 클래스 결정
-    TSubclassOf<AWeaponBase> NewClass = GetWeaponClassFromSlot(SlotIndex);
-    ServerEquipWeapon(NewClass);
+    ServerEquipWeapon(WeaponClass);
 }
 
-void UNS_EquipedWeaponComponent::ServerEquipWeapon_Implementation(TSubclassOf<AWeaponBase> WeaponClass)
+void UNS_EquipedWeaponComponent::ServerEquipWeapon_Implementation(TSubclassOf<ANS_BaseMeleeWeapon> WeaponClass)
 {
-    // 기존 장착 해제
     if (CurrentWeapon)
     {
         CurrentWeapon->Destroy();
         CurrentWeapon = nullptr;
     }
 
-    // 새 무기 스폰 & 부착
     if (WeaponClass && OwnerCharacter)
     {
         FActorSpawnParameters Params;
         Params.Owner = GetOwner();
         Params.Instigator = OwnerCharacter;
-        AWeaponBase* NewWpn = GetWorld()->SpawnActor<AWeaponBase>(WeaponClass, FVector::ZeroVector, FRotator::ZeroRotator, Params);
+        
+        ANS_BaseMeleeWeapon* NewWpn = GetWorld()->SpawnActor<ANS_BaseMeleeWeapon>(
+            WeaponClass, FVector::ZeroVector, FRotator::ZeroRotator, Params);
+
         if (NewWpn)
         {
-            NewWpn->AttachToComponent(OwnerCharacter->GetMesh(),
-                                      FAttachmentTransformRules::SnapToTargetIncludingScale,
-                                      WeaponAttachSocketName);
+            FName AttachSocketName = TEXT("hand_rKnife");
+            if (WeaponClass->GetDefaultObject())
+            {
+                AttachSocketName = WeaponClass->GetDefaultObject<ANS_BaseMeleeWeapon>()->WeaponSocketName;
+            }
+
+            NewWpn->AttachToComponent(
+                OwnerCharacter->GetMesh(),
+                FAttachmentTransformRules::SnapToTargetIncludingScale,
+                AttachSocketName
+            );
+
             CurrentWeapon = NewWpn;
         }
     }
 
-    // 클라이언트에도 동일하게 복제
     MulticastEquipWeapon(WeaponClass);
 }
 
-void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf<AWeaponBase> WeaponClass)
+
+void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf<ANS_BaseMeleeWeapon> WeaponClass)
 {
     // 서버 쪽은 이미 처리했으므로 클라이언트만 동작
     if (GetOwner()->HasAuthority())
         return;
 
+    // 기존에 무기가 장착되어있으면 제거
     if (CurrentWeapon)
     {
         CurrentWeapon->Destroy();
@@ -78,12 +89,24 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
         FActorSpawnParameters Params;
         Params.Owner = GetOwner();
         Params.Instigator = OwnerCharacter;
-        AWeaponBase* NewWpn = GetWorld()->SpawnActor<AWeaponBase>(WeaponClass, FVector::ZeroVector, FRotator::ZeroRotator, Params);
+        
+        ANS_BaseMeleeWeapon* NewWpn = GetWorld()->SpawnActor<ANS_BaseMeleeWeapon>(
+            WeaponClass, FVector::ZeroVector, FRotator::ZeroRotator, Params);
+
         if (NewWpn)
         {
-            NewWpn->AttachToComponent(OwnerCharacter->GetMesh(),
-                                      FAttachmentTransformRules::SnapToTargetIncludingScale,
-                                      WeaponAttachSocketName);
+            FName AttachSocketName = TEXT("hand_rSocket");
+            if (WeaponClass->GetDefaultObject())
+            {
+                AttachSocketName = WeaponClass->GetDefaultObject<ANS_BaseMeleeWeapon>()->WeaponSocketName;
+            }
+
+            NewWpn->AttachToComponent(
+                OwnerCharacter->GetMesh(),
+                FAttachmentTransformRules::SnapToTargetIncludingScale,
+                AttachSocketName
+            );
+
             CurrentWeapon = NewWpn;
         }
     }
@@ -91,23 +114,17 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
 
 void UNS_EquipedWeaponComponent::Fire()
 {
-    if (CurrentWeapon && OwnerCharacter->HasAuthority())
-    {
-        CurrentWeapon->StartFire();
-    }
+    // if (CurrentWeapon && OwnerCharacter->HasAuthority())
+    // {
+    //     CurrentWeapon->StartFire();
+    // }
 }
 
 void UNS_EquipedWeaponComponent::Reload()
 {
-    if (CurrentWeapon && OwnerCharacter->HasAuthority())
-    {
-        CurrentWeapon->StartReload();
-    }
+    // if (CurrentWeapon && OwnerCharacter->HasAuthority())
+    // {
+    //     CurrentWeapon->StartReload();
+    // }
 }
 
-TSubclassOf<AWeaponBase> UNS_EquipedWeaponComponent::GetWeaponClassFromSlot(int32 SlotIndex) const
-{
-    // TODO: 나중에 InventoryComponent 에서 꺼내는 로직으로 대체
-    // 예시) return OwnerCharacter->GetInventory()->GetWeaponClassAtSlot(SlotIndex);
-    return nullptr;
-}
