@@ -16,7 +16,7 @@ public:
 	ANS_BaseItem();
 
 protected:
-	virtual void BeginPlay() override;
+	virtual void BeginPlay();
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Confige")
 	UDataTable* ItemsDataTable;
@@ -26,9 +26,6 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	EItemType ItemType;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
-	EWeaponType WeaponType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	FText ItemName;
@@ -51,6 +48,12 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "PickUp")
 	FInteractableData InstanceInteractableData;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
+	USkeletalMesh* ItemSkeletalMesh;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
+	USkeletalMeshComponent* ItemSkeletalcomponent;
+
 public:	
 	EItemType GetItemType() const { return ItemType; }
 	EWeaponType GetWeaponType() const { return WeaponType; }
@@ -62,6 +65,6 @@ public:
 
 	virtual void OnUseItem();
 
-	virtual void BeginFocus() override;
-	virtual void EndFocus() override;
+	virtual void BeginFocus();
+	virtual void EndFocus();
 };
