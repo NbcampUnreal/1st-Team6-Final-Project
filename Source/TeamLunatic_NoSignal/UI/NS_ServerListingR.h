@@ -3,35 +3,30 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Blueprint/UserWidget.h"
-#include "OnlineSessionSettings.h"                   
+#include "UI/NS_MasterMenuPanel.h"
 #include "NS_ServerListingR.generated.h"
 
-class UTextBlock;
 class UButton;
-class UNS_ServerBrowserR;
+class UTextBlock;
 
 UCLASS()
-class TEAMLUNATIC_NOSIGNAL_API UNS_ServerListingR : public UUserWidget
+class TEAMLUNATIC_NOSIGNAL_API UNS_ServerListingR : public UNS_MasterMenuPanel
 {
 	GENERATED_BODY()
 
 public:
-	virtual void NativeConstruct() override;
 
-	UFUNCTION()
-	void OnJoinServerButtonClicked();
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* TextBlock_ServerName;
 
-	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UTextBlock* ServerNameText;
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* TextBlock_First;
 
-	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UTextBlock* PlayerContText;
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* TextBlock_Second;
 
-	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UTextBlock* PingText;
 
-	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
+	UPROPERTY(meta = (BindWidget))
 	UButton* JoinServerButton;
-
+	
 };

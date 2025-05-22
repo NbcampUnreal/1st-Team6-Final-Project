@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "5.5",
+	"EngineAssociation": "{079CEA16-49D5-B76B-0974-448E8BA737FB}",
 	"Category": "",
 	"Description": "",
 	"Modules": [
@@ -30,10 +30,6 @@
 		},
 		{
 			"Name": "PCG",
-			"Enabled": true
-		},
-		{
-			"Name": "DaySequence",
 			"Enabled": true
 		}
 	]

@@ -12,19 +12,6 @@ UInteractionComponent::UInteractionComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
-void UInteractionComponent::UpdateInteractionWidget()
-{
-	if (IsValid(TargetInteractable.GetObject()))
-	{
-		HUD->UpdateInteractionWidget(&TargetInteractable->InteractableData);
-	}
-}
-
-void UInteractionComponent::ToggleMenu()
-{
-	HUD->ToggleMenu();
-}
-
 void UInteractionComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -175,7 +162,7 @@ void UInteractionComponent::Interact()
 
 	if (IsValid(TargetInteractable.GetObject()))
 	{
-		TargetInteractable->Interact(GetOwner());
+		TargetInteractable->Interact();
 	}
 }
 
