@@ -44,5 +44,4 @@ void ANS_SinglePlayMode::HandleGameOver(bool bPlayerSurvived)
 		UE_LOG(LogTemp, Log, TEXT("GAME OVER! Player died."));
 	}
 
-	// ���� RestartLevel() or Quit �� �߰� ����
 }
