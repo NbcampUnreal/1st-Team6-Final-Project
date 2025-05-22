@@ -7,6 +7,8 @@
 #include "Interaction/InteractionInterface.h"
 #include "NS_BaseItem.generated.h"
 
+class UInventoryComponent;
+
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_BaseItem : public AActor, public IInteractionInterface
 {
@@ -15,7 +17,8 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_BaseItem : public AActor, public IInteraction
 public:	
 	ANS_BaseItem();
 
-protected:
+	UInventoryComponent* OwingInventory;
+
 	virtual void BeginPlay() override;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Confige")
@@ -51,6 +54,36 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "PickUp")
 	FInteractableData InstanceInteractableData;
 
+	UPROPERTY(EditAnywhere, Category = "ItemData")
+	FItemNumericData NumericData;
+
+	UPROPERTY(EditAnywhere, Category = "ItemData")
+	FItemTextData TextData;
+
+	UPROPERTY(EditAnywhere, Category = "ItemData")
+	FItemAssetData AssetData;
+
+	UPROPERTY(VisibleAnywhere, Category = "ItemData", meta = (UIMin=1, UIMax=100))
+	int32 Quantity;
+
+	bool bisCopy;
+	bool bisPickup;
+
+	void ResetItemFlags();
+
+	ANS_BaseItem* CreateItemCopy();
+
+	UFUNCTION(Category = "Item")
+	FORCEINLINE float GetItemStackWeight() const { return Quantity * NumericData.Weight; };
+
+	UFUNCTION(Category = "Item")
+	FORCEINLINE float GetItemSingleWeight() const { return NumericData.Weight; };
+
+	UFUNCTION(Category = "Item")
+	FORCEINLINE bool IsFullItemStack() const { return Quantity == NumericData.MaxStack; };
+
+	UFUNCTION(Category = "Item")
+	void SetQuantity(const int32 NewQuantity);
 public:	
 	EItemType GetItemType() const { return ItemType; }
 	EWeaponType GetWeaponType() const { return WeaponType; }
@@ -64,4 +97,10 @@ public:
 
 	virtual void BeginFocus() override;
 	virtual void EndFocus() override;
+
+protected:
+	bool operator == (const FName& OtherID) const
+	{
+		return ItemDataRowName == OtherID;
+	}
 };

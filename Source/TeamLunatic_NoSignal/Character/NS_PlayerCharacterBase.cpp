@@ -206,6 +206,16 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
              );
         }
 
+        if (ToggleMenuAction)
+        {
+            EnhancedInput->BindAction(
+                ToggleMenuAction,
+                ETriggerEvent::Triggered,
+                InteractionComponent,
+                &UInteractionComponent::ToggleMenu
+            );
+        }
+
         if (InputAttackAction)
         {
             EnhancedInput->BindAction(

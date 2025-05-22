@@ -8,7 +8,7 @@
 
 DECLARE_MULTICAST_DELEGATE(FOnInventoryUpdated);
 
-class ANS_BaseWeapon;
+class ANS_BaseItem;
 
 UENUM(BlueprintType)
 enum class EItemAddResult : uint8
@@ -76,21 +76,21 @@ public:
 	UInventoryComponent();
 
 	UFUNCTION(Category = "Inventory")
-	FItemAddResult HandleAddItem(ANS_BaseWeapon* InputItem);
+	FItemAddResult HandleAddItem(ANS_BaseItem* InputItem);
 	
 	UFUNCTION(Category = "Inventory")
-	ANS_BaseWeapon* FindMatchingItem(ANS_BaseWeapon* ItemIn) const;
+	ANS_BaseItem* FindMatchingItem(ANS_BaseItem* ItemIn) const;
 	UFUNCTION(Category = "Inventory")
-	ANS_BaseWeapon* FindNextItemByID(ANS_BaseWeapon* ItemIn) const;
+	ANS_BaseItem* FindNextItemByID(ANS_BaseItem* ItemIn) const;
 	UFUNCTION(Category = "Inventory")
-	ANS_BaseWeapon* FindNextPartialStack(ANS_BaseWeapon* ItemIn) const;
+	ANS_BaseItem* FindNextPartialStack(ANS_BaseItem* ItemIn) const;
 
 	UFUNCTION(Category = "Inventory")
-	void RemoveSingleInstanceOfItem(ANS_BaseWeapon* ItemToRemove);
+	void RemoveSingleInstanceOfItem(ANS_BaseItem* ItemToRemove);
 	UFUNCTION(Category = "Inventory")
-	int32 RemoveAmountOfItem(ANS_BaseWeapon* ItemIn, int32 DesiredAmountToRemove);
+	int32 RemoveAmountOfItem(ANS_BaseItem* ItemIn, int32 DesiredAmountToRemove);
 	UFUNCTION(Category = "Inventory")
-	void SplitExistingStack(ANS_BaseWeapon* ItemIn, const int32 AmountToSplit);
+	void SplitExistingStack(ANS_BaseItem* ItemIn, const int32 AmountToSplit);
 
 	UFUNCTION(Category = "Inventory")
 	FORCEINLINE float GetInventoryTotalWeight() const { return InventoryTotalWeight; };
@@ -99,7 +99,7 @@ public:
 	UFUNCTION(Category = "Inventory")
 	FORCEINLINE int32 GetSlotsCapacity() const { return InventorySlotsCapacity; };
 	UFUNCTION(Category = "Inventory")
-	FORCEINLINE TArray<ANS_BaseWeapon*> GetInventoryContents() const { return InventoryContents; };
+	FORCEINLINE TArray<ANS_BaseItem*> GetInventoryContents() const { return InventoryContents; };
 
 	UFUNCTION(Category = "Inventory")
 	FORCEINLINE void SetSlotsCapacity(const int32 NewSlotsCapacity) { InventorySlotsCapacity = NewSlotsCapacity; };
@@ -117,12 +117,12 @@ protected:
 	float InventoryWeightCapacity;
 
 	UPROPERTY(VisibleAnywhere, Category = "Inventory")
-	TArray<TObjectPtr<ANS_BaseWeapon>> InventoryContents;
+	TArray<TObjectPtr<ANS_BaseItem>> InventoryContents;
 
-	FItemAddResult HandleNonStackableItems(ANS_BaseWeapon* InputItem, int32 RequestedAddAmount);
-	int32 HandleStackableItems(ANS_BaseWeapon* ItemIn, int32 RequestedAddAmount);
-	int32 CalculateWeightAddAmount(ANS_BaseWeapon* ItemIn, int32 RequestedAddAmount);
-	int32 CalculateNumberForFullStack(ANS_BaseWeapon* StackableItem, int32 InitialRequestedAddAmount);
+	FItemAddResult HandleNonStackableItems(ANS_BaseItem* InputItem);
+	int32 HandleStackableItems(ANS_BaseItem* ItemIn, int32 RequestedAddAmount);
+	int32 CalculateWeightAddAmount(ANS_BaseItem* ItemIn, int32 RequestedAddAmount);
+	int32 CalculateNumberForFullStack(ANS_BaseItem* StackableItem, int32 InitialRequestedAddAmount);
 
-	void AddNewItem(ANS_BaseWeapon* Item, const int32 AmountToAdd);
+	void AddNewItem(ANS_BaseItem* Item, const int32 AmountToAdd);
 };

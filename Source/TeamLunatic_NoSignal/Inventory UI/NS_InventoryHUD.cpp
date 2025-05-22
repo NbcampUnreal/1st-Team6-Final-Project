@@ -46,6 +46,26 @@ void ANS_InventoryHUD::HideMenu()
 	}
 }
 
+void ANS_InventoryHUD::ToggleMenu()
+{
+	if (bIsMenuVisible)
+	{
+		HideMenu();
+
+		const FInputModeGameOnly InputMode;
+		GetOwningPlayerController()->SetInputMode(InputMode);
+		GetOwningPlayerController()->SetShowMouseCursor(false);
+	}
+	else
+	{
+		DisplayMenu();
+
+		const FInputModeGameAndUI InputMode;
+		GetOwningPlayerController()->SetInputMode(InputMode);
+		GetOwningPlayerController()->SetShowMouseCursor(true);
+	}
+}
+
 void ANS_InventoryHUD::ShowInteractionWidget()
 {
 	if (InteractionWidget)

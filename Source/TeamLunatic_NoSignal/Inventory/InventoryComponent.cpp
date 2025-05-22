@@ -2,7 +2,7 @@
 
 
 #include "Inventory/InventoryComponent.h"
-#include "Item/NS_BaseWeapon.h"
+#include "Item/NS_BaseItem.h"
 
 
 UInventoryComponent::UInventoryComponent()
@@ -17,32 +17,32 @@ void UInventoryComponent::BeginPlay()
 
 }
 
-FItemAddResult UInventoryComponent::HandleAddItem(ANS_BaseWeapon* InputItem)
+FItemAddResult UInventoryComponent::HandleAddItem(ANS_BaseItem* InputItem)
 {
 	if (GetOwner())
 	{
 		const int32 InitialRequestedAddAmount = InputItem->Quantity;
 
-		if (!InputItem->ItemNumericData.isStackable)
+		if (!InputItem->NumericData.isStackable)
 		{
-			return HandleNonStackableItems(InputItem, InitialRequestedAddAmount);
+			return HandleNonStackableItems(InputItem);
 		}
 
 		const int32 StackableAmountAdded = HandleStackableItems(InputItem, InitialRequestedAddAmount);
 
 		if (StackableAmountAdded == InitialRequestedAddAmount)
 		{
-			return FItemAddResult::AddedAll(InitialRequestedAddAmount, FText::Format(FText::FromString("Successfully added{0} {1} to the Inventory."), InitialRequestedAddAmount, InputItem->ItemTextData.ItemName));
+			return FItemAddResult::AddedAll(InitialRequestedAddAmount, FText::Format(FText::FromString("Successfully added{0} {1} to the Inventory."), InitialRequestedAddAmount, InputItem->TextData.ItemName));
 		}
 
 		if (StackableAmountAdded < InitialRequestedAddAmount && StackableAmountAdded > 0)
 		{
-			return FItemAddResult::AddedAll(InitialRequestedAddAmount, FText::Format(FText::FromString("Partial amount of {0} added to the Inventory. Number added = {1}"), InputItem->ItemTextData.ItemName, StackableAmountAdded));
+			return FItemAddResult::AddedAll(InitialRequestedAddAmount, FText::Format(FText::FromString("Partial amount of {0} added to the Inventory. Number added = {1}"), InputItem->TextData.ItemName, StackableAmountAdded));
 		}
 
 		if (StackableAmountAdded <= 0)
 		{
-			return FItemAddResult::AddedAll(InitialRequestedAddAmount, FText::Format(FText::FromString("Could not add{0} to the Inventory. No remaining Inventory slots, or invalid Item."), InputItem->ItemTextData.ItemName));
+			return FItemAddResult::AddedAll(InitialRequestedAddAmount, FText::Format(FText::FromString("Could not add{0} to the Inventory. No remaining Inventory slots, or invalid Item."), InputItem->TextData.ItemName));
 		}
 	}
 
@@ -50,7 +50,7 @@ FItemAddResult UInventoryComponent::HandleAddItem(ANS_BaseWeapon* InputItem)
 	return FItemAddResult::AddedNone(FText::FromString("TryAddItem fallthrough error. GetOwner() check somehow failed."));
 }
 
-ANS_BaseWeapon* UInventoryComponent::FindMatchingItem(ANS_BaseWeapon* ItemIn) const
+ANS_BaseItem* UInventoryComponent::FindMatchingItem(ANS_BaseItem* ItemIn) const
 {
 	if (ItemIn)
 	{
@@ -62,11 +62,11 @@ ANS_BaseWeapon* UInventoryComponent::FindMatchingItem(ANS_BaseWeapon* ItemIn) co
 	return nullptr;
 }
 
-ANS_BaseWeapon* UInventoryComponent::FindNextItemByID(ANS_BaseWeapon* ItemIn) const
+ANS_BaseItem* UInventoryComponent::FindNextItemByID(ANS_BaseItem* ItemIn) const
 {
 	if (ItemIn)
 	{
-		if (const TArray<TObjectPtr<ANS_BaseWeapon>>::ElementType* Result = InventoryContents.FindByKey(ItemIn))
+		if (const TArray<TObjectPtr<ANS_BaseItem>>::ElementType* Result = InventoryContents.FindByKey(ItemIn))
 		{
 			return *Result;
 		}
@@ -74,11 +74,11 @@ ANS_BaseWeapon* UInventoryComponent::FindNextItemByID(ANS_BaseWeapon* ItemIn) co
 	return nullptr;
 }
 
-ANS_BaseWeapon* UInventoryComponent::FindNextPartialStack(ANS_BaseWeapon* ItemIn) const
+ANS_BaseItem* UInventoryComponent::FindNextPartialStack(ANS_BaseItem* ItemIn) const
 {
-	if (const TArray<TObjectPtr<ANS_BaseWeapon>>::ElementType* Result = InventoryContents.FindByPredicate([&ItemIn](const ANS_BaseWeapon* InventoryItem)
+	if (const TArray<TObjectPtr<ANS_BaseItem>>::ElementType* Result = InventoryContents.FindByPredicate([&ItemIn](const ANS_BaseItem* InventoryItem)
 		{
-			return InventoryItem->WeaponDataRowName == ItemIn->WeaponDataRowName && !InventoryItem->IsFullItemStack();
+			return InventoryItem->ItemDataRowName == ItemIn->ItemDataRowName && !InventoryItem->IsFullItemStack();
 		}
 	))
 	{
@@ -88,13 +88,13 @@ ANS_BaseWeapon* UInventoryComponent::FindNextPartialStack(ANS_BaseWeapon* ItemIn
 	return nullptr;
 }
 
-void UInventoryComponent::RemoveSingleInstanceOfItem(ANS_BaseWeapon* ItemToRemove)
+void UInventoryComponent::RemoveSingleInstanceOfItem(ANS_BaseItem* ItemToRemove)
 {
 	InventoryContents.RemoveSingle(ItemToRemove);
 	OnInventoryUpdated.Broadcast();
 }
 
-int32 UInventoryComponent::RemoveAmountOfItem(ANS_BaseWeapon* ItemIn, int32 DesiredAmountToRemove)
+int32 UInventoryComponent::RemoveAmountOfItem(ANS_BaseItem* ItemIn, int32 DesiredAmountToRemove)
 {
 	const int32 ActualAmountToRemove = FMath::Min(DesiredAmountToRemove, ItemIn->Quantity);
 
@@ -107,7 +107,7 @@ int32 UInventoryComponent::RemoveAmountOfItem(ANS_BaseWeapon* ItemIn, int32 Desi
 	return ActualAmountToRemove;
 }
 
-void UInventoryComponent::SplitExistingStack(ANS_BaseWeapon* ItemIn, const int32 AmountToSplit)
+void UInventoryComponent::SplitExistingStack(ANS_BaseItem* ItemIn, const int32 AmountToSplit)
 {
 	if (!(InventoryContents.Num() + 1 > InventorySlotsCapacity))
 	{
@@ -116,33 +116,33 @@ void UInventoryComponent::SplitExistingStack(ANS_BaseWeapon* ItemIn, const int32
 	}
 }
 
-FItemAddResult UInventoryComponent::HandleNonStackableItems(ANS_BaseWeapon* InputItem, int32 RequestedAddAmount)
+FItemAddResult UInventoryComponent::HandleNonStackableItems(ANS_BaseItem* InputItem)
 {
 	if (FMath::IsNearlyZero(InputItem->GetItemSingleWeight()) || InputItem->GetItemSingleWeight() < 0)
 	{
-		return FItemAddResult::AddedNone(FText::Format(FText::FromString("Could not add{0} to the Inventory. Item has invalid weight value."), InputItem->ItemTextData.ItemName));
+		return FItemAddResult::AddedNone(FText::Format(FText::FromString("Could not add{0} to the Inventory. Item has invalid weight value."), InputItem->TextData.ItemName));
 	}
 
 	if (InventoryTotalWeight + InputItem->GetItemSingleWeight() > GetWeightCapacity())
 	{
-		return FItemAddResult::AddedNone(FText::Format(FText::FromString("Could not add{0} to the Inventory. Item would overflow weight limit."), InputItem->ItemTextData.ItemName));
+		return FItemAddResult::AddedNone(FText::Format(FText::FromString("Could not add{0} to the Inventory. Item would overflow weight limit."), InputItem->TextData.ItemName));
 	}
 
 	if (InventoryContents.Num() + 1 > InventorySlotsCapacity)
 	{
-		return FItemAddResult::AddedNone(FText::Format(FText::FromString("Could not add{0} to the Inventory. All Inventory slots are full."), InputItem->ItemTextData.ItemName));
+		return FItemAddResult::AddedNone(FText::Format(FText::FromString("Could not add{0} to the Inventory. All Inventory slots are full."), InputItem->TextData.ItemName));
 	}
 
-	AddNewItem(InputItem, RequestedAddAmount);
-	return FItemAddResult::AddedAll(RequestedAddAmount, FText::Format(FText::FromString("Successfully added{0} {1} to the Inventory."), RequestedAddAmount, InputItem->ItemTextData.ItemName));
+	AddNewItem(InputItem, 1);
+	return FItemAddResult::AddedAll(1, FText::Format(FText::FromString("Successfully added a single {0} to the Inventory."), InputItem->TextData.ItemName));
 }
 
-int32 UInventoryComponent::HandleStackableItems(ANS_BaseWeapon* ItemIn, int32 RequestedAddAmount)
+int32 UInventoryComponent::HandleStackableItems(ANS_BaseItem* ItemIn, int32 RequestedAddAmount)
 {
 	return int32();
 }
 
-int32 UInventoryComponent::CalculateWeightAddAmount(ANS_BaseWeapon* ItemIn, int32 RequestedAddAmount)
+int32 UInventoryComponent::CalculateWeightAddAmount(ANS_BaseItem* ItemIn, int32 RequestedAddAmount)
 {
 	const int32 WeightMaxAddAmount = FMath::FloorToInt((GetWeightCapacity() - InventoryTotalWeight) / ItemIn->GetItemSingleWeight());
 	if (WeightMaxAddAmount >= RequestedAddAmount)
@@ -152,16 +152,16 @@ int32 UInventoryComponent::CalculateWeightAddAmount(ANS_BaseWeapon* ItemIn, int3
 	return WeightMaxAddAmount;
 }
 
-int32 UInventoryComponent::CalculateNumberForFullStack(ANS_BaseWeapon* StackableItem, int32 InitialRequestedAddAmount)
+int32 UInventoryComponent::CalculateNumberForFullStack(ANS_BaseItem* StackableItem, int32 InitialRequestedAddAmount)
 {
-	const int32 AddAmountToMakeFullStack = StackableItem->ItemNumericData.MaxStack - StackableItem->Quantity;
+	const int32 AddAmountToMakeFullStack = StackableItem->NumericData.MaxStack - StackableItem->Quantity;
 
 	return FMath::Min(InitialRequestedAddAmount, AddAmountToMakeFullStack);
 }
 
-void UInventoryComponent::AddNewItem(ANS_BaseWeapon* Item, const int32 AmountToAdd)
+void UInventoryComponent::AddNewItem(ANS_BaseItem* Item, const int32 AmountToAdd)
 {
-	ANS_BaseWeapon* NewItem;
+	ANS_BaseItem* NewItem;
 
 	if (Item->bisCopy || Item->bisPickup)
 	{

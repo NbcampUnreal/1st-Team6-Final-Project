@@ -20,6 +20,11 @@ void UInteractionComponent::UpdateInteractionWidget()
 	}
 }
 
+void UInteractionComponent::ToggleMenu()
+{
+	HUD->ToggleMenu();
+}
+
 void UInteractionComponent::BeginPlay()
 {
 	Super::BeginPlay();

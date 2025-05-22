@@ -138,6 +138,10 @@ public:
 	UInputAction* InputAimingAction;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputReloadAction;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* InteractAction;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* ToggleMenuAction;
 	
 	// 이동 입력 잠금 제어 함수 
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category="Input")

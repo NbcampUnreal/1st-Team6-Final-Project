@@ -28,6 +28,7 @@ public:
 
 	void DisplayMenu();
 	void HideMenu();
+	void ToggleMenu();
 
 	void ShowInteractionWidget();
 	void HideInteractionWidget();

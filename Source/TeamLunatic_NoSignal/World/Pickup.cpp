@@ -4,7 +4,7 @@
 #include "World/Pickup.h"
 #include "Engine/DataTable.h"
 #include "Item/NS_ItemDataStruct.h"
-#include "Item/NS_BaseWeapon.h"
+#include "Item/NS_BaseItem.h"
 #include "Inventory/InventoryComponent.h"
 #include "Character/NS_PlayerCharacterBase.h"
 
@@ -22,21 +22,21 @@ void APickup::BeginPlay()
 {
 	Super::BeginPlay();
 
-	InitializePickup(ANS_BaseWeapon:: StaticClass(), ItemQuantity);
+	InitializePickup(ANS_BaseItem:: StaticClass(), ItemQuantity);
 }
 
-void APickup::InitializePickup(const TSubclassOf<ANS_BaseWeapon> BaseClass, const int32 InQuantity)
+void APickup::InitializePickup(const TSubclassOf<ANS_BaseItem> BaseClass, const int32 InQuantity)
 {
 	if (ItemDataTable && !DesiredItemID.IsNone())
 	{
 		const FNS_ItemDataStruct* ItemData = ItemDataTable->FindRow<FNS_ItemDataStruct>(DesiredItemID, DesiredItemID.ToString());
 
-		ItemReference = NewObject<ANS_BaseWeapon>(this, BaseClass);
+		ItemReference = NewObject<ANS_BaseItem>(this, BaseClass);
 
-		ItemReference->WeaponType = ItemData->WeaponType;
-		ItemReference->ItemTextData = ItemData->ItemTextData;
-		ItemReference->ItemNumericData = ItemData->ItemNumericData;
-		ItemReference->ItemAssetData = ItemData->ItemAssetData;
+		ItemReference->ItemType = ItemData->ItemType;
+		ItemReference->TextData = ItemData->ItemTextData;
+		ItemReference->NumericData = ItemData->ItemNumericData;
+		ItemReference->AssetData = ItemData->ItemAssetData;
 
 		InQuantity <= 0 ? ItemReference->SetQuantity(1) : ItemReference->SetQuantity(InQuantity);
 
@@ -46,12 +46,12 @@ void APickup::InitializePickup(const TSubclassOf<ANS_BaseWeapon> BaseClass, cons
 	}
 }
 
-void APickup::InitializeDrop(ANS_BaseWeapon* ItemToDrop, const int32 InQuantity)
+void APickup::InitializeDrop(ANS_BaseItem* ItemToDrop, const int32 InQuantity)
 {
 	ItemReference = ItemToDrop;
 	InQuantity <= 0 ? ItemReference->SetQuantity(1) : ItemReference->SetQuantity(InQuantity);
-	ItemReference->ItemNumericData.Weight = ItemToDrop->GetItemSingleWeight();
-	PickupMesh->SetStaticMesh(ItemToDrop->ItemAssetData.StaticMesh);
+	ItemReference->NumericData.Weight = ItemToDrop->GetItemSingleWeight();
+	PickupMesh->SetStaticMesh(ItemToDrop->AssetData.StaticMesh);
 
 	UpdateInteractableData();
 }
@@ -59,8 +59,8 @@ void APickup::InitializeDrop(ANS_BaseWeapon* ItemToDrop, const int32 InQuantity)
 void APickup::UpdateInteractableData()
 {
 	InstanceInteractableData.InteractableType = EInteractableType::Pickup;
-	InstanceInteractableData.Action = ItemReference->ItemTextData.InteractionText;
-	InstanceInteractableData.Name = ItemReference->ItemTextData.ItemName;
+	InstanceInteractableData.Action = ItemReference->TextData.InteractionText;
+	InstanceInteractableData.Name = ItemReference->TextData.ItemName;
 	InstanceInteractableData.Quantity = ItemReference->Quantity;
 	InteractableData = InstanceInteractableData;
 }

@@ -8,7 +8,7 @@
 #include "Pickup.generated.h"
 
 class UDataTable;
-class ANS_BaseWeapon;
+class ANS_BaseItem;
 class ANS_PlayerCharacterBase;
 
 UCLASS()
@@ -19,10 +19,10 @@ class TEAMLUNATIC_NOSIGNAL_API APickup : public AActor, public IInteractionInter
 public:	
 	APickup();
 
-	void InitializePickup(const TSubclassOf<ANS_BaseWeapon> BaseClass, const int32 InQuantity);
-	void InitializeDrop(ANS_BaseWeapon* ItemToDrop, const int32 InQuantity);
+	void InitializePickup(const TSubclassOf<ANS_BaseItem> BaseClass, const int32 InQuantity);
+	void InitializeDrop(ANS_BaseItem* ItemToDrop, const int32 InQuantity);
 
-	FORCEINLINE ANS_BaseWeapon* GetItemData() { return ItemReference; };
+	FORCEINLINE ANS_BaseItem* GetItemData() { return ItemReference; };
 
 	virtual void BeginFocus() override;
 	virtual void EndFocus() override;
@@ -37,7 +37,7 @@ protected:
 	FName DesiredItemID;
 	
 	UPROPERTY(VisibleAnywhere, Category = "Pickup | ItemReference")
-	ANS_BaseWeapon* ItemReference;
+	ANS_BaseItem* ItemReference;
 	
 	UPROPERTY(EditInstanceOnly, Category = "Pickup | ItemInitialization")
 	int32 ItemQuantity;
