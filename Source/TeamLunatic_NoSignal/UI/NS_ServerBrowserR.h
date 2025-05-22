@@ -4,6 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "UI/NS_MasterMenuPanel.h"
+#include "Blueprint/UserWidget.h"
+#include "Interfaces/OnlineSessionInterface.h"
+#include "OnlineSessionSettings.h"
 #include "NS_ServerBrowserR.generated.h"
 
 class UButton;
@@ -22,7 +25,22 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_ServerBrowserR : public UNS_MasterMenuPanel
 public:
     virtual void NativeConstruct() override;
 
+    UFUNCTION()
+    void OnRefreshButtonClicked();
+
+    UFUNCTION()
+    void OnUseLANCheckChanged(bool bIsChecked);
+
+    void RefreshServerList();
+
 protected:
+
+    void HandleFindSessionsComplete(bool bWasSuccessful);
+
+    void AddServerEntry(const FOnlineSessionSearchResult& SessionResult);
+
+protected:
+    TSharedPtr<FOnlineSessionSearch> SessionSearch;
 
     UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
     UBorder* Backround;
@@ -32,9 +50,6 @@ protected:
 
     UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
     UTextBlock * Title;
-
- /*   UPROPERTY(meta = (BindWidget))
-    UTextBlock* MyTextBlock;*/
 
     UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
     UImage* PlayerArrow;
@@ -47,28 +62,15 @@ protected:
     UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
     UCircularThrobber* CircularThrobber_Image;
 
-    UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-    UNS_ServerListingR* BP_ServerListing_v1_ServerName0;
-    UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-    UNS_ServerListingR* BP_ServerListing_v1_ServerName1;
-    UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-    UNS_ServerListingR* BP_ServerListing_v1_ServerName2;
-    UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-    UNS_ServerListingR* BP_ServerListing_v1_ServerName3;
-    UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-    UNS_ServerListingR* BP_ServerListing_v1_ServerName4;
-    UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-    UNS_ServerListingR* BP_ServerListing_v1_ServerName5;
-    UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-    UNS_ServerListingR* BP_ServerListing_v1_ServerName6;
-    UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-    UNS_ServerListingR* BP_ServerListing_v1_ServerName7;
-    UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-    UNS_ServerListingR* BP_ServerListing_v1_ServerName8;
+    //UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
+   // UNS_ServerListingR* BP_ServerListing_v1_ServerName;
 
     UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
     UButton* RefreshButton;
 
     UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
     UCheckBox* CheckBox_UseLAN;
+
+    bool bUseLAN = false;
+
 };
