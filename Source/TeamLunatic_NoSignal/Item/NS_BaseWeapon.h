@@ -1,103 +1,56 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "NS_ItemDataStruct.h"
-#include "Engine/DataTable.h"
+#include "Item/NS_BaseItem.h"
 #include "NS_BaseWeapon.generated.h"
 
-class ANS_PlayerCharacterBase;
-class UInventoryComponent;
+class USphereComponent;
+class UBoxComponent;
+class UCapsuleComponent;
 
 UCLASS()
-class TEAMLUNATIC_NOSIGNAL_API ANS_BaseWeapon : public AActor
+class TEAMLUNATIC_NOSIGNAL_API ANS_BaseWeapon : public ANS_BaseItem
 {
 	GENERATED_BODY()
 	
-public:	
+public:
 	ANS_BaseWeapon();
 
-	UPROPERTY()
-	UInventoryComponent* OwingInventory;
-
-	virtual void Attack();
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Equipcheck")
-	bool isequip;
-
+protected:
 	virtual void BeginPlay() override;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config")
-	UDataTable* ItemsDataTable;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config")
-	FName WeaponDataRowName;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
-	EWeaponType WeaponType;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
-	int32 Weapondamage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	float Durability;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	float Current_Durability;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
-	USoundBase* EquipSound = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
-	USoundBase* UnEquipSound = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	USoundBase* AttackSound = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
-	UStaticMesh* StaticMesh;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
+	USoundBase* EquipSound = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
-	USkeletalMesh* SkeletalMesh;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
+	USoundBase* UnEquipSound = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
-	FName AttachSocketName;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
+	USphereComponent* SphereComponent;
 
-	UPROPERTY(EditAnywhere, Category = "WeaponData")
-	FItemTextData ItemTextData;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
+	UBoxComponent* BoxComponent;
 
-	UPROPERTY(EditAnywhere, Category = "WeaponData")
-	FItemNumericData ItemNumericData;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
+	UCapsuleComponent* CapsuleComponent;
 
-	UPROPERTY(EditAnywhere, Category = "WeaponData")
-	FItemAssetData ItemAssetData;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|HitDetection")
+	bool bUseBoxComponent;
 
-	UFUNCTION(Category = "WeaponData")
-	FORCEINLINE float GetItemStackWeight() const { return Quantity * ItemNumericData.Weight; };
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|HitDetection")
+	bool bUseSphereComponent;
 
-	UFUNCTION(Category = "WeaponData")
-	FORCEINLINE float GetItemSingleWeight() const { return ItemNumericData.Weight; };
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|HitDetection")
+	bool bUseCapsuleComponent;
 
-	UFUNCTION(BlueprintCallable, Category = "WeaponData")
-	void SetQuantity(int32 NewQuantity);
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
-	int32 Quantity;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
-	//UStaticMeshComponent* 
-
-	UFUNCTION(Category = "Inventory")
-	FORCEINLINE bool IsFullItemStack() const { return Quantity == ItemNumericData.MaxStack; };
-
-	bool bisCopy;
-	bool bisPickup;
-
-	void ResetItemFlags();
-
-	ANS_BaseWeapon* CreateItemCopy() const;
-protected:
-	bool operator==(const FName& OtherID) const
-	{
-		return this->WeaponDataRowName == OtherID;
-	}
+public:
 };

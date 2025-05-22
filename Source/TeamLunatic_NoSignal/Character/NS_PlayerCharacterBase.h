@@ -5,6 +5,7 @@
 #include "InputActionValue.h"
 #include "Character/Components/NS_StatusComponent.h"
 #include "Interaction/Component/InteractionComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "NS_PlayerCharacterBase.generated.h"
 
 class UInputMappingContext;
@@ -32,7 +33,6 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	// 피격
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
-	void OnDeath();
 
 public:
 	// 카메라를 붙일 소켓 이름 [에디터에서 변경 가능함] 
@@ -70,7 +70,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float CharacterTurnSpeed = 5.0f;
 	
-	
 	// ========== 이동 관련 =============
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float DefaultWalkSpeed;
@@ -80,6 +79,13 @@ public:
 	bool IsCanJump = true;
 
 	/////////////////////////////// 리플리케이션용 변수들////////////////////////////////
+	// 캐릭터가 바라보고있는 좌/우 값
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Replicated Variables")
+	float CamYaw;
+	// 캐릭터가 바라보고있는 상/하 값
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Replicated Variables")
+	float CamPitch;
+	
 	// 달리고있는 상태인지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsSprint = false;
@@ -92,8 +98,18 @@ public:
 	// 아이템을 줍고있는지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsPickUp = false;
+	// 차후에 지워야함
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	int32 IsChange = 0;
+	// 캐릭터가 맞고있는지 확인 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool IsHit = false;
+	// 조준중인지 확인 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool IsAiming = false;
+	// 장전중인지 확인 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool IsReload = false;
 	//////////////////////////////////////////////////////////////////////////////////////
 	
 	
@@ -119,7 +135,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputPickUpAction;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-	UInputAction* InteractAction;
+	UInputAction* InputAimingAction;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* InputReloadAction;
 	
 	// 이동 입력 잠금 제어 함수 
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category="Input")
@@ -131,7 +149,7 @@ public:
 	//////////////CharacterMovmentComponent를 사용함////////////////
 	// 이동
 	void MoveAction(const FInputActionValue& Value);
-	// 마우스 카메라 
+	// 마우스 카메라
 	void LookAction(const FInputActionValue& Value);
 	// 점프
 	void JumpAction(const FInputActionValue& Value);
@@ -143,30 +161,41 @@ public:
 	// 달리기
 	UFUNCTION(server, Reliable)
 	void StartSprint_Server(const FInputActionValue& Value);
-	UFUNCTION(NetMulticast, Reliable)
-	void StartSprint_Multicast();
-
 	UFUNCTION(Server, Reliable)
 	void StopSprint_Server(const FInputActionValue& Value);
-	UFUNCTION(NetMulticast, Reliable)
-	void StopSprint_Multicast();
-
+	
 	// 발차기
 	UFUNCTION(Server, Reliable)
 	void KickAction_Server(const FInputActionValue& Value);
-	UFUNCTION(NetMulticast, Reliable)
-	void KickAction_Multicast();
 
 	// 공격
 	UFUNCTION(Server, Reliable)
-	void AttackAction_Server(const FInputActionValue& Value);
-	UFUNCTION(NetMulticast, Reliable)
-	void AttackAction_Multicast();
+	void StartAttackAction_Server(const FInputActionValue& Value);
+	UFUNCTION(Server, Reliable)
+	void StopAttackAction_Server(const FInputActionValue& Value);
 
 	// 아이템 줍기
 	UFUNCTION(Server, Reliable)
 	void PickUpAction_Server(const FInputActionValue& Value);
-	UFUNCTION(NetMulticast, Reliable)
-	void PickUpAction_Multicast();
+
+	// 조준 
+	UFUNCTION(Server, Reliable)
+	void StartAimingAction_Server(const FInputActionValue& Value);
+	UFUNCTION(Server, Reliable)
+	void StopAimingAction_Server(const FInputActionValue& Value);
+
+	// 재장전
+	UFUNCTION(Server, Reliable)
+	void ReloadAction_Server(const FInputActionValue& Value);
 	//////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
+	
+	// 캐릭터 죽는 애니메이션 멀티캐스트
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void PlayDeath_Server();
+	UFUNCTION(BlueprintCallable, NetMulticast, Reliable)
+	void PlayDeath_Multicast();
+
+	// 카메라 Yaw값, Pitch값 서버로 전송
+	UFUNCTION(Server, Unreliable)
+	void UpdateAim_Server(float NewAimYaw, float NewAimPitch);
 };
