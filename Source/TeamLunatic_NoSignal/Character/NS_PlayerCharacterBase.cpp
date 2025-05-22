@@ -206,10 +206,10 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                &ANS_PlayerCharacterBase::StopAttackAction_Server);
         }
 
-        if (InputPickUpAction)
+        if (InteractAction)
         {
             EnhancedInput->BindAction(
-            InputPickUpAction,
+            InteractAction,
              ETriggerEvent::Triggered,
               this,
                &ANS_PlayerCharacterBase::PickUpAction_Server);
