@@ -98,7 +98,7 @@ public:
 	// 아이템을 줍고있는지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsPickUp = false;
-	// 차후에 지워야함
+	// ---------------------------------------차후에 지워야함
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	int32 IsChange = 0;
 	// 캐릭터가 맞고있는지 확인 변수
@@ -200,6 +200,6 @@ public:
 	void PlayDeath_Multicast();
 
 	// 카메라 Yaw값, Pitch값 서버로 전송
-	UFUNCTION(Server, Unreliable)
+	UFUNCTION(Server, Reliable)
 	void UpdateAim_Server(float NewAimYaw, float NewAimPitch);
 };

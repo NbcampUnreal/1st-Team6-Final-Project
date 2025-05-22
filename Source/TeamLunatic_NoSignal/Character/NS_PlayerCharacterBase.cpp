@@ -1,5 +1,5 @@
 #include "Character/NS_PlayerCharacterBase.h"
-#include "Character/Debug/NS_DebugStatusWidget.h"  // 디버그용 차후 삭제 가능
+#include "Character/Debug/NS_DebugStatusWidget.h"  // 디버그용 차후 삭제
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
@@ -91,30 +91,6 @@ void ANS_PlayerCharacterBase::Tick(float DeltaTime)
         const FRotator NewRot = FMath::RInterpTo(Current, Desired, DeltaTime, CharacterTurnSpeed);
         // 계산된 NewRot값을 캐릭터에 실제로 적용시켜 회전
         SetActorRotation(NewRot);
-    }
-
-    // 로컬 컨트롤러인 경우 Aim값을 전송
-    if (IsLocallyControlled() && Controller)
-    {
-        // 현재 컨트롤러 축 회전 가져와서
-        const FRotator ControlRot = Controller->GetControlRotation();
-        // 캐릭터 몸체를 기준으로 Yaw와 Pitch값을 한번더 -90 ~ 90까지 제한을 둠
-        // ----------- 2중으로 안전한게 최대각도를 막아둔거라서 ClampAngle로 최대각도 지정부분은 제거해도 이상없을것같긴한데 우선 넣어 둠----------
-        const float NewCamYaw   = FMath::ClampAngle(ControlRot.Yaw - GetActorRotation().Yaw,-90.f, 90.f);
-        const float NewCamPitch = FMath::ClampAngle(ControlRot.Pitch,-90.f, 90.f);
-
-        // 서버라면
-        if (HasAuthority())
-        {
-            // 서버라면 Yaw값과 Pitch값을 저장
-            CamYaw   = NewCamYaw;
-            CamPitch = NewCamPitch;
-        }
-        else // 서버가 아니면
-        {
-            // 클라이언트면 서버에 전송
-            UpdateAim_Server(NewCamYaw, NewCamPitch);
-        }
     }
 }
 
@@ -347,21 +323,26 @@ void ANS_PlayerCharacterBase::MoveAction(const FInputActionValue& Value)
 void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
 {
     FVector2D LookInput = Value.Get<FVector2D>();
-
+    
     // 상/하 회전
     AddControllerPitchInput(LookInput.Y);
-
+    
     // 좌/우 회전
     FRotator ControlRot = Controller->GetControlRotation();
     float ActorYaw = GetActorRotation().Yaw;
     float NewYaw = ControlRot.Yaw + LookInput.X;
-
+    
     // 좌/우(Yaw값) 각도 제한 -90 ~ +90까지 허용
     float RelativeYaw = FMath::ClampAngle(NewYaw - ActorYaw, -90.f, 90.f);
     ControlRot.Yaw = ActorYaw + RelativeYaw;
-
+    
     // 컨트롤러 회전에 반영하여 카메라와 캐릭터 조준 축 업데이트 ------------- (자세한 원리 부가 설명 필요)
     Controller->SetControlRotation(ControlRot);
+
+    const float NewCamYaw   = RelativeYaw;      
+    const float NewCamPitch = FMath::ClampAngle( ControlRot.Pitch, -90.f, 90.f);
+
+    UpdateAim_Server(NewCamYaw, NewCamPitch);
 }
 
 void ANS_PlayerCharacterBase::JumpAction(const FInputActionValue& Value)
