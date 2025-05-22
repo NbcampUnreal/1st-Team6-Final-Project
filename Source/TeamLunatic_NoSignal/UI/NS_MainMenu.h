@@ -19,6 +19,7 @@ public:
 
 public:
 
+
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* ShowR;
 
