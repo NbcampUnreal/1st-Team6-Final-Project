@@ -69,21 +69,3 @@ void ANS_AIController::InitializingHearingConfig()
 		HearingConfig->DetectionByAffiliation.bDetectFriendlies = false;
 	}
 }
-
-void ANS_AIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulus)
-{
-	if (Stimulus.WasSuccessfullySensed())
-	{
-		AActor* CloseActor = nullptr;
-		float Distance = TNumericLimits<float>::Max();
-		if (Actor->ActorHasTag(TEXT("Player")))
-		{
-			GetBlackboardComponent()->SetValueAsObject("TargetActor", Actor);
-		}
-	}
-	else
-	{
-		GetBlackboardComponent()->ClearValue("TargetActor");
-		BlackboardComp->SetValueAsVector("LastSeenLocation", Stimulus.StimulusLocation);
-	}
-}

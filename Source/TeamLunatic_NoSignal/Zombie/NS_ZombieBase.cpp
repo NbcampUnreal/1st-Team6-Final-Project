@@ -8,7 +8,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 
-ANS_ZombieBase::ANS_ZombieBase() : CurrentState(Enum_ZombieState::PATROLL), MaxHealth(100.f), CurrentHealth(MaxHealth)
+ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), CurrentState(Enum_ZombieState::PATROLL)
 {
 	PrimaryActorTick.bCanEverTick = true;
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> ManequineAsset(TEXT("/Game/YI_ModularZombies/Demo/Characters/Mannequins/Meshes/SKM_Manny"));
