@@ -5,10 +5,10 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Zombie/AIController/NS_AIController.h"
 
-UNS_BTTask_LookPlayer::UNS_BTTask_LookPlayer()
-{
-	
-}
+
+UNS_BTTask_LookPlayer::UNS_BTTask_LookPlayer() : TargetRotation(0.f) {}
+
+
 
 EBTNodeResult::Type UNS_BTTask_LookPlayer::ExecuteTask(UBehaviorTreeComponent& Comp, uint8* NodeMemory)
 {
@@ -30,7 +30,6 @@ EBTNodeResult::Type UNS_BTTask_LookPlayer::ExecuteTask(UBehaviorTreeComponent& C
 
 void UNS_BTTask_LookPlayer::TickTask(UBehaviorTreeComponent& Comp, uint8* NodeMemory, float DeltaSeconds)
 {
-	Super::TickTask(Comp, NodeMemory, DeltaSeconds);
 	ANS_AIController* AIController = Cast<ANS_AIController>(Comp.GetAIOwner());
 	APawn* Pawn = AIController->GetPawn();
 	if (!AIController||!Pawn) return;
@@ -39,7 +38,7 @@ void UNS_BTTask_LookPlayer::TickTask(UBehaviorTreeComponent& Comp, uint8* NodeMe
 	FRotator NewRotation = FMath::RInterpTo(CurrentRotation, TargetRotation, DeltaSeconds, 2.f);
 
 	Pawn->SetActorRotation(NewRotation);
-
+	Comp.GetBlackboardComponent()->SetValueAsFloat("PlayerRotation",NewRotation.Yaw-TargetRotation.Yaw);
 	float DiffYaw = FMath::Abs(FRotator::NormalizeAxis(NewRotation.Yaw-TargetRotation.Yaw));
 	if (DiffYaw < 2.f)
 	{
