@@ -68,8 +68,8 @@ void UNS_EquipedWeaponComponent::ServerEquipWeapon_Implementation(TSubclassOf<AN
 void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf<ANS_BaseMeleeWeapon> WeaponClass)
 {
     // 서버 쪽은 이미 처리했으므로 클라이언트만 동작
-    if (GetOwner()->HasAuthority())
-        return;
+    // if (GetOwner()->HasAuthority())
+    //     return;
 
     // 기존에 무기가 장착되어있으면 제거
     if (CurrentWeapon)
