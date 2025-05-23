@@ -1,5 +1,4 @@
 #include "Item/NS_BaseWeapon.h"
-#include "Inventory/InventoryComponent.h"
 
 ANS_BaseWeapon::ANS_BaseWeapon()
 {
@@ -20,5 +19,6 @@ void ANS_BaseWeapon::BeginPlay()
 		Current_Durability = Durability;
 	}
 }
+
 
 

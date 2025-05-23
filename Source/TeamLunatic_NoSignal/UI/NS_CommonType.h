@@ -6,15 +6,6 @@
 #include "NS_CommonType.generated.h"
 
 UENUM(BlueprintType)
-enum class ENewGameState : uint8
-{
-    
-    CreateSaveMetaDataSlot ,
-    OverwriteSaveMetaDataSlot
-
-};
-
-UENUM(BlueprintType)
 enum class EWidgetToggleType : uint8
 {
     MainMenu,
@@ -29,14 +20,11 @@ enum class EWidgetToggleType : uint8
     Back,
     ServerBrowser,
     HostServer,
-	HostNewGame,
-	HostLoadGame,
     Disconnect,
     Resume,
     NewGame,
     LoadGame,
     SaveGame,
-	AreYouSureMenu,
     None,
     //LoadingGame
 };
@@ -72,57 +60,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scaler")
     float Value;
 };
-//------------------------------------------------------------------------------------------------------
 
-USTRUCT(BlueprintType)
-struct FSaveMetaData
-{
-    GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadWrite)
-    FString SaveGameSlotName;
 
-     UPROPERTY(BlueprintReadWrite)
-     FString LevelName;
-
-    UPROPERTY(BlueprintReadWrite)
-    FString SaveDate;
-
-    UPROPERTY(BlueprintReadWrite)
-    FDateTime SaveTime;
-    //UPROPERTY(BlueprintReadWrite)
-    //FString SaveTime;
-
-   /*  UPROPERTY(BlueprintReadWrite)
-     FDateTime SaveTime;*/
-};
-
-USTRUCT(BlueprintType)
-struct FPlayerSaveData
-{
-    GENERATED_BODY()
-
-    UPROPERTY(BlueprintReadWrite)
-    FString PlayerName;
-
-    UPROPERTY(BlueprintReadWrite)
-    float Health;
-
-    UPROPERTY(BlueprintReadWrite)
-    FVector SavePosition;
-};
-
-USTRUCT(BlueprintType)
-struct FLevelSaveData
-{
-    GENERATED_BODY()
-
-    UPROPERTY(BlueprintReadWrite)
-    FString LevelName;
-
-    UPROPERTY(BlueprintReadWrite)
-	FVector TempClearKeyItemPosition; // 예시로 추가한 키 아이템 위치
-};
 
 
 //class TEAMLUNATIC_NOSIGNAL_API NS_CommonType

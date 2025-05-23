@@ -13,7 +13,5 @@ public class TeamLunatic_NoSignal : ModuleRules
     "Sockets",
     "Networking"});
         PublicIncludePaths.AddRange(new string[] { "TeamLunatic_NoSignal" });
-        PublicIncludePaths.AddRange(new string[] {"Source/TeamLunatic_NoSignal"});
-
     }
 }

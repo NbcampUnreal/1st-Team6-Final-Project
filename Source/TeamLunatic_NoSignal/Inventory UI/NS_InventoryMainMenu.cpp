@@ -2,7 +2,6 @@
 
 
 #include "Inventory UI/NS_InventoryMainMenu.h"
-#include "Character/NS_PlayerCharacterBase.h"
 
 void UNS_InventoryMainMenu::NativeOnInitialized()
 {
