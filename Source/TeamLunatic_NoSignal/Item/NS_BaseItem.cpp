@@ -23,7 +23,7 @@ void ANS_BaseItem::BeginPlay()
 	{
 		ItemType = ItemData->ItemType;
 		ItemName = ItemData->ItemTextData.ItemName;
-		NumericData = ItemData->ItemNumericData;
+		Weight = ItemData->ItemNumericData.Weight;
 		GetItemSound = ItemData->ItemAssetData.UseSound;
 		ItemMesh = ItemData->ItemAssetData.StaticMesh;
 		Icon = ItemData->ItemAssetData.Icon;
