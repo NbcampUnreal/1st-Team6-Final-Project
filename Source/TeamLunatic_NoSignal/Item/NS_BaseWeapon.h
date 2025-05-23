@@ -18,8 +18,8 @@ public:
 
 	virtual void BeginPlay() override;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
-	EWeaponType WeaponType;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
+	//EWeaponType WeaponType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	FName WeaponSocketName;
