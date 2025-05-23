@@ -2,11 +2,13 @@
 #include "Character/Debug/NS_DebugStatusWidget.h"  // 디버그용 차후 삭제
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "Camera/CameraComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "Interaction/InteractionInterface.h"
+#include "Camera/CameraComponent.h"
+
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Inventory/InventoryComponent.h"
 #include "Components/NS_EquipedWeaponComponent.h"
+#include "Character/Components/NS_StatusComponent.h"
 #include "Interaction/Component/InteractionComponent.h"
 
 #include <Net/UnrealNetwork.h>
@@ -32,13 +34,14 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     StatusComp = CreateDefaultSubobject<UNS_StatusComponent>(TEXT("StatusComponent"));
     InteractionComponent = CreateDefaultSubobject<UInteractionComponent>(TEXT("InteractionComponent"));
 
+    EquipedWeaponComp = CreateDefaultSubobject<UNS_EquipedWeaponComponent>(TEXT("EquipedWeaponComponent"));
+
     BaseEyeHeight = 74.0f;
     // 인벤토리
     PlayerInventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("PlayerInventory"));
     PlayerInventory->SetSlotsCapacity(20);
     PlayerInventory->SetWeightCapacity(50.0f);
 
-    EquipedWeaponComp = CreateDefaultSubobject<UNS_EquipedWeaponComponent>(TEXT("EquipedWeaponComponent"));
 }
 
 void ANS_PlayerCharacterBase::BeginPlay()

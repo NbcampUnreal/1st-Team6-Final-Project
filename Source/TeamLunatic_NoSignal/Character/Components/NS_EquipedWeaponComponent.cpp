@@ -51,16 +51,10 @@ void UNS_EquipedWeaponComponent::ServerEquipWeapon_Implementation(TSubclassOf<AN
 
         if (NewWpn)
         {
-            FName AttachSocketName = TEXT("hand_rKnife");
-            if (WeaponClass->GetDefaultObject())
-            {
-                AttachSocketName = WeaponClass->GetDefaultObject<ANS_BaseMeleeWeapon>()->WeaponSocketName;
-            }
-
             NewWpn->AttachToComponent(
                 OwnerCharacter->GetMesh(),
                 FAttachmentTransformRules::SnapToTargetIncludingScale,
-                AttachSocketName
+				WeaponClass->GetDefaultObject<ANS_BaseMeleeWeapon>()->WeaponSocketName
             );
 
             CurrentWeapon = NewWpn;

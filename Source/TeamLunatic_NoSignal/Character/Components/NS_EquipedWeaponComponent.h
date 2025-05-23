@@ -5,7 +5,7 @@
 #include "NS_EquipedWeaponComponent.generated.h"
 
 class ANS_PlayerCharacterBase;
-class ANS_BaseWeapon;   // 무기 베이스 클래스 (발사/재장전 기능을 가진 액터)
+class ANS_BaseWeapon; 
   
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class TEAMLUNATIC_NOSIGNAL_API UNS_EquipedWeaponComponent : public UActorComponent

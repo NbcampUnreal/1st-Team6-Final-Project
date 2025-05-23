@@ -3,7 +3,6 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
-#include "Character/Components/NS_StatusComponent.h"
 #include "Interaction/Component/InteractionComponent.h"
 #include "NS_PlayerCharacterBase.generated.h"
 
@@ -67,7 +66,7 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Inventory")
 	UInventoryComponent* PlayerInventory;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interaction", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UNS_EquipedWeaponComponent* EquipedWeaponComp;
 
 	
