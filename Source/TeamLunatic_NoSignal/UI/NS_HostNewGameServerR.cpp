@@ -63,16 +63,14 @@ void UNS_HostNewGameServerR::StartGame()
         bIsLAN = CheckBox_UseLAN->IsChecked();
     }
 
-    APlayerController* PC = GetOwningPlayer();
-    if (!PC)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("플레이어 컨트롤러 없음"));
-        return;
-    }
+    // 2. 세션 이름 정의 (슬롯 이름 사용)
+    FName SessionName = FName(*SlotName);
+
+    // 3. 최대 접속 인원
+    int32 MaxPlayers = FCString::Atoi(*EditableTextBox_MaxPlayers->GetText().ToString());
 
     // 4. 세션 생성 요청
-    UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance());
-    if (GI)
+    if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
         // CreateSession 성공 시 호출되는 델리게이트 바인딩먼저해야  CreateSession 성공하면 broadcast되서 lamda가 호출됨.
         GI->OnCreateSessionSuccess.AddLambda([this, SelectedLevelName, SlotName, PlayerData, LevelData, GI]()
@@ -86,9 +84,8 @@ void UNS_HostNewGameServerR::StartGame()
                 MainMenu->GetWidget(EWidgetToggleType::HostServer)->HideSubMenuWidget();
                 MainMenu->GetWidget(EWidgetToggleType::MultiPlayer)->HideSubMenuWidget();
             });
-        // 세션 생성
-        int32 MaxPlayers = FCString::Atoi(*EditableTextBox_MaxPlayers->GetText().ToString());
-        GI->CreateSession(PC, MaxPlayers, bIsLAN);
+      
+        GI->CreateSession(SessionName, bIsLAN, MaxPlayers);
     }
     else
         UE_LOG(LogTemp, Warning, TEXT("게임 인스턴스 없음"));

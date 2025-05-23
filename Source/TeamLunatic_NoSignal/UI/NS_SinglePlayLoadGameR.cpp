@@ -66,7 +66,6 @@ void UNS_SinglePlayLoadGameR::StartGame()
     if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
         GI->SetGameModeType(EGameModeType::SinglePlayMode);
-        GI->SetCurrentSaveSlot(SlotName);
        
         UGameplayStatics::OpenLevel(this, FName(*LevelName));
     }

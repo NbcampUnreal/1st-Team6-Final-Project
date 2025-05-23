@@ -10,7 +10,7 @@ class TEAMLUNATIC_NOSIGNAL_API NS_SaveLoadHelper
 {
 public:
 	static constexpr const TCHAR* MetaSlotName = TEXT("SaveGameMetaData");
-	static constexpr const TCHAR* GameLevelName = TEXT("MainWorld");
+	static constexpr const TCHAR* GameLevelName = TEXT("MainWorld");//Showcase MainWorld
 
 
 	static bool SaveGame(const FString& SlotName, const FPlayerSaveData& PlayerData, const FLevelSaveData& LevelData);

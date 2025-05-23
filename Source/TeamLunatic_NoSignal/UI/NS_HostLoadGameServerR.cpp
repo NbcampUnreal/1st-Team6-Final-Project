@@ -21,20 +21,20 @@ void UNS_HostLoadGameServerR::NativeConstruct()
 }
 void UNS_HostLoadGameServerR::OnCreateServerButtonClicked()
 {
-   FPlayerSaveData PlayerData;
-   FLevelSaveData LevelData;
-   FString LoadMapName ;
+    FPlayerSaveData PlayerData;
+    FLevelSaveData LevelData;
+    FString LoadMapName;
 
-   if (NS_SaveLoadHelper::LoadGame(LoadSlotName, PlayerData, LevelData))
-   {
-       LoadMapName = LevelData.LevelName;
-   }
-   else
-   {
-	   UE_LOG(LogTemp, Warning, TEXT("세이브 파일 로드 실패"));
-	   return;
-   }
-   
+    if (NS_SaveLoadHelper::LoadGame(LoadSlotName, PlayerData, LevelData))
+    {
+        LoadMapName = LevelData.LevelName;
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("세이브 파일 로드 실패"));
+        return;
+    }
+
     // 1. LAN 체크박스 상태 확인
     bool bIsLAN = false;
     if (CheckBox_Use_LAN)
@@ -42,32 +42,28 @@ void UNS_HostLoadGameServerR::OnCreateServerButtonClicked()
         bIsLAN = CheckBox_Use_LAN->IsChecked();
     }
 
-    // 2. 플레이어 컨트롤러 가져오기
-    APlayerController* PC = GetOwningPlayer();
-    if (!PC)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("플레이어 컨트롤러 없음"));
-        return;
-    }
+    // 2. 세션 이름 정의 (슬롯 이름 사용)
+    FName SessionName = FName(*LoadSlotName);
 
-    // 3. 세션 생성 요청
-    UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance());
-    if (GI)
+    // 3. 최대 접속 인원
+    int32 MaxPlayers = FCString::Atoi(*EditableTextBox_MaxPlayers->GetText().ToString());
+
+    // 4. 세션 생성
+    if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
-        // CreateSession 성공 시 호출되는 델리게이트 바인딩먼저해야  CreateSession 성공하면 broadcast되서 lamda가 호출됨.
+        // 세션 생성 성공 시 맵 이동 및 UI 정리
         GI->OnCreateSessionSuccess.AddLambda([this, LoadMapName, GI]()
-        {
-            UGameplayStatics::OpenLevel(this, FName(*LoadMapName), true);
+            {
+                UGameplayStatics::OpenLevel(this, FName(*LoadMapName), true);
+                GI->SetGameModeType(EGameModeType::MultiPlayMode);
+                MainMenu->GetWidget(EWidgetToggleType::HostServer)->HideSubMenuWidget();
+                MainMenu->GetWidget(EWidgetToggleType::MultiPlayer)->HideSubMenuWidget();
+            });
 
-            GI->SetGameModeType(EGameModeType::MultiPlayMode);// 게임 모드 타입 설정
-
-            MainMenu->GetWidget(EWidgetToggleType::HostServer)->HideSubMenuWidget();
-            MainMenu->GetWidget(EWidgetToggleType::MultiPlayer)->HideSubMenuWidget();
-        });
-        // 세션 생성
-        int32 MaxPlayers = FCString::Atoi(*EditableTextBox_MaxPlayers->GetText().ToString());
-        GI->CreateSession(PC, MaxPlayers, bIsLAN);
-	}
-	else
-		UE_LOG(LogTemp, Warning, TEXT("게임 인스턴스 없음"));
+        GI->CreateSession(SessionName, bIsLAN, MaxPlayers);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("게임 인스턴스 없음"));
+    }
 }
