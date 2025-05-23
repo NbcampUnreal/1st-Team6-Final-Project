@@ -35,9 +35,6 @@ struct FItemTextData
 
 	UPROPERTY(EditAnywhere)
 	FText ItemDescription;
-	
-	UPROPERTY(EditAnywhere)
-	FText InteractionText;
 };
 
 USTRUCT()
@@ -128,34 +125,35 @@ struct FWeaponData
 USTRUCT(BlueprintType)
 struct FNS_ItemDataStruct : public FTableRowBase
 {
+public:
 	GENERATED_USTRUCT_BODY()
 
 	//있어야 될 데이터
-	UPROPERTY(EditAnywhere, Category = "Item Data")
+	UPROPERTY(EditAnywhere)
 	EItemType ItemType;
 
-	UPROPERTY(EditAnywhere, Category = "Item Data")
+	UPROPERTY(EditAnywhere)
 	EWeaponType WeaponType;
 
-	UPROPERTY(EditAnywhere, Category = "Item Data")
+	UPROPERTY(EditAnywhere)
 	FItemTextData ItemTextData;
 
-	UPROPERTY(EditAnywhere, Category = "Item Data")
+	UPROPERTY(EditAnywhere)
 	FWeaponData WeaponData;
 
-	UPROPERTY(EditAnywhere, Category = "Item Data")
+	UPROPERTY(EditAnywhere)
 	FItemStates ItemStates;
 
-	UPROPERTY(EditAnywhere, Category = "Item Data")
+	UPROPERTY(EditAnywhere)
 	FItemFlags ItemFlags;
 
-	UPROPERTY(EditAnywhere, Category = "Item Data")
+	UPROPERTY(EditAnywhere)
 	FItemNumericData ItemNumericData;
 
-	UPROPERTY(EditAnywhere, Category = "Item Data")
+	UPROPERTY(EditAnywhere)
 	FItemAssetData ItemAssetData;
 
 	//상한 음식 체크
-	UPROPERTY(EditAnywhere, Category = "Item Data")
+	UPROPERTY(EditAnywhere)
 	bool isSpoiledfood;
 };
