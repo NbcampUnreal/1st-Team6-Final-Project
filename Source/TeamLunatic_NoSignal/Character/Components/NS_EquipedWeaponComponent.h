@@ -22,19 +22,18 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SwapWeapon(TSubclassOf<ANS_BaseMeleeWeapon> WeaponClass);
 	
-	/** 즉시 장착 */
+	// 서버에서 무기 스폰 및 부착 함수
 	UFUNCTION(Server, Reliable)
 	void ServerEquipWeapon(TSubclassOf<ANS_BaseMeleeWeapon> WeaponClass);
-
-	/** 클라이언트에 복제된 무기 스폰/부착 */
+	// 클라이언트에 무기 스폰 및 부착 함수 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastEquipWeapon(TSubclassOf<ANS_BaseMeleeWeapon> WeaponClass);
 
-	/** 현재 장착 무기로 발사 */
+	// 현재 장착 무기로 발사 
 	UFUNCTION(BlueprintCallable)
 	void Fire();
 
-	/** 현재 장착 무기로 재장전 */
+	// 현재 장착 무기가 원기리일때는 재장전 
 	UFUNCTION(BlueprintCallable)
 	void Reload();
 	

@@ -207,7 +207,7 @@ public:
 	void PlayDeath_Multicast();
 
 	// 카메라 Yaw값, Pitch값 서버로 전송
-	UFUNCTION(Server, Reliable)
+	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void UpdateAim_Server(float NewAimYaw, float NewAimPitch);
 
 	UFUNCTION()

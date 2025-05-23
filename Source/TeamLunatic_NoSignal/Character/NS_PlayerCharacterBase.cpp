@@ -340,12 +340,13 @@ void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
     float RelativeYaw = FMath::ClampAngle(NewYaw - ActorYaw, -90.f, 90.f);
     ControlRot.Yaw = ActorYaw + RelativeYaw;
     
-    // 컨트롤러 회전에 반영하여 카메라와 캐릭터 조준 축 업데이트 ------------- (자세한 원리 부가 설명 필요)
+    // 컨트롤러 회전에 반영하여 카메라와 캐릭터 조준 축 업데이트
     Controller->SetControlRotation(ControlRot);
 
     const float NewCamYaw   = RelativeYaw;      
     const float NewCamPitch = FMath::ClampAngle( ControlRot.Pitch, -90.f, 90.f);
 
+    // 카메라 회전값이 있을때마다 CamYaw와 CamPitch변수값이 서버로 전송
     UpdateAim_Server(NewCamYaw, NewCamPitch);
 }
 
