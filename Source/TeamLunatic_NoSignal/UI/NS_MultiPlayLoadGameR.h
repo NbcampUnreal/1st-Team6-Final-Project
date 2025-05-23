@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UI/NS_MasterMenuPanel.h"
-#include "NS_SinglePlayLoadGameR.generated.h"
+#include "NS_MultiPlayLoadGameR.generated.h"
 
 class UTextBlock;
 class UImage;
@@ -14,21 +14,23 @@ class UCheckBox;
 class UNS_MenuButtonWidget;
 class UNS_LoadGameMenuPanel;
 UCLASS()
-class TEAMLUNATIC_NOSIGNAL_API UNS_SinglePlayLoadGameR : public UNS_MasterMenuPanel
+class TEAMLUNATIC_NOSIGNAL_API UNS_MultiPlayLoadGameR : public UNS_MasterMenuPanel
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
-    UNS_SinglePlayLoadGameR(const FObjectInitializer& ObjectInitializer);
+    UNS_MultiPlayLoadGameR(const FObjectInitializer& ObjectInitializer);
 
     UFUNCTION(BlueprintCallable, Category = "Load UI")
     void LoadSaveSlotsToUI();
+
+   
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Load UI")
     TSubclassOf<UNS_LoadGameMenuPanel> LoadGameDataElementClass;
 
     UPROPERTY(meta = (BindWidget), BlueprintReadWrite) //, BlueprintReadOnly / BlueprintReadWrite
-    UTextBlock* Subtitle;
+        UTextBlock* Subtitle;
 
     UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
     UTextBlock* Title;
@@ -39,9 +41,6 @@ public:
     UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
     UVerticalBox* SaveVerticalBox;
 
-    //UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-    //UNS_LoadGameMenuPanel* BP_LoadGameMenuPanel;
-
     UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
     UNS_MenuButtonWidget* NewGameButton;
 
@@ -49,9 +48,10 @@ protected:
     UNS_LoadGameMenuPanel* SelectChildPanel;
 
     virtual void NativeConstruct() override;
-
+	virtual void Init(UNS_MainMenu* NsMainMenu) override;
+   
     UFUNCTION()
-    void StartGame();
+    void NewGame();
 
     UFUNCTION()
     void OnClickedDeleteSlot(UNS_LoadGameMenuPanel* ChidPanel);
@@ -59,4 +59,6 @@ protected:
     UFUNCTION()
     void OnClickedSelectChildPanel(UNS_LoadGameMenuPanel* ChidPanel);
 
+private:
+  
 };
