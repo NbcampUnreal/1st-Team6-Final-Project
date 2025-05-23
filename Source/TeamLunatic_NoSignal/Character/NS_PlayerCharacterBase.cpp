@@ -2,9 +2,7 @@
 #include "Character/Debug/NS_DebugStatusWidget.h"  // 디버그용 차후 삭제
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "Interaction/InteractionInterface.h"
 #include "Camera/CameraComponent.h"
-
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Inventory/InventoryComponent.h"
 #include "Components/NS_EquipedWeaponComponent.h"

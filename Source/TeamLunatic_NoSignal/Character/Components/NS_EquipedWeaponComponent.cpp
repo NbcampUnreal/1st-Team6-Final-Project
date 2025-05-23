@@ -25,8 +25,8 @@ void UNS_EquipedWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProp
 
 void UNS_EquipedWeaponComponent::SwapWeapon(TSubclassOf<ANS_BaseMeleeWeapon> WeaponClass)
 {
-    if (!GetOwner()->HasAuthority())
-        return;
+    // if (!GetOwner()->HasAuthority())
+    //     return;
 
     // 슬롯 → 무기 클래스 결정
     ServerEquipWeapon(WeaponClass);
@@ -34,32 +34,32 @@ void UNS_EquipedWeaponComponent::SwapWeapon(TSubclassOf<ANS_BaseMeleeWeapon> Wea
 
 void UNS_EquipedWeaponComponent::ServerEquipWeapon_Implementation(TSubclassOf<ANS_BaseMeleeWeapon> WeaponClass)
 {
-    if (CurrentWeapon)
-    {
-        CurrentWeapon->Destroy();
-        CurrentWeapon = nullptr;
-    }
-
-    if (WeaponClass && OwnerCharacter)
-    {
-        FActorSpawnParameters Params;
-        Params.Owner = GetOwner();
-        Params.Instigator = OwnerCharacter;
-        
-        ANS_BaseMeleeWeapon* NewWpn = GetWorld()->SpawnActor<ANS_BaseMeleeWeapon>(
-            WeaponClass, FVector::ZeroVector, FRotator::ZeroRotator, Params);
-
-        if (NewWpn)
-        {
-            NewWpn->AttachToComponent(
-                OwnerCharacter->GetMesh(),
-                FAttachmentTransformRules::SnapToTargetIncludingScale,
-				WeaponClass->GetDefaultObject<ANS_BaseMeleeWeapon>()->WeaponSocketName
-            );
-
-            CurrentWeapon = NewWpn;
-        }
-    }
+    // if (CurrentWeapon)
+    // {
+    //     CurrentWeapon->Destroy();
+    //     CurrentWeapon = nullptr;
+    // }
+    //
+    // if (WeaponClass && OwnerCharacter)
+    // {
+    //     FActorSpawnParameters Params;
+    //     Params.Owner = GetOwner();
+    //     Params.Instigator = OwnerCharacter;
+    //     
+    //     ANS_BaseMeleeWeapon* NewWpn = GetWorld()->SpawnActor<ANS_BaseMeleeWeapon>(
+    //         WeaponClass, FVector::ZeroVector, FRotator::ZeroRotator, Params);
+    //
+    //     if (NewWpn)
+    //     {
+    //         NewWpn->AttachToComponent(
+    //             OwnerCharacter->GetMesh(),
+    //             FAttachmentTransformRules::SnapToTargetIncludingScale,
+				// WeaponClass->GetDefaultObject<ANS_BaseMeleeWeapon>()->WeaponSocketName
+    //         );
+    //
+    //         CurrentWeapon = NewWpn;
+    //     }
+    // }
 
     MulticastEquipWeapon(WeaponClass);
 }
@@ -89,16 +89,10 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
 
         if (NewWpn)
         {
-            FName AttachSocketName = TEXT("hand_rSocket");
-            if (WeaponClass->GetDefaultObject())
-            {
-                AttachSocketName = WeaponClass->GetDefaultObject<ANS_BaseMeleeWeapon>()->WeaponSocketName;
-            }
-
             NewWpn->AttachToComponent(
                 OwnerCharacter->GetMesh(),
                 FAttachmentTransformRules::SnapToTargetIncludingScale,
-                AttachSocketName
+                WeaponClass->GetDefaultObject<ANS_BaseMeleeWeapon>()->WeaponSocketName
             );
 
             CurrentWeapon = NewWpn;
