@@ -177,8 +177,6 @@ void UInventoryComponent::AddNewItem(ANS_BaseItem* Item, const int32 AmountToAdd
 	NewItem->SetQuantity(AmountToAdd);
 
 	InventoryContents.Add(NewItem);
-	UE_LOG(LogTemp, Warning, TEXT(">>> NewItem Weight Per Unit: %f | Stack Weight: %f"),
-		NewItem->GetItemSingleWeight(), NewItem->GetItemStackWeight());
 	InventoryTotalWeight += NewItem->GetItemStackWeight();
 	OnInventoryUpdated.Broadcast();
 }
