@@ -12,6 +12,19 @@ UInteractionComponent::UInteractionComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
+void UInteractionComponent::UpdateInteractionWidget()
+{
+	if (IsValid(TargetInteractable.GetObject()))
+	{
+		HUD->UpdateInteractionWidget(&TargetInteractable->InteractableData);
+	}
+}
+
+void UInteractionComponent::ToggleMenu()
+{
+	HUD->ToggleMenu();
+}
+
 void UInteractionComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -23,7 +36,7 @@ void UInteractionComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// ���� �ð����� PerformInteractionCheck() ����
+	// ÀÏÁ¤ ½Ã°£¸¶´Ù PerformInteractionCheck() ½ÇÇà
 	if (GetWorld()->TimeSince(InteractionData.LastInteractionCheckTime) > InteractionCheckFrequency)
 	{
 		PerformInteractionCheck();
@@ -162,8 +175,6 @@ void UInteractionComponent::Interact()
 
 	if (IsValid(TargetInteractable.GetObject()))
 	{
-		TargetInteractable->Interact();
+		TargetInteractable->Interact(GetOwner());
 	}
 }
-
-

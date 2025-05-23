@@ -35,6 +35,9 @@ struct FItemTextData
 
 	UPROPERTY(EditAnywhere)
 	FText ItemDescription;
+
+	UPROPERTY(EditAnywhere)
+	FText InteractionText;
 };
 
 USTRUCT()
