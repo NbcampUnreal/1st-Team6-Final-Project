@@ -19,8 +19,8 @@ public:
 protected:
 	virtual void BeginPlay();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
-	EWeaponType WeaponType;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
+	//EWeaponType WeaponType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	int32 WeaponDamage;
