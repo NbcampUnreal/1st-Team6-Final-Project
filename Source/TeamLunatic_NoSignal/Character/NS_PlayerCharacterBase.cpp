@@ -1,10 +1,16 @@
 #include "Character/NS_PlayerCharacterBase.h"
-#include "Character/Debug/NS_DebugStatusWidget.h"  // 디버그용 차후 삭제 가능
+#include "Character/Debug/NS_DebugStatusWidget.h"  // 디버그용 차후 삭제
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Interaction/InteractionInterface.h"
 #include "Camera/CameraComponent.h"
+
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Inventory/InventoryComponent.h"
+#include "Components/NS_EquipedWeaponComponent.h"
+#include "Character/Components/NS_StatusComponent.h"
+#include "Interaction/Component/InteractionComponent.h"
+
 #include <Net/UnrealNetwork.h>
 
 ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
@@ -28,11 +34,14 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     StatusComp = CreateDefaultSubobject<UNS_StatusComponent>(TEXT("StatusComponent"));
     InteractionComponent = CreateDefaultSubobject<UInteractionComponent>(TEXT("InteractionComponent"));
 
+    EquipedWeaponComp = CreateDefaultSubobject<UNS_EquipedWeaponComponent>(TEXT("EquipedWeaponComponent"));
+
     BaseEyeHeight = 74.0f;
     // 인벤토리
     PlayerInventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("PlayerInventory"));
     PlayerInventory->SetSlotsCapacity(20);
     PlayerInventory->SetWeightCapacity(50.0f);
+
 }
 
 void ANS_PlayerCharacterBase::BeginPlay()
@@ -103,8 +112,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                 InputMoveAction,
                 ETriggerEvent::Triggered,
                 this,
-                &ANS_PlayerCharacterBase::MoveAction
-                );
+                &ANS_PlayerCharacterBase::MoveAction);
         }
         
 
@@ -114,8 +122,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                 InputLookAction,
              ETriggerEvent::Triggered,
               this,
-               &ANS_PlayerCharacterBase::LookAction
-               );
+               &ANS_PlayerCharacterBase::LookAction);
         }
 
         if (InputJumpAction)
@@ -124,8 +131,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                 InputJumpAction,
              ETriggerEvent::Triggered,
               this,
-               &ANS_PlayerCharacterBase::JumpAction
-               );
+               &ANS_PlayerCharacterBase::JumpAction);
         }
 
         if (InputCrouchAction)
@@ -134,14 +140,12 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
             InputCrouchAction,
              ETriggerEvent::Triggered,
               this,
-               &ANS_PlayerCharacterBase::StartCrouch
-               );
+               &ANS_PlayerCharacterBase::StartCrouch);
             EnhancedInput->BindAction(
             InputCrouchAction,
              ETriggerEvent::Completed,
               this,
-               &ANS_PlayerCharacterBase::StopCrouch
-               );
+               &ANS_PlayerCharacterBase::StopCrouch);
         }
         
         if (InputSprintAction)
@@ -150,14 +154,12 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
             InputSprintAction,
              ETriggerEvent::Triggered,
               this,
-               &ANS_PlayerCharacterBase::StartSprint_Server
-               );
+               &ANS_PlayerCharacterBase::StartSprint_Server);
             EnhancedInput->BindAction(
             InputSprintAction,
              ETriggerEvent::Completed,
               this,
-               &ANS_PlayerCharacterBase::StopSprint_Server
-               );
+               &ANS_PlayerCharacterBase::StopSprint_Server);
         }
 
         if (InputKickAction)
@@ -166,36 +168,35 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
             InputKickAction,
              ETriggerEvent::Triggered,
               this,
-               &ANS_PlayerCharacterBase::KickAction_Server
-               );
+               &ANS_PlayerCharacterBase::KickAction_Server);
         }
 
-         if (InteractAction)
-         {
-             EnhancedInput->BindAction(
+        if (InteractAction)
+        {
+            EnhancedInput->BindAction(
                 InteractAction,
-                 ETriggerEvent::Started,
-                InteractionComponent,
+                ETriggerEvent::Started,
+               InteractionComponent,
                 &UInteractionComponent::BeginInteract
             );
 
-            EnhancedInput->BindAction(
-                InteractAction,
-                ETriggerEvent::Completed,
-                InteractionComponent,
-                &UInteractionComponent::EndInteract
-            );
-         }
-
-         if (ToggleMenuAction)
-         {
              EnhancedInput->BindAction(
-                 ToggleMenuAction,
-                 ETriggerEvent::Triggered,
+                 InteractAction,
+                 ETriggerEvent::Completed,
                  InteractionComponent,
-                 &UInteractionComponent::ToggleMenu
-                 );
-         }
+                 &UInteractionComponent::EndInteract
+             );
+        }
+
+        if (ToggleMenuAction)
+        {
+            EnhancedInput->BindAction(
+                ToggleMenuAction,
+                ETriggerEvent::Triggered,
+                InteractionComponent,
+                &UInteractionComponent::ToggleMenu
+            );
+        }
 
         if (InputAttackAction)
         {
@@ -203,24 +204,21 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
             InputAttackAction,
              ETriggerEvent::Triggered,
               this,
-               &ANS_PlayerCharacterBase::StartAttackAction_Server
-               );
+               &ANS_PlayerCharacterBase::StartAttackAction_Server);
             EnhancedInput->BindAction(
             InputAttackAction,
              ETriggerEvent::Completed,
               this,
-               &ANS_PlayerCharacterBase::StopAttackAction_Server
-               );
+               &ANS_PlayerCharacterBase::StopAttackAction_Server);
         }
 
-        if (InputPickUpAction)
+        if (InteractAction)
         {
             EnhancedInput->BindAction(
-            InputPickUpAction,
+            InteractAction,
              ETriggerEvent::Triggered,
               this,
-               &ANS_PlayerCharacterBase::PickUpAction_Server
-               );
+               &ANS_PlayerCharacterBase::PickUpAction_Server);
         }
 
         if (InputAimingAction)
@@ -229,15 +227,13 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
             InputAimingAction,
              ETriggerEvent::Triggered,
               this,
-               &ANS_PlayerCharacterBase::StartAimingAction_Server
-               );
+               &ANS_PlayerCharacterBase::StartAimingAction_Server);
             
             EnhancedInput->BindAction(
            InputAimingAction,
             ETriggerEvent::Completed,
              this,
-              &ANS_PlayerCharacterBase::StopAimingAction_Server
-              );
+              &ANS_PlayerCharacterBase::StopAimingAction_Server);
         }
 
         if (InputReloadAction)
@@ -246,8 +242,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
             InputReloadAction,
              ETriggerEvent::Triggered,
               this,
-               &ANS_PlayerCharacterBase::ReloadAction_Server
-               );
+               &ANS_PlayerCharacterBase::ReloadAction_Server);
         }
     }
 }
@@ -496,4 +491,9 @@ void ANS_PlayerCharacterBase::UpdateAim_Server_Implementation(float NewCamYaw, f
 {
     CamYaw   = NewCamYaw;
     CamPitch = NewCamPitch;
+}
+
+void ANS_PlayerCharacterBase::SwapWeapon(TSubclassOf<ANS_BaseMeleeWeapon> WeaponClass)
+{
+    EquipedWeaponComp->SwapWeapon(WeaponClass);
 }

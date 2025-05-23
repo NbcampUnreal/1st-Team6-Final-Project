@@ -3,17 +3,16 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
-#include "Character/Components/NS_StatusComponent.h"
 #include "Interaction/Component/InteractionComponent.h"
-#include "Kismet/GameplayStatics.h"
 #include "NS_PlayerCharacterBase.generated.h"
 
-class UInventoryComponent;
 class UInputMappingContext;
 class UInputAction;
 class UCameraComponent;
 class UNS_DebugStatusWidget;  // 디버그용 위젯 차후 삭제해야함
 class UNS_StatusComponent;
+class UInventoryComponent;
+class UNS_EquipedWeaponComponent;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
@@ -33,6 +32,7 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	// 피격
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
 public:
 	// 카메라를 붙일 소켓 이름 [에디터에서 변경 가능함] 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera")
@@ -54,6 +54,7 @@ public:
 	UNS_DebugStatusWidget* DebugWidgetInstance;
 
 	
+	////////////////////////////////////캐릭터 부착 컴포넌트들///////////////////////////////////////
 	// 스탯 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
 	UNS_StatusComponent* StatusComp;
@@ -64,7 +65,14 @@ public:
 
 	UPROPERTY(VisibleAnywhere, Category = "Inventory")
 	UInventoryComponent* PlayerInventory;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UNS_EquipedWeaponComponent* EquipedWeaponComp;
+
 	
+	////////////////////////////////////캐릭터 부착 컴포넌트들 끝!///////////////////////////////////////
+	
+
 	// 캐릭터 이동 중 바라보는 곳으로 몸 회전 속도 (1 ~ 10까지 해봤는데 5가 가장 적당함)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float CharacterTurnSpeed = 5.0f;
@@ -97,7 +105,7 @@ public:
 	// 아이템을 줍고있는지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsPickUp = false;
-	// -------------------------------------------------------------------------- 차후에 지워야함
+	// ---------------------------------------차후에 지워야함
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	int32 IsChange = 0;
 	// 캐릭터가 맞고있는지 확인 변수
@@ -137,10 +145,8 @@ public:
 	UInputAction* InputAimingAction;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputReloadAction;
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InteractAction;
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* ToggleMenuAction;
 	
@@ -201,6 +207,9 @@ public:
 	void PlayDeath_Multicast();
 
 	// 카메라 Yaw값, Pitch값 서버로 전송
-	UFUNCTION(Server, Unreliable)
+	UFUNCTION(Server, Reliable)
 	void UpdateAim_Server(float NewAimYaw, float NewAimPitch);
+
+	UFUNCTION()
+	void SwapWeapon(TSubclassOf<ANS_BaseMeleeWeapon> WeaponClass);
 };
