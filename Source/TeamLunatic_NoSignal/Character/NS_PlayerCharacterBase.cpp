@@ -89,30 +89,6 @@ void ANS_PlayerCharacterBase::Tick(float DeltaTime)
         // 계산된 NewRot값을 캐릭터에 실제로 적용시켜 회전
         SetActorRotation(NewRot);
     }
-
-    // 로컬 컨트롤러인 경우 Aim값을 전송
-    if (IsLocallyControlled() && Controller)
-    {
-        // 현재 컨트롤러 축 회전 가져와서
-        const FRotator ControlRot = Controller->GetControlRotation();
-        // 캐릭터 몸체를 기준으로 Yaw와 Pitch값을 한번더 -90 ~ 90까지 제한을 둠
-        // ----------- 2중으로 안전한게 최대각도를 막아둔거라서 ClampAngle로 최대각도 지정부분은 제거해도 이상없을것같긴한데 우선 넣어 둠----------
-        const float NewCamYaw   = FMath::ClampAngle(ControlRot.Yaw - GetActorRotation().Yaw,-90.f, 90.f);
-        const float NewCamPitch = FMath::ClampAngle(ControlRot.Pitch,-90.f, 90.f);
-
-        // 서버라면
-        if (HasAuthority())
-        {
-            // 서버라면 Yaw값과 Pitch값을 저장
-            CamYaw   = NewCamYaw;
-            CamPitch = NewCamPitch;
-        }
-        else // 서버가 아니면
-        {
-            // 클라이언트면 서버에 전송
-            UpdateAim_Server(NewCamYaw, NewCamPitch);
-        }
-    }
 }
 
 void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -127,7 +103,8 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                 InputMoveAction,
                 ETriggerEvent::Triggered,
                 this,
-                &ANS_PlayerCharacterBase::MoveAction);
+                &ANS_PlayerCharacterBase::MoveAction
+                );
         }
         
 
@@ -137,7 +114,8 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                 InputLookAction,
              ETriggerEvent::Triggered,
               this,
-               &ANS_PlayerCharacterBase::LookAction);
+               &ANS_PlayerCharacterBase::LookAction
+               );
         }
 
         if (InputJumpAction)
@@ -146,7 +124,8 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                 InputJumpAction,
              ETriggerEvent::Triggered,
               this,
-               &ANS_PlayerCharacterBase::JumpAction);
+               &ANS_PlayerCharacterBase::JumpAction
+               );
         }
 
         if (InputCrouchAction)
@@ -155,12 +134,14 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
             InputCrouchAction,
              ETriggerEvent::Triggered,
               this,
-               &ANS_PlayerCharacterBase::StartCrouch);
+               &ANS_PlayerCharacterBase::StartCrouch
+               );
             EnhancedInput->BindAction(
             InputCrouchAction,
              ETriggerEvent::Completed,
               this,
-               &ANS_PlayerCharacterBase::StopCrouch);
+               &ANS_PlayerCharacterBase::StopCrouch
+               );
         }
         
         if (InputSprintAction)
@@ -169,12 +150,14 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
             InputSprintAction,
              ETriggerEvent::Triggered,
               this,
-               &ANS_PlayerCharacterBase::StartSprint_Server);
+               &ANS_PlayerCharacterBase::StartSprint_Server
+               );
             EnhancedInput->BindAction(
             InputSprintAction,
              ETriggerEvent::Completed,
               this,
-               &ANS_PlayerCharacterBase::StopSprint_Server);
+               &ANS_PlayerCharacterBase::StopSprint_Server
+               );
         }
 
         if (InputKickAction)
@@ -183,7 +166,8 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
             InputKickAction,
              ETriggerEvent::Triggered,
               this,
-               &ANS_PlayerCharacterBase::KickAction_Server);
+               &ANS_PlayerCharacterBase::KickAction_Server
+               );
         }
 
          if (InteractAction)
@@ -209,7 +193,8 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                  ToggleMenuAction,
                  ETriggerEvent::Triggered,
                  InteractionComponent,
-                 &UInteractionComponent::ToggleMenu);
+                 &UInteractionComponent::ToggleMenu
+                 );
          }
 
         if (InputAttackAction)
@@ -218,12 +203,14 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
             InputAttackAction,
              ETriggerEvent::Triggered,
               this,
-               &ANS_PlayerCharacterBase::StartAttackAction_Server);
+               &ANS_PlayerCharacterBase::StartAttackAction_Server
+               );
             EnhancedInput->BindAction(
             InputAttackAction,
              ETriggerEvent::Completed,
               this,
-               &ANS_PlayerCharacterBase::StopAttackAction_Server);
+               &ANS_PlayerCharacterBase::StopAttackAction_Server
+               );
         }
 
         if (InputPickUpAction)
@@ -232,7 +219,8 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
             InputPickUpAction,
              ETriggerEvent::Triggered,
               this,
-               &ANS_PlayerCharacterBase::PickUpAction_Server);
+               &ANS_PlayerCharacterBase::PickUpAction_Server
+               );
         }
 
         if (InputAimingAction)
@@ -241,13 +229,15 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
             InputAimingAction,
              ETriggerEvent::Triggered,
               this,
-               &ANS_PlayerCharacterBase::StartAimingAction_Server);
+               &ANS_PlayerCharacterBase::StartAimingAction_Server
+               );
             
             EnhancedInput->BindAction(
            InputAimingAction,
             ETriggerEvent::Completed,
              this,
-              &ANS_PlayerCharacterBase::StopAimingAction_Server);
+              &ANS_PlayerCharacterBase::StopAimingAction_Server
+              );
         }
 
         if (InputReloadAction)
@@ -256,7 +246,8 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
             InputReloadAction,
              ETriggerEvent::Triggered,
               this,
-               &ANS_PlayerCharacterBase::ReloadAction_Server);
+               &ANS_PlayerCharacterBase::ReloadAction_Server
+               );
         }
     }
 }
@@ -343,21 +334,26 @@ void ANS_PlayerCharacterBase::MoveAction(const FInputActionValue& Value)
 void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
 {
     FVector2D LookInput = Value.Get<FVector2D>();
-
+    
     // 상/하 회전
     AddControllerPitchInput(LookInput.Y);
-
+    
     // 좌/우 회전
     FRotator ControlRot = Controller->GetControlRotation();
     float ActorYaw = GetActorRotation().Yaw;
     float NewYaw = ControlRot.Yaw + LookInput.X;
-
+    
     // 좌/우(Yaw값) 각도 제한 -90 ~ +90까지 허용
     float RelativeYaw = FMath::ClampAngle(NewYaw - ActorYaw, -90.f, 90.f);
     ControlRot.Yaw = ActorYaw + RelativeYaw;
-
+    
     // 컨트롤러 회전에 반영하여 카메라와 캐릭터 조준 축 업데이트 ------------- (자세한 원리 부가 설명 필요)
     Controller->SetControlRotation(ControlRot);
+
+    const float NewCamYaw   = RelativeYaw;      
+    const float NewCamPitch = FMath::ClampAngle( ControlRot.Pitch, -90.f, 90.f);
+
+    UpdateAim_Server(NewCamYaw, NewCamPitch);
 }
 
 void ANS_PlayerCharacterBase::JumpAction(const FInputActionValue& Value)
