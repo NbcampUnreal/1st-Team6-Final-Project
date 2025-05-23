@@ -36,7 +36,7 @@ void UInteractionComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// ÀÏÁ¤ ½Ã°£¸¶´Ù PerformInteractionCheck() ½ÇÇà
+	// Ã€ÃÃÂ¤ Â½ÃƒÂ°Â£Â¸Â¶Â´Ã™ PerformInteractionCheck() Â½Ã‡Ã‡Ã 
 	if (GetWorld()->TimeSince(InteractionData.LastInteractionCheckTime) > InteractionCheckFrequency)
 	{
 		PerformInteractionCheck();
@@ -178,5 +178,3 @@ void UInteractionComponent::Interact()
 		TargetInteractable->Interact(GetOwner());
 	}
 }
-
-

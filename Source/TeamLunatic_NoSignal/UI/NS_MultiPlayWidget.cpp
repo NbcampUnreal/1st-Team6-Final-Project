@@ -29,8 +29,6 @@ void UNS_MultiPlayWidget::Init(UNS_MainMenu* NsMainMenu)
     Super::Init(NsMainMenu);
     SubMenus.Add(EWidgetToggleType::HostServer, MainMenu->GetWidget(EWidgetToggleType::HostServer));
     SubMenus.Add(EWidgetToggleType::ServerBrowser, MainMenu->GetWidget(EWidgetToggleType::ServerBrowser));
-    SubMenus.Add(EWidgetToggleType::HostNewGame, MainMenu->GetWidget(EWidgetToggleType::HostNewGame));
-    SubMenus.Add(EWidgetToggleType::HostLoadGame, MainMenu->GetWidget(EWidgetToggleType::HostLoadGame));
 }
 
 void UNS_MultiPlayWidget::OnHostServerClicked()

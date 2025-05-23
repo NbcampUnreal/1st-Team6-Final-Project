@@ -25,10 +25,15 @@ void UNS_MainMenu::NativeConstruct()
 			if (ToggleKey == EWidgetToggleType::None)
 				continue;
 
-			//const UEnum* EnumPtr = StaticEnum<EWidgetToggleType>();
-			//FString EnumName = EnumPtr ? EnumPtr->GetNameStringByValue((int64)ToggleKey) : TEXT("Unknown");
-			//UE_LOG(LogTemp, Warning, TEXT("PanelName:%s  / ToggleKey: %s"), *Panel->GetName(), *EnumName);
+			const UEnum* EnumPtr = StaticEnum<EWidgetToggleType>();
+			FString EnumName = EnumPtr ? EnumPtr->GetNameStringByValue((int64)ToggleKey) : TEXT("Unknown");
+			UE_LOG(LogTemp, Warning, TEXT("PanelName:%s  / ToggleKey: %s"), *Panel->GetName(), *EnumName);
 
+			if (ToggleKey == EWidgetToggleType::SinglePlayer)
+			{
+				int32 dsaf = 0;
+				UE_LOG(LogTemp, Warning, TEXT("UNS_MainMenu NativeConstruct"));
+			}
 			if (!WidgetMap.Contains(ToggleKey))
 			{
 				//Panel->MainMenu = this;
@@ -43,6 +48,7 @@ void UNS_MainMenu::NativeConstruct()
 		if (Elem.Value)
 			Elem.Value->Init(this);
 	}
+
 }
 
 void UNS_MainMenu::PlayAnimationShowR()

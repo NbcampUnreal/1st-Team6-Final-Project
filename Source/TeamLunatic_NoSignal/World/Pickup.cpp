@@ -4,6 +4,7 @@
 #include "World/Pickup.h"
 #include "Engine/DataTable.h"
 #include "Item/NS_ItemDataStruct.h"
+#include "Item/NS_BaseWeapon.h"
 #include "Item/NS_BaseItem.h"
 #include "Inventory/InventoryComponent.h"
 #include "Character/NS_PlayerCharacterBase.h"
@@ -22,7 +23,7 @@ void APickup::BeginPlay()
 {
 	Super::BeginPlay();
 
-	InitializePickup(ANS_BaseItem:: StaticClass(), ItemQuantity);
+	InitializePickup(ANS_BaseItem::StaticClass(), ItemQuantity);
 }
 
 void APickup::InitializePickup(const TSubclassOf<ANS_BaseItem> BaseClass, const int32 InQuantity)
@@ -146,4 +147,3 @@ void APickup::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent
 		}
 	}
 }
-

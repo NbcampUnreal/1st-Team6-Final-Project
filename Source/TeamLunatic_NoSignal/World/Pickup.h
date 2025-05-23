@@ -15,8 +15,8 @@ UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API APickup : public AActor, public IInteractionInterface
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	APickup();
 
 	void InitializePickup(const TSubclassOf<ANS_BaseItem> BaseClass, const int32 InQuantity);
@@ -29,22 +29,22 @@ public:
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Pickup | Components")
 	UStaticMeshComponent* PickupMesh;
-	
+
 	UPROPERTY(EditInstanceOnly, Category = "Pickup | ItemInitialization")
 	UDataTable* ItemDataTable;
-	
+
 	UPROPERTY(EditInstanceOnly, Category = "Pickup | ItemInitialization")
 	FName DesiredItemID;
-	
+
 	UPROPERTY(VisibleAnywhere, Category = "Pickup | ItemReference")
 	ANS_BaseItem* ItemReference;
-	
+
 	UPROPERTY(EditInstanceOnly, Category = "Pickup | ItemInitialization")
 	int32 ItemQuantity;
-	
+
 	UPROPERTY(VisibleInstanceOnly, Category = "Pickup | Interaction")
 	FInteractableData InstanceInteractableData;
-	
+
 	virtual void BeginPlay() override;
 	virtual void Interact(AActor* InteractingActor) override;
 	void UpdateInteractableData();

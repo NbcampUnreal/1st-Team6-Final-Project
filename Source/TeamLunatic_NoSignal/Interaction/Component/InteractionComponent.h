@@ -28,12 +28,12 @@ struct FInteractionData
 	float LastInteractionCheckTime;
 };
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class TEAMLUNATIC_NOSIGNAL_API UInteractionComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
-public:	
+public:
 	// Sets default values for this component's properties
 	UInteractionComponent();
 
