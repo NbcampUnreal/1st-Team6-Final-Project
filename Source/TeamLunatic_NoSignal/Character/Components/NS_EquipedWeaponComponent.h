@@ -45,12 +45,10 @@ public:
 	ANS_PlayerCharacterBase* OwnerCharacter;
 
 	/** 현재 장착 중인 무기 액터 */
-	UPROPERTY(Replicated)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
     ANS_BaseWeapon* CurrentWeapon;
 
 	/** 메쉬에 붙일 소켓 이름 (에디터에서 필요 시 변경) */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Equip")
 	FName WeaponAttachSocketName = TEXT("hand_rKnife");
-
-	
 };

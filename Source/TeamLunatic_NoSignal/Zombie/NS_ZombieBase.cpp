@@ -71,6 +71,8 @@ void ANS_ZombieBase::Die()
 	//OnDeath_Implementation();
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	SetLifeSpan(5.f);
+
+	Die_Multicast();
 }
 
 void ANS_ZombieBase::SetState(Enum_ZombieState NewState)
@@ -93,8 +95,14 @@ void ANS_ZombieBase::SetState(Enum_ZombieState NewState)
 	}
 }
 
-/*void ANS_ZombieBase::OnDeath_Implementation()
+void ANS_ZombieBase::Die_Multicast_Implementation()
 {
-	// 사망시 멀티캐스트로 처리할 것들.
+	GetCharacterMovement()->DisableMovement();
+
+	GetMesh()->SetCollisionProfileName("Ragdoll");
+	GetMesh()->SetSimulatePhysics(true);
+	GetMesh()->bBlendPhysics = true;
+	//OnDeath_Implementation();
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	SetLifeSpan(5.f);
 }
-*/
