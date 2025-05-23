@@ -8,6 +8,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "NS_PlayerCharacterBase.generated.h"
 
+class UInventoryComponent;
 class UInputMappingContext;
 class UInputAction;
 class UCameraComponent;
@@ -22,6 +23,9 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
 public:
 	ANS_PlayerCharacterBase();
 
+	FORCEINLINE UInventoryComponent* GetInventory() const { return PlayerInventory; };
+
+	UInteractionComponent* GetInteractionComponent() const { return InteractionComponent; }
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
@@ -29,7 +33,6 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	// 피격
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
-
 public:
 	// 카메라를 붙일 소켓 이름 [에디터에서 변경 가능함] 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera")
@@ -58,6 +61,9 @@ public:
 	// 인터렉션 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interaction", meta = (AllowPrivateAccess = "true"))
 	UInteractionComponent* InteractionComponent;
+
+	UPROPERTY(VisibleAnywhere, Category = "Inventory")
+	UInventoryComponent* PlayerInventory;
 	
 	// 캐릭터 이동 중 바라보는 곳으로 몸 회전 속도 (1 ~ 10까지 해봤는데 5가 가장 적당함)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
@@ -131,6 +137,12 @@ public:
 	UInputAction* InputAimingAction;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputReloadAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* InteractAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* ToggleMenuAction;
 	
 	// 이동 입력 잠금 제어 함수 
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category="Input")

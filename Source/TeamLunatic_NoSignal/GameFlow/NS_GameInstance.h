@@ -3,6 +3,8 @@
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
 #include "EGameModeType.h"  
+#include "Interfaces/OnlineSessionInterface.h"
+#include "OnlineSessionSettings.h"
 #include "NS_GameInstance.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnCreateSessionSuccess);
@@ -22,11 +24,12 @@ public:
 	void SetGameModeType(EGameModeType Type);
 	EGameModeType GetGameModeType() const { return GameModeType; }
 
-	void CreateSession(APlayerController* PC, int32 NumConnections, bool bIsLAN);
-	void SetCurrentSaveSlot(FString SaveSlotName);
+	void CreateSession(FName SessionName, bool bIsLAN, int32 MaxPlayers);
+
 private:
 	EGameModeType GameModeType = EGameModeType::SinglePlayMode;
 
-	TSharedPtr<class FOnlineSessionSettings> SessionSettings;
 	void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
+
+	TSharedPtr<FOnlineSessionSettings> SessionSettings;
 };

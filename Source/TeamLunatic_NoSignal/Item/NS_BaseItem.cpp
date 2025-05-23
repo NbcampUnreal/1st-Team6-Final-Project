@@ -1,6 +1,7 @@
 #include "Item/NS_BaseItem.h"
+#include "Inventory/InventoryComponent.h"
 
-ANS_BaseItem::ANS_BaseItem()
+ANS_BaseItem::ANS_BaseItem() : bisCopy(false), bisPickup(false)
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
@@ -24,7 +25,7 @@ void ANS_BaseItem::BeginPlay()
 		ItemType = ItemData->ItemType;
 		WeaponType = ItemData->WeaponType;
 		ItemName = ItemData->ItemTextData.ItemName;
-		Weight = ItemData->ItemNumericData.Weight;
+		NumericData = ItemData->ItemNumericData;
 		GetItemSound = ItemData->ItemAssetData.UseSound;
 		ItemMesh = ItemData->ItemAssetData.StaticMesh;
 		Icon = ItemData->ItemAssetData.Icon;
@@ -33,6 +34,43 @@ void ANS_BaseItem::BeginPlay()
 	InstanceInteractableData.InteractableType = EInteractableType::Pickup;
 	InstanceInteractableData.Name = ItemName;
 	InstanceInteractableData.Action = FText::FromString("to pick up");
+}
+
+void ANS_BaseItem::ResetItemFlags()
+{
+	bisCopy = false;
+	bisPickup = false;
+}
+
+ANS_BaseItem* ANS_BaseItem::CreateItemCopy()
+{
+	ANS_BaseItem* ItemCopy = NewObject<ANS_BaseItem>(StaticClass());
+
+	ItemCopy->ItemDataRowName = this->ItemDataRowName;
+	ItemCopy->ItemName = this->ItemName;
+	ItemCopy->ItemType = this->ItemType;
+	ItemCopy->TextData = this->TextData;
+	ItemCopy->NumericData = this->NumericData;
+	ItemCopy->AssetData = this->AssetData;
+	ItemCopy->bisCopy = true;
+
+	return ItemCopy;
+}
+
+void ANS_BaseItem::SetQuantity(const int32 NewQuantity)
+{
+	if (NewQuantity != Quantity)
+	{
+		Quantity = FMath::Clamp(NewQuantity, 0, NumericData.isStackable ? NumericData.MaxStack : 1);
+
+		if (OwingInventory)
+		{
+			if (Quantity <= 0)
+			{
+				OwingInventory->RemoveSingleInstanceOfItem(this);
+			}
+		}
+	}
 }
 
 const FNS_ItemDataStruct* ANS_BaseItem::GetItemData() const
