@@ -23,7 +23,6 @@ void ANS_BaseItem::BeginPlay()
 	if (ItemData)
 	{
 		ItemType = ItemData->ItemType;
-		WeaponType = ItemData->WeaponType;
 		ItemName = ItemData->ItemTextData.ItemName;
 		NumericData = ItemData->ItemNumericData;
 		GetItemSound = ItemData->ItemAssetData.UseSound;
