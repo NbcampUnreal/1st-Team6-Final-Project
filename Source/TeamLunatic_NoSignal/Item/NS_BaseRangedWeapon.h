@@ -1,0 +1,32 @@
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Item/NS_BaseWeapon.h"
+#include "NS_BaseRangedWeapon.generated.h"
+
+class UNiagaraComponent;
+class UNiagaraSystem;
+
+UCLASS()
+class TEAMLUNATIC_NOSIGNAL_API ANS_BaseRangedWeapon : public ANS_BaseWeapon
+{
+	GENERATED_BODY()
+	
+public:
+	ANS_BaseRangedWeapon();
+
+protected:
+	virtual void BeginPlay() override;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
+	USkeletalMesh* RangedWeaponMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
+	USkeletalMeshComponent* RangedWeaponMeshComp;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponFX")
+	UNiagaraComponent* NiagaraComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponFX")
+	UNiagaraSystem* NiagaraEffect;
+};

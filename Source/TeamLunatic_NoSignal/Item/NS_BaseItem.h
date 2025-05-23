@@ -7,6 +7,8 @@
 #include "Interaction/InteractionInterface.h"
 #include "NS_BaseItem.generated.h"
 
+class UInventoryComponent;
+
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_BaseItem : public AActor, public IInteractionInterface
 {
@@ -15,9 +17,11 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_BaseItem : public AActor, public IInteraction
 public:	
 	ANS_BaseItem();
 
+	UInventoryComponent* OwingInventory;
+	
 protected:
-	virtual void BeginPlay() override;
-
+  virtual void BeginPlay();
+  
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Confige")
 	UDataTable* ItemsDataTable;
 
@@ -26,9 +30,6 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	EItemType ItemType;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
-	EWeaponType WeaponType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	FText ItemName;
@@ -53,7 +54,6 @@ protected:
 
 public:	
 	EItemType GetItemType() const { return ItemType; }
-	EWeaponType GetWeaponType() const { return WeaponType; }
 	FText GetItemName() const { return ItemName; }
 	float GetWeight() const { return Weight; }
 	const FNS_ItemDataStruct* GetItemData() const;
@@ -62,6 +62,12 @@ public:
 
 	virtual void OnUseItem();
 
-	virtual void BeginFocus() override;
-	virtual void EndFocus() override;
+	virtual void BeginFocus();
+	virtual void EndFocus();
+
+protected:
+	bool operator == (const FName& OtherID) const
+	{
+		return ItemDataRowName == OtherID;
+	}
 };
