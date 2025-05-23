@@ -7,6 +7,8 @@
 #include "Interaction/InteractionInterface.h"
 #include "NS_BaseItem.generated.h"
 
+class UInventoryComponent;
+
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_BaseItem : public AActor, public IInteractionInterface
 {
