@@ -28,12 +28,12 @@ struct FInteractionData
 	float LastInteractionCheckTime;
 };
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class TEAMLUNATIC_NOSIGNAL_API UInteractionComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
-public:	
+public:
 	// Sets default values for this component's properties
 	UInteractionComponent();
 
@@ -43,6 +43,9 @@ public:
 
 	FORCEINLINE bool IsInteracting() const { return GetWorld()->GetTimerManager().IsTimerActive(TimerHandle_Interaction); }
 
+	TScriptInterface<class IInteractionInterface> GetCurrentInteractable() const { return TargetInteractable; }
+	void UpdateInteractionWidget();
+	void ToggleMenu();
 protected:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
