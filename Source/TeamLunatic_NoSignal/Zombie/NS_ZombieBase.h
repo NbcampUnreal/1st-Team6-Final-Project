@@ -22,7 +22,10 @@ protected:
 	virtual void BeginPlay() override;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	USphereComponent* SphereComp;
-	
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category="Mesh")
+	USkeletalMeshComponent* SkeletalMesh;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Mesh")
+	UAnimInstance* AnimInstance;
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite, Category = "Stat")
 	float MaxHealth;
 	

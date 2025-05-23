@@ -11,8 +11,8 @@
 ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), CurrentState(Enum_ZombieState::PATROLL)
 {
 	PrimaryActorTick.bCanEverTick = true;
+
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> ManequineAsset(TEXT("/Game/YI_ModularZombies/Demo/Characters/Mannequins/Meshes/SKM_Manny"));
-	
 	if (ManequineAsset.Succeeded())
 	{
 		GetMesh()->SetSkeletalMesh(ManequineAsset.Object);
@@ -35,7 +35,6 @@ void ANS_ZombieBase::BeginPlay()
 void ANS_ZombieBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 
