@@ -135,6 +135,16 @@ bool NS_SaveLoadHelper::DeleteExistingSave(const FString& SlotName) // Delete! S
     }
     return false;
 }
+FString NS_SaveLoadHelper::FormatDateTime_YMDHM(const FDateTime& InDateTime)
+{
+	FString FormattedDateTime = FString::Printf(TEXT("%04d-%02d-%02d %02d:%02d"),
+		InDateTime.GetYear(),
+		InDateTime.GetMonth(),
+		InDateTime.GetDay(),
+		InDateTime.GetHour(),
+		InDateTime.GetMinute());
+    return FormattedDateTime;
+}
 UNS_SaveGameMetaData* NS_SaveLoadHelper::LoadSaveMetaData()
 {
     if (!UGameplayStatics::DoesSaveGameExist(NS_SaveLoadHelper::MetaSlotName, 0)) 

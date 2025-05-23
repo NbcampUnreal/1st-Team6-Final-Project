@@ -94,7 +94,7 @@ void UNS_NewGameR::StartGame()
 {
     const FString SlotName = GetSaveSlotName();
 
-    FString SelectedLevelName = ComboBoxString_mapName->GetSelectedOption();
+    FString SelectedLevelName = NS_SaveLoadHelper::GameLevelName;//ComboBoxString_mapName->GetSelectedOption();
 	
     //이부분  PlayerData.Health,SavePosition => "Game Level 기획Table" 같은거에 받아서 적용되어야함. 임시로 그냥 넣은거임.
     FPlayerSaveData PlayerData;
