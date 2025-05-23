@@ -18,9 +18,10 @@ public:
 	ANS_BaseItem();
 
 	UInventoryComponent* OwingInventory;
-
-	virtual void BeginPlay() override;
-
+	
+protected:
+  virtual void BeginPlay();
+  
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Confige")
 	UDataTable* ItemsDataTable;
 
@@ -29,9 +30,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	EItemType ItemType;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
-	EWeaponType WeaponType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	FText ItemName;
@@ -54,39 +52,8 @@ public:
 	UPROPERTY(EditAnywhere, Category = "PickUp")
 	FInteractableData InstanceInteractableData;
 
-	UPROPERTY(EditAnywhere, Category = "ItemData")
-	FItemNumericData NumericData;
-
-	UPROPERTY(EditAnywhere, Category = "ItemData")
-	FItemTextData TextData;
-
-	UPROPERTY(EditAnywhere, Category = "ItemData")
-	FItemAssetData AssetData;
-
-	UPROPERTY(VisibleAnywhere, Category = "ItemData", meta = (UIMin=1, UIMax=100))
-	int32 Quantity;
-
-	bool bisCopy;
-	bool bisPickup;
-
-	void ResetItemFlags();
-
-	ANS_BaseItem* CreateItemCopy();
-
-	UFUNCTION(Category = "Item")
-	FORCEINLINE float GetItemStackWeight() const { return Quantity * NumericData.Weight; };
-
-	UFUNCTION(Category = "Item")
-	FORCEINLINE float GetItemSingleWeight() const { return NumericData.Weight; };
-
-	UFUNCTION(Category = "Item")
-	FORCEINLINE bool IsFullItemStack() const { return Quantity == NumericData.MaxStack; };
-
-	UFUNCTION(Category = "Item")
-	void SetQuantity(const int32 NewQuantity);
 public:	
 	EItemType GetItemType() const { return ItemType; }
-	EWeaponType GetWeaponType() const { return WeaponType; }
 	FText GetItemName() const { return ItemName; }
 	float GetWeight() const { return Weight; }
 	const FNS_ItemDataStruct* GetItemData() const;
@@ -95,8 +62,8 @@ public:
 
 	virtual void OnUseItem();
 
-	virtual void BeginFocus() override;
-	virtual void EndFocus() override;
+	virtual void BeginFocus();
+	virtual void EndFocus();
 
 protected:
 	bool operator == (const FName& OtherID) const

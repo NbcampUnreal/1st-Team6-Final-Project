@@ -24,23 +24,81 @@ ANS_AIController::ANS_AIController()
 	
 	BehaviorTreeComp = CreateDefaultSubobject<UBehaviorTreeComponent>("BehaviorTreeComponent");
 	BlackboardComp = CreateDefaultSubobject<UBlackboardComponent>("BlackboardComponent");
-
-	Perception->OnTargetPerceptionUpdated.AddDynamic(this, &ANS_AIController::OnTargetDetected);
 }
 
 void ANS_AIController::BeginPlay()
 {
 	Super::BeginPlay();
-
 	if (UseBlackboard(BehaviorTreeAsset->BlackboardAsset, BlackboardComp))
 	{
 		RunBehaviorTree(BehaviorTreeAsset);
-		UE_LOG(LogTemp, Error, TEXT("BehaviorTreeAsset is!"));
+	}
+
+	Perception->OnTargetPerceptionUpdated.AddDynamic(this, &ANS_AIController::OnPerceptionUpdated);
+}
+
+void ANS_AIController::OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
+{
+	FString SenseName = Stimulus.Type.Name.ToString();
+	if (SenseName == "Default__AISense_Sight")
+	{
+		HandleSightStimulus();
+	}
+	else if (SenseName == "Default__AISense_Hearing")
+	{
+		HandleHearingStimulus(Stimulus);
+	}
+	else if (SenseName == "Default__AISense_Damage"){
+		HandleDamageStimulus(Actor);
+	}
+}
+
+void ANS_AIController::HandleSightStimulus()
+{
+	AActor* Actor = GetClosestSightTarget();
+	if (Actor)
+	{
+		BlackboardComp->SetValueAsObject("TargetActor", Actor);
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("BehaviorTreeAsset is null!"));
+		BlackboardComp->ClearValue("TargetActor");
 	}
+}
+
+void ANS_AIController::HandleHearingStimulus(const FAIStimulus& Stimulus)
+{	
+	BlackboardComp->SetValueAsVector("HeardLocation", Stimulus.StimulusLocation);	
+}
+
+void ANS_AIController::HandleDamageStimulus(AActor* Attacker)
+{
+	BlackboardComp->SetValueAsObject("TargetActor", Attacker);
+}
+
+
+AActor* ANS_AIController::GetClosestSightTarget()
+{
+	TArray<AActor*> Targets;
+	float ClosestDist = FLT_MAX;
+	Perception->GetCurrentlyPerceivedActors(UAISense_Sight::StaticClass(), Targets);
+	FVector PawnLocation = GetPawn()->GetActorLocation();
+	
+	AActor* ClosestSightTarget = nullptr;
+	
+	for (AActor* Actor : Targets)
+	{
+		if (!Actor->ActorHasTag("Player")) continue;
+
+		float dist = FVector::DistSquared(Actor->GetActorLocation(), PawnLocation);
+		if (dist < ClosestDist)
+		{
+			ClosestDist = dist;
+			ClosestSightTarget = Actor;
+		}
+	}
+	if (ClosestSightTarget) return ClosestSightTarget;
+	return nullptr;
 }
 
 void ANS_AIController::InitializingSightConfig()
@@ -67,21 +125,5 @@ void ANS_AIController::InitializingHearingConfig()
 		HearingConfig->DetectionByAffiliation.bDetectEnemies = true;
 		HearingConfig->DetectionByAffiliation.bDetectNeutrals = true;
 		HearingConfig->DetectionByAffiliation.bDetectFriendlies = false;
-	}
-}
-
-void ANS_AIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulus)
-{
-	if (Stimulus.WasSuccessfullySensed())
-	{
-		if (Actor->ActorHasTag(TEXT("Player")))
-		{
-			GetBlackboardComponent()->SetValueAsObject("TargetActor", Actor);
-		}
-	}
-	else
-	{
-		GetBlackboardComponent()->ClearValue("TargetActor");
-		BlackboardComp->SetValueAsVector("LastSeenLocation", Stimulus.StimulusLocation);
 	}
 }

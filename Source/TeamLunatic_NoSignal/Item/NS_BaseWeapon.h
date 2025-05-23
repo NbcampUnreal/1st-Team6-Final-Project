@@ -17,7 +17,13 @@ public:
 	ANS_BaseWeapon();
 
 protected:
-	virtual void BeginPlay() override;
+	virtual void BeginPlay();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
+	EWeaponType WeaponType;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
+	int32 WeaponDamage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	float Durability;
@@ -43,14 +49,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	UCapsuleComponent* CapsuleComponent;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|HitDetection")
-	bool bUseBoxComponent;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|HitDetection")
-	bool bUseSphereComponent;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|HitDetection")
-	bool bUseCapsuleComponent;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
+	FName SocketName;
 
 public:
 };

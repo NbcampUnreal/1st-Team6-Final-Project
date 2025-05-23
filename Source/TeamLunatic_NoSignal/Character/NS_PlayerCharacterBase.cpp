@@ -4,10 +4,6 @@
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Interaction/InteractionInterface.h"
-#include "Inventory/InventoryComponent.h"
-#include "Interaction/Component/InteractionComponent.h"
-
 #include <Net/UnrealNetwork.h>
 
 ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
@@ -32,10 +28,6 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     InteractionComponent = CreateDefaultSubobject<UInteractionComponent>(TEXT("InteractionComponent"));
 
     BaseEyeHeight = 74.0f;
-    // 인벤토리
-    PlayerInventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("PlayerInventory"));
-    PlayerInventory->SetSlotsCapacity(20);
-    PlayerInventory->SetWeightCapacity(50.0f);
 }
 
 void ANS_PlayerCharacterBase::BeginPlay()
@@ -189,32 +181,22 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                &ANS_PlayerCharacterBase::KickAction_Server);
         }
 
-        if (InteractAction)
-        {
-            EnhancedInput->BindAction(
-                InteractAction,
-                ETriggerEvent::Started,
-               InteractionComponent,
-                &UInteractionComponent::BeginInteract
-            );
+        // if (InteractAction)
+        // {
+        //     EnhancedInput->BindAction(
+        //         InteractAction,
+        //         ETriggerEvent::Started,
+        //         InteractionComponent,
+        //         &UInteractionComponent::BeginInteract
+        //     );
 
-             EnhancedInput->BindAction(
-                 InteractAction,
-                 ETriggerEvent::Completed,
-                 InteractionComponent,
-                 &UInteractionComponent::EndInteract
-             );
-        }
-
-        if (ToggleMenuAction)
-        {
-            EnhancedInput->BindAction(
-                ToggleMenuAction,
-                ETriggerEvent::Triggered,
-                InteractionComponent,
-                &UInteractionComponent::ToggleMenu
-            );
-        }
+        //     EnhancedInput->BindAction(
+        //         InteractAction,
+        //         ETriggerEvent::Completed,
+        //         InteractionComponent,
+        //         &UInteractionComponent::EndInteract
+        //     );
+        // }
 
         if (InputAttackAction)
         {
