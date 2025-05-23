@@ -7,8 +7,6 @@
 #include "Interaction/InteractionInterface.h"
 #include "NS_BaseItem.generated.h"
 
-class UInventoryComponent;
-
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_BaseItem : public AActor, public IInteractionInterface
 {
@@ -17,11 +15,17 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_BaseItem : public AActor, public IInteraction
 public:	
 	ANS_BaseItem();
 
+<<<<<<< HEAD
 	UInventoryComponent* OwingInventory;
 	
 protected:
   virtual void BeginPlay();
   
+=======
+protected:
+	virtual void BeginPlay() override;
+
+>>>>>>> parent of 189edb63a ([Fix]인벤토리 컴포넌트, 픽업 수정 #7)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Confige")
 	UDataTable* ItemsDataTable;
 
@@ -62,6 +66,7 @@ public:
 
 	virtual void OnUseItem();
 
+<<<<<<< HEAD
 	virtual void BeginFocus();
 	virtual void EndFocus();
 
@@ -70,4 +75,8 @@ protected:
 	{
 		return ItemDataRowName == OtherID;
 	}
+=======
+	virtual void BeginFocus() override;
+	virtual void EndFocus() override;
+>>>>>>> parent of 189edb63a ([Fix]인벤토리 컴포넌트, 픽업 수정 #7)
 };

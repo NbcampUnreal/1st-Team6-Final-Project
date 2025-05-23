@@ -12,6 +12,17 @@ UInteractionComponent::UInteractionComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
+<<<<<<< HEAD
+=======
+void UInteractionComponent::UpdateInteractionWidget()
+{
+	if (IsValid(TargetInteractable.GetObject()))
+	{
+		HUD->UpdateInteractionWidget(&TargetInteractable->InteractableData);
+	}
+}
+
+>>>>>>> parent of 189edb63a ([Fix]인벤토리 컴포넌트, 픽업 수정 #7)
 void UInteractionComponent::BeginPlay()
 {
 	Super::BeginPlay();

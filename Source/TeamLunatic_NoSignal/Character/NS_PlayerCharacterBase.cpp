@@ -190,6 +190,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
         //         &UInteractionComponent::BeginInteract
         //     );
 
+<<<<<<< HEAD
         //     EnhancedInput->BindAction(
         //         InteractAction,
         //         ETriggerEvent::Completed,
@@ -197,6 +198,15 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
         //         &UInteractionComponent::EndInteract
         //     );
         // }
+=======
+             EnhancedInput->BindAction(
+                 InteractAction,
+                 ETriggerEvent::Completed,
+                 InteractionComponent,
+                 &UInteractionComponent::EndInteract
+             );
+        }
+>>>>>>> parent of 189edb63a ([Fix]인벤토리 컴포넌트, 픽업 수정 #7)
 
         if (InputAttackAction)
         {

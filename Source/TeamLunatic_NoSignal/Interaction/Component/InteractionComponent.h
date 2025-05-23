@@ -43,6 +43,11 @@ public:
 
 	FORCEINLINE bool IsInteracting() const { return GetWorld()->GetTimerManager().IsTimerActive(TimerHandle_Interaction); }
 
+<<<<<<< HEAD
+=======
+	TScriptInterface<class IInteractionInterface> GetCurrentInteractable() const { return TargetInteractable; }
+	void UpdateInteractionWidget();
+>>>>>>> parent of 189edb63a ([Fix]인벤토리 컴포넌트, 픽업 수정 #7)
 protected:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
