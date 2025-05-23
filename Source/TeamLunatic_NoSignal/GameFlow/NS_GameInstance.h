@@ -20,11 +20,14 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "SaveGame")
 	FString CurrentSaveSlotName;
 
-	// ���� ��� ����
 	void SetGameModeType(EGameModeType Type);
 	EGameModeType GetGameModeType() const { return GameModeType; }
 
 	void CreateSession(FName SessionName, bool bIsLAN, int32 MaxPlayers);
+
+	UPROPERTY(EditAnywhere, Category = "Level")
+	TSoftObjectPtr<UWorld> WaitingRoom;
+
 
 private:
 	EGameModeType GameModeType = EGameModeType::SinglePlayMode;
@@ -32,4 +35,4 @@ private:
 	void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
 
 	TSharedPtr<FOnlineSessionSettings> SessionSettings;
-};
+}; 

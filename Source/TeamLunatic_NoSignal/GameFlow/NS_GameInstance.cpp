@@ -40,7 +40,18 @@ void UNS_GameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSucce
 	if (bWasSuccessful)
 	{
 		UE_LOG(LogTemp, Log, TEXT("Session created successfully: %s"), *SessionName.ToString());
-		//UGameplayStatics::OpenLevel(GetWorld(), "대기실"); 
+		
+		if (!WaitingRoom.IsNull())
+		{
+			FString LevelPath = WaitingRoom.GetLongPackageName();
+			UE_LOG(LogTemp, Log, TEXT("Opening level: %s"), *LevelPath);
+			UGameplayStatics::OpenLevel(GetWorld(), FName(*LevelPath));
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("No WaitingRoom assigned. Cannot open level."));
+		}
+
 	}
 	else
 	{
