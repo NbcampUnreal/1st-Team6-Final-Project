@@ -78,40 +78,7 @@ void ANS_PlayerCharacterBase::BeginPlay()
 void ANS_PlayerCharacterBase::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-
-    if (!Controller)
-        return;
-
-    // 캐릭터의 이동 속도에 따라 bUseControllerRotationYaw 설정
-    // 이동 속도가 0보다 크면 true (캐릭터 몸통이 컨트롤러 회전 따라감)
-    // 이동 속도가 0이면 false (캐릭터 몸통이 컨트롤러 회전 안 따라감)
-    if (GetCharacterMovement()) //
-    {
-        if (GetCharacterMovement()->Velocity.SizeSquared() > KINDA_SMALL_NUMBER) // 이동 중
-        {
-            bUseControllerRotationYaw = true; //
-        }
-        else // 정지 상태
-        {
-            bUseControllerRotationYaw = false; //
-        }
-    }
-
-    // // 캐릭터가 이동중이라면 몸체회전시키는변수인 CharacterTurnSpeed = 5값으로 카메라가 바라보는 중앙으로 몸을 회전시킴
-    // // 이전에 주석 처리된 몸통 회전 로직은 bUseControllerRotationYaw를 동적으로 변경하는 방식과 충돌하므로 계속 주석 처리합니다.
-    // if (!GetCharacterMovement()->Velocity.IsNearlyZero())
-    // {
-    //     // 캐릭터가 바라봐야 할 목표 방향
-    //     const float TargetYaw = Controller->GetControlRotation().Yaw;
-    //     // 캐릭터가 회전하는 값
-    //     const FRotator Current = GetActorRotation();
-    //     // 캐릭터가 최종적으로 회전해야하는 목표 값
-    //     const FRotator Desired(0.f, TargetYaw, 0.f);
-    //     // 현재 캐릭터의 회전 값인 Current에서 목표 값인 Desired으로 CharacterTurnSpeed에 저장된 회전 속도로 회전함
-    //     const FRotator NewRot = FMath::RInterpTo(Current, Desired, DeltaTime, CharacterTurnSpeed);
-    //     // 계산된 NewRot값을 캐릭터에 실제로 적용시켜 회전
-    //     SetActorRotation(NewRot);
-    // }
+    
 }
 
 void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
