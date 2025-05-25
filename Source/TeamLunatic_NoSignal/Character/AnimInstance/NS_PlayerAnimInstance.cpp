@@ -15,30 +15,25 @@ void UNS_PlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     Super::NativeUpdateAnimation(DeltaSeconds);
     if (!PlayerCharacter) return;
 
-    // 1) AimOffset 업데이트
+    // AimOffset Tick에서 계속 업데이트
     UpdateAimOffset(DeltaSeconds);
 
-    // 2) 이동 중이면 컨트롤러 회전 항상 ON, 턴 플래그 리셋
-    const bool bIsMoving = PlayerCharacter->GetCharacterMovement()
-                                ->Velocity.SizeSquared() > KINDA_SMALL_NUMBER;
+    // 이동 중이면 컨트롤러 회전을 계속 활성화
+    const bool bIsMoving = PlayerCharacter->GetCharacterMovement()->Velocity.SizeSquared() > KINDA_SMALL_NUMBER;
     if (bIsMoving)
     {
-        bIsTurningRight = bIsTurningLeft = false;
         PlayerCharacter->bUseControllerRotationYaw = true;
     }
-    else
+    else // 이동중이 아니명 컨트롤러 회전 yaw를 비활성화
     {
-        if (!bIsTurningInPlace)
-        {
-            PlayerCharacter->bUseControllerRotationYaw = false;
-        }
-        TurnInPlace(DeltaSeconds);
+        PlayerCharacter->bUseControllerRotationYaw = false;
     }
 }
 void UNS_PlayerAnimInstance::UpdateAimOffset(float DeltaSeconds)
 {
     if (!PlayerCharacter) return;
 
+    // 로컬 플레이어라면 부드러운 AimYaw와 AimPitch값을 사용
     if (PlayerCharacter->IsLocallyControlled())
     {
         const FRotator ControlRot = PlayerCharacter->GetController()
@@ -56,46 +51,8 @@ void UNS_PlayerAnimInstance::UpdateAimOffset(float DeltaSeconds)
     }
     else // 원격 컨트롤러는 서버에서 복제된 값 사용
     {
-        AimYaw   = FMath::FInterpTo(AimYaw, PlayerCharacter->CamYaw, DeltaSeconds, PlayerCharacter->AimSendInterpSpeed); //
-        AimPitch = FMath::FInterpTo(AimPitch, PlayerCharacter->CamPitch, DeltaSeconds, PlayerCharacter->AimSendInterpSpeed); //
-    }
-}
-
-void UNS_PlayerAnimInstance::TurnInPlace(float DeltaSeconds)
-{
-    if (!PlayerCharacter) return;
-
-    // 1) 오른쪽 턴 시작 체크 (A == +90, 오차 ±2)
-    if (FMath::IsNearlyEqual(AimYaw, TurnInPlaceActivationAngle, 2.f))
-    {
-        bIsTurningInPlace = true;
-        bIsTurningRight = true;
-        bIsTurningLeft  = false;
-        PlayerCharacter->bUseControllerRotationYaw = true;
-    }
-    // 2) 왼쪽 턴 시작 체크 (A == -90, 오차 ±2)
-    else if (FMath::IsNearlyEqual(AimYaw, -TurnInPlaceActivationAngle, 2.f))
-    {
-        bIsTurningInPlace = true;
-        bIsTurningRight  = true;
-        bIsTurningLeft = false;
-        PlayerCharacter->bUseControllerRotationYaw = true;
-    }
-
-    // // 3) 턴 해제 조건: AimYaw가 -2 ~ +2 사이로 돌아왔을 때
-    // if (AimYaw > -TurnInPlaceDeactivationThreshold && AimYaw < TurnInPlaceDeactivationThreshold)
-    // {
-    //     bIsTurningInPlace = false;
-    //     bIsTurningRight = false;
-    //     bIsTurningLeft  = false;
-    //     PlayerCharacter->bUseControllerRotationYaw = false;
-    // }
-    if (FMath::Abs(AimYaw) < TurnInPlaceDeactivationThreshold)
-    {
-        bIsTurningInPlace = false;
-        bIsTurningRight = false;
-        bIsTurningLeft  = false;
-        PlayerCharacter->bUseControllerRotationYaw = false;
+        AimYaw   = FMath::FInterpTo(AimYaw, PlayerCharacter->CamYaw, DeltaSeconds, PlayerCharacter->AimSendInterpSpeed); 
+        AimPitch = FMath::FInterpTo(AimPitch, PlayerCharacter->CamPitch, DeltaSeconds, PlayerCharacter->AimSendInterpSpeed); 
     }
 }
 

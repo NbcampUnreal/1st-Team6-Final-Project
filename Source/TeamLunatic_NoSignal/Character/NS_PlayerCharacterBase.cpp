@@ -301,53 +301,53 @@ void ANS_PlayerCharacterBase::MoveAction(const FInputActionValue& Value)
     if (!GetCharacterMovement()) return;
 
     FVector2D MoveInput = Value.Get<FVector2D>();
-    if (!FMath::IsNearlyZero(MoveInput.X)) //
-        AddMovementInput(GetActorForwardVector(), MoveInput.X); //
-    if (!FMath::IsNearlyZero(MoveInput.Y)) //
-        AddMovementInput(GetActorRightVector(), MoveInput.Y); //
+    if (!FMath::IsNearlyZero(MoveInput.X)) 
+        AddMovementInput(GetActorForwardVector(), MoveInput.X); 
+    if (!FMath::IsNearlyZero(MoveInput.Y)) 
+        AddMovementInput(GetActorRightVector(), MoveInput.Y); 
 }
 
 void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
 {
-    // 1) 카메라 회전 적용
-    FVector2D LookInput = Value.Get<FVector2D>(); //
-    AddControllerYawInput  (LookInput.X); //
-    AddControllerPitchInput(LookInput.Y); //
+    if (!Controller) return;
+    
+    // 카메라 회전 적용
+    FVector2D LookInput = Value.Get<FVector2D>(); 
+    AddControllerYawInput  (LookInput.X); 
+    AddControllerPitchInput(LookInput.Y); 
 
-    if (!Controller) return; //
+    // Actor Rotation과 Control Rotation을 Delta를 이용해 Yaw값 추출
+    const FRotator ActorRot   = GetActorRotation(); 
+    const FRotator ControlRot = Controller->GetControlRotation(); 
+    const FRotator DeltaRot   = UKismetMathLibrary::NormalizedDeltaRotator(ControlRot, ActorRot); 
 
-    // 2) Raw Delta 계산 (BP Delta + Multiply(-1) 와 동일)
-    const FRotator ActorRot   = GetActorRotation(); //
-    const FRotator ControlRot = Controller->GetControlRotation(); //
-    const FRotator DeltaRot   = UKismetMathLibrary::NormalizedDeltaRotator(ControlRot, ActorRot); //
+    const float RawYaw   = DeltaRot.Yaw; 
+    const float RawPitch = DeltaRot.Pitch; 
+    const float DeltaTime = GetWorld()->GetDeltaSeconds();
+    
+    CamYaw   = FMath::FInterpTo(CamYaw,   DeltaRot.Yaw,   DeltaTime, AimSendInterpSpeed); 
+    CamPitch = FMath::FInterpTo(CamPitch, DeltaRot.Pitch, DeltaTime, AimSendInterpSpeed); 
 
-    const float RawYaw   = DeltaRot.Yaw; //
-    const float RawPitch = DeltaRot.Pitch; //
-
-    // 3) 로컬 보간: SmoothedAim → Raw 로 부드럽게 따라가도록
-    const float DeltaTime = GetWorld()->GetDeltaSeconds(); //
-    CamYaw   = FMath::FInterpTo(CamYaw,   DeltaRot.Yaw,   DeltaTime, AimSendInterpSpeed); //
-    CamPitch = FMath::FInterpTo(CamPitch, DeltaRot.Pitch, DeltaTime, AimSendInterpSpeed); //
-
-    // 4) 보간된 값을 서버로 전송
-    UpdateAim_Server(CamYaw, CamPitch); //
+    // InterpTo를 이요해서 부드러운 Yaw/Pitch값을 서버로 전송
+    UpdateAim_Server(CamYaw, CamPitch); 
 }
 
 void ANS_PlayerCharacterBase::JumpAction(const FInputActionValue& Value)
 {
-    bool IsJump = Value.Get<bool>(); //
+    bool IsJump = Value.Get<bool>(); 
     
-    if (IsJump && IsCanJump) //
+    if (IsJump && IsCanJump) 
     {
-        Jump(); //
-        IsCanJump = false; //
+        Jump(); 
+        IsCanJump = false; 
 
-        FTimerHandle RestartJumpTime; //
-        GetWorldTimerManager().SetTimer( //
-            RestartJumpTime, //
-            FTimerDelegate::CreateLambda([this]() { IsCanJump = true; }), //
-            1.3f, //
-            false //
+        // 점프한 뒤로 1.3초동안은 점프를 못함
+        FTimerHandle RestartJumpTime; 
+        GetWorldTimerManager().SetTimer( 
+            RestartJumpTime, 
+            FTimerDelegate::CreateLambda([this]() { IsCanJump = true; }), 
+            1.3f, 
+            false 
         );
     }
 }
@@ -355,127 +355,127 @@ void ANS_PlayerCharacterBase::JumpAction(const FInputActionValue& Value)
 void ANS_PlayerCharacterBase::StartCrouch(const FInputActionValue& Value)
 {
 	//점프 중이거나 발차기 중일 때는 앉지 않음
-    if (GetCharacterMovement()->IsFalling() || IsKick) { return; } //
+    if (GetCharacterMovement()->IsFalling() || IsKick) { return; } 
     
-    Crouch(); //
+    Crouch(); 
 }
 
 void ANS_PlayerCharacterBase::StopCrouch(const FInputActionValue& Value)
 {
-    UnCrouch(); //
+    UnCrouch(); 
 }
 
 void ANS_PlayerCharacterBase::StartSprint_Server_Implementation(const FInputActionValue& Value)
 {
-    IsSprint = true; //
-    if (GetCharacterMovement()) //
-        GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier; //
+    IsSprint = true; 
+    if (GetCharacterMovement()) 
+        GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier; 
 }
 
 void ANS_PlayerCharacterBase::StopSprint_Server_Implementation(const FInputActionValue& Value)
 {
-    IsSprint = false; //
-    if (GetCharacterMovement()) //
-        GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed; //
+    IsSprint = false; 
+    if (GetCharacterMovement()) 
+        GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed; 
 }
 
 void ANS_PlayerCharacterBase::KickAction_Server_Implementation(const FInputActionValue& Value)
 {
-    if (GetCharacterMovement()->IsFalling()) {return;} //
+    if (GetCharacterMovement()->IsFalling()) {return;} 
 
-    IsKick = true; //
+    IsKick = true; 
 
     // 1.2초간 실행 후 IsKick변수는 false로 변경
-    FTimerHandle ResettKickTime; //
-    GetWorldTimerManager().SetTimer( //
-        ResettKickTime, //
-        FTimerDelegate::CreateLambda([this]() { IsKick = false; }), //
-        1.2f, //
-        false //
+    FTimerHandle ResettKickTime; 
+    GetWorldTimerManager().SetTimer( 
+        ResettKickTime, 
+        FTimerDelegate::CreateLambda([this]() { IsKick = false; }), 
+        1.2f, 
+        false 
     );
 }
 
 void ANS_PlayerCharacterBase::StartAttackAction_Server_Implementation(const FInputActionValue& Value)
 {
-    if (GetCharacterMovement()->IsFalling()) {return;} //
+    if (GetCharacterMovement()->IsFalling()) {return;} 
 
-    IsAttack = true; //
+    IsAttack = true; 
 }
 
 void ANS_PlayerCharacterBase::StopAttackAction_Server_Implementation(const FInputActionValue& Value)
 {
-    IsAttack = false; //
+    IsAttack = false; 
 }
 
 void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputActionValue& Value)
 {
-    if (GetCharacterMovement()->IsFalling()) {return;} //
+    if (GetCharacterMovement()->IsFalling()) {return;} 
 
-    IsPickUp = true; //
+    IsPickUp = true; 
 
     // 1.0초간 실행 후 IsPickUp변수는 false로 변경
-    FTimerHandle ResetPickUpTime; //
-    GetWorldTimerManager().SetTimer( //
-    ResetPickUpTime, //
-    FTimerDelegate::CreateLambda([this]() { IsPickUp = false; }), //
-    1.0f, //
-    false //
+    FTimerHandle ResetPickUpTime; 
+    GetWorldTimerManager().SetTimer( 
+    ResetPickUpTime, 
+    FTimerDelegate::CreateLambda([this]() { IsPickUp = false; }), 
+    1.0f, 
+    false 
     );
 }
 
 void ANS_PlayerCharacterBase::StartAimingAction_Server_Implementation(const FInputActionValue& Value)
 {
-    IsAiming = true; //
+    IsAiming = true; 
 }
 
 
 void ANS_PlayerCharacterBase::StopAimingAction_Server_Implementation(const FInputActionValue& Value)
 {
-    IsAiming = false; //
+    IsAiming = false; 
 }
 
 void ANS_PlayerCharacterBase::ReloadAction_Server_Implementation(const FInputActionValue& Value)
 {
-    IsReload = true; //
+    IsReload = true; 
 
     // 2.5초간 실행 후 IsReload변수는 false로 변경
-    FTimerHandle ResetPickUpTime; //
-    GetWorldTimerManager().SetTimer( //
-    ResetPickUpTime, //
-    FTimerDelegate::CreateLambda([this]() { IsReload = false; }), //
-    2.5f, //
-    false //
+    FTimerHandle ResetPickUpTime; 
+    GetWorldTimerManager().SetTimer( 
+    ResetPickUpTime, 
+    FTimerDelegate::CreateLambda([this]() { IsReload = false; }), 
+    2.5f, 
+    false 
     );
 }
 //////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
 
 void ANS_PlayerCharacterBase::PlayDeath_Server_Implementation()
 {
-    PlayDeath_Multicast(); //
+    PlayDeath_Multicast(); 
 }
 
 void ANS_PlayerCharacterBase::PlayDeath_Multicast_Implementation()
 {
-    DetachFromControllerPendingDestroy(); //
+    DetachFromControllerPendingDestroy(); 
 	
-    GetCharacterMovement()->DisableMovement(); //
+    GetCharacterMovement()->DisableMovement(); 
 
-    GetMesh()->SetCollisionProfileName("Ragdoll"); //
-    GetMesh()->SetSimulatePhysics(true); //
-    GetMesh()->SetAllBodiesSimulatePhysics(true); //
-    GetMesh()->WakeAllRigidBodies(); //
-    GetMesh()->bBlendPhysics = true; //
-    SetLifeSpan(5.f); //
+    GetMesh()->SetCollisionProfileName("Ragdoll"); 
+    GetMesh()->SetSimulatePhysics(true); 
+    GetMesh()->SetAllBodiesSimulatePhysics(true); 
+    GetMesh()->WakeAllRigidBodies(); 
+    GetMesh()->bBlendPhysics = true; 
+    SetLifeSpan(5.f); 
 }
 
 // 클라이언트면 서버로 클라이언트 자신에 Yaw값과 Pitch값을 서버로 전송
 void ANS_PlayerCharacterBase::UpdateAim_Server_Implementation(float NewCamYaw, float NewCamPitch)
 {
-    CamYaw   = NewCamYaw; //
-    CamPitch = NewCamPitch; //
+    CamYaw   = NewCamYaw; 
+    CamPitch = NewCamPitch; 
 }
 
 void ANS_PlayerCharacterBase::SwapWeapon(TSubclassOf<ANS_BaseMeleeWeapon> WeaponClass)
 {
-    EquipedWeaponComp->SwapWeapon(WeaponClass); //
+    EquipedWeaponComp->SwapWeapon(WeaponClass); 
 }

@@ -18,27 +18,13 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category="Character")
 	class ANS_PlayerCharacterBase* PlayerCharacter = nullptr;
 
-	// AimOffset 보간값
+	// PlayerCharacterBase에 있는 CamYaw값과는 다른 로컬용 Yaw값
 	UPROPERTY(BlueprintReadOnly, Category="Aim")
 	float AimYaw   = 0.f;
+	// PlayerCharacterBase에 있는 CamPitch값과는 다른 로컬용 Pitch값
 	UPROPERTY(BlueprintReadOnly, Category="Aim")
 	float AimPitch = 0.f;
 
-	// TurnInPlace 상태
-	UPROPERTY(BlueprintReadOnly, Category="TurnInPlace")
-	bool bIsTurningInPlace = false;
-	UPROPERTY(BlueprintReadOnly, Category="TurnInPlace")
-	bool bIsTurningLeft = false;
-	UPROPERTY(BlueprintReadOnly, Category="TurnInPlace")
-	bool bIsTurningRight = false;
-
-	// 시작·종료 임계각
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="TurnInPlace")
-	float TurnInPlaceActivationAngle = 90.f;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="TurnInPlace")
-	float TurnInPlaceDeactivationThreshold = 2.f;
-
-	// 내부 로직
+	
 	void UpdateAimOffset(float DeltaSeconds);
-	void TurnInPlace(float DeltaSeconds);
 };

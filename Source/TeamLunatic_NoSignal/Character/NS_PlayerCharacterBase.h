@@ -71,9 +71,9 @@ public:
 	////////////////////////////////////캐릭터 부착 컴포넌트들 끝!///////////////////////////////////////
 
 
-	// LookAction에서 서버 전송 시 보간 속도
+	// LookAction에 카메라 회전값 보간 속도 ---> 8은 너무 느려서 10이상은 되어야할 듯
 	UPROPERTY(EditDefaultsOnly, Category = "Aim")
-	float AimSendInterpSpeed = 8.f;
+	float AimSendInterpSpeed = 15.f;
 	
 	// ========== 이동 관련 =============
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
