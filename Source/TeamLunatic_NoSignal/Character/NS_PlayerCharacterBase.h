@@ -68,10 +68,12 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UNS_EquipedWeaponComponent* EquipedWeaponComp;
-
-	
 	////////////////////////////////////캐릭터 부착 컴포넌트들 끝!///////////////////////////////////////
-	
+
+
+	// LookAction에서 서버 전송 시 보간 속도
+	UPROPERTY(EditDefaultsOnly, Category = "Aim")
+	float AimSendInterpSpeed = 8.f;
 
 	// 캐릭터 이동 중 바라보는 곳으로 몸 회전 속도 (1 ~ 10까지 해봤는데 5가 가장 적당함)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
@@ -208,7 +210,7 @@ public:
 
 	// 카메라 Yaw값, Pitch값 서버로 전송
 	UFUNCTION(BlueprintCallable, Server, Reliable)
-	void UpdateAim_Server(float NewAimYaw, float NewAimPitch);
+	void UpdateAim_Server(float NewCamYaw, float NewCamPitch);
 
 	UFUNCTION()
 	void SwapWeapon(TSubclassOf<ANS_BaseMeleeWeapon> WeaponClass);
