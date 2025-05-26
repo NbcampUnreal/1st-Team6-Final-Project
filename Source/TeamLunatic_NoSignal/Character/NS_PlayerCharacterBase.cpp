@@ -399,12 +399,12 @@ void ANS_PlayerCharacterBase::StartAttackAction_Server_Implementation(const FInp
 {
     if (GetCharacterMovement()->IsFalling()) {return;} 
 
-    IsAttack = true; 
+    IsAttack = true;
 }
 
 void ANS_PlayerCharacterBase::StopAttackAction_Server_Implementation(const FInputActionValue& Value)
 {
-    IsAttack = false; 
+    IsAttack = false;
 }
 
 void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputActionValue& Value)

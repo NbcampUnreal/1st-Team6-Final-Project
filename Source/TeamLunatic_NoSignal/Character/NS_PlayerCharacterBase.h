@@ -73,7 +73,7 @@ public:
 
 	// LookAction에 카메라 회전값 보간 속도 ---> 8은 너무 느려서 10이상은 되어야할 듯
 	UPROPERTY(EditDefaultsOnly, Category = "Aim")
-	float AimSendInterpSpeed = 15.f;
+	float AimSendInterpSpeed = 10.f;
 	
 	// ========== 이동 관련 =============
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
