@@ -25,3 +25,8 @@ void UTempGameInstance::Init()
 		UIManager->InitUi(GetWorld());
 	}
 }
+
+void UTempGameInstance::SetCurrentSaveSlot(FString SlotNameInfo)
+{
+	CurrentSaveSlotName = SlotNameInfo;
+}
