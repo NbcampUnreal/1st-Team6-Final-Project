@@ -86,16 +86,28 @@ void UNS_ServerBrowserR::RefreshServerList()
     {
         if (UNS_GameInstance* NSGI = Cast<UNS_GameInstance>(GI))
         {
+            NSGI->OnSessionSearchSuccess.Clear();
+
             NSGI->OnSessionSearchSuccess.AddLambda([this](const TArray<FOnlineSessionSearchResult>& Results)
             {
                 for (const FOnlineSessionSearchResult& Result : Results)
                 {
-                    AddServerEntry(Result);
+                    if (!Result.IsValid())
+                        continue;
+
+                    const FOnlineSession& Session = Result.Session;
+
+                    if (Session.NumOpenPublicConnections > 0 &&
+                        !Session.OwningUserName.IsEmpty())
+                    {
+                        AddServerEntry(Result);
+                    }
                 }
 
                 if (CircularThrobber_Image)
                     CircularThrobber_Image->SetVisibility(ESlateVisibility::Hidden);
             });
+
 
             NSGI->FindSessions(bUseLAN);
         }

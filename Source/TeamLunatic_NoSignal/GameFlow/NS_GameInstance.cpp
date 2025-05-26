@@ -7,7 +7,7 @@
 #include "OnlineSubsystem.h"                          // IOnlineSubsystem
 #include "OnlineSessionSettings.h"                    // FOnlineSessionSettings
 #include "Interfaces/OnlineSessionInterface.h"        // IOnlineSessionPtr
-
+#include <Online/OnlineSessionNames.h>
 void UNS_GameInstance::SetGameModeType(EGameModeType Type)
 {
 	GameModeType = Type;
@@ -28,9 +28,12 @@ void UNS_GameInstance::CreateSession(FName SessionName, bool bIsLAN, int32 MaxPl
 	SessionSettings->bShouldAdvertise = true;
 	SessionSettings->bUsesPresence = true;
 	SessionSettings->bUseLobbiesIfAvailable = true;
-
+	SessionSettings->BuildUniqueId = 0203;
 	SessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this, &UNS_GameInstance::OnCreateSessionComplete);
 	SessionInterface->CreateSession(0, SessionName, *SessionSettings);
+
+	UE_LOG(LogTemp, Warning, TEXT("[Session] BuildUniqueId = 0x%08X"), SessionSettings->BuildUniqueId);
+
 }
 
 void UNS_GameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful)
@@ -68,7 +71,8 @@ void UNS_GameInstance::FindSessions(bool bIsLAN)
 	SessionSearch = MakeShareable(new FOnlineSessionSearch());
 	SessionSearch->bIsLanQuery = bIsLAN;
 	SessionSearch->MaxSearchResults = 100;
-	SessionSearch->QuerySettings.Set(FName("Presence"), true, EOnlineComparisonOp::Equals);
+	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
+
 
 	Sessions->OnFindSessionsCompleteDelegates.AddUObject(this, &UNS_GameInstance::OnFindSessionsComplete);
 	Sessions->FindSessions(0, SessionSearch.ToSharedRef());
