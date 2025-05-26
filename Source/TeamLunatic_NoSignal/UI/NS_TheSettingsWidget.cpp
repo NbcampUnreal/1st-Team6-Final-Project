@@ -7,7 +7,7 @@
 #include "UI/TempGameInstance.h"
 #include "UI/NS_UIManager.h"
 #include "UI/NS_CommonType.h"
-#include "UI/NS_MainMenu.h"
+#include "UI/NS_BaseMainMenu.h"
 #include "Kismet/GameplayStatics.h"
 
 void UNS_TheSettingsWidget::NativeConstruct()
@@ -30,7 +30,7 @@ void UNS_TheSettingsWidget::NativeConstruct()
         BP_WidgetToggleButton_MainMenu->RootButton->OnClicked.AddUniqueDynamic(this, &UNS_TheSettingsWidget::OnMainMenuClicked);
 }
 
-void UNS_TheSettingsWidget::Init(UNS_MainMenu* NsMainMenu)
+void UNS_TheSettingsWidget::Init(UNS_BaseMainMenu* NsMainMenu)
 {
     Super::Init(NsMainMenu);
 
@@ -52,7 +52,10 @@ void UNS_TheSettingsWidget::OnVideoClicked()
 {
     HideSubMenuWidget();
     if (UNS_MasterMenuPanel* Widget = SubMenus.FindRef(EWidgetToggleType::Video))
+    {
         Widget->ShowWidget();
+
+    }
 }
 
 void UNS_TheSettingsWidget::OnAudioClicked()
@@ -73,5 +76,8 @@ void UNS_TheSettingsWidget::OnMainMenuClicked()
 {
     HideSubMenuWidget();
     HideWidget();
-    MainMenu->GetWidget(EWidgetToggleType::MainMenu)->ShowWidget();
+    //if(UiProperty == EUIProperty::MenuUI)
+         MainMenu->GetWidget(EWidgetToggleType::MainMenu)->ShowWidget();
+   // else //EUIProperty::InGameUI
+   //     MainMenu->GetWidget(EWidgetToggleType::ingame)->ShowWidget();
 }

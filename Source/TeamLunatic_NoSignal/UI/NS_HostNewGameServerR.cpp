@@ -75,7 +75,7 @@ void UNS_HostNewGameServerR::StartGame()
         // CreateSession 성공 시 호출되는 델리게이트 바인딩먼저해야  CreateSession 성공하면 broadcast되서 lamda가 호출됨.
         GI->OnCreateSessionSuccess.AddLambda([this, SelectedLevelName, SlotName, PlayerData, LevelData, GI]()
             {
-                UGameplayStatics::OpenLevel(this, FName(*SelectedLevelName), true);
+               // UGameplayStatics::OpenLevel(this, FName(*SelectedLevelName), true);
 
                 GI->SetGameModeType(EGameModeType::MultiPlayMode); // 게임 모드 타입 설정
 

@@ -4,7 +4,7 @@
 #include "UI/NS_MasterMenuPanel.h"
 #include "NS_MainUiPlayerController.h"
 #include "Kismet/GameplayStatics.h"
-#include "UI/NS_MainMenu.h"
+#include "UI/NS_BaseMainMenu.h"
 
 void UNS_MasterMenuPanel::NativeConstruct()
 {
@@ -156,6 +156,10 @@ void UNS_MasterMenuPanel::ShowWidget()
     else
         MainMenu->PlayAnimationShowR();
 }
+void UNS_MasterMenuPanel::ShowWidgetD()
+{
+    SetVisibility(ESlateVisibility::Visible);
+}
 
 void UNS_MasterMenuPanel::HideWidget()
 {
@@ -171,7 +175,7 @@ void UNS_MasterMenuPanel::HideSubMenuWidget()
     }
 }
 
-void UNS_MasterMenuPanel::Init(UNS_MainMenu* NsMainMenu)
+void UNS_MasterMenuPanel::Init(UNS_BaseMainMenu* NsMainMenu)
 {
     MainMenu = NsMainMenu;
     SetToggleType();

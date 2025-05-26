@@ -3,9 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+//#include "Blueprint/UserWidget.h"
 #include "UI/NS_MasterMenuPanel.h"
-#include "NS_VideoSettingsR.generated.h"
+#include "NS_VideoSettingsR1.generated.h"
 
+class UUserWidget;
 class UBorder;
 class UTextBlock;
 class UCheckBox;
@@ -14,62 +16,54 @@ class UNS_ResolutionSettingR;
 class UNS_ScalerSettingR;
 
 UCLASS()
-class TEAMLUNATIC_NOSIGNAL_API UNS_VideoSettingsR : public UNS_MasterMenuPanel
+class TEAMLUNATIC_NOSIGNAL_API UNS_VideoSettingsR1 : public UNS_MasterMenuPanel
 {
 	GENERATED_BODY()
-	
+
 public:
+
 	virtual void NativeConstruct() override;
-
-	virtual void ShowWidget() override;
-
-	UFUNCTION(BlueprintImplementableEvent)
-	void LoadVideoSetting();
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
 	UBorder* Backround;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)//, BlueprintReadOnly / BlueprintReadWrite
-	UTextBlock* Subtitle;
+		UTextBlock* Subtitle;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
 	UTextBlock* Title;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
-	UButton* ApplyButton;
+	UButton* RefreshButton;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UNS_ResolutionSettingR* BP_ResolutionSelector;
+	UUserWidget* ResolutionSelector;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UNS_ScalerSettingR* BP_WindowModeSelector;
+	UUserWidget* WindowModeSelector;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UNS_ScalerSettingR* BP_VSyncSelector;
+	UUserWidget* VSyncSelector;
 
-	//UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	//UNS_ScalerSettingR* BP_MaxFPSSelector;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UNS_ScalerSettingR* BP_AntiAliasingSelector;
+	UUserWidget* AntiAliasingSelector;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UNS_ScalerSettingR* BP_ScalerSetting_ViewDist;
+	UUserWidget* ViewDist;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UNS_ScalerSettingR* BP_ScalerSetting_TextQuality;
+	UUserWidget* Textures;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UNS_ScalerSettingR* BP_ScalerSetting_PostProcessing;
+	UUserWidget* PostProcessing;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UNS_ScalerSettingR* BP_ScalerSetting_Foliage;
+	UUserWidget* Foliage;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UNS_ScalerSettingR* BP_ScalerSetting_Effects;
+	UUserWidget* Effects;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UNS_ScalerSettingR* BP_ScalerSetting_Shadows;
-
-
+	UUserWidget* Shadows;
 };

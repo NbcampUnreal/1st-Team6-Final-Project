@@ -40,6 +40,8 @@ void UNS_GameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSucce
 	if (bWasSuccessful)
 	{
 		UE_LOG(LogTemp, Log, TEXT("Session created successfully: %s"), *SessionName.ToString());
+		OnCreateSessionSuccess.Broadcast();
+		UGameplayStatics::OpenLevel(this, "ShowCase", true);
 		//UGameplayStatics::OpenLevel(GetWorld(), "대기실"); 
 	}
 	else

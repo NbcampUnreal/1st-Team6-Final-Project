@@ -7,9 +7,7 @@
 #include "UI/NS_CommonType.h"
 #include "NS_ResolutionSettingR.generated.h"
 
-/**
- * 
- */
+class  UTextBlock;
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UNS_ResolutionSettingR : public UUserWidget
 {
@@ -17,6 +15,8 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_ResolutionSettingR : public UUserWidget
 
 public:
 	virtual void NativeConstruct() override;
-
+public:
+	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
+	UTextBlock* ScalerText;
 
 };

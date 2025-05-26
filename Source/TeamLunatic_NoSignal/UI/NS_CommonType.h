@@ -6,6 +6,12 @@
 #include "NS_CommonType.generated.h"
 
 UENUM(BlueprintType)
+enum class EUIProperty : uint8
+{
+    MenuUI,
+    InGameUI,
+};
+UENUM(BlueprintType)
 enum class ENewGameState : uint8
 {
     
