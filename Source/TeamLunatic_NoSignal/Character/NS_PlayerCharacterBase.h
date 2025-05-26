@@ -97,24 +97,18 @@ public:
 	// 발차기 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsKick = false;
-	// 공격중인지 확인 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
-	bool IsAttack = false;
 	// 아이템을 줍고있는지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsPickUp = false;
-	// ---------------------------------------차후에 지워야함
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
-	int32 IsChange = 0;
 	// 캐릭터가 맞고있는지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsHit = false;
 	// 조준중인지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsAiming = false;
-	// 장전중인지 확인 변수
+	// 무기 교체중인지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
-	bool IsReload = false;
+	bool IsChangingWeapon = false;
 	//////////////////////////////////////////////////////////////////////////////////////
 	
 	

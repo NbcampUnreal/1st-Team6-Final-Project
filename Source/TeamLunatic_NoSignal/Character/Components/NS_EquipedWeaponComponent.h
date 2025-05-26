@@ -15,6 +15,17 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_EquipedWeaponComponent : public UActorCompone
 public:
 	UNS_EquipedWeaponComponent();
 
+	// 공격중인지 확인 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool IsAttack = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool IsReload = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool IsEmpty = false;
+
+
 	// 서버-클라이언트 복제 설정
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -29,14 +40,17 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastEquipWeapon(TSubclassOf<ANS_BaseMeleeWeapon> WeaponClass);
 
-	// 현재 장착 무기로 발사 
+	// 현재 장착 무기로 발사 or 공격
 	UFUNCTION(BlueprintCallable)
-	void Fire();
+	void StartAttack();
+
+	UFUNCTION(BlueprintCallable)
+	void StopAttack();
 
 	// 현재 장착 무기가 원기리일때는 재장전 
 	UFUNCTION(BlueprintCallable)
 	void Reload();
-	
+		
 	virtual void BeginPlay() override;
 
 	/** 실제로 소유한 캐릭터 */

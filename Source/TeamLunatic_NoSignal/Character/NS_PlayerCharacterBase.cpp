@@ -233,14 +233,11 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsKick);
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsSprint);
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsAttack);
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsPickUp);
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsChange);
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsHit);
     DOREPLIFETIME(ANS_PlayerCharacterBase, CamYaw);
     DOREPLIFETIME(ANS_PlayerCharacterBase, CamPitch);
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsAiming);
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsReload);
 }
 
 void ANS_PlayerCharacterBase::SetMovementLockState_Server_Implementation(bool bLock)
@@ -399,12 +396,12 @@ void ANS_PlayerCharacterBase::StartAttackAction_Server_Implementation(const FInp
 {
     if (GetCharacterMovement()->IsFalling()) {return;} 
 
-    IsAttack = true;
+    EquipedWeaponComp->StartAttack();
 }
 
 void ANS_PlayerCharacterBase::StopAttackAction_Server_Implementation(const FInputActionValue& Value)
 {
-    IsAttack = false;
+    EquipedWeaponComp->StopAttack();
 }
 
 void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputActionValue& Value)
@@ -436,16 +433,8 @@ void ANS_PlayerCharacterBase::StopAimingAction_Server_Implementation(const FInpu
 
 void ANS_PlayerCharacterBase::ReloadAction_Server_Implementation(const FInputActionValue& Value)
 {
-    IsReload = true; 
+	EquipedWeaponComp->Reload();
 
-    // 2.5초간 실행 후 IsReload변수는 false로 변경
-    FTimerHandle ResetPickUpTime; 
-    GetWorldTimerManager().SetTimer( 
-    ResetPickUpTime, 
-    FTimerDelegate::CreateLambda([this]() { IsReload = false; }), 
-    2.5f, 
-    false 
-    );
 }
 //////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
 

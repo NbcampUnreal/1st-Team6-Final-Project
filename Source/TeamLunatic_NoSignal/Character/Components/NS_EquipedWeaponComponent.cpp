@@ -5,6 +5,7 @@
 #include "GameFramework/Character.h"
 #include "Engine/World.h"
 #include "Item/NS_BaseMeleeWeapon.h"
+#include "TimerManager.h"
 
 UNS_EquipedWeaponComponent::UNS_EquipedWeaponComponent()
 {
@@ -21,6 +22,9 @@ void UNS_EquipedWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProp
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(UNS_EquipedWeaponComponent, CurrentWeapon);
+	DOREPLIFETIME(UNS_EquipedWeaponComponent, IsAttack);
+	DOREPLIFETIME(UNS_EquipedWeaponComponent, IsReload);
+	DOREPLIFETIME(UNS_EquipedWeaponComponent, IsEmpty);
 }
 
 void UNS_EquipedWeaponComponent::SwapWeapon(TSubclassOf<ANS_BaseMeleeWeapon> WeaponClass)
@@ -100,19 +104,68 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
     }
 }
 
-void UNS_EquipedWeaponComponent::Fire()
+void UNS_EquipedWeaponComponent::StartAttack()
 {
-    // if (CurrentWeapon && OwnerCharacter->HasAuthority())
-    // {
-    //     CurrentWeapon->StartFire();
-    // }
+    // 비무장 : 공격없음
+    if (!CurrentWeapon)
+    {
+        IsAttack = false;
+        return;
+    }
+
+    // 무기 변경중이면 공격 불가
+	if (OwnerCharacter && OwnerCharacter->IsChangingWeapon)
+    {
+        IsAttack = false;
+        return;
+    }
+
+	// 무기 타입에 따라 공격 처리
+    if (CurrentWeapon->GetWeaponType() == EWeaponType::Ranged) // 원거리
+    {
+        // 현재 탄창 비어있음
+		if (IsEmpty)
+        {
+            IsAttack = false;
+            return;
+        }
+
+		if (IsReload)
+		{
+			IsAttack = false;
+			return;
+		}
+
+		IsAttack = true;
+
+    }
+    else if (CurrentWeapon->GetWeaponType() == EWeaponType::Melee)
+    {
+        IsAttack = true;
+    }
+
+
 }
+
+void UNS_EquipedWeaponComponent::StopAttack()
+{	
+	IsAttack = false;
+}
+
 
 void UNS_EquipedWeaponComponent::Reload()
 {
-    // if (CurrentWeapon && OwnerCharacter->HasAuthority())
-    // {
-    //     CurrentWeapon->StartReload();
-    // }
+	// 원거리 무장 아님 : 재장전 무조건 false
+	//if (CurrentWeapon && CurrentWeapon->GetWeaponType() != EWeaponType::Ranged)
+	//{
+	//	IsReload = false;
+	//	return;
+	//}
+
+    //TODO 인벤토리 살펴보기
+    //인벤토리내 무기에 맞는 탄창or탄약이 있는지 체크
+    //if(탄창으로 구현) : 현재 탄창을 인벤토리에 넣고(부족하면)
+
+    IsReload = true;
 }
 
