@@ -5,6 +5,7 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Inventory/InventoryComponent.h"
+#include "World/Pickup.h"
 #include <Net/UnrealNetwork.h>
 
 ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
@@ -33,6 +34,31 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     PlayerInventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("PlayerInventory"));
     PlayerInventory->SetSlotsCapacity(20);
     PlayerInventory->SetWeightCapacity(50.0f);
+}
+
+void ANS_PlayerCharacterBase::DropItem(ANS_BaseItem* ItemToDrop, const int32 QuantityToDrop)
+{
+    if (PlayerInventory->FindMatchingItem(ItemToDrop))
+    {
+        FActorSpawnParameters SpawnParams;
+        SpawnParams.Owner = this;
+        SpawnParams.bNoFail = true;
+        SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+        const FVector ForwardOffset = GetActorForwardVector() * 100.0f; // 플레이어 앞 100cm
+        const FVector SpawnLocation = GetActorLocation() + ForwardOffset + FVector(0.f, 0.f, 50.f); // 약간 위로 올림
+        const FTransform SpawnTransform(GetActorRotation(), SpawnLocation);
+
+        const int32 RemovedQuantity = PlayerInventory->RemoveAmountOfItem(ItemToDrop, QuantityToDrop);
+
+        APickup* Pickup = GetWorld()->SpawnActor<APickup>(APickup::StaticClass(), SpawnTransform, SpawnParams);
+
+        Pickup->InitializeDrop(ItemToDrop, RemovedQuantity);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Item to drop was somehow null"));
+    }
 }
 
 void ANS_PlayerCharacterBase::BeginPlay()

@@ -33,6 +33,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	EWeaponType WeaponType;
 
+	UPROPERTY(EditAnywhere,  Category = "ItemData")
+	FWeaponData WeaponData;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	FText ItemName;
 
