@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/HorizontalBox.h"
 #include "InventoryTooltip.generated.h"
 
 class UTextBlock;
@@ -29,7 +30,13 @@ public:
 	UTextBlock* WeaponType;
 
 	UPROPERTY(meta = (BindWidget))
+	UHorizontalBox* WeaponTypeHorizontal;
+
+	UPROPERTY(meta = (BindWidget))
 	UTextBlock* DamageValue;
+
+	UPROPERTY(meta = (BindWidget))
+	UHorizontalBox* DamageHorizontal;
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* UsageText;
@@ -39,6 +46,10 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* MaxStack;
+
+	UPROPERTY(meta = (BindWidget))
+	UHorizontalBox* MaxStackHorizontal;
+
 
 	//UPROPERTY(meta = (BindWidget))
 	//UTextBlock* SellValue;

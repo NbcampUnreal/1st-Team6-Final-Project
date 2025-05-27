@@ -13,6 +13,8 @@ class UNS_DebugStatusWidget;  // 디버그용 위젯 차후 삭제해야함
 class UNS_StatusComponent;
 class UInventoryComponent;
 class UNS_EquipedWeaponComponent;
+class ANS_BaseItem;
+
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
@@ -25,6 +27,8 @@ public:
 	FORCEINLINE UInventoryComponent* GetInventory() const { return PlayerInventory; };
 
 	UInteractionComponent* GetInteractionComponent() const { return InteractionComponent; }
+
+	void DropItem(ANS_BaseItem* ItemToDrop, const int32 QuantityToDrop);
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
