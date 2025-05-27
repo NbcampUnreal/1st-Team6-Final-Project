@@ -1,10 +1,13 @@
 ﻿#include "NS_EquipedWeaponComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Character/NS_PlayerCharacterBase.h"
-#include "Item/NS_BaseWeapon.h" 
+#include "Item/NS_BaseMeleeWeapon.h"
+#include "Item/NS_BaseRangedWeapon.h"
 #include "GameFramework/Character.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Components/StaticMeshComponent.h"   
 
 UNS_EquipedWeaponComponent::UNS_EquipedWeaponComponent()
 {
@@ -40,34 +43,68 @@ void UNS_EquipedWeaponComponent::ServerEquipWeapon_Implementation(TSubclassOf<AN
 
 void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf<ANS_BaseWeapon> WeaponClass)
 {
-    // 기존에 무기가 장착되어있으면 제거
+    // 기존 무기 제거
     if (CurrentWeapon)
     {
         CurrentWeapon->Destroy();
         CurrentWeapon = nullptr;
     }
 
-	// 무기 클래스가 유효해야함.(비무장 상태는 제외)
-    if (WeaponClass && OwnerCharacter)
+    if (!WeaponClass || !OwnerCharacter) return;
+
+    FActorSpawnParameters Params;
+    Params.Owner      = OwnerCharacter;
+    Params.Instigator = OwnerCharacter;
+
+    ANS_BaseWeapon* NewWpn = GetWorld()->SpawnActor<ANS_BaseWeapon>(
+        WeaponClass, FVector::ZeroVector, FRotator::ZeroRotator, Params);
+    if (!NewWpn) return;
+
+    NewWpn->SetOwner(OwnerCharacter);
+    
+    const FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
+    const FName SocketName = NewWpn->AttachSocketName;
+
+    // MeleeWeapon (근접 무기)
+    if (auto Melee = Cast<ANS_BaseMeleeWeapon>(NewWpn))
     {
-        FActorSpawnParameters Params;
-        Params.Owner = GetOwner();
-        Params.Instigator = OwnerCharacter;
-        
-        ANS_BaseWeapon* NewWpn = GetWorld()->SpawnActor<ANS_BaseWeapon>(
-            WeaponClass, FVector::ZeroVector, FRotator::ZeroRotator, Params);
-
-        if (NewWpn)
+        // 플레이어한테만 보이는 메쉬를 팔에 부착
+        // ArmsMesh가 유효한지 확인
+        if (Melee->ArmsMesh) 
         {
-            NewWpn->AttachToComponent(
-                OwnerCharacter->GetMesh(),
-                FAttachmentTransformRules::SnapToTargetIncludingScale,
-                WeaponClass->GetDefaultObject<ANS_BaseWeapon>()->AttachSocketName
-            );
-
-            CurrentWeapon = NewWpn;
+            Melee->ArmsMesh->AttachToComponent(
+                OwnerCharacter->FirstPersonArms, Rules, SocketName);
+        }
+        
+        // 다른 플레이어에게 보이게 메쉬를 몸에 부착
+        // ItemStaticMesh가 유효한지 확인
+        if (Melee->ItemStaticMesh)
+        {
+            Melee->ItemStaticMesh->AttachToComponent(
+                OwnerCharacter->GetMesh(), Rules, SocketName);
         }
     }
+    // RangeWeapon (원거리 무기)
+    else if (auto Ranged = Cast<ANS_BaseRangedWeapon>(NewWpn))
+    {
+        // 플레이어한테만 보이는 메쉬를 팔에 부착
+        // RangedWeaponMeshComp가 유효한지 확인
+        if (Ranged->RangedWeaponMeshComp)
+        {
+            Ranged->RangedWeaponMeshComp->AttachToComponent(
+                OwnerCharacter->GetMesh(), Rules, SocketName);
+        }
+        
+        // 다른 플레이어에게 보이게 메쉬를 몸에 부착
+        // ArmsMesh가 유효한지 확인
+        if (Ranged->ArmsMesh)
+        {
+            Ranged->ArmsMesh->AttachToComponent(
+                OwnerCharacter->FirstPersonArms, Rules, SocketName);
+        }
+    }
+    
+    CurrentWeapon = NewWpn;
 }
 
 void UNS_EquipedWeaponComponent::StartAttack()
