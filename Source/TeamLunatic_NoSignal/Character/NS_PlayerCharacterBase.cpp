@@ -1,32 +1,47 @@
 #include "Character/NS_PlayerCharacterBase.h"
-#include "Character/Debug/NS_DebugStatusWidget.h"  // 디버그용 차후 삭제 가능
+#include "Character/Debug/NS_DebugStatusWidget.h"
 #include "EnhancedInputComponent.h"
-#include "EnhancedInputSubsystems.h"
+#include "EnhancedInputSubsystems.H"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Inventory/InventoryComponent.h"
+#include "Components/NS_EquipedWeaponComponent.h"
+#include "Character/Components/NS_StatusComponent.h"
+#include "Interaction/Component/InteractionComponent.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "World/Pickup.h"
 #include <Net/UnrealNetwork.h>
 
 ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
 {
     PrimaryActorTick.bCanEverTick = true;
 
-    DefaultWalkSpeed = 400.f;
+    DefaultWalkSpeed = 500.f;
     SprintSpeedMultiplier = 1.5f;
 
     // 카메라 설정
     CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
     CameraComp->SetupAttachment(GetMesh(), CameraAttachSocketName);
-    CameraComp->bUsePawnControlRotation = true; // 카메라는 컨트롤러 회전을 따라감
+    CameraComp->bUsePawnControlRotation = true;
 
+    // 1인칭용 팔 설정
+    FirstPersonArms = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FirstPersonArms"));
+    FirstPersonArms->SetupAttachment(CameraComp);
+    FirstPersonArms->bCastDynamicShadow = false;
+    FirstPersonArms->CastShadow = false;
+    FirstPersonArms->SetOnlyOwnerSee(true); // 플레이어 본인만 보이게 설정 (다른클라이언트는 안보이게)
+    
     // 캐릭터 회전 및 이동 방향 설정
-    bUseControllerRotationYaw = false; // 기존에 마우스 회전에 따라 캐릭터 몸 이동 해제
-    GetCharacterMovement()->bOrientRotationToMovement = false; // 좌/우 이동 값을 벡터로 이동이 아닌 회전으로 변경하는거 해제
-    GetCharacterMovement()->bUseControllerDesiredRotation = false; // 정확하게 이게 뭔지 모르겠는데 OrientRotationToMovement를 실행하면 이것도 같이 켜줘야하는걸로 기억
+    // bUseControllerRotationYaw는 Tick 함수에서 동적으로 제어될 것입니다.
+    bUseControllerRotationYaw = false; // 초기값은 false로 설정
+    GetCharacterMovement()->bOrientRotationToMovement = false;
+    GetCharacterMovement()->bUseControllerDesiredRotation = false;
 
     // 스탯 컴포넌트 부착
     StatusComp = CreateDefaultSubobject<UNS_StatusComponent>(TEXT("StatusComponent"));
     InteractionComponent = CreateDefaultSubobject<UInteractionComponent>(TEXT("InteractionComponent"));
+
+    EquipedWeaponComp = CreateDefaultSubobject<UNS_EquipedWeaponComponent>(TEXT("EquipedWeaponComponent"));
 
     BaseEyeHeight = 74.0f;
     // 인벤토리
@@ -35,10 +50,41 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     PlayerInventory->SetWeightCapacity(50.0f);
 }
 
+void ANS_PlayerCharacterBase::DropItem(ANS_BaseItem* ItemToDrop, const int32 QuantityToDrop)
+{
+    if (PlayerInventory->FindMatchingItem(ItemToDrop))
+    {
+        FActorSpawnParameters SpawnParams;
+        SpawnParams.Owner = this;
+        SpawnParams.bNoFail = true;
+        SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+        const FVector ForwardOffset = GetActorForwardVector() * 100.0f; // 플레이어 앞 100cm
+        const FVector SpawnLocation = GetActorLocation() + ForwardOffset + FVector(0.f, 0.f, 50.f); // 약간 위로 올림
+        const FTransform SpawnTransform(GetActorRotation(), SpawnLocation);
+
+        const int32 RemovedQuantity = PlayerInventory->RemoveAmountOfItem(ItemToDrop, QuantityToDrop);
+
+        APickup* Pickup = GetWorld()->SpawnActor<APickup>(APickup::StaticClass(), SpawnTransform, SpawnParams);
+
+        Pickup->InitializeDrop(ItemToDrop, RemovedQuantity);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Item to drop was somehow null"));
+    }
+}
+
 void ANS_PlayerCharacterBase::BeginPlay()
 {
     Super::BeginPlay();
 
+    if (IsLocallyControlled())
+    {
+        GetMesh()->SetOwnerNoSee(true);          // 전체 메시는 보이지 않게
+        FirstPersonArms->SetOnlyOwnerSee(true);  // 팔 메시만 본인(플레이어)이 보이게
+    }
+    
     // 디버그 위젯 생성 ======================== 차후 삭제필요
     if (DebugWidgetClass && Controller)
     {
@@ -71,48 +117,7 @@ void ANS_PlayerCharacterBase::BeginPlay()
 void ANS_PlayerCharacterBase::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-
-    if (!Controller)
-        return;
-
-    // 캐릭터가 이동중이라면 몸체회전시키는변수인 CharacterTurnSpeed = 5값으로 카메라가 바라보는 중앙으로 몸을 회전시킴
-    if (!GetCharacterMovement()->Velocity.IsNearlyZero())
-    {
-        // 캐릭터가 바라봐야 할 목표 방향
-        const float TargetYaw = Controller->GetControlRotation().Yaw;
-        // 캐릭터가 회전하는 값
-        const FRotator Current = GetActorRotation();
-        // 캐릭터가 최종적으로 회전해야하는 목표 값
-        const FRotator Desired(0.f, TargetYaw, 0.f);
-        // 현재 캐릭터의 회전 값인 Current에서 목표 값인 Desired으로 CharacterTurnSpeed에 저장된 회전 속도로 회전함 
-        const FRotator NewRot = FMath::RInterpTo(Current, Desired, DeltaTime, CharacterTurnSpeed);
-        // 계산된 NewRot값을 캐릭터에 실제로 적용시켜 회전
-        SetActorRotation(NewRot);
-    }
-
-    // 로컬 컨트롤러인 경우 Aim값을 전송
-    if (IsLocallyControlled() && Controller)
-    {
-        // 현재 컨트롤러 축 회전 가져와서
-        const FRotator ControlRot = Controller->GetControlRotation();
-        // 캐릭터 몸체를 기준으로 Yaw와 Pitch값을 한번더 -90 ~ 90까지 제한을 둠
-        // ----------- 2중으로 안전한게 최대각도를 막아둔거라서 ClampAngle로 최대각도 지정부분은 제거해도 이상없을것같긴한데 우선 넣어 둠----------
-        const float NewCamYaw   = FMath::ClampAngle(ControlRot.Yaw - GetActorRotation().Yaw,-90.f, 90.f);
-        const float NewCamPitch = FMath::ClampAngle(ControlRot.Pitch,-90.f, 90.f);
-
-        // 서버라면
-        if (HasAuthority())
-        {
-            // 서버라면 Yaw값과 Pitch값을 저장
-            CamYaw   = NewCamYaw;
-            CamPitch = NewCamPitch;
-        }
-        else // 서버가 아니면
-        {
-            // 클라이언트면 서버에 전송
-            UpdateAim_Server(NewCamYaw, NewCamPitch);
-        }
-    }
+    
 }
 
 void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -186,31 +191,32 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                &ANS_PlayerCharacterBase::KickAction_Server);
         }
 
-         if (InteractAction)
-         {
-             EnhancedInput->BindAction(
+        if (InteractAction)
+        {
+            EnhancedInput->BindAction(
                 InteractAction,
-                 ETriggerEvent::Started,
-                InteractionComponent,
+                ETriggerEvent::Started,
+               InteractionComponent,
                 &UInteractionComponent::BeginInteract
             );
 
-            EnhancedInput->BindAction(
-                InteractAction,
-                ETriggerEvent::Completed,
-                InteractionComponent,
-                &UInteractionComponent::EndInteract
-            );
-         }
-
-         if (ToggleMenuAction)
-         {
              EnhancedInput->BindAction(
-                 ToggleMenuAction,
-                 ETriggerEvent::Triggered,
+                 InteractAction,
+                 ETriggerEvent::Completed,
                  InteractionComponent,
-                 &UInteractionComponent::ToggleMenu);
-         }
+                 &UInteractionComponent::EndInteract
+             );
+        }
+
+        if (ToggleMenuAction)
+        {
+            EnhancedInput->BindAction(
+                ToggleMenuAction,
+                ETriggerEvent::Triggered,
+                InteractionComponent,
+                &UInteractionComponent::ToggleMenu
+            );
+        }
 
         if (InputAttackAction)
         {
@@ -226,10 +232,10 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                &ANS_PlayerCharacterBase::StopAttackAction_Server);
         }
 
-        if (InputPickUpAction)
+        if (InteractAction)
         {
             EnhancedInput->BindAction(
-            InputPickUpAction,
+            InteractAction,
              ETriggerEvent::Triggered,
               this,
                &ANS_PlayerCharacterBase::PickUpAction_Server);
@@ -264,16 +270,13 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
 void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsKick);    // 발차기 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsSprint);  // 달리기 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsAttack);  // 공격 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsPickUp);  // 아이템줍기 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsChange);  // ================================= 나중에에 삭제해야함
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsHit);     // 맞는지 확인 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, CamYaw);    // 카메라 좌/우 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, CamPitch);  // 카메라 상/하 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsAiming);  // 조준중인지 확인 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsReload);  // 장전중인지 확인 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsKick);
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsSprint);
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsPickUp);
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsHit);
+    DOREPLIFETIME(ANS_PlayerCharacterBase, CamYaw);
+    DOREPLIFETIME(ANS_PlayerCharacterBase, CamPitch);
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsAiming);
 }
 
 void ANS_PlayerCharacterBase::SetMovementLockState_Server_Implementation(bool bLock)
@@ -334,47 +337,53 @@ void ANS_PlayerCharacterBase::MoveAction(const FInputActionValue& Value)
     if (!GetCharacterMovement()) return;
 
     FVector2D MoveInput = Value.Get<FVector2D>();
-    if (!FMath::IsNearlyZero(MoveInput.X))
-        AddMovementInput(GetActorForwardVector(), MoveInput.X);
-    if (!FMath::IsNearlyZero(MoveInput.Y))
-        AddMovementInput(GetActorRightVector(), MoveInput.Y);
+    if (!FMath::IsNearlyZero(MoveInput.X)) 
+        AddMovementInput(GetActorForwardVector(), MoveInput.X); 
+    if (!FMath::IsNearlyZero(MoveInput.Y)) 
+        AddMovementInput(GetActorRightVector(), MoveInput.Y); 
 }
 
 void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
 {
-    FVector2D LookInput = Value.Get<FVector2D>();
+    if (!Controller) return;
+    
+    // 카메라 회전 적용
+    FVector2D LookInput = Value.Get<FVector2D>(); 
+    AddControllerYawInput  (LookInput.X); 
+    AddControllerPitchInput(LookInput.Y); 
 
-    // 상/하 회전
-    AddControllerPitchInput(LookInput.Y);
+    // Actor Rotation과 Control Rotation을 Delta를 이용해 Yaw값 추출
+    const FRotator ActorRot   = GetActorRotation(); 
+    const FRotator ControlRot = Controller->GetControlRotation(); 
+    const FRotator DeltaRot   = UKismetMathLibrary::NormalizedDeltaRotator(ControlRot, ActorRot); 
 
-    // 좌/우 회전
-    FRotator ControlRot = Controller->GetControlRotation();
-    float ActorYaw = GetActorRotation().Yaw;
-    float NewYaw = ControlRot.Yaw + LookInput.X;
+    const float RawYaw   = DeltaRot.Yaw; 
+    const float RawPitch = DeltaRot.Pitch; 
+    const float DeltaTime = GetWorld()->GetDeltaSeconds();
+    
+    CamYaw   = FMath::FInterpTo(CamYaw,   DeltaRot.Yaw,   DeltaTime, AimSendInterpSpeed); 
+    CamPitch = FMath::FInterpTo(CamPitch, DeltaRot.Pitch, DeltaTime, AimSendInterpSpeed); 
 
-    // 좌/우(Yaw값) 각도 제한 -90 ~ +90까지 허용
-    float RelativeYaw = FMath::ClampAngle(NewYaw - ActorYaw, -90.f, 90.f);
-    ControlRot.Yaw = ActorYaw + RelativeYaw;
-
-    // 컨트롤러 회전에 반영하여 카메라와 캐릭터 조준 축 업데이트 ------------- (자세한 원리 부가 설명 필요)
-    Controller->SetControlRotation(ControlRot);
+    // InterpTo를 이요해서 부드러운 Yaw/Pitch값을 서버로 전송
+    UpdateAim_Server(CamYaw, CamPitch); 
 }
 
 void ANS_PlayerCharacterBase::JumpAction(const FInputActionValue& Value)
 {
-    bool IsJump = Value.Get<bool>();
+    bool IsJump = Value.Get<bool>(); 
     
-    if (IsJump && IsCanJump)
+    if (IsJump && IsCanJump) 
     {
-        Jump();
-        IsCanJump = false;
+        Jump(); 
+        IsCanJump = false; 
 
-        FTimerHandle RestartJumpTime;
-        GetWorldTimerManager().SetTimer(
-            RestartJumpTime,
-            FTimerDelegate::CreateLambda([this]() { IsCanJump = true; }),
-            1.3f,
-            false
+        // 점프한 뒤로 1.3초동안은 점프를 못함
+        FTimerHandle RestartJumpTime; 
+        GetWorldTimerManager().SetTimer( 
+            RestartJumpTime, 
+            FTimerDelegate::CreateLambda([this]() { IsCanJump = true; }), 
+            1.3f, 
+            false 
         );
     }
 }
@@ -382,122 +391,119 @@ void ANS_PlayerCharacterBase::JumpAction(const FInputActionValue& Value)
 void ANS_PlayerCharacterBase::StartCrouch(const FInputActionValue& Value)
 {
 	//점프 중이거나 발차기 중일 때는 앉지 않음
-    if (GetCharacterMovement()->IsFalling() || IsKick) { return; }
+    if (GetCharacterMovement()->IsFalling() || IsKick) { return; } 
     
-    Crouch();
+    Crouch(); 
 }
 
 void ANS_PlayerCharacterBase::StopCrouch(const FInputActionValue& Value)
 {
-    UnCrouch();
+    UnCrouch(); 
 }
 
 void ANS_PlayerCharacterBase::StartSprint_Server_Implementation(const FInputActionValue& Value)
 {
-    IsSprint = true;
-    if (GetCharacterMovement())
-        GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier;
+    IsSprint = true; 
+    if (GetCharacterMovement()) 
+        GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier; 
 }
 
 void ANS_PlayerCharacterBase::StopSprint_Server_Implementation(const FInputActionValue& Value)
 {
-    IsSprint = false;
-    if (GetCharacterMovement())
-        GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed;
+    IsSprint = false; 
+    if (GetCharacterMovement()) 
+        GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed; 
 }
 
 void ANS_PlayerCharacterBase::KickAction_Server_Implementation(const FInputActionValue& Value)
 {
-    if (GetCharacterMovement()->IsFalling()) {return;}
+    if (GetCharacterMovement()->IsFalling()) {return;} 
 
-    IsKick = true;
+    IsKick = true; 
 
     // 1.2초간 실행 후 IsKick변수는 false로 변경
-    FTimerHandle ResettKickTime;
-    GetWorldTimerManager().SetTimer(
-        ResettKickTime,
-        FTimerDelegate::CreateLambda([this]() { IsKick = false; }),
-        1.2f,
-        false
+    FTimerHandle ResettKickTime; 
+    GetWorldTimerManager().SetTimer( 
+        ResettKickTime, 
+        FTimerDelegate::CreateLambda([this]() { IsKick = false; }), 
+        1.2f, 
+        false 
     );
 }
 
 void ANS_PlayerCharacterBase::StartAttackAction_Server_Implementation(const FInputActionValue& Value)
 {
-    if (GetCharacterMovement()->IsFalling()) {return;}
+    if (GetCharacterMovement()->IsFalling()) {return;} 
 
-    IsAttack = true;
+    EquipedWeaponComp->StartAttack();
 }
 
 void ANS_PlayerCharacterBase::StopAttackAction_Server_Implementation(const FInputActionValue& Value)
 {
-    IsAttack = false;
+    EquipedWeaponComp->StopAttack();
 }
 
 void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputActionValue& Value)
 {
-    if (GetCharacterMovement()->IsFalling()) {return;}
+    if (GetCharacterMovement()->IsFalling()) {return;} 
 
-    IsPickUp = true;
+    IsPickUp = true; 
 
     // 1.0초간 실행 후 IsPickUp변수는 false로 변경
-    FTimerHandle ResetPickUpTime;
-    GetWorldTimerManager().SetTimer(
-    ResetPickUpTime,
-    FTimerDelegate::CreateLambda([this]() { IsPickUp = false; }),
-    1.0f,
-    false
+    FTimerHandle ResetPickUpTime; 
+    GetWorldTimerManager().SetTimer( 
+    ResetPickUpTime, 
+    FTimerDelegate::CreateLambda([this]() { IsPickUp = false; }), 
+    1.0f, 
+    false 
     );
 }
 
 void ANS_PlayerCharacterBase::StartAimingAction_Server_Implementation(const FInputActionValue& Value)
 {
-    IsAiming = true;
+    IsAiming = true; 
 }
 
 
 void ANS_PlayerCharacterBase::StopAimingAction_Server_Implementation(const FInputActionValue& Value)
 {
-    IsAiming = false;
+    IsAiming = false; 
 }
 
 void ANS_PlayerCharacterBase::ReloadAction_Server_Implementation(const FInputActionValue& Value)
 {
-    IsReload = true;
+	EquipedWeaponComp->Reload();
 
-    // 2.5초간 실행 후 IsReload변수는 false로 변경
-    FTimerHandle ResetPickUpTime;
-    GetWorldTimerManager().SetTimer(
-    ResetPickUpTime,
-    FTimerDelegate::CreateLambda([this]() { IsReload = false; }),
-    2.5f,
-    false
-    );
 }
 //////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
 
 void ANS_PlayerCharacterBase::PlayDeath_Server_Implementation()
 {
-    PlayDeath_Multicast();
+    PlayDeath_Multicast(); 
 }
 
 void ANS_PlayerCharacterBase::PlayDeath_Multicast_Implementation()
 {
-    DetachFromControllerPendingDestroy();
+    DetachFromControllerPendingDestroy(); 
 	
-    GetCharacterMovement()->DisableMovement();
+    GetCharacterMovement()->DisableMovement(); 
 
-    GetMesh()->SetCollisionProfileName("Ragdoll");
-    GetMesh()->SetSimulatePhysics(true);
-    GetMesh()->SetAllBodiesSimulatePhysics(true);
-    GetMesh()->WakeAllRigidBodies();
-    GetMesh()->bBlendPhysics = true;
-    SetLifeSpan(5.f);
+    GetMesh()->SetCollisionProfileName("Ragdoll"); 
+    GetMesh()->SetSimulatePhysics(true); 
+    GetMesh()->SetAllBodiesSimulatePhysics(true); 
+    GetMesh()->WakeAllRigidBodies(); 
+    GetMesh()->bBlendPhysics = true; 
+    SetLifeSpan(5.f); 
 }
 
 // 클라이언트면 서버로 클라이언트 자신에 Yaw값과 Pitch값을 서버로 전송
 void ANS_PlayerCharacterBase::UpdateAim_Server_Implementation(float NewCamYaw, float NewCamPitch)
 {
-    CamYaw   = NewCamYaw;
-    CamPitch = NewCamPitch;
+    CamYaw   = NewCamYaw; 
+    CamPitch = NewCamPitch; 
+}
+
+void ANS_PlayerCharacterBase::SwapWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass)
+{
+    EquipedWeaponComp->SwapWeapon(WeaponClass); 
 }

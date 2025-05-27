@@ -33,6 +33,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	EWeaponType WeaponType;
 
+	UPROPERTY(EditAnywhere,  Category = "ItemData")
+	FWeaponData WeaponData;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	FText ItemName;
 
@@ -84,7 +87,6 @@ public:
 
 	UFUNCTION(Category = "Item")
 	void SetQuantity(const int32 NewQuantity);
-public:	
 	EItemType GetItemType() const { return ItemType; }
 	EWeaponType GetWeaponType() const { return WeaponType; }
 	FText GetItemName() const { return ItemName; }

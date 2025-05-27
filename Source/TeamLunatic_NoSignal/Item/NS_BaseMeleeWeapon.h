@@ -15,7 +15,6 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_BaseMeleeWeapon : public ANS_BaseWeapon
 public:
 	ANS_BaseMeleeWeapon();
 
-protected:
 	virtual void BeginPlay() override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Effects")

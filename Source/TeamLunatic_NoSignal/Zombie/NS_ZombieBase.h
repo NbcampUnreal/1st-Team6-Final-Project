@@ -41,7 +41,7 @@ public:
 	virtual void Die();
 
 	void SetState(Enum_ZombieState NewState);
-	//��� �� ��Ƽĳ����. ex)����, ���
-	//UFUNCTION(NetMulticast, Unreliable)
-	//void OnDeath();
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void Die_Multicast();
 };
