@@ -8,8 +8,17 @@ ANS_BaseMeleeWeapon::ANS_BaseMeleeWeapon()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	ItemStaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
+	ItemStaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HideWeaponMesh"));
 	RootComponent = ItemStaticMesh;
+	ItemStaticMesh->SetOnlyOwnerSee(false);
+	ItemStaticMesh->CastShadow = true;
+	ItemStaticMesh->bCastDynamicShadow = true;
+
+	ArmsMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
+	RootComponent = ArmsMesh;
+	ArmsMesh->SetOnlyOwnerSee(true);
+	ArmsMesh->CastShadow = false;
+	ArmsMesh->bCastDynamicShadow = false;
 }
 
 void ANS_BaseMeleeWeapon::BeginPlay()

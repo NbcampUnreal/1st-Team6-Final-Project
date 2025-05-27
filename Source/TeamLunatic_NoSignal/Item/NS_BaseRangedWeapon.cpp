@@ -7,8 +7,17 @@ ANS_BaseRangedWeapon::ANS_BaseRangedWeapon()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
-	RangedWeaponMeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
+	RangedWeaponMeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("HideWeaponMesh"));
 	RootComponent = RangedWeaponMeshComp;
+	RangedWeaponMeshComp->SetOnlyOwnerSee(false);
+	RangedWeaponMeshComp->CastShadow = true;
+	RangedWeaponMeshComp->bCastDynamicShadow = true;
+
+	ArmsMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
+	RootComponent = ArmsMesh;
+	ArmsMesh->SetOnlyOwnerSee(true);
+	ArmsMesh->CastShadow = false;
+	ArmsMesh->bCastDynamicShadow = false;
 
 	NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Effect"));
 	NiagaraComponent->SetupAttachment(RootComponent);
