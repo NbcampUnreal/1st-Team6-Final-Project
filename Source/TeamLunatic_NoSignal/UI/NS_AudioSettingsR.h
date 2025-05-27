@@ -20,6 +20,7 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_AudioSettingsR : public UNS_MasterMenuPanel
 public:
 	virtual void NativeConstruct() override;
 
+
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
 	UBorder* Backround;
 
@@ -41,4 +42,28 @@ public:
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
 	USlider* MusicSlider;
 
+	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
+	UButton* SaveButton;
+
+	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
+	UButton* ResetButton;
+
+	float MasterVolume = 0.5f;
+	float EffectVolume = 0.5f;
+	float AmbientVolume = 0.5f;
+	float MusicVolume = 0.5f;
+
+	UFUNCTION()
+	void OnSaveButtonClicked();
+
+	UFUNCTION()
+	void OnSliderValueChanged(float Value);
+
+	UFUNCTION()
+	void OnResetButtonClicked();
+
+	void LoadSoundSettings();
+	void UpdateVolumeValuesFromSliders();
+	void SaveSoundSettings();
+	void ApplyVolumes();
 };

@@ -5,6 +5,11 @@
 #include "Kismet/GameplayStatics.h"
 #include "Engine/Engine.h"
 
+#include "OnlineSubsystem.h"                          // IOnlineSubsystem
+#include "OnlineSessionSettings.h"                    // FOnlineSessionSettings
+#include "Interfaces/OnlineSessionInterface.h"        // IOnlineSessionPtr
+#include "Kismet/GameplayStatics.h"                   // UGameplayStatics (선택사항)
+
 void UNS_GameInstance::SetGameModeType(EGameModeType Type)
 {
 	GameModeType = Type;

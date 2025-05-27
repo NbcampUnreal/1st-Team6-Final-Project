@@ -7,12 +7,20 @@
 #include "OnlineSessionSettings.h"
 #include "NS_GameInstance.generated.h"
 
+DECLARE_MULTICAST_DELEGATE(FOnCreateSessionSuccess);
+
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UNS_GameInstance : public UGameInstance
 {
 	GENERATED_BODY()
 
 public:
+	FOnCreateSessionSuccess OnCreateSessionSuccess;
+
+	UPROPERTY(BlueprintReadOnly, Category = "SaveGame")
+	FString CurrentSaveSlotName;
+
+	// ���� ��� ����
 	void SetGameModeType(EGameModeType Type);
 	EGameModeType GetGameModeType() const { return GameModeType; }
 

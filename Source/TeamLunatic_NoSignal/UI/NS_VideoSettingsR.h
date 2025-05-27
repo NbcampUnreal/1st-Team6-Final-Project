@@ -31,7 +31,7 @@ public:
 	UTextBlock* Title;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
-	UButton* RefreshButton;
+	UButton* ApplyButton;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
 	UNS_ResolutionSettingR* BP_ResolutionSelector;
@@ -42,8 +42,8 @@ public:
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
 	UNS_ScalerSettingR* BP_VSyncSelector;
 
-	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UNS_ScalerSettingR* BP_MaxFPSSelector;
+	//UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
+	//UNS_ScalerSettingR* BP_MaxFPSSelector;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
 	UNS_ScalerSettingR* BP_AntiAliasingSelector;
