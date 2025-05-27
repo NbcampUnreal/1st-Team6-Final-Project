@@ -37,11 +37,6 @@ public:
 	// 카메라를 붙일 소켓 이름 [에디터에서 변경 가능함] 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera")
 	FName CameraAttachSocketName = TEXT("head");
-
-	// 1인칭 카메라 컴포넌트 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
-	UCameraComponent* CameraComp;
-
 	
 	// ============== 디버그용 위젯 차후 삭제해야 함 ===================
 	// 에디터에서 할당할 위젯 Blueprint 클래스
@@ -55,6 +50,13 @@ public:
 
 	
 	////////////////////////////////////캐릭터 부착 컴포넌트들///////////////////////////////////////
+	// 1인칭 카메라 컴포넌트 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
+	UCameraComponent* CameraComp;
+	// 1인칭 팔스켈레탈 메시 컴포넌트
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "FirstPerson")
+	USkeletalMeshComponent* FirstPersonArms;
+
 	// 스탯 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
 	UNS_StatusComponent* StatusComp;
@@ -203,5 +205,5 @@ public:
 	void UpdateAim_Server(float NewCamYaw, float NewCamPitch);
 
 	UFUNCTION()
-	void SwapWeapon(TSubclassOf<ANS_BaseMeleeWeapon> WeaponClass);
+	void SwapWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass);
 };

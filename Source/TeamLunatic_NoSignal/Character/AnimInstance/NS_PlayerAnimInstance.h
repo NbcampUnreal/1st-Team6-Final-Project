@@ -24,7 +24,7 @@ protected:
 	// PlayerCharacterBase에 있는 CamPitch값과는 다른 로컬용 Pitch값
 	UPROPERTY(BlueprintReadOnly, Category="Aim")
 	float AimPitch = 0.f;
-
 	
+	// AimOffset용 Yaw와 Pitch값 업데이트 함수
 	void UpdateAimOffset(float DeltaSeconds);
 };

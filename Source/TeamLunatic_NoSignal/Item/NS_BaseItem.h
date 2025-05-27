@@ -84,7 +84,6 @@ public:
 
 	UFUNCTION(Category = "Item")
 	void SetQuantity(const int32 NewQuantity);
-public:	
 	EItemType GetItemType() const { return ItemType; }
 	EWeaponType GetWeaponType() const { return WeaponType; }
 	FText GetItemName() const { return ItemName; }

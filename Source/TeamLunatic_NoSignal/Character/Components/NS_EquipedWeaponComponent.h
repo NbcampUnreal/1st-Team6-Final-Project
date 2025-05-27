@@ -31,14 +31,14 @@ public:
 
 	/** 슬롯 인덱스에 해당하는 무기를 장착 */
 	UFUNCTION(BlueprintCallable)
-	void SwapWeapon(TSubclassOf<ANS_BaseMeleeWeapon> WeaponClass);
+	void SwapWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass);
 	
 	// 서버에서 무기 스폰 및 부착 함수
 	UFUNCTION(Server, Reliable)
-	void ServerEquipWeapon(TSubclassOf<ANS_BaseMeleeWeapon> WeaponClass);
+	void ServerEquipWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass);
 	// 클라이언트에 무기 스폰 및 부착 함수 
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastEquipWeapon(TSubclassOf<ANS_BaseMeleeWeapon> WeaponClass);
+	void MulticastEquipWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass);
 
 	// 현재 장착 무기로 발사 or 공격
 	UFUNCTION(BlueprintCallable)

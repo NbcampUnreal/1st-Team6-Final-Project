@@ -22,7 +22,7 @@ public:
 	//EWeaponType WeaponType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
-	FName WeaponSocketName;
+	FName AttachSocketName;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	float Durability;
@@ -59,5 +59,6 @@ public:
 
 	EWeaponType GetWeaponType() const { return WeaponType; }
 
-public:
+	FName GetAttachSocketName() const { return AttachSocketName; }
+
 };

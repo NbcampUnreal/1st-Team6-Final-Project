@@ -15,7 +15,7 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
 {
     PrimaryActorTick.bCanEverTick = true;
 
-    DefaultWalkSpeed = 400.f;
+    DefaultWalkSpeed = 500.f;
     SprintSpeedMultiplier = 1.5f;
 
     // 카메라 설정
@@ -23,6 +23,13 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     CameraComp->SetupAttachment(GetMesh(), CameraAttachSocketName);
     CameraComp->bUsePawnControlRotation = true;
 
+    // 1인칭용 팔 설정
+    FirstPersonArms = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FirstPersonArms"));
+    FirstPersonArms->SetupAttachment(CameraComp);
+    FirstPersonArms->bCastDynamicShadow = false;
+    FirstPersonArms->CastShadow = false;
+    FirstPersonArms->SetOnlyOwnerSee(true); // 플레이어 본인만 보이게 설정 (다른클라이언트는 안보이게)
+    
     // 캐릭터 회전 및 이동 방향 설정
     // bUseControllerRotationYaw는 Tick 함수에서 동적으로 제어될 것입니다.
     bUseControllerRotationYaw = false; // 초기값은 false로 설정
@@ -46,6 +53,12 @@ void ANS_PlayerCharacterBase::BeginPlay()
 {
     Super::BeginPlay();
 
+    if (IsLocallyControlled())
+    {
+        GetMesh()->SetOwnerNoSee(true);          // 전체 메시는 보이지 않게
+        FirstPersonArms->SetOnlyOwnerSee(true);  // 팔 메시만 본인(플레이어)이 보이게
+    }
+    
     // 디버그 위젯 생성 ======================== 차후 삭제필요
     if (DebugWidgetClass && Controller)
     {
@@ -464,7 +477,7 @@ void ANS_PlayerCharacterBase::UpdateAim_Server_Implementation(float NewCamYaw, f
     CamPitch = NewCamPitch; 
 }
 
-void ANS_PlayerCharacterBase::SwapWeapon(TSubclassOf<ANS_BaseMeleeWeapon> WeaponClass)
+void ANS_PlayerCharacterBase::SwapWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass)
 {
     EquipedWeaponComp->SwapWeapon(WeaponClass); 
 }

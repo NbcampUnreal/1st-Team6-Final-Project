@@ -15,9 +15,9 @@ void UNS_PlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     Super::NativeUpdateAnimation(DeltaSeconds);
     if (!PlayerCharacter) return;
 
-    // AimOffset Tick에서 계속 업데이트
+    // AimOffset 업데이트
     UpdateAimOffset(DeltaSeconds);
-
+    
     // 이동 중이면 컨트롤러 회전을 계속 활성화
     const bool bIsMoving = PlayerCharacter->GetCharacterMovement()->Velocity.SizeSquared() > KINDA_SMALL_NUMBER;
     if (bIsMoving)
@@ -51,8 +51,8 @@ void UNS_PlayerAnimInstance::UpdateAimOffset(float DeltaSeconds)
     }
     else // 원격 컨트롤러는 서버에서 복제된 값 사용
     {
-        AimYaw   = FMath::FInterpTo(AimYaw, PlayerCharacter->CamYaw, DeltaSeconds, PlayerCharacter->AimSendInterpSpeed); 
-        AimPitch = FMath::FInterpTo(AimPitch, PlayerCharacter->CamPitch, DeltaSeconds, PlayerCharacter->AimSendInterpSpeed); 
+        AimYaw   = PlayerCharacter->CamYaw;
+        AimPitch = PlayerCharacter->CamPitch;
     }
 }
 

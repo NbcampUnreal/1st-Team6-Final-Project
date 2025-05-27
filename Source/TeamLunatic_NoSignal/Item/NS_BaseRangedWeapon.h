@@ -15,7 +15,6 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_BaseRangedWeapon : public ANS_BaseWeapon
 public:
 	ANS_BaseRangedWeapon();
 
-protected:
 	virtual void BeginPlay() override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
