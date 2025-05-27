@@ -19,7 +19,7 @@ protected:
 	class ANS_PlayerCharacterBase* PlayerCharacter = nullptr;
 
 	// PlayerCharacterBase에 있는 CamYaw값과는 다른 로컬용 Yaw값
-	UPROPERTY(BlueprintReadOnly, Category="Aim")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Aim")
 	float AimYaw   = 0.f;
 	// PlayerCharacterBase에 있는 CamPitch값과는 다른 로컬용 Pitch값
 	UPROPERTY(BlueprintReadOnly, Category="Aim")
