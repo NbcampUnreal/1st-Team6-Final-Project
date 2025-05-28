@@ -23,10 +23,11 @@ void UNS_EquipedWeaponComponent::BeginPlay()
 void UNS_EquipedWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-    DOREPLIFETIME(UNS_EquipedWeaponComponent, CurrentWeapon);
-	DOREPLIFETIME(UNS_EquipedWeaponComponent, IsAttack);
-	DOREPLIFETIME(UNS_EquipedWeaponComponent, IsReload);
-	DOREPLIFETIME(UNS_EquipedWeaponComponent, IsEmpty);
+    DOREPLIFETIME(UNS_EquipedWeaponComponent, CurrentWeapon); // 현재 무기 변수
+	DOREPLIFETIME(UNS_EquipedWeaponComponent, IsAttack); // 공격중인지 확인 변수
+	DOREPLIFETIME(UNS_EquipedWeaponComponent, IsReload); // 장전중인지 확인 변수
+	DOREPLIFETIME(UNS_EquipedWeaponComponent, IsEmpty); // 총알이 있는지 없는지 확인 변수
+    DOREPLIFETIME(UNS_EquipedWeaponComponent, WeaponType); // 무기 타입 변수
 }
 
 void UNS_EquipedWeaponComponent::SwapWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass)
@@ -103,8 +104,12 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
                 OwnerCharacter->FirstPersonArms, Rules, SocketName);
         }
     }
-    
+
+    // 현재 무기 설정
     CurrentWeapon = NewWpn;
+    
+    // 무기타입 갱신
+    WeaponType = NewWpn->GetWeaponType();
 }
 
 void UNS_EquipedWeaponComponent::StartAttack()
