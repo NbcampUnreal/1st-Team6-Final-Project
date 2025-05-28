@@ -55,4 +55,3 @@ void UNS_PlayerAnimInstance::UpdateAimOffset(float DeltaSeconds)
         AimPitch = PlayerCharacter->CamPitch;
     }
 }
-

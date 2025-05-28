@@ -1,26 +1,19 @@
 #include "Item/NS_BaseRangedWeapon.h"
-#include "NiagaraSystem.h"
 #include "NiagaraComponent.h"
-
 
 ANS_BaseRangedWeapon::ANS_BaseRangedWeapon()
 {
 	PrimaryActorTick.bCanEverTick = false;
-
-	RangedWeaponMeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("HideWeaponMesh"));
-	RootComponent = RangedWeaponMeshComp;
+	
+	RangedWeaponMeshComp = CreateDefaultSubobject<USkeletalMeshComponent>("I Can'tSee Mesh");
+	RangedWeaponMeshComp->SetOwnerNoSee(true);
 	RangedWeaponMeshComp->SetOnlyOwnerSee(false);
-	RangedWeaponMeshComp->CastShadow = true;
-	RangedWeaponMeshComp->bCastDynamicShadow = true;
 
-	ArmsMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
-	RootComponent = ArmsMesh;
+	ArmsMesh = CreateDefaultSubobject<USkeletalMeshComponent>("I See Mesh");
+	ArmsMesh->SetOwnerNoSee(false);
 	ArmsMesh->SetOnlyOwnerSee(true);
-	ArmsMesh->CastShadow = false;
-	ArmsMesh->bCastDynamicShadow = false;
-
-	NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Effect"));
-	NiagaraComponent->SetupAttachment(RootComponent);
+	
+	NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Niagara"));
 }
 
 void ANS_BaseRangedWeapon::BeginPlay()

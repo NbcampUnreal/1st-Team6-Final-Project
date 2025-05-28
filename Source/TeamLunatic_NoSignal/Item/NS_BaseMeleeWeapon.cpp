@@ -1,24 +1,17 @@
 #include "Item/NS_BaseMeleeWeapon.h"
 #include "Components/StaticMeshComponent.h"
-#include "Components/SphereComponent.h"
-#include "Components/BoxComponent.h"
-#include "Components/CapsuleComponent.h"
 
 ANS_BaseMeleeWeapon::ANS_BaseMeleeWeapon()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	ItemStaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HideWeaponMesh"));
-	RootComponent = ItemStaticMesh;
+	ItemStaticMesh = CreateDefaultSubobject<UStaticMeshComponent>("I Can'tSee Mesh");
+	ItemStaticMesh->SetOwnerNoSee(true);
 	ItemStaticMesh->SetOnlyOwnerSee(false);
-	ItemStaticMesh->CastShadow = true;
-	ItemStaticMesh->bCastDynamicShadow = true;
 
-	ArmsMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
-	RootComponent = ArmsMesh;
+	ArmsMesh = CreateDefaultSubobject<UStaticMeshComponent>("I See Mesh");
+	ArmsMesh->SetOwnerNoSee(false);
 	ArmsMesh->SetOnlyOwnerSee(true);
-	ArmsMesh->CastShadow = false;
-	ArmsMesh->bCastDynamicShadow = false;
 }
 
 void ANS_BaseMeleeWeapon::BeginPlay()
@@ -32,6 +25,8 @@ void ANS_BaseMeleeWeapon::BeginPlay()
 		ItemMesh = ItemData->ItemAssetData.StaticMesh;
 	}
 
+	ArmsMesh->SetStaticMesh(ItemMesh);
+	
 	ItemStaticMesh->SetStaticMesh(ItemMesh);
 
 	InstanceInteractableData.Quantity = 1;
