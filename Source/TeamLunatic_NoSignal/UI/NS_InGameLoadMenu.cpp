@@ -25,10 +25,16 @@ UNS_InGameLoadMenu::UNS_InGameLoadMenu(const FObjectInitializer& ObjectInitializ
 void UNS_InGameLoadMenu::NativeConstruct()
 {
     Super::NativeConstruct();
+    SaveVerticalBox->ClearChildren(); // 기존 UI 클리어
+    if (!LoadGameDataElementClass)
+    {
+        LoadGameDataElementClass = LoadClass<UNS_LoadGameMenuPanel>(
+            nullptr, TEXT("/Game/SurvivalGameKitV2/Blueprints/Widgets/BP_LoadGameMenuPanel_v1.BP_LoadGameMenuPanel_v1_C"));
+    }
+
     LoadSaveSlotsToUI();
 
     StartGameButton->RootButton->OnClicked.AddDynamic(this, &UNS_InGameLoadMenu::StartGame);
-
 }
 void UNS_InGameLoadMenu::ShowWidgetD()
 {
