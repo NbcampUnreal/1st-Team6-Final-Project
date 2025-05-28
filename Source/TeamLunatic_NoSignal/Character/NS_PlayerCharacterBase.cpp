@@ -307,7 +307,7 @@ float ANS_PlayerCharacterBase::TakeDamage(
         return ActualDamage;
 
     // 캐릭터 체력 감소
-    StatusComp->ChangeHealthGauge(-ActualDamage);
+    StatusComp->AddHealthGauge(-ActualDamage);
 
     IsHit = true;
     
