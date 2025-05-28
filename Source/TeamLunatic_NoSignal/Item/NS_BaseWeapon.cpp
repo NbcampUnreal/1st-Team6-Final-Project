@@ -1,9 +1,12 @@
 #include "Item/NS_BaseWeapon.h"
-#include "Inventory/InventoryComponent.h"
+#include "GameFramework/Actor.h"
 
 ANS_BaseWeapon::ANS_BaseWeapon()
 {
 	PrimaryActorTick.bCanEverTick = false;
+
+	bReplicates = true;
+	SetReplicatingMovement(true);
 }
 
 void ANS_BaseWeapon::BeginPlay()

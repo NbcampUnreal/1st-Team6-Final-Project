@@ -13,9 +13,12 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_EquipedWeaponComponent : public UActorCompone
 {
 	GENERATED_BODY()
 
-public:
+	
 	UNS_EquipedWeaponComponent();
+	
+	virtual void BeginPlay() override;
 
+public:
 	///////////////////////////////////////리플리케이션 변수//////////////////////////////////////////
 	// 공격중인지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
@@ -30,7 +33,10 @@ public:
 	// 현재 장착중인 무기 타입 변수
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Replicated, Category="Replicated Variables")
 	EWeaponType WeaponType = EWeaponType::Unarmed;
-///////////////////////////////////////////////////////////////////////////////////////////
+
+	// 현재 장착 중인 무기 액터 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Replicated, Category="Replicated Variables")	ANS_BaseWeapon* CurrentWeapon;
+	///////////////////////////////////////////////////////////////////////////////////////////
 
 	// 서버-클라이언트 복제 설정
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -56,18 +62,13 @@ public:
 	// 현재 장착 무기가 원기리일때는 재장전 
 	UFUNCTION(BlueprintCallable)
 	void Reload();
-		
-	virtual void BeginPlay() override;
 
 	// 현재 플레이하는 캐릭터 변수
 	UPROPERTY()
 	ANS_PlayerCharacterBase* OwnerCharacter;
-
-	// 현재 장착 중인 무기 액터 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
-    ANS_BaseWeapon* CurrentWeapon;
 	
 	// 메쉬에 붙일 소켓 이름 (에디터에서 필요 시 변경) 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Equip")
 	FName WeaponAttachSocketName = TEXT("hand_rKnife");
+	
 };
