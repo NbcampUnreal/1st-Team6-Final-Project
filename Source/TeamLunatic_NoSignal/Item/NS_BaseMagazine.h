@@ -13,7 +13,6 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_BaseMagazine : public ANS_BaseItem
 public:
 	ANS_BaseMagazine();
 
-protected:
 	virtual void BeginPlay() override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
@@ -25,14 +24,39 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	EAmmoType AmmoType;
 
-public:
 	int32 GetMaxAmmo() const { return MaxAmmo; }
 	int32 GetCurrentAmmo() const { return CurrentAmmo; }
 	EAmmoType GetAmmoType() const { return AmmoType; }
 
-	void AddCurrentAmmo(int32 AddAmount);
-	void MinusCurrentAmmo(int32 SubAmount);
+	//빈공간 체크
+	UFUNCTION(BlueprintCallable, Category = "Magazine")
+	bool IsEmpty() const;
 
-	//UFUNCTION(BlueprintCallable, Category = "Magazine")
-	//bool TryAddAmmo();
+	//총알이 가득 찼는지 확인
+	UFUNCTION(BlueprintCallable, Category = "Magazine")
+	bool isFull() const;
+
+	//총알 사용
+	UFUNCTION(BlueprintCallable, Category = "Magazine")
+	bool ConsumeOne();
+
+	//탄환 전부 제거
+	UFUNCTION(BlueprintCallable, Category = "Magazine")
+	int32 ConsumeAll();
+
+	//원하는 수 만큼 탄환 제거
+	UFUNCTION(BlueprintCallable, Category = "Magazine")
+	int32 RemoveAmmo(int32 Amount);
+
+	//탄약 채우기
+	UFUNCTION(BlueprintCallable, Category = "Magazine")
+	bool Refill(int32 Amount, EAmmoType InputAmmoType);
+
+	//해당 탄환 사용가능 여부 체크
+	UFUNCTION(BlueprintCallable, Category = "Magazine")
+	bool CanUseAmmoType(EAmmoType InputType) const;
+
+	//남은 공간 확인
+	UFUNCTION(BlueprintCallable, Category = "Magazine")
+	int32 GetRemainingCapacity() const;
 };
