@@ -13,11 +13,12 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_BaseWeapon : public ANS_BaseItem
 {
 	GENERATED_BODY()
 	
-public:
+protected:
 	ANS_BaseWeapon();
 
 	virtual void BeginPlay() override;
 
+public:
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	//EWeaponType WeaponType;
 
@@ -60,5 +61,4 @@ public:
 	EWeaponType GetWeaponType() const { return WeaponType; }
 
 	FName GetAttachSocketName() const { return AttachSocketName; }
-
 };
