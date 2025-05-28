@@ -14,6 +14,9 @@ APickup::APickup()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
+	bReplicates = true;
+	SetReplicatingMovement(true); // 움직이는 아이템이면
+
 	PickupMesh = CreateDefaultSubobject<UStaticMeshComponent>("PickupMesh");
 	PickupMesh->SetSimulatePhysics(true);
 	SetRootComponent(PickupMesh);
@@ -23,7 +26,14 @@ void APickup::BeginPlay()
 {
 	Super::BeginPlay();
 
-	InitializePickup(ANS_BaseItem::StaticClass(), ItemQuantity);
+	if (HasAuthority())
+	{
+		InitializePickup(ANS_BaseItem::StaticClass(), ItemQuantity);
+	}
+	else
+	{
+		OnRep_ReplicatedItemData();
+	}
 }
 
 void APickup::InitializePickup(const TSubclassOf<ANS_BaseItem> BaseClass, const int32 InQuantity)
@@ -31,6 +41,10 @@ void APickup::InitializePickup(const TSubclassOf<ANS_BaseItem> BaseClass, const 
 	if (ItemDataTable && !DesiredItemID.IsNone())
 	{
 		const FNS_ItemDataStruct* ItemData = ItemDataTable->FindRow<FNS_ItemDataStruct>(DesiredItemID, DesiredItemID.ToString());
+
+		ReplicatedItemData = *ItemData;
+		ReplicatedItemData.Quantity = InQuantity > 0 ? InQuantity : 1;
+		OnRep_ReplicatedItemData();
 
 		ItemReference = NewObject<ANS_BaseItem>(this, BaseClass);
 
@@ -40,6 +54,7 @@ void APickup::InitializePickup(const TSubclassOf<ANS_BaseItem> BaseClass, const 
 		ItemReference->TextData = ItemData->ItemTextData;
 		ItemReference->NumericData = ItemData->ItemNumericData;
 		ItemReference->AssetData = ItemData->ItemAssetData;
+		ItemReference->ItemDataRowName = ItemData->ItemDataRowName;
 
 		InQuantity <= 0 ? ItemReference->SetQuantity(1) : ItemReference->SetQuantity(InQuantity);
 
@@ -55,6 +70,33 @@ void APickup::InitializeDrop(ANS_BaseItem* ItemToDrop, const int32 InQuantity)
 	InQuantity <= 0 ? ItemReference->SetQuantity(1) : ItemReference->SetQuantity(InQuantity);
 	ItemReference->NumericData.Weight = ItemToDrop->GetItemSingleWeight();
 	PickupMesh->SetStaticMesh(ItemToDrop->AssetData.StaticMesh);
+
+	ReplicatedItemData.ItemTextData = ItemToDrop->TextData;
+	ReplicatedItemData.ItemNumericData = ItemToDrop->NumericData;
+	ReplicatedItemData.ItemAssetData = ItemToDrop->AssetData;
+	ReplicatedItemData.WeaponData = ItemToDrop->WeaponData;
+	ReplicatedItemData.WeaponType = ItemToDrop->WeaponType;
+	ReplicatedItemData.ItemType = ItemToDrop->ItemType;
+
+	UpdateInteractableData();
+}
+
+void APickup::OnRep_ReplicatedItemData()
+{
+	if (!ItemReference)
+	{
+		ItemReference = NewObject<ANS_BaseItem>(this, ANS_BaseItem::StaticClass());
+	}
+
+	ItemReference->TextData = ReplicatedItemData.ItemTextData;
+	ItemReference->NumericData = ReplicatedItemData.ItemNumericData;
+	ItemReference->AssetData = ReplicatedItemData.ItemAssetData;
+	ItemReference->WeaponData = ReplicatedItemData.WeaponData;
+	ItemReference->WeaponType = ReplicatedItemData.WeaponType;
+	ItemReference->ItemType = ReplicatedItemData.ItemType;
+	PickupMesh->SetStaticMesh(ReplicatedItemData.ItemAssetData.StaticMesh);
+
+	ItemReference->SetQuantity(ReplicatedItemData.Quantity);
 
 	UpdateInteractableData();
 }
@@ -84,7 +126,7 @@ void APickup::EndFocus()
 	}
 }
 
-void APickup::Interact(AActor* InteractingActor)
+void APickup::Interact_Implementation(AActor* InteractingActor)
 {
 	if (ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(InteractingActor))
 	{
@@ -94,6 +136,8 @@ void APickup::Interact(AActor* InteractingActor)
 
 void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 {
+	if (!HasAuthority()) return;
+
 	if (!IsPendingKillPending())
 	{
 		if (ItemReference)
@@ -149,3 +193,10 @@ void APickup::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent
 		}
 	}
 }
+
+void APickup::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(APickup, ReplicatedItemData);
+}
+

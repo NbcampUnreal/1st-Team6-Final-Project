@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Interaction/InteractionInterface.h"
+#include "Net/UnrealNetwork.h"
+#include "Item/NS_ItemDataStruct.h"
 #include "Pickup.generated.h"
 
 class UDataTable;
@@ -21,6 +23,13 @@ public:
 
 	void InitializePickup(const TSubclassOf<ANS_BaseItem> BaseClass, const int32 InQuantity);
 	void InitializeDrop(ANS_BaseItem* ItemToDrop, const int32 InQuantity);
+
+	UPROPERTY(ReplicatedUsing = OnRep_ReplicatedItemData)
+	FNS_ItemDataStruct ReplicatedItemData;
+
+	// OnRep 함수 선언
+	UFUNCTION()
+	void OnRep_ReplicatedItemData();
 
 	FORCEINLINE ANS_BaseItem* GetItemData() { return ItemReference; };
 
@@ -46,11 +55,12 @@ protected:
 	FInteractableData InstanceInteractableData;
 
 	virtual void BeginPlay() override;
-	virtual void Interact(AActor* InteractingActor) override;
+	virtual void Interact_Implementation(AActor* InteractingActor) override;
 	void UpdateInteractableData();
 	void TakePickup(ANS_PlayerCharacterBase* Taker);
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 #endif
 };

@@ -21,34 +21,34 @@ public:
 
 	virtual void BeginPlay() override;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Confige")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Confige", Replicated)
 	UDataTable* ItemsDataTable;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Confige")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Confige", ReplicatedUsing = OnRep_ItemDataRowName)
 	FName ItemDataRowName;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData", Replicated)
 	EItemType ItemType;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData", Replicated)
 	EWeaponType WeaponType;
 
-	UPROPERTY(EditAnywhere,  Category = "ItemData")
+	UPROPERTY(EditAnywhere,  Category = "ItemData", Replicated)
 	FWeaponData WeaponData;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData", Replicated)
 	FText ItemName;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData", Replicated)
 	float Weight;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	USoundBase* GetItemSound = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData", Replicated)
 	UStaticMesh* ItemMesh;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData", Replicated)
 	UTexture2D* Icon;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
@@ -57,16 +57,16 @@ public:
 	UPROPERTY(EditAnywhere, Category = "PickUp")
 	FInteractableData InstanceInteractableData;
 
-	UPROPERTY(EditAnywhere, Category = "ItemData")
+	UPROPERTY(EditAnywhere, Category = "ItemData", Replicated)
 	FItemNumericData NumericData;
 
-	UPROPERTY(EditAnywhere, Category = "ItemData")
+	UPROPERTY(EditAnywhere, Category = "ItemData", Replicated)
 	FItemTextData TextData;
 
-	UPROPERTY(EditAnywhere, Category = "ItemData")
+	UPROPERTY(EditAnywhere, Category = "ItemData", Replicated)
 	FItemAssetData AssetData;
 
-	UPROPERTY(VisibleAnywhere, Category = "ItemData", meta = (UIMin=1, UIMax=100))
+	UPROPERTY(VisibleAnywhere, Category = "ItemData", meta = (UIMin=1, UIMax=100), Replicated)
 	int32 Quantity;
 
 	bool bisCopy;
@@ -75,6 +75,9 @@ public:
 	void ResetItemFlags();
 
 	ANS_BaseItem* CreateItemCopy();
+	
+	UFUNCTION()
+	void OnRep_ItemDataRowName();
 
 	UFUNCTION(Category = "Item")
 	FORCEINLINE float GetItemStackWeight() const { return Quantity * NumericData.Weight; };
@@ -87,6 +90,7 @@ public:
 
 	UFUNCTION(Category = "Item")
 	void SetQuantity(const int32 NewQuantity);
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 public:	
 	EItemType GetItemType() const { return ItemType; }
 	EWeaponType GetWeaponType() const { return WeaponType; }
@@ -106,4 +110,5 @@ protected:
 	{
 		return ItemDataRowName == OtherID;
 	}
+	bool IsSupportedForNetworking() const;
 };

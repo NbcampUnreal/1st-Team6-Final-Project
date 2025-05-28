@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Item/NS_ItemDataStruct.h"
 #include "InventoryComponent.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnInventoryUpdated);
@@ -70,10 +71,14 @@ class TEAMLUNATIC_NOSIGNAL_API UInventoryComponent : public UActorComponent
 	GENERATED_BODY()
 
 public:	
-
 	FOnInventoryUpdated OnInventoryUpdated;
 
+	void BroadcastInventoryUpdate();
+
 	UInventoryComponent();
+	virtual void InitializeComponent() override;
+	virtual bool ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UFUNCTION(Category = "Inventory")
 	FItemAddResult HandleAddItem(ANS_BaseItem* InputItem);
@@ -100,7 +105,6 @@ public:
 	FORCEINLINE int32 GetSlotsCapacity() const { return InventorySlotsCapacity; };
 	UFUNCTION(Category = "Inventory")
 	FORCEINLINE TArray<ANS_BaseItem*> GetInventoryContents() const { return InventoryContents; };
-
 	UFUNCTION(Category = "Inventory")
 	FORCEINLINE void SetSlotsCapacity(const int32 NewSlotsCapacity) { InventorySlotsCapacity = NewSlotsCapacity; };
 	UFUNCTION(Category = "Inventory")
@@ -116,7 +120,7 @@ protected:
 	UPROPERTY(EditInstanceOnly, Category = "Inventory")
 	float InventoryWeightCapacity;
 
-	UPROPERTY(VisibleAnywhere, Category = "Inventory")
+	UPROPERTY(VisibleAnywhere, Category = "Inventory", Replicated)
 	TArray<TObjectPtr<ANS_BaseItem>> InventoryContents;
 
 	FItemAddResult HandleNonStackableItems(ANS_BaseItem* InputItem);
@@ -124,5 +128,6 @@ protected:
 	int32 CalculateWeightAddAmount(ANS_BaseItem* ItemIn, int32 RequestedAddAmount);
 	int32 CalculateNumberForFullStack(ANS_BaseItem* StackableItem, int32 InitialRequestedAddAmount);
 
+	UFUNCTION(BlueprintCallable)
 	void AddNewItem(ANS_BaseItem* Item, const int32 AmountToAdd);
 };

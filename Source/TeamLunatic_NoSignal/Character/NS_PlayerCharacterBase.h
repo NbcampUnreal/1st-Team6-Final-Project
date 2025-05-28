@@ -29,6 +29,9 @@ public:
 	UInteractionComponent* GetInteractionComponent() const { return InteractionComponent; }
 
 	void DropItem(ANS_BaseItem* ItemToDrop, const int32 QuantityToDrop);
+
+	UFUNCTION(Client, Reliable)
+	void Client_NotifyInventoryUpdated();
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
@@ -185,6 +188,10 @@ public:
 	// 아이템 줍기
 	UFUNCTION(Server, Reliable)
 	void PickUpAction_Server(const FInputActionValue& Value);
+
+	// 아이템 버리기
+	UFUNCTION(Server, Reliable)
+	void DropItem_Server(ANS_BaseItem* ItemToDrop, int32 QuantityToDrop);
 
 	// 조준 
 	UFUNCTION(Server, Reliable)

@@ -12,6 +12,8 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
 {
     PrimaryActorTick.bCanEverTick = true;
 
+    bReplicates = true;
+
     DefaultWalkSpeed = 400.f;
     SprintSpeedMultiplier = 1.5f;
 
@@ -36,7 +38,7 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     PlayerInventory->SetWeightCapacity(50.0f);
 }
 
-void ANS_PlayerCharacterBase::DropItem(ANS_BaseItem* ItemToDrop, const int32 QuantityToDrop)
+void ANS_PlayerCharacterBase::DropItem_Server_Implementation(ANS_BaseItem* ItemToDrop, int32 QuantityToDrop)
 {
     if (PlayerInventory->FindMatchingItem(ItemToDrop))
     {
@@ -58,6 +60,27 @@ void ANS_PlayerCharacterBase::DropItem(ANS_BaseItem* ItemToDrop, const int32 Qua
     else
     {
         UE_LOG(LogTemp, Warning, TEXT("Item to drop was somehow null"));
+    }
+}
+
+void ANS_PlayerCharacterBase::DropItem(ANS_BaseItem* ItemToDrop, const int32 QuantityToDrop)
+{
+    if (HasAuthority())
+    {
+        DropItem_Server(ItemToDrop, QuantityToDrop);
+    }
+    else
+    {
+        DropItem_Server(ItemToDrop, QuantityToDrop); // 클라에서 서버로 요청
+    }
+}
+
+void ANS_PlayerCharacterBase::Client_NotifyInventoryUpdated_Implementation()
+{
+    if (PlayerInventory)
+    {
+        PlayerInventory->OnInventoryUpdated.Broadcast(); // UI 갱신
+        UE_LOG(LogTemp, Warning, TEXT("Inventory update received for %s"), *GetOwner()->GetName());
     }
 }
 
@@ -527,3 +550,4 @@ void ANS_PlayerCharacterBase::UpdateAim_Server_Implementation(float NewCamYaw, f
     CamYaw   = NewCamYaw;
     CamPitch = NewCamPitch;
 }
+

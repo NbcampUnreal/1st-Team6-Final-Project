@@ -2,13 +2,38 @@
 
 
 #include "Inventory/InventoryComponent.h"
+#include "Net/UnrealNetwork.h"
+#include "Character/NS_PlayerCharacterBase.h"
 #include "Item/NS_BaseItem.h"
+#include "Engine/ActorChannel.h"
 
 
 UInventoryComponent::UInventoryComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
+}
 
+void UInventoryComponent::InitializeComponent()
+{
+	Super::InitializeComponent();
+
+	SetIsReplicated(true);
+	bWantsInitializeComponent = true;
+}
+
+bool UInventoryComponent::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags)
+{
+	bool bWroteSomething = Super::ReplicateSubobjects(Channel, Bunch, RepFlags);
+
+	for (const TObjectPtr<ANS_BaseItem>& ItemPtr : InventoryContents)
+	{
+		if (IsValid(ItemPtr))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[Replication] Trying to replicate item: %s"), *ItemPtr->GetName());
+			bWroteSomething |= Channel->ReplicateSubobject(ItemPtr.Get(), *Bunch, *RepFlags);
+		}
+	}
+	return bWroteSomething;
 }
 
 void UInventoryComponent::BeginPlay()
@@ -17,29 +42,57 @@ void UInventoryComponent::BeginPlay()
 
 }
 
+void UInventoryComponent::BroadcastInventoryUpdate()
+{
+	UE_LOG(LogTemp, Warning, TEXT(" BroadcastInventoryUpdate() called"));
+	OnInventoryUpdated.Broadcast(); // 서버용 UI 갱신
+
+	// 클라이언트에게도 알림
+	if (AController* Controller = Cast<AController>(GetOwner()->GetInstigatorController()))
+	{
+		if (ANS_PlayerCharacterBase* Player = Cast<ANS_PlayerCharacterBase>(Controller->GetPawn()))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Calling Client_NotifyInventoryUpdated()"));
+			Player->Client_NotifyInventoryUpdated();
+		}
+	}
+}
+
+void UInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UInventoryComponent, InventoryContents);
+}
+
+
+//  인벤토리에 아이템을 추가하는 함수
 FItemAddResult UInventoryComponent::HandleAddItem(ANS_BaseItem* InputItem)
 {
 	if (GetOwner())
 	{
 		const int32 InitialRequestedAddAmount = InputItem->Quantity;
-
+		
+		// 스택 불가능한 아이템 처리
 		if (!InputItem->NumericData.isStackable)
 		{
 			return HandleNonStackableItems(InputItem);
 		}
 
+		// 스택 가능한 아이템 처리
 		const int32 StackableAmountAdded = HandleStackableItems(InputItem, InitialRequestedAddAmount);
 
+		// 전량 추가된 경우
 		if (StackableAmountAdded == InitialRequestedAddAmount)
 		{
 			return FItemAddResult::AddedAll(InitialRequestedAddAmount, FText::Format(FText::FromString("Successfully added{0} {1} to the Inventory."), InitialRequestedAddAmount, InputItem->TextData.ItemName));
 		}
-
+		// 일부만 추가된 경우
 		if (StackableAmountAdded < InitialRequestedAddAmount && StackableAmountAdded > 0)
 		{
 			return FItemAddResult::AddedAll(InitialRequestedAddAmount, FText::Format(FText::FromString("Partial amount of {0} added to the Inventory. Number added = {1}"), InputItem->TextData.ItemName, StackableAmountAdded));
 		}
-
+		// 하나도 추가되지 못한 경우
 		if (StackableAmountAdded <= 0)
 		{
 			return FItemAddResult::AddedAll(InitialRequestedAddAmount, FText::Format(FText::FromString("Could not add{0} to the Inventory. No remaining Inventory slots, or invalid Item."), InputItem->TextData.ItemName));
@@ -91,7 +144,7 @@ ANS_BaseItem* UInventoryComponent::FindNextPartialStack(ANS_BaseItem* ItemIn) co
 void UInventoryComponent::RemoveSingleInstanceOfItem(ANS_BaseItem* ItemToRemove)
 {
 	InventoryContents.RemoveSingle(ItemToRemove);
-	OnInventoryUpdated.Broadcast();
+	BroadcastInventoryUpdate();
 }
 
 int32 UInventoryComponent::RemoveAmountOfItem(ANS_BaseItem* ItemIn, int32 DesiredAmountToRemove)
@@ -102,7 +155,7 @@ int32 UInventoryComponent::RemoveAmountOfItem(ANS_BaseItem* ItemIn, int32 Desire
 
 	InventoryTotalWeight -= ActualAmountToRemove * ItemIn->GetItemSingleWeight();
 
-	OnInventoryUpdated.Broadcast();
+	BroadcastInventoryUpdate();
 
 	return ActualAmountToRemove;
 }
@@ -116,8 +169,10 @@ void UInventoryComponent::SplitExistingStack(ANS_BaseItem* ItemIn, const int32 A
 	}
 }
 
+// 스택 불가능한 아이템 처리
 FItemAddResult UInventoryComponent::HandleNonStackableItems(ANS_BaseItem* InputItem)
 {
+	// 무게 또는 슬롯 제한 체크
 	if (FMath::IsNearlyZero(InputItem->GetItemSingleWeight()) || InputItem->GetItemSingleWeight() < 0)
 	{
 		return FItemAddResult::AddedNone(FText::Format(FText::FromString("Could not add{0} to the Inventory. Item has invalid weight value."), InputItem->TextData.ItemName));
@@ -132,14 +187,84 @@ FItemAddResult UInventoryComponent::HandleNonStackableItems(ANS_BaseItem* InputI
 	{
 		return FItemAddResult::AddedNone(FText::Format(FText::FromString("Could not add{0} to the Inventory. All Inventory slots are full."), InputItem->TextData.ItemName));
 	}
-
+	// 새 아이템 추가
 	AddNewItem(InputItem, 1);
 	return FItemAddResult::AddedAll(1, FText::Format(FText::FromString("Successfully added a single {0} to the Inventory."), InputItem->TextData.ItemName));
 }
-
+// 스택 가능한 아이템 처리
 int32 UInventoryComponent::HandleStackableItems(ANS_BaseItem* ItemIn, int32 RequestedAddAmount)
 {
-	return int32();
+	if (RequestedAddAmount <= 0 || FMath::IsNearlyZero(ItemIn->GetItemStackWeight()))
+	{
+		return 0;
+	}
+
+	int32 AmountToDistribute = RequestedAddAmount;
+	// 1. 기존 스택에 추가 시도
+	ANS_BaseItem* ExstingItemStack = FindNextPartialStack(ItemIn);
+
+	while (ExstingItemStack)
+	{
+		const int32 AmountToMakeFullStack = CalculateNumberForFullStack(ExstingItemStack, AmountToDistribute);
+		const int32 WeightLimitAddAmount = CalculateWeightAddAmount(ExstingItemStack, AmountToMakeFullStack);
+
+		if (WeightLimitAddAmount > 0)
+		{
+			ExstingItemStack->SetQuantity(ExstingItemStack->Quantity + WeightLimitAddAmount);
+			InventoryTotalWeight += (ExstingItemStack->GetItemSingleWeight() * WeightLimitAddAmount);
+
+			AmountToDistribute -= WeightLimitAddAmount;
+
+			ItemIn->SetQuantity(AmountToDistribute);
+
+			if (InventoryTotalWeight + ExstingItemStack->GetItemSingleWeight()>InventoryWeightCapacity)
+			{
+				BroadcastInventoryUpdate();
+				return RequestedAddAmount - AmountToDistribute;
+			}
+		}
+		else if (WeightLimitAddAmount <= 0)
+		{
+			if (AmountToDistribute != RequestedAddAmount)
+			{
+				BroadcastInventoryUpdate();
+				return RequestedAddAmount - AmountToDistribute;
+			}
+
+			return 0;
+		}
+
+		if (AmountToDistribute <= 0)
+		{
+			BroadcastInventoryUpdate();
+			return RequestedAddAmount;
+		}
+
+		ExstingItemStack = FindNextPartialStack(ItemIn);
+	}
+	// 2. 새 스택 생성 시도
+	if (InventoryContents.Num() + 1 <= InventorySlotsCapacity)
+	{
+		const int32 WeightLimitAddAmount = CalculateWeightAddAmount(ItemIn, AmountToDistribute);
+
+		if (WeightLimitAddAmount > 0)
+		{
+			if (WeightLimitAddAmount < AmountToDistribute)
+			{
+				AmountToDistribute -= WeightLimitAddAmount;
+				ItemIn->SetQuantity(AmountToDistribute);
+
+				AddNewItem(ItemIn->CreateItemCopy(), WeightLimitAddAmount);
+				return RequestedAddAmount - AmountToDistribute;
+			}
+
+			AddNewItem(ItemIn, AmountToDistribute);
+			return RequestedAddAmount;
+		}
+	}
+
+	BroadcastInventoryUpdate();
+	return RequestedAddAmount - AmountToDistribute;
 }
 
 int32 UInventoryComponent::CalculateWeightAddAmount(ANS_BaseItem* ItemIn, int32 RequestedAddAmount)
@@ -158,7 +283,7 @@ int32 UInventoryComponent::CalculateNumberForFullStack(ANS_BaseItem* StackableIt
 
 	return FMath::Min(InitialRequestedAddAmount, AddAmountToMakeFullStack);
 }
-
+//  새 아이템 인벤토리에 추가
 void UInventoryComponent::AddNewItem(ANS_BaseItem* Item, const int32 AmountToAdd)
 {
 	ANS_BaseItem* NewItem;
@@ -178,7 +303,9 @@ void UInventoryComponent::AddNewItem(ANS_BaseItem* Item, const int32 AmountToAdd
 
 	InventoryContents.Add(NewItem);
 	InventoryTotalWeight += NewItem->GetItemStackWeight();
-	OnInventoryUpdated.Broadcast();
+	BroadcastInventoryUpdate();
+	UE_LOG(LogTemp, Warning, TEXT("[Inventory] Added %s"),
+		*NewItem->GetName());
 }
 
 
