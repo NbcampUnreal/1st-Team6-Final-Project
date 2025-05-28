@@ -66,9 +66,4 @@ public:
 	// 현재 플레이하는 캐릭터 변수
 	UPROPERTY()
 	ANS_PlayerCharacterBase* OwnerCharacter;
-	
-	// 메쉬에 붙일 소켓 이름 (에디터에서 필요 시 변경) 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Equip")
-	FName WeaponAttachSocketName = TEXT("hand_rKnife");
-	
 };

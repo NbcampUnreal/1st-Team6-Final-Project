@@ -23,11 +23,14 @@ public:
 	//나한테 안보임, 상대한테 보임
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 	USkeletalMeshComponent* RangedWeaponMeshComp;
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
+	UStaticMeshComponent* RangeWeaponStaticMeshComp;
 	//나한테 보임, 상대한테 안보임
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 	USkeletalMeshComponent* ArmsMesh;
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
+	UStaticMeshComponent* ArmsMeshStaticMeshComp;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponFX")
 	UNiagaraComponent* NiagaraComponent;
 

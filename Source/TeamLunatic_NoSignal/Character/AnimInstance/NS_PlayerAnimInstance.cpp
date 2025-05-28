@@ -1,6 +1,8 @@
 ﻿#include "Character/AnimInstance/NS_PlayerAnimInstance.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Character/Components/NS_EquipedWeaponComponent.h"
+#include "Item/NS_BaseRangedWeapon.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 void UNS_PlayerAnimInstance::NativeInitializeAnimation()
@@ -53,5 +55,20 @@ void UNS_PlayerAnimInstance::UpdateAimOffset(float DeltaSeconds)
     {
         AimYaw   = PlayerCharacter->CamYaw;
         AimPitch = PlayerCharacter->CamPitch;
+    }
+}
+
+void UNS_PlayerAnimInstance::UpdateLeftHandIK(float DeltaSeconds)
+{
+    if (ANS_BaseWeapon* Weapon = PlayerCharacter->EquipedWeaponComp->CurrentWeapon)
+    {
+        if (auto Ranged = Cast<ANS_BaseRangedWeapon>(Weapon))
+        {
+            if (USkeletalMeshComponent* WeaponMesh = Ranged->RangedWeaponMeshComp)
+            {
+                // "LeftHand" 소켓 트랜스폼을 매 프레임 받아옴 --------------------- 하드코딩
+                LeftHandIKTransform = WeaponMesh->GetSocketTransform(TEXT("LeftHand"));
+            }
+        }
     }
 }
