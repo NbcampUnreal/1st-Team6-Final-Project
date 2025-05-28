@@ -18,6 +18,9 @@ public:
 	static bool LoadGame(const FString& SlotName,  FPlayerSaveData& OutPlayerData, FLevelSaveData& OutLevelData);
 	static UNS_SaveGameMetaData* LoadSaveMetaData();
 
+	static void FixSaveData(); //문제생긴 세이브데이터 삭제.
+	static void DeleteAllSaves();
+
 	static bool FindExistingSave(const FString& SlotName);//같은 슬롯(이름)이 저장되어 있는지 체크
 	static bool DeleteExistingSave(const FString& SlotName);// Delete SaveData and SaveMetaData
 

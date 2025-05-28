@@ -25,14 +25,13 @@ public:
 
 	virtual void NativeConstruct() override;
 
-	UFUNCTION(BlueprintCallable, Category = "Widget")
-	void SetToggleType();
+	virtual void Init(UNS_BaseMainMenu* NsMainMenu);
 
 	UFUNCTION(BlueprintCallable, Category = "Widget")
 	virtual void ShowWidget();
 
 	UFUNCTION(BlueprintCallable, Category = "Widget")
-	void ShowWidgetD();
+	virtual void ShowWidgetD();
 
 	UFUNCTION(BlueprintCallable, Category = "Widget")
 	void HideWidget();
@@ -40,7 +39,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Widget")
 	void HideSubMenuWidget();
 
-	virtual void Init(UNS_BaseMainMenu* NsMainMenu);
+	UFUNCTION(BlueprintCallable, Category = "Widget")
+	void SetToggleType();
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widget")//EditDefaultsOnly
 		UNS_BaseMainMenu* MainMenu;

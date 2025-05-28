@@ -9,9 +9,8 @@
 #include "OnlineSubsystem.h"                     // IOnlineSubsystem
 #include "Interfaces/OnlineSessionInterface.h"   // IOnlineSessionPtr, DestroySession()
 #include "Kismet/KismetSystemLibrary.h"          // KismetSystemLibrary::QuitGame()
-#include "GameFramework/PlayerController.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"    // FInputModeGameOnly 등
-//using namespace APlayerController;
+#include "GameFlow/NS_GameInstance.h"
 
 void UNS_InGameStartMenu::NativeConstruct()
 {
@@ -30,6 +29,34 @@ void UNS_InGameStartMenu::NativeConstruct()
         BP_Disconnect->RootButton->OnClicked.AddUniqueDynamic(this, &UNS_InGameStartMenu::OnDisconnectClicked);
     if (BP_Quit)
         BP_Quit->RootButton->OnClicked.AddUniqueDynamic(this, &UNS_InGameStartMenu::OnQuitClicked);
+
+   UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance());
+  if (NS_GameInstance)
+  {
+      if (NS_GameInstance->bIsSinglePlayer)
+      {
+          BP_SaveGame->SetVisibility(ESlateVisibility::Visible);
+          BP_LoadGame->SetVisibility(ESlateVisibility::Visible);
+      }
+      else
+      {
+          BP_SaveGame->SetVisibility(ESlateVisibility::Collapsed);
+          BP_LoadGame->SetVisibility(ESlateVisibility::Collapsed);
+      }
+  }
+}
+void UNS_InGameStartMenu::Init(UNS_BaseMainMenu* NsMainMenu)
+{
+    Super::Init(NsMainMenu);
+    SubMenus.Add(EWidgetToggleType::SaveGame, MainMenu->GetWidget(EWidgetToggleType::SaveGame));
+    SubMenus.Add(EWidgetToggleType::LoadGame, MainMenu->GetWidget(EWidgetToggleType::LoadGame));
+    SubMenus.Add(EWidgetToggleType::Settings, MainMenu->GetWidget(EWidgetToggleType::Settings));
+}
+
+void UNS_InGameStartMenu::ShowWidgetD()
+{
+    Super::ShowWidgetD();
+    HideSubMenuWidget();
 }
 
 void UNS_InGameStartMenu::OnResumeClicked()
@@ -49,27 +76,30 @@ void UNS_InGameStartMenu::OnResumeClicked()
 
 void UNS_InGameStartMenu::OnSaveGameClicked()
 {
-    HideWidget();
+    HideSubMenuWidget();
     if (UNS_MasterMenuPanel* Widget = MainMenu->GetWidget(EWidgetToggleType::SaveGame))
-        Widget->ShowWidget();
+        Widget->ShowWidgetD();
 }
 
 void UNS_InGameStartMenu::OnLoadGameClicked()
 {
-    HideWidget();
+    HideSubMenuWidget();
     if (UNS_MasterMenuPanel* Widget = MainMenu->GetWidget(EWidgetToggleType::LoadGame))
-        Widget->ShowWidget();
+        Widget->ShowWidgetD();
 }
 
 void UNS_InGameStartMenu::OnSettingsClicked()
 {
+    HideSubMenuWidget();
     HideWidget();
     if (UNS_MasterMenuPanel* Widget = MainMenu->GetWidget(EWidgetToggleType::Settings))
-        Widget->ShowWidget();
+        Widget->ShowWidgetD();
 }
 
 void UNS_InGameStartMenu::On_MainMenuClicked()
 {
+    //HideSubMenuWidget();
+    HideWidget();
     IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
     if (OnlineSub)
     {

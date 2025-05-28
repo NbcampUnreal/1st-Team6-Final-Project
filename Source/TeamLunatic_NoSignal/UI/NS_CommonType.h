@@ -5,19 +5,12 @@
 #include "CoreMinimal.h"
 #include "NS_CommonType.generated.h"
 
-UENUM(BlueprintType)
-enum class EUIProperty : uint8
-{
-    MenuUI,
-    InGameUI,
-};
+
 UENUM(BlueprintType)
 enum class ENewGameState : uint8
 {
-    
     CreateSaveMetaDataSlot ,
     OverwriteSaveMetaDataSlot
-
 };
 
 UENUM(BlueprintType)
@@ -37,12 +30,15 @@ enum class EWidgetToggleType : uint8
     HostServer,
 	HostNewGame,
 	HostLoadGame,
+	InGamemStartMenu,
     Disconnect,
     Resume,
     NewGame,
     LoadGame,
     SaveGame,
+    SaveNameMenu,
 	AreYouSureMenu,
+	PopUpMsg,
     None,
     //LoadingGame
 };

@@ -8,6 +8,7 @@
 #include "UI/NS_UIManager.h"
 #include "UI/NS_CommonType.h"
 #include "UI/NS_BaseMainMenu.h"
+#include "UI/NS_MainMenu.h"
 #include "Kismet/GameplayStatics.h"
 
 void UNS_TheSettingsWidget::NativeConstruct()
@@ -76,8 +77,9 @@ void UNS_TheSettingsWidget::OnMainMenuClicked()
 {
     HideSubMenuWidget();
     HideWidget();
-    //if(UiProperty == EUIProperty::MenuUI)
-         MainMenu->GetWidget(EWidgetToggleType::MainMenu)->ShowWidget();
-   // else //EUIProperty::InGameUI
-   //     MainMenu->GetWidget(EWidgetToggleType::ingame)->ShowWidget();
+
+	if ( Cast<UNS_MainMenu>(MainMenu) )
+        MainMenu->GetWidget(EWidgetToggleType::MainMenu)->ShowWidget();
+    else
+        MainMenu->GetWidget(EWidgetToggleType::InGamemStartMenu)->ShowWidget();
 }

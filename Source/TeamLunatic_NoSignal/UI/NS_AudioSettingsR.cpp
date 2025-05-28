@@ -83,12 +83,42 @@ void UNS_AudioSettingsR::SaveSoundSettings()
 
     UE_LOG(LogTemp, Warning, TEXT("직접 파일 생성 및 저장 완료: %s"), *CustomIniFile);
 
+ // 
     //GConfig->SetFloat(TEXT("Audio"), TEXT("MasterVolume"), MasterSlider->GetValue(), CustomIniFile);
     //GConfig->SetFloat(TEXT("Audio"), TEXT("EffectVolume"), EffectSlider->GetValue(), CustomIniFile);
     //GConfig->SetFloat(TEXT("Audio"), TEXT("AmbientVolume"), AmbientSlider->GetValue(), CustomIniFile);
     //GConfig->SetFloat(TEXT("Audio"), TEXT("MusicVolume"), MusicSlider->GetValue(), CustomIniFile);
     //GConfig->Flush(false, CustomIniFile);
     //UE_LOG(LogTemp, Warning, TEXT("저장 파일 경로: %s"), *CustomIniFile);
+
+    /*
+    FString FilePath = FPaths::ProjectSavedDir() / TEXT("Config/WindowsEditor/GameUserSettings1.ini");
+    TArray<FString> Lines;
+
+    // 1. 기존 파일 읽기
+    if (FFileHelper::LoadFileToStringArray(Lines, *FilePath))
+    {
+        // 2. 각 줄을 돌면서 MasterVolume만 찾아서 바꿔치기
+        for (FString& Line : Lines)
+        {
+            if (Line.StartsWith(TEXT("MasterVolume=")))
+            {
+                Line = FString::Printf(TEXT("MasterVolume=%.2f"), NewMasterVolume);
+                break;
+            }
+        }
+    }
+    else
+    {
+        // 파일이 없으면 새로 생성
+        Lines.Add(TEXT("[Audio]"));
+        Lines.Add(FString::Printf(TEXT("MasterVolume=%.2f"), NewMasterVolume));
+    }
+
+    // 3. 파일로 다시 저장 (덮어쓰기)
+    FFileHelper::SaveStringArrayToFile(Lines, *FilePath);
+
+    UE_LOG(LogTemp, Warning, TEXT("MasterVolume만 업데이트 완료: %s"), *FilePath);*/
 }
 
 void UNS_AudioSettingsR::LoadSoundSettings()

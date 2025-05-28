@@ -49,6 +49,7 @@ UNS_MasterMenuPanel* UNS_BaseMainMenu::GetWidget(EWidgetToggleType ToggleType)
 		return Widget;
 	return nullptr;
 }
+
 void UNS_BaseMainMenu::QuitNSGame()
 {
 	UKismetSystemLibrary::QuitGame(this, GetOwningPlayer(), EQuitPreference::Quit, true);

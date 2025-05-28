@@ -36,9 +36,6 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UNS_MenuButtonWidget* BP_WidgetToggleButton_MainMenu;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widget")
-	EUIProperty UiProperty;
-
 	UFUNCTION()
 	void OnGameClicked();
 

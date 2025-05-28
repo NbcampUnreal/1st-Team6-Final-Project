@@ -67,7 +67,7 @@ void UNS_HostNewGameServerR::StartGame()
     FName SessionName = FName(*SlotName);
 
     // 3. 최대 접속 인원
-    int32 MaxPlayers = FCString::Atoi(*EditableTextBox_MaxPlayers->GetText().ToString());
+    int32 MaxPlayers = FCString::Atoi(*ComboBoxString->GetSelectedOption());
 
     // 4. 세션 생성 요청
     if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
@@ -92,6 +92,9 @@ void UNS_HostNewGameServerR::StartGame()
 }
 void UNS_HostNewGameServerR::OnCreateServerButtonClicked()
 {
+    StartGame();
+    if(1)return;
+
     const FString SlotName = GetSaveSlotName();
 
     if (NS_SaveLoadHelper::FindExistingSave(SlotName))

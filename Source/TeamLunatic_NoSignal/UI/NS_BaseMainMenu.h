@@ -22,7 +22,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Animation")
 	virtual void PlayAnimationShowL();
 
-	UFUNCTION(BlueprintCallable, Category = "Animation")
+	UFUNCTION(BlueprintCallable, Category = "Widget")
 	virtual UNS_MasterMenuPanel* GetWidget(EWidgetToggleType ToggleType);
 
 	virtual void QuitNSGame();

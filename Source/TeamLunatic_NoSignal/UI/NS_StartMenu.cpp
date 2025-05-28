@@ -5,6 +5,8 @@
 #include "UI/NS_CommonType.h"
 #include "UI/NS_MainMenu.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFlow/NS_GameInstance.h"
+#include "UI/NS_InGameStartMenu.h"
 
 void UNS_StartMenu::NativeConstruct()
 {
@@ -27,6 +29,21 @@ void UNS_StartMenu::OnSinglePlayerClicked()
     HideWidget();
     if (UNS_MasterMenuPanel* Widget = MainMenu->GetWidget(EWidgetToggleType::SinglePlayer))
         Widget->ShowWidget();
+
+    //if (UNS_MasterMenuPanel* Widget = MainMenu->GetWidget(EWidgetToggleType::InGamemStartMenu))
+    //{
+    //    if (UNS_InGameStartMenu* NS_InGameStartMenu = Cast<UNS_InGameStartMenu>(Widget))
+    //    {
+    //        NS_InGameStartMenu->bIsSinglePlayer = false;
+    //    }
+    //}
+    UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance());
+	if (NS_GameInstance)
+	{
+        NS_GameInstance->bIsSinglePlayer = true; // 싱글 플레이어 모드로 설정
+		UE_LOG(LogTemp, Warning, TEXT("싱글 플레이어 모드로 설정됨"));
+	}
+	
 }
 
 void UNS_StartMenu::OnSettingsClicked()
@@ -47,4 +64,18 @@ void UNS_StartMenu::OnMultiPlayerClicked()
     HideWidget();
     if (UNS_MasterMenuPanel* Widget = MainMenu->GetWidget(EWidgetToggleType::MultiPlayer))
         Widget->ShowWidget();
+
+    //if (UNS_MasterMenuPanel* Widget = MainMenu->GetWidget(EWidgetToggleType::InGamemStartMenu))
+    //{
+    //   if (UNS_InGameStartMenu* NS_InGameStartMenu = Cast<UNS_InGameStartMenu>(Widget))
+    //   {
+    //       NS_InGameStartMenu->bIsSinglePlayer = false;
+    //   }
+    //}
+    UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance());
+    if (NS_GameInstance)
+    {
+        NS_GameInstance->bIsSinglePlayer = false; // 싱글 플레이어 모드로 설정
+        UE_LOG(LogTemp, Warning, TEXT("싱글 플레이어 모드로 설정됨"));
+    }
 }

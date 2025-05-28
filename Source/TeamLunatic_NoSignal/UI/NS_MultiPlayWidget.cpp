@@ -36,7 +36,8 @@ void UNS_MultiPlayWidget::Init(UNS_BaseMainMenu* NsMainMenu)
 void UNS_MultiPlayWidget::OnHostServerClicked()
 {
     HideSubMenuWidget();
-    MainMenu->GetWidget(EWidgetToggleType::HostServer)->ShowWidget();
+   // MainMenu->GetWidget(EWidgetToggleType::HostServer)->ShowWidget();
+    MainMenu->GetWidget(EWidgetToggleType::HostNewGame)->ShowWidget();
 }
 
 void UNS_MultiPlayWidget::OnServerBrowserClicked()

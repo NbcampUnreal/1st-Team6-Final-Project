@@ -15,6 +15,8 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_InGameStartMenu : public UNS_MasterMenuPanel
 	GENERATED_BODY()
 public:
     virtual void NativeConstruct() override;
+    virtual void Init(UNS_BaseMainMenu* NsMainMenu) override;
+    virtual void ShowWidgetD() override;
 
 protected:
 

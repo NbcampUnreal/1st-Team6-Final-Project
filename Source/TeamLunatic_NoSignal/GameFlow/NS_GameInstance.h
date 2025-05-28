@@ -16,7 +16,7 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_GameInstance : public UGameInstance
 
 public:
 	FOnCreateSessionSuccess OnCreateSessionSuccess;
-
+	bool bIsSinglePlayer = true;
 	UPROPERTY(BlueprintReadOnly, Category = "SaveGame")
 	FString CurrentSaveSlotName;
 
