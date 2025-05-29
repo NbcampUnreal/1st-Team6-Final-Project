@@ -4,11 +4,9 @@
 #include "GameFlow/NS_GameInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/Engine.h"
-
 #include "OnlineSubsystem.h"                          // IOnlineSubsystem
 #include "OnlineSessionSettings.h"                    // FOnlineSessionSettings
 #include "Interfaces/OnlineSessionInterface.h"        // IOnlineSessionPtr
-#include "Kismet/GameplayStatics.h"                   // UGameplayStatics (선택사항)
 
 void UNS_GameInstance::SetGameModeType(EGameModeType Type)
 {
@@ -40,12 +38,103 @@ void UNS_GameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSucce
 	if (bWasSuccessful)
 	{
 		UE_LOG(LogTemp, Log, TEXT("Session created successfully: %s"), *SessionName.ToString());
-		OnCreateSessionSuccess.Broadcast();
-		UGameplayStatics::OpenLevel(this, "ShowCase", true);
-		//UGameplayStatics::OpenLevel(GetWorld(), "대기실"); 
+		
+		if (!WaitingRoom.IsNull())
+		{
+			FString LevelPath = WaitingRoom.GetLongPackageName();
+			UE_LOG(LogTemp, Log, TEXT("Opening level: %s"), *LevelPath);
+			UGameplayStatics::OpenLevel(GetWorld(), FName(*LevelPath));
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("No WaitingRoom assigned. Cannot open level."));
+		}
+
 	}
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Failed to create session: %s"), *SessionName.ToString());
 	}
+}
+
+void UNS_GameInstance::FindSessions(bool bIsLAN)
+{
+	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
+	if (!Subsystem) return;
+
+	IOnlineSessionPtr Sessions = Subsystem->GetSessionInterface();
+	if (!Sessions.IsValid()) return;
+
+	SessionSearch = MakeShareable(new FOnlineSessionSearch());
+	SessionSearch->bIsLanQuery = bIsLAN;
+	SessionSearch->MaxSearchResults = 100;
+	SessionSearch->QuerySettings.Set(FName("Presence"), true, EOnlineComparisonOp::Equals);
+
+	Sessions->OnFindSessionsCompleteDelegates.AddUObject(this, &UNS_GameInstance::OnFindSessionsComplete);
+	Sessions->FindSessions(0, SessionSearch.ToSharedRef());
+}
+
+void UNS_GameInstance::OnFindSessionsComplete(bool bWasSuccessful)
+{
+	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
+	if (Subsystem)
+	{
+		IOnlineSessionPtr Sessions = Subsystem->GetSessionInterface();
+		if (Sessions.IsValid())
+		{
+			Sessions->ClearOnFindSessionsCompleteDelegates(this);
+		}
+	}
+
+	if (bWasSuccessful && SessionSearch.IsValid())
+	{
+		UE_LOG(LogTemp, Log, TEXT("FindSessions completed. %d results"), SessionSearch->SearchResults.Num());
+		OnSessionSearchSuccess.Broadcast(SessionSearch->SearchResults);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("FindSessions failed."));
+	}
+}
+
+void UNS_GameInstance::JoinSession(const FOnlineSessionSearchResult& SessionResult)
+{
+	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
+	if (!Subsystem) return;
+
+	IOnlineSessionPtr Sessions = Subsystem->GetSessionInterface();
+	if (!Sessions.IsValid()) return;
+
+	Sessions->OnJoinSessionCompleteDelegates.AddUObject(this, &UNS_GameInstance::OnJoinSessionCompleteInternal);
+
+	Sessions->JoinSession(0, NAME_GameSession, SessionResult);
+}
+
+void UNS_GameInstance::OnJoinSessionCompleteInternal(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
+{
+	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
+	if (Subsystem)
+	{
+		IOnlineSessionPtr Sessions = Subsystem->GetSessionInterface();
+		if (Sessions.IsValid())
+		{
+			Sessions->ClearOnJoinSessionCompleteDelegates(this);
+
+			FString ConnectString;
+			if (Sessions->GetResolvedConnectString(SessionName, ConnectString))
+			{
+				UE_LOG(LogTemp, Log, TEXT("Joining session at: %s"), *ConnectString);
+				APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+				if (PC)
+				{
+					PC->ClientTravel(ConnectString, TRAVEL_Absolute);
+					OnJoinSessionComplete.Broadcast(true);
+					return;
+				}
+			}
+		}
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Failed to join session."));
+	OnJoinSessionComplete.Broadcast(false);
 }

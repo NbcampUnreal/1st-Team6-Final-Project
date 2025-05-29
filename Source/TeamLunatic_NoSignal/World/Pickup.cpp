@@ -35,6 +35,8 @@ void APickup::InitializePickup(const TSubclassOf<ANS_BaseItem> BaseClass, const 
 		ItemReference = NewObject<ANS_BaseItem>(this, BaseClass);
 
 		ItemReference->ItemType = ItemData->ItemType;
+		ItemReference->WeaponType = ItemData->WeaponType;
+		ItemReference->WeaponData = ItemData->WeaponData;
 		ItemReference->TextData = ItemData->ItemTextData;
 		ItemReference->NumericData = ItemData->ItemNumericData;
 		ItemReference->AssetData = ItemData->ItemAssetData;

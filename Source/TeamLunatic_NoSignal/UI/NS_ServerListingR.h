@@ -34,4 +34,6 @@ public:
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
 	UButton* JoinServerButton;
 
+	FOnlineSessionSearchResult SessionResult;
+
 };

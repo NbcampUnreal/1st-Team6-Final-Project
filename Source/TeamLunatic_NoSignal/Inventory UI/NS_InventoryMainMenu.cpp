@@ -2,7 +2,9 @@
 
 
 #include "Inventory UI/NS_InventoryMainMenu.h"
+#include "Inventory UI/Inventory/ItemDragDropOperation.h"
 #include "Character/NS_PlayerCharacterBase.h"
+#include "Item/NS_BaseItem.h"
 
 void UNS_InventoryMainMenu::NativeOnInitialized()
 {
@@ -18,7 +20,14 @@ void UNS_InventoryMainMenu::NativeConstruct()
 
 bool UNS_InventoryMainMenu::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
 {
-	return Super::NativeOnDrop(InGeometry, InDragDropEvent, InOperation);
+	Super::NativeOnDrop(InGeometry, InDragDropEvent, InOperation);
 
-	// cast operation to Item drag drop, ensure player is valid, call drop Item on player
+	const UItemDragDropOperation* ItemDragDrop = Cast<UItemDragDropOperation>(InOperation);
+
+	if (PlayerCharacter && ItemDragDrop->SourceItem)
+	{
+		PlayerCharacter->DropItem(ItemDragDrop->SourceItem, ItemDragDrop->SourceItem->Quantity);
+		return true;
+	}
+	return false;
 }

@@ -4,9 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "BehaviorTree/BTTaskNode.h"
-#include "Zombie/Enum_ZombieState.h"
+#include "Zombie/Enum/Enum_ZombieState.h"
 #include "AIController.h"
 #include "NS_BTTask_SetZombieState.generated.h"
+
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UNS_BTTask_SetZombieState : public UBTTaskNode

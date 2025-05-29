@@ -73,4 +73,6 @@ protected:
 
     bool bUseLAN = false;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Server", meta = (AllowPrivateAccess = "true"))
+    TSubclassOf<UNS_ServerListingR> ServerEntryClass;
 };
