@@ -84,7 +84,6 @@ public:
 	// LookAction에 카메라 회전값 보간 속도 ---> 8은 너무 느려서 10이상은 되어야할 듯
 	UPROPERTY(EditDefaultsOnly, Category = "Aim")
 	float AimSendInterpSpeed = 10.f;
-
 	
 	// ========== 이동 관련 =============
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
@@ -93,8 +92,6 @@ public:
 	float SprintSpeedMultiplier;
 	// 점프가 가능하게 하는 변수 
 	bool IsCanJump = true;
-	// ====================================
-	
 
 	/////////////////////////////// 리플리케이션용 변수들////////////////////////////////
 	// 캐릭터가 바라보고있는 좌/우 값
