@@ -7,7 +7,7 @@
 #include "ItemDragDropOperation.generated.h"
 
 class UInventoryComponent;
-class ANS_BaseItem;
+class UNS_InventoryBaseItem;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UItemDragDropOperation : public UDragDropOperation
@@ -16,7 +16,7 @@ class TEAMLUNATIC_NOSIGNAL_API UItemDragDropOperation : public UDragDropOperatio
 	
 public:
 	UPROPERTY()
-	ANS_BaseItem* SourceItem;
+	UNS_InventoryBaseItem* SourceItem;
 
 	UPROPERTY()
 	UInventoryComponent* SourceInventory;

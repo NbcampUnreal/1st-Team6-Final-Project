@@ -4,7 +4,7 @@
 #include "UI/TempGameInstance.h"
 #include "UI/NS_UIManager.h"
 #include "UI/NS_CommonType.h"
-#include "UI/NS_MainMenu.h"
+#include "UI/NS_BaseMainMenu.h"
 #include "Kismet/GameplayStatics.h"
 
 void UNS_SinglePlayWidget::NativeConstruct()
@@ -20,7 +20,7 @@ void UNS_SinglePlayWidget::NativeConstruct()
         BP_WidgetToggleButton_MainMenu->RootButton->OnClicked.AddUniqueDynamic(this, &UNS_SinglePlayWidget::OnMainMenuClicked);
 }
 
-void UNS_SinglePlayWidget::Init(UNS_MainMenu* NsMainMenu)
+void UNS_SinglePlayWidget::Init(UNS_BaseMainMenu* NsMainMenu)
 {
     Super::Init(NsMainMenu);
   //  UE_LOG(LogTemp, Warning, TEXT("UNS_SinglePlayWidget NativeConstruct"));

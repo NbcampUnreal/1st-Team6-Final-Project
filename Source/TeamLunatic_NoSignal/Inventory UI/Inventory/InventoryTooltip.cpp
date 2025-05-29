@@ -2,14 +2,14 @@
 
 
 #include "Inventory UI/Inventory/InventoryTooltip.h"
-#include "Item/NS_BaseItem.h"
+#include "Item/NS_InventoryBaseItem.h"
 #include "Inventory UI/Inventory/InventoryItemSlot.h"
 
 void UInventoryTooltip::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	const ANS_BaseItem* ItemBeingHovered = InventorySlotBeingHovered->GetItemReference();
+	const UNS_InventoryBaseItem* ItemBeingHovered = InventorySlotBeingHovered->GetItemReference();
 
 	switch (ItemBeingHovered->ItemType)
 	{

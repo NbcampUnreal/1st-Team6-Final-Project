@@ -17,7 +17,6 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_GameInstance : public UGameInstance
 public:
 	// == 세션 생성 담당 부분들 == 
 	FOnCreateSessionSuccess OnCreateSessionSuccess;
-
 	void SetGameModeType(EGameModeType Type);
 	EGameModeType GetGameModeType() const { return GameModeType; }
 	void CreateSession(FName SessionName, bool bIsLAN, int32 MaxPlayers);
@@ -36,6 +35,7 @@ public:
 	void JoinSession(const FOnlineSessionSearchResult& SessionResult);
 	FOnJoinSessionComplete OnJoinSessionComplete;
 
+	bool bIsSinglePlayer = true;
 private:
 	EGameModeType GameModeType = EGameModeType::SinglePlayMode;
 

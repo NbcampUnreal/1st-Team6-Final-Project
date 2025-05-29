@@ -54,7 +54,7 @@ void UNS_HostLoadGameServerR::OnCreateServerButtonClicked()
         // 세션 생성 성공 시 맵 이동 및 UI 정리
         GI->OnCreateSessionSuccess.AddLambda([this, LoadMapName, GI]()
             {
-                UGameplayStatics::OpenLevel(this, FName(*LoadMapName), true);
+               // UGameplayStatics::OpenLevel(this, FName(*LoadMapName), true);
                 GI->SetGameModeType(EGameModeType::MultiPlayMode);
                 MainMenu->GetWidget(EWidgetToggleType::HostServer)->HideSubMenuWidget();
                 MainMenu->GetWidget(EWidgetToggleType::MultiPlayer)->HideSubMenuWidget();

@@ -8,7 +8,7 @@
 #include "NS_MultiPlayWidget.generated.h"
 
 class UNS_MenuButtonWidget;
-class UNS_MainMenu;
+class UNS_BaseMainMenu;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UNS_MultiPlayWidget : public UNS_MasterMenuPanel
@@ -17,7 +17,7 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_MultiPlayWidget : public UNS_MasterMenuPanel
 	
 public:
 	virtual void NativeConstruct() override;
-    virtual void Init(UNS_MainMenu* NsMainMenu);
+    virtual void Init(UNS_BaseMainMenu* NsMainMenu);
 
 protected:
     UPROPERTY(meta = (BindWidget))

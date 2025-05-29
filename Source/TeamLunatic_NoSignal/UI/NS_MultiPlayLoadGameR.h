@@ -48,7 +48,7 @@ protected:
     UNS_LoadGameMenuPanel* SelectChildPanel;
 
     virtual void NativeConstruct() override;
-	virtual void Init(UNS_MainMenu* NsMainMenu) override;
+	virtual void Init(UNS_BaseMainMenu* NsMainMenu) override;
    
     UFUNCTION()
     void NewGame();

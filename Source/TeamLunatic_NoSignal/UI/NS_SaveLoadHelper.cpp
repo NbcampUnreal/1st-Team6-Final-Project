@@ -152,3 +152,76 @@ UNS_SaveGameMetaData* NS_SaveLoadHelper::LoadSaveMetaData()
 
     return Cast<UNS_SaveGameMetaData>(UGameplayStatics::LoadGameFromSlot(NS_SaveLoadHelper::MetaSlotName, 0));
 }
+void NS_SaveLoadHelper::FixSaveData()
+{
+    if (!UGameplayStatics::DoesSaveGameExist(MetaSlotName, 0))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("메타데이터 파일이 없습니다."));
+        return;
+    }
+
+    UNS_SaveGameMetaData* MetaData = Cast<UNS_SaveGameMetaData>(
+        UGameplayStatics::LoadGameFromSlot(MetaSlotName, 0));
+
+    if (!MetaData)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("메타데이터를 불러올 수 없습니다."));
+        return;
+    }
+
+    TArray<int32> IndicesToRemove;
+
+    for (int32 i = 0; i < MetaData->SaveMetaDataArray.Num(); ++i)
+    {
+        const FString& SlotName = MetaData->SaveMetaDataArray[i].SaveGameSlotName;
+
+        if (!UGameplayStatics::DoesSaveGameExist(SlotName, 0))
+        {
+            UE_LOG(LogTemp, Warning, TEXT("SlotName %s 의 실제 세이브 파일이 없어 메타데이터에서 제거 예정"), *SlotName);
+            IndicesToRemove.Add(i);
+        }
+    }
+
+    for (int32 i = IndicesToRemove.Num() - 1; i >= 0; --i)
+    {
+        MetaData->SaveMetaDataArray.RemoveAt(IndicesToRemove[i]);
+    }
+
+    if (IndicesToRemove.Num() > 0)
+    {
+        UGameplayStatics::SaveGameToSlot(MetaData, MetaSlotName, 0);
+        UE_LOG(LogTemp, Warning, TEXT("메타데이터 정리 완료 (정리된 항목 수: %d)"), IndicesToRemove.Num());
+    }
+    else
+    {
+        UE_LOG(LogTemp, Log, TEXT("정리할 필요가 없었습니다."));
+    }
+}
+void NS_SaveLoadHelper::DeleteAllSaves()
+{
+    if (UGameplayStatics::DoesSaveGameExist(MetaSlotName, 0))
+    {
+        UNS_SaveGameMetaData* MetaData = Cast<UNS_SaveGameMetaData>(
+            UGameplayStatics::LoadGameFromSlot(MetaSlotName, 0));
+
+        if (MetaData)
+        {
+            for (const FSaveMetaData& Meta : MetaData->SaveMetaDataArray)
+            {
+                const FString& SlotName = Meta.SaveGameSlotName;
+                if (UGameplayStatics::DoesSaveGameExist(SlotName, 0))
+                {
+                    UGameplayStatics::DeleteGameInSlot(SlotName, 0);
+                    UE_LOG(LogTemp, Warning, TEXT("세이브 파일 삭제: %s"), *SlotName);
+                }
+            }
+        }
+
+        UGameplayStatics::DeleteGameInSlot(MetaSlotName, 0);
+        UE_LOG(LogTemp, Warning, TEXT("메타데이터 파일 삭제: %s"), MetaSlotName);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Log, TEXT("메타데이터가 존재하지 않아 삭제할 항목이 없습니다."));
+    }
+}
