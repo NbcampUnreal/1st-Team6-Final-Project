@@ -4,12 +4,12 @@
 #include "Zombie/Zombies/NS_RunnerZombie.h"
 
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Zombie/Enum/Enum_ZombieState.h"
-#include "Zombie/Enum/Enum_ZombieType.h"
+#include "Zombie/Enum/EZombieState.h"
+#include "Zombie/Enum/EZombieType.h"
 
 ANS_RunnerZombie::ANS_RunnerZombie()
 {
-	ZombieType = Enum_ZombieType::RUNNER;
+	ZombieType = EZombieType::RUNNER;
 	ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshAsset(TEXT("/Script/Engine.SkeletalMesh'/Game/Infected_Zombie_Bundle/Female_Infected/Mesh/SK_Woman_Zombie.SK_Woman_Zombie'"));
 	if (MeshAsset.Succeeded())
 	{
@@ -19,21 +19,22 @@ ANS_RunnerZombie::ANS_RunnerZombie()
 	BaseDamage = 10.f;
 }
 
-void ANS_RunnerZombie::OnStateChanged(Enum_ZombieState NewState)
+void ANS_RunnerZombie::OnStateChanged(EZombieState NewState)
 {
 	switch (NewState)
 	{
-	case Enum_ZombieState::IDLE:
-	case Enum_ZombieState::DEAD:
-	case Enum_ZombieState::DETECTING:
-	case Enum_ZombieState::PUSHED:
-		GetCharacterMovement()->MaxWalkSpeed = 0;
+	case EZombieState::IDLE:
+	case EZombieState::DEAD:
+	case EZombieState::DETECTING:
+	case EZombieState::PUSHED:
+		TargetSpeed = 0.f;
 		break;
-	case Enum_ZombieState::PATROLL:
-		GetCharacterMovement()->MaxWalkSpeed = 20.f;
-	case Enum_ZombieState::CHACING:
-	case Enum_ZombieState::ATTACK:
-		GetCharacterMovement()->MaxWalkSpeed = 300.f;
+	case EZombieState::PATROLL:
+		TargetSpeed = 20.f;
+		break;
+	case EZombieState::CHACING:
+	case EZombieState::ATTACK:
+		TargetSpeed = 350.f;
 		break;
 	default:
 		break;

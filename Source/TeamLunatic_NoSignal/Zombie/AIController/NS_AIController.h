@@ -32,6 +32,9 @@ protected:
 	UBehaviorTree* BehaviorTreeAsset;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
 	UBlackboardComponent* BlackboardComp;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI")
+	bool bIsDetect;
 
 public:
 	virtual void BeginPlay() override;
