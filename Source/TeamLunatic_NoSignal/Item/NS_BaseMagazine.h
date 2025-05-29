@@ -5,6 +5,8 @@
 #include "NS_EAmmoType.h"
 #include "NS_BaseMagazine.generated.h"
 
+class ANS_BaseAmmo;
+
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_BaseMagazine : public ANS_BaseItem
 {
@@ -23,6 +25,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	EAmmoType AmmoType;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ammo")
+	TSubclassOf< ANS_BaseAmmo> AmmoClass;
 
 	int32 GetMaxAmmo() const { return MaxAmmo; }
 	int32 GetCurrentAmmo() const { return CurrentAmmo; }
@@ -59,4 +64,6 @@ public:
 	//남은 공간 확인
 	UFUNCTION(BlueprintCallable, Category = "Magazine")
 	int32 GetRemainingCapacity() const;
+
+	TSubclassOf<ANS_BaseAmmo> GetAmmoClass() const { return AmmoClass; }
 };
