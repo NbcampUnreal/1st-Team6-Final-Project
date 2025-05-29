@@ -4,7 +4,7 @@
 #include "Inventory UI/NS_InventoryMainMenu.h"
 #include "Inventory UI/Inventory/ItemDragDropOperation.h"
 #include "Character/NS_PlayerCharacterBase.h"
-#include "Item/NS_BaseItem.h"
+#include "Item/NS_InventoryBaseItem.h"
 
 void UNS_InventoryMainMenu::NativeOnInitialized()
 {

@@ -16,7 +16,10 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
 {
     PrimaryActorTick.bCanEverTick = true;
 
+    bReplicates = true;
+
     DefaultWalkSpeed = 500.f;
+
     SprintSpeedMultiplier = 1.5f;
 
     // 카메라 설정
@@ -46,11 +49,12 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     BaseEyeHeight = 74.0f;
     // 인벤토리
     PlayerInventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("PlayerInventory"));
+    SetReplicates(true);
     PlayerInventory->SetSlotsCapacity(20);
     PlayerInventory->SetWeightCapacity(50.0f);
 }
 
-void ANS_PlayerCharacterBase::DropItem(ANS_BaseItem* ItemToDrop, const int32 QuantityToDrop)
+void ANS_PlayerCharacterBase::DropItem_Server_Implementation(UNS_InventoryBaseItem* ItemToDrop, int32 QuantityToDrop)
 {
     if (PlayerInventory->FindMatchingItem(ItemToDrop))
     {
@@ -72,6 +76,31 @@ void ANS_PlayerCharacterBase::DropItem(ANS_BaseItem* ItemToDrop, const int32 Qua
     else
     {
         UE_LOG(LogTemp, Warning, TEXT("Item to drop was somehow null"));
+    }
+}
+
+void ANS_PlayerCharacterBase::DropItem(UNS_InventoryBaseItem* ItemToDrop, const int32 QuantityToDrop)
+{
+    if (HasAuthority())
+    {
+        DropItem_Server(ItemToDrop, QuantityToDrop);
+    }
+    else
+    {
+        DropItem_Server(ItemToDrop, QuantityToDrop); // 클라에서 서버로 요청
+    }
+}
+
+void ANS_PlayerCharacterBase::Client_NotifyInventoryUpdated_Implementation()
+{
+    if (PlayerInventory)
+    {
+        FTimerHandle DelayHandle;
+        GetWorldTimerManager().SetTimer(DelayHandle, FTimerDelegate::CreateLambda([this]()
+            {
+                PlayerInventory->OnInventoryUpdated.Broadcast();
+                UE_LOG(LogTemp, Warning, TEXT("Client_NotifyInventoryUpdated - Inventory 갱신 (지연 호출)"));
+            }), 0.05f, false);
     }
 }
 
@@ -270,13 +299,15 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
 void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsKick);
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsSprint);
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsPickUp);
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsHit);
-    DOREPLIFETIME(ANS_PlayerCharacterBase, CamYaw);
-    DOREPLIFETIME(ANS_PlayerCharacterBase, CamPitch);
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsAiming);
+
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsKick);    // 발차기 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsSprint);  // 달리기 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsPickUp);  // 아이템줍기 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsHit);     // 맞는지 확인 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, CamYaw);    // 카메라 좌/우 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, CamPitch);  // 카메라 상/하 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsAiming);  // 조준중인지 확인 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, PlayerInventory);
 }
 
 void ANS_PlayerCharacterBase::SetMovementLockState_Server_Implementation(bool bLock)
@@ -507,3 +538,4 @@ void ANS_PlayerCharacterBase::SwapWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass
 {
     EquipedWeaponComp->SwapWeapon(WeaponClass); 
 }
+

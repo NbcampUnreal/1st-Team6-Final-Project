@@ -11,9 +11,10 @@ class UInputAction;
 class UCameraComponent;
 class UNS_DebugStatusWidget;  // 디버그용 위젯 차후 삭제해야함
 class UNS_StatusComponent;
+class UNS_InventoryBaseItem;
 class UInventoryComponent;
 class UNS_EquipedWeaponComponent;
-class ANS_BaseItem;
+
 
 
 UCLASS()
@@ -28,7 +29,10 @@ public:
 
 	UInteractionComponent* GetInteractionComponent() const { return InteractionComponent; }
 
-	void DropItem(ANS_BaseItem* ItemToDrop, const int32 QuantityToDrop);
+	void DropItem(UNS_InventoryBaseItem* ItemToDrop, const int32 QuantityToDrop);
+
+	UFUNCTION(Client, Reliable)
+	void Client_NotifyInventoryUpdated();
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
@@ -69,7 +73,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interaction", meta = (AllowPrivateAccess = "true"))
 	UInteractionComponent* InteractionComponent;
 
-	UPROPERTY(VisibleAnywhere, Category = "Inventory")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory", Replicated)
 	UInventoryComponent* PlayerInventory;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
@@ -186,6 +190,10 @@ public:
 	// 아이템 줍기
 	UFUNCTION(Server, Reliable)
 	void PickUpAction_Server(const FInputActionValue& Value);
+
+	// 아이템 버리기
+	UFUNCTION(Server, Reliable)
+	void DropItem_Server(UNS_InventoryBaseItem* ItemToDrop, int32 QuantityToDrop);
 
 	// 조준 
 	UFUNCTION(Server, Reliable)
