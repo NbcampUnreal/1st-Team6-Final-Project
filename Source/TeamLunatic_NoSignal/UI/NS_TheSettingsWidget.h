@@ -21,8 +21,8 @@ public:
 	virtual void Init(UNS_BaseMainMenu* NsMainMenu) override;
 protected:
 
-	UPROPERTY(meta = (BindWidget))
-	UNS_MenuButtonWidget* BP_WidgetToggleButton_Game;
+	//UPROPERTY(meta = (BindWidget))
+	//UNS_MenuButtonWidget* BP_WidgetToggleButton_Game;
 
 	UPROPERTY(meta = (BindWidget))
 	UNS_MenuButtonWidget* BP_WidgetToggleButton_Video;
@@ -30,8 +30,8 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UNS_MenuButtonWidget* BP_WidgetToggleButton_Audio;
 
-	UPROPERTY(meta = (BindWidget))
-	UNS_MenuButtonWidget* BP_WidgetToggleButton_Controls;
+	//UPROPERTY(meta = (BindWidget))
+	//UNS_MenuButtonWidget* BP_WidgetToggleButton_Controls;
 
 	UPROPERTY(meta = (BindWidget))
 	UNS_MenuButtonWidget* BP_WidgetToggleButton_MainMenu;

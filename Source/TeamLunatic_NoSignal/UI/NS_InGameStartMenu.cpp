@@ -25,8 +25,8 @@ void UNS_InGameStartMenu::NativeConstruct()
         BP_Settings->RootButton->OnClicked.AddUniqueDynamic(this, &UNS_InGameStartMenu::OnSettingsClicked);
     if (BP_MainMenu)
         BP_MainMenu->RootButton->OnClicked.AddUniqueDynamic(this, &UNS_InGameStartMenu::On_MainMenuClicked);
-    if (BP_Disconnect)
-        BP_Disconnect->RootButton->OnClicked.AddUniqueDynamic(this, &UNS_InGameStartMenu::OnDisconnectClicked);
+    //if (BP_Disconnect)
+    //    BP_Disconnect->RootButton->OnClicked.AddUniqueDynamic(this, &UNS_InGameStartMenu::OnDisconnectClicked);
     if (BP_Quit)
         BP_Quit->RootButton->OnClicked.AddUniqueDynamic(this, &UNS_InGameStartMenu::OnQuitClicked);
 

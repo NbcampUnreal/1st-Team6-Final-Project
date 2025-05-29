@@ -35,8 +35,8 @@ protected:
     UPROPERTY(meta = (BindWidget))
     UNS_MenuButtonWidget* BP_MainMenu;
 
-    UPROPERTY(meta = (BindWidget))
-    UNS_MenuButtonWidget* BP_Disconnect;
+    //UPROPERTY(meta = (BindWidget))
+    //UNS_MenuButtonWidget* BP_Disconnect;
 
     UPROPERTY(meta = (BindWidget))
     UNS_MenuButtonWidget* BP_Quit;

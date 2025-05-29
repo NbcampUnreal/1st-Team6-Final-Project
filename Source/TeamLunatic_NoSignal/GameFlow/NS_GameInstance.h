@@ -35,6 +35,7 @@ public:
 	void JoinSession(const FOnlineSessionSearchResult& SessionResult);
 	FOnJoinSessionComplete OnJoinSessionComplete;
 
+	bool bIsSinglePlayer = true;
 private:
 	EGameModeType GameModeType = EGameModeType::SinglePlayMode;
 
