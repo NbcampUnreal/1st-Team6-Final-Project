@@ -7,6 +7,7 @@
 #include "Inventory/InventoryComponent.h"
 #include "Components/NS_EquipedWeaponComponent.h"
 #include "Character/Components/NS_StatusComponent.h"
+#include "Item/NS_BaseRangedWeapon.h"
 #include "Interaction/Component/InteractionComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "World/Pickup.h"
@@ -146,7 +147,6 @@ void ANS_PlayerCharacterBase::BeginPlay()
 void ANS_PlayerCharacterBase::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-    
 }
 
 void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -338,7 +338,7 @@ float ANS_PlayerCharacterBase::TakeDamage(
         return ActualDamage;
 
     // 캐릭터 체력 감소
-    StatusComp->ChangeHealthGauge(-ActualDamage);
+    StatusComp->AddHealthGauge(-ActualDamage);
 
     IsHit = true;
     
@@ -436,14 +436,14 @@ void ANS_PlayerCharacterBase::StartSprint_Server_Implementation(const FInputActi
 {
     IsSprint = true; 
     if (GetCharacterMovement()) 
-        GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier; 
+        GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier * SpeedMultiAtStat; 
 }
 
 void ANS_PlayerCharacterBase::StopSprint_Server_Implementation(const FInputActionValue& Value)
 {
     IsSprint = false; 
     if (GetCharacterMovement()) 
-        GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed; 
+        GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SpeedMultiAtStat;
 }
 
 void ANS_PlayerCharacterBase::KickAction_Server_Implementation(const FInputActionValue& Value)
@@ -492,7 +492,8 @@ void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputAct
 
 void ANS_PlayerCharacterBase::StartAimingAction_Server_Implementation(const FInputActionValue& Value)
 {
-    IsAiming = true; 
+    if(IsAvaliableAiming)
+        IsAiming = true; 
 }
 
 
@@ -539,3 +540,23 @@ void ANS_PlayerCharacterBase::SwapWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass
     EquipedWeaponComp->SwapWeapon(WeaponClass); 
 }
 
+void ANS_PlayerCharacterBase::AddWeightInventory(float Weight)
+{
+	if (PlayerInventory)
+	{
+        //TODO: 인벤토리에 추가무게 넣기
+		//PlayerInventory->AddWeightCapacity(Weight);
+	}
+}
+
+void ANS_PlayerCharacterBase::AddSearchTime(float Multiple)
+{
+    //TODO: 아이템 찾기의 수색시간 증감(배율)
+	//??->AddSerachTime(Multiple)
+}
+
+void ANS_PlayerCharacterBase::AddCraftingSpeed(float Multiple)
+{
+	//TODO: 아이템 제작의 속도 증감(배율)
+	//??->AddCraftingSpeed(Multiple);
+}
