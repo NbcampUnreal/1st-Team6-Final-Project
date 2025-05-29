@@ -17,6 +17,8 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_BaseItem : public AActor, public IInteraction
 public:	
 	ANS_BaseItem();
 
+	UInventoryComponent* OwingInventory;
+
 	virtual void BeginPlay() override;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Confige")
@@ -73,7 +75,7 @@ public:
 	void ResetItemFlags();
 
 	ANS_BaseItem* CreateItemCopy();
-	
+
 	UFUNCTION(Category = "Item")
 	FORCEINLINE float GetItemStackWeight() const { return Quantity * NumericData.Weight; };
 
@@ -83,9 +85,9 @@ public:
 	UFUNCTION(Category = "Item")
 	FORCEINLINE bool IsFullItemStack() const { return Quantity == NumericData.MaxStack; };
 
-public:	
+	UFUNCTION(Category = "Item")
+	void SetQuantity(const int32 NewQuantity);
 	EItemType GetItemType() const { return ItemType; }
-	EWeaponType GetWeaponType() const { return WeaponType; }
 	FText GetItemName() const { return ItemName; }
 	float GetWeight() const { return Weight; }
 	const FNS_ItemDataStruct* GetItemData() const;

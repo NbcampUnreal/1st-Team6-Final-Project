@@ -1,6 +1,8 @@
 ﻿#include "Character/AnimInstance/NS_PlayerAnimInstance.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Character/Components/NS_EquipedWeaponComponent.h"
+#include "Item/NS_BaseRangedWeapon.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 void UNS_PlayerAnimInstance::NativeInitializeAnimation()
@@ -17,6 +19,9 @@ void UNS_PlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
     // AimOffset 업데이트
     UpdateAimOffset(DeltaSeconds);
+
+    // 왼손을 무기소켓에 부착 위치 업데이트
+    UpdateLeftHandIK(DeltaSeconds);
     
     // 이동 중이면 컨트롤러 회전을 계속 활성화
     const bool bIsMoving = PlayerCharacter->GetCharacterMovement()->Velocity.SizeSquared() > KINDA_SMALL_NUMBER;
@@ -53,5 +58,22 @@ void UNS_PlayerAnimInstance::UpdateAimOffset(float DeltaSeconds)
     {
         AimYaw   = PlayerCharacter->CamYaw;
         AimPitch = PlayerCharacter->CamPitch;
+    }
+}
+
+void UNS_PlayerAnimInstance::UpdateLeftHandIK(float DeltaSeconds)
+{
+    if (auto* Wpn = Cast<ANS_BaseRangedWeapon>(PlayerCharacter->EquipedWeaponComp->CurrentWeapon))
+    {
+        if (Wpn->RangedWeaponMeshComp)
+        {
+            LeftHandIKTransform = 
+                Wpn->RangedWeaponMeshComp
+                   ->GetSocketTransform(TEXT("LeftHandSocket"), RTS_World);
+        }
+    }
+    else
+    {
+        LeftHandIKTransform = FTransform::Identity;
     }
 }
