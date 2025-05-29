@@ -25,12 +25,11 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category="Aim")
 	float AimPitch = 0.f;
 
-	// M4A4무기에 LeftHandSocket 위치·회전을 받아올 변수
 	UPROPERTY(BlueprintReadOnly, Category="IK")
 	FTransform LeftHandIKTransform;
 	
 	// AimOffset용 Yaw와 Pitch값 업데이트 함수
 	void UpdateAimOffset(float DeltaSeconds);
-	// 손 부착할 소켓 위치 업데이트 함수
+	// 왼손이 무기소켓에 부착되는 위치 업데이트 함수
 	void UpdateLeftHandIK(float DeltaSeconds);
 };
