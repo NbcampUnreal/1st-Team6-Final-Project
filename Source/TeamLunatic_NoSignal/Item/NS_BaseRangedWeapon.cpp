@@ -4,6 +4,7 @@
 #include "Sound/SoundBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Item/NS_BaseAmmo.h"
+#include "Character/NS_PlayerController.h"
 
 ANS_BaseRangedWeapon::ANS_BaseRangedWeapon()
 {
@@ -77,13 +78,13 @@ bool ANS_BaseRangedWeapon::CanFire() const
 	return CurrentMagazine && !CurrentMagazine->IsEmpty();
 }
 
-bool ANS_BaseRangedWeapon::Fire()
+void ANS_BaseRangedWeapon::Fire()
 {
 	if (!CanFire())
 	{
 		UE_LOG(LogTemp, Log, TEXT("현재 탄창이 없이 없거나, 총알이 없음."));
 		UGameplayStatics::PlaySoundAtLocation(this, UnFireSound, GetActorLocation());
-		return false;
+		return;
 	}
 	
 	CurrentMagazine->ConsumeOne();
@@ -92,18 +93,34 @@ bool ANS_BaseRangedWeapon::Fire()
 	UGameplayStatics::PlaySoundAtLocation(this, AttackSound, GetActorLocation());
 
 	TSubclassOf<ANS_BaseAmmo> AmmoClass = CurrentMagazine->GetAmmoClass();
-	if (AmmoClass)
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	ANS_BaseAmmo* TempAmmo = GetWorld()->SpawnActor<ANS_BaseAmmo>(
+		AmmoClass,
+		FVector::ZeroVector,
+		FRotator::ZeroRotator,
+		SpawnParams
+	);
+
+	if (!TempAmmo)
 	{
-		const ANS_BaseAmmo* DefaultAmmo = AmmoClass->GetDefaultObject<ANS_BaseAmmo>();
-		int32 Damage = DefaultAmmo->GetDamage();
+		UE_LOG(LogTemp, Error, TEXT("탄환 생성 실패"));
+		return;
 	}
 
+	int32 AmmoDamage = TempAmmo->GetDamage(); // BaseAmmo 내부에서 초기화된 Damage
+	TempAmmo->Destroy();
 
-	return true;
+	UE_LOG(LogTemp, Log, TEXT("발사! Damage: %d"), AmmoDamage);
+
+	// 히트스캔 처리
+	PerformHitScan(AmmoDamage);
 }
 
-void ANS_BaseRangedWeapon::PerformHitScan(int32 Damage)
+void ANS_BaseRangedWeapon::PerformHitScan(int32 damage)
 {
-	
+
 }
 
