@@ -14,7 +14,7 @@ class UInputAction;
 class UCameraComponent;
 class UNS_DebugStatusWidget;  // 디버그용 위젯 차후 삭제해야함
 class UNS_StatusComponent;
-class ANS_BaseItem;
+class UNS_InventoryBaseItem;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
@@ -28,7 +28,7 @@ public:
 
 	UInteractionComponent* GetInteractionComponent() const { return InteractionComponent; }
 
-	void DropItem(ANS_BaseItem* ItemToDrop, const int32 QuantityToDrop);
+	void DropItem(UNS_InventoryBaseItem* ItemToDrop, const int32 QuantityToDrop);
 
 	UFUNCTION(Client, Reliable)
 	void Client_NotifyInventoryUpdated();
@@ -68,7 +68,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interaction", meta = (AllowPrivateAccess = "true"))
 	UInteractionComponent* InteractionComponent;
 
-	UPROPERTY(VisibleAnywhere, Category = "Inventory")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory", Replicated)
 	UInventoryComponent* PlayerInventory;
 	
 	// 캐릭터 이동 중 바라보는 곳으로 몸 회전 속도 (1 ~ 10까지 해봤는데 5가 가장 적당함)
@@ -191,7 +191,7 @@ public:
 
 	// 아이템 버리기
 	UFUNCTION(Server, Reliable)
-	void DropItem_Server(ANS_BaseItem* ItemToDrop, int32 QuantityToDrop);
+	void DropItem_Server(UNS_InventoryBaseItem* ItemToDrop, int32 QuantityToDrop);
 
 	// 조준 
 	UFUNCTION(Server, Reliable)

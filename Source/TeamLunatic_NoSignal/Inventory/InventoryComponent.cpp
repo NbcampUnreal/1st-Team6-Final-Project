@@ -4,20 +4,20 @@
 #include "Inventory/InventoryComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Character/NS_PlayerCharacterBase.h"
-#include "Item/NS_BaseItem.h"
+#include "Item/NS_InventoryBaseItem.h"
 #include "Engine/ActorChannel.h"
 
 
 UInventoryComponent::UInventoryComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
+	SetIsReplicatedByDefault(true);
 }
 
 void UInventoryComponent::InitializeComponent()
 {
 	Super::InitializeComponent();
 
-	SetIsReplicated(true);
 	bWantsInitializeComponent = true;
 }
 
@@ -25,14 +25,20 @@ bool UInventoryComponent::ReplicateSubobjects(UActorChannel* Channel, FOutBunch*
 {
 	bool bWroteSomething = Super::ReplicateSubobjects(Channel, Bunch, RepFlags);
 
-	for (const TObjectPtr<ANS_BaseItem>& ItemPtr : InventoryContents)
+	for (UNS_InventoryBaseItem* Item : InventoryContents)
 	{
-		if (IsValid(ItemPtr))
+		if (IsValid(Item))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("[Replication] Trying to replicate item: %s"), *ItemPtr->GetName());
-			bWroteSomething |= Channel->ReplicateSubobject(ItemPtr.Get(), *Bunch, *RepFlags);
+			bool bRep = Channel->ReplicateSubobject(Item, *Bunch, *RepFlags);
+			bWroteSomething |= bRep;
+
+			if (bRep)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Replicated Inventory Item: %s"), *Item->GetName());
+			}
 		}
 	}
+
 	return bWroteSomething;
 }
 
@@ -63,11 +69,12 @@ void UInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(UInventoryComponent, InventoryContents);
+	DOREPLIFETIME(UInventoryComponent, InventoryTotalWeight);
 }
 
 
 //  인벤토리에 아이템을 추가하는 함수
-FItemAddResult UInventoryComponent::HandleAddItem(ANS_BaseItem* InputItem)
+FItemAddResult UInventoryComponent::HandleAddItem(UNS_InventoryBaseItem* InputItem)
 {
 	if (GetOwner())
 	{
@@ -103,7 +110,7 @@ FItemAddResult UInventoryComponent::HandleAddItem(ANS_BaseItem* InputItem)
 	return FItemAddResult::AddedNone(FText::FromString("TryAddItem fallthrough error. GetOwner() check somehow failed."));
 }
 
-ANS_BaseItem* UInventoryComponent::FindMatchingItem(ANS_BaseItem* ItemIn) const
+UNS_InventoryBaseItem* UInventoryComponent::FindMatchingItem(UNS_InventoryBaseItem* ItemIn) const
 {
 	if (ItemIn)
 	{
@@ -115,11 +122,11 @@ ANS_BaseItem* UInventoryComponent::FindMatchingItem(ANS_BaseItem* ItemIn) const
 	return nullptr;
 }
 
-ANS_BaseItem* UInventoryComponent::FindNextItemByID(ANS_BaseItem* ItemIn) const
+UNS_InventoryBaseItem* UInventoryComponent::FindNextItemByID(UNS_InventoryBaseItem* ItemIn) const
 {
 	if (ItemIn)
 	{
-		if (const TArray<TObjectPtr<ANS_BaseItem>>::ElementType* Result = InventoryContents.FindByKey(ItemIn))
+		if (const TArray<TObjectPtr<UNS_InventoryBaseItem>>::ElementType* Result = InventoryContents.FindByKey(ItemIn))
 		{
 			return *Result;
 		}
@@ -127,9 +134,9 @@ ANS_BaseItem* UInventoryComponent::FindNextItemByID(ANS_BaseItem* ItemIn) const
 	return nullptr;
 }
 
-ANS_BaseItem* UInventoryComponent::FindNextPartialStack(ANS_BaseItem* ItemIn) const
+UNS_InventoryBaseItem* UInventoryComponent::FindNextPartialStack(UNS_InventoryBaseItem* ItemIn) const
 {
-	if (const TArray<TObjectPtr<ANS_BaseItem>>::ElementType* Result = InventoryContents.FindByPredicate([&ItemIn](const ANS_BaseItem* InventoryItem)
+	if (const TArray<TObjectPtr<UNS_InventoryBaseItem>>::ElementType* Result = InventoryContents.FindByPredicate([&ItemIn](const UNS_InventoryBaseItem* InventoryItem)
 		{
 			return InventoryItem->ItemDataRowName == ItemIn->ItemDataRowName && !InventoryItem->IsFullItemStack();
 		}
@@ -141,13 +148,13 @@ ANS_BaseItem* UInventoryComponent::FindNextPartialStack(ANS_BaseItem* ItemIn) co
 	return nullptr;
 }
 
-void UInventoryComponent::RemoveSingleInstanceOfItem(ANS_BaseItem* ItemToRemove)
+void UInventoryComponent::RemoveSingleInstanceOfItem(UNS_InventoryBaseItem* ItemToRemove)
 {
 	InventoryContents.RemoveSingle(ItemToRemove);
 	BroadcastInventoryUpdate();
 }
 
-int32 UInventoryComponent::RemoveAmountOfItem(ANS_BaseItem* ItemIn, int32 DesiredAmountToRemove)
+int32 UInventoryComponent::RemoveAmountOfItem(UNS_InventoryBaseItem* ItemIn, int32 DesiredAmountToRemove)
 {
 	const int32 ActualAmountToRemove = FMath::Min(DesiredAmountToRemove, ItemIn->Quantity);
 
@@ -160,7 +167,7 @@ int32 UInventoryComponent::RemoveAmountOfItem(ANS_BaseItem* ItemIn, int32 Desire
 	return ActualAmountToRemove;
 }
 
-void UInventoryComponent::SplitExistingStack(ANS_BaseItem* ItemIn, const int32 AmountToSplit)
+void UInventoryComponent::SplitExistingStack(UNS_InventoryBaseItem* ItemIn, const int32 AmountToSplit)
 {
 	if (!(InventoryContents.Num() + 1 > InventorySlotsCapacity))
 	{
@@ -170,7 +177,7 @@ void UInventoryComponent::SplitExistingStack(ANS_BaseItem* ItemIn, const int32 A
 }
 
 // 스택 불가능한 아이템 처리
-FItemAddResult UInventoryComponent::HandleNonStackableItems(ANS_BaseItem* InputItem)
+FItemAddResult UInventoryComponent::HandleNonStackableItems(UNS_InventoryBaseItem* InputItem)
 {
 	// 무게 또는 슬롯 제한 체크
 	if (FMath::IsNearlyZero(InputItem->GetItemSingleWeight()) || InputItem->GetItemSingleWeight() < 0)
@@ -192,7 +199,7 @@ FItemAddResult UInventoryComponent::HandleNonStackableItems(ANS_BaseItem* InputI
 	return FItemAddResult::AddedAll(1, FText::Format(FText::FromString("Successfully added a single {0} to the Inventory."), InputItem->TextData.ItemName));
 }
 // 스택 가능한 아이템 처리
-int32 UInventoryComponent::HandleStackableItems(ANS_BaseItem* ItemIn, int32 RequestedAddAmount)
+int32 UInventoryComponent::HandleStackableItems(UNS_InventoryBaseItem* ItemIn, int32 RequestedAddAmount)
 {
 	if (RequestedAddAmount <= 0 || FMath::IsNearlyZero(ItemIn->GetItemStackWeight()))
 	{
@@ -201,7 +208,7 @@ int32 UInventoryComponent::HandleStackableItems(ANS_BaseItem* ItemIn, int32 Requ
 
 	int32 AmountToDistribute = RequestedAddAmount;
 	// 1. 기존 스택에 추가 시도
-	ANS_BaseItem* ExstingItemStack = FindNextPartialStack(ItemIn);
+	UNS_InventoryBaseItem* ExstingItemStack = FindNextPartialStack(ItemIn);
 
 	while (ExstingItemStack)
 	{
@@ -267,7 +274,7 @@ int32 UInventoryComponent::HandleStackableItems(ANS_BaseItem* ItemIn, int32 Requ
 	return RequestedAddAmount - AmountToDistribute;
 }
 
-int32 UInventoryComponent::CalculateWeightAddAmount(ANS_BaseItem* ItemIn, int32 RequestedAddAmount)
+int32 UInventoryComponent::CalculateWeightAddAmount(UNS_InventoryBaseItem* ItemIn, int32 RequestedAddAmount)
 {
 	const int32 WeightMaxAddAmount = FMath::FloorToInt((GetWeightCapacity() - InventoryTotalWeight) / ItemIn->GetItemSingleWeight());
 	if (WeightMaxAddAmount >= RequestedAddAmount)
@@ -277,16 +284,16 @@ int32 UInventoryComponent::CalculateWeightAddAmount(ANS_BaseItem* ItemIn, int32 
 	return WeightMaxAddAmount;
 }
 
-int32 UInventoryComponent::CalculateNumberForFullStack(ANS_BaseItem* StackableItem, int32 InitialRequestedAddAmount)
+int32 UInventoryComponent::CalculateNumberForFullStack(UNS_InventoryBaseItem* StackableItem, int32 InitialRequestedAddAmount)
 {
 	const int32 AddAmountToMakeFullStack = StackableItem->NumericData.MaxStack - StackableItem->Quantity;
 
 	return FMath::Min(InitialRequestedAddAmount, AddAmountToMakeFullStack);
 }
 //  새 아이템 인벤토리에 추가
-void UInventoryComponent::AddNewItem(ANS_BaseItem* Item, const int32 AmountToAdd)
+void UInventoryComponent::AddNewItem(UNS_InventoryBaseItem* Item, const int32 AmountToAdd)
 {
-	ANS_BaseItem* NewItem;
+	UNS_InventoryBaseItem* NewItem;
 
 	if (Item->bisCopy || Item->bisPickup)
 	{

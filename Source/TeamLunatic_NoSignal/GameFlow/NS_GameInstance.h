@@ -2,8 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
-#include "Engine/DataTable.h"
-#include "Item/NS_ItemDataStruct.h"
 #include "EGameModeType.h"  
 #include "Interfaces/OnlineSessionInterface.h"
 #include "OnlineSessionSettings.h"
@@ -37,9 +35,6 @@ public:
 
 	void JoinSession(const FOnlineSessionSearchResult& SessionResult);
 	FOnJoinSessionComplete OnJoinSessionComplete;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item")
-	UDataTable* ItemDataTable;
 
 private:
 	EGameModeType GameModeType = EGameModeType::SinglePlayMode;

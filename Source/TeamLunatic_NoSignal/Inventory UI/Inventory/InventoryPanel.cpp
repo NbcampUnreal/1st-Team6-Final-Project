@@ -6,25 +6,11 @@
 #include "Inventory/InventoryComponent.h"
 #include "Inventory UI/Inventory/InventoryItemSlot.h"
 #include "Inventory UI/Inventory/ItemDragDropOperation.h"
-#include "Item/NS_BaseItem.h"
+#include "Item/NS_InventoryBaseItem.h"
 
 void UInventoryPanel::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
-
-    PlayerCharacter = Cast<ANS_PlayerCharacterBase>(GetOwningPlayerPawn());
-    if (PlayerCharacter)
-    {
-        InventoryReference = PlayerCharacter->GetInventory();
-        if (InventoryReference)
-        {
-            
-            InventoryReference->OnInventoryUpdated.AddUObject(this, &UInventoryPanel::RefreshInventory);
-
-           
-            SetInfoText();
-        }
-    }
 }
 
 void UInventoryPanel::NativeConstruct()
@@ -43,19 +29,19 @@ void UInventoryPanel::TryBindInventory()
         InventoryReference = PlayerCharacter->GetInventory();
         if (InventoryReference)
         {
+            RefreshInventory();
+            UE_LOG(LogTemp, Warning, TEXT("[UI-Bind] 성공: %s, 컨트롤러: %s"),
+                *GetName(), *GetOwningPlayer()->GetName());
             InventoryReference->OnInventoryUpdated.AddUObject(this, &UInventoryPanel::RefreshInventory);
-            RefreshInventory(); // 초기 UI 갱신
-
-            UE_LOG(LogTemp, Warning, TEXT(" TryBindInventory 바인딩 성공: %s"), *GetName());
         }
         else
         {
-            UE_LOG(LogTemp, Warning, TEXT(" InventoryReference is nullptr"));
+            UE_LOG(LogTemp, Error, TEXT("[UI-Bind] 실패: InventoryReference가 null입니다. 위젯: %s"), *GetName());
         }
     }
     else
     {
-        UE_LOG(LogTemp, Warning, TEXT(" PlayerCharacter is nullptr"));
+        UE_LOG(LogTemp, Warning, TEXT("[UI-Bind] 실패: PlayerCharacter nullptr"));
     }
 }
 
@@ -81,7 +67,11 @@ void UInventoryPanel::RefreshInventory()
     {
         InventoryPanel->ClearChildren();
 
-        for (ANS_BaseItem* const& InventoryItem : InventoryReference->GetInventoryContents())
+        const auto& Contents = InventoryReference->GetInventoryContents();
+
+        UE_LOG(LogTemp, Warning, TEXT("[UI] RefreshInventory 호출됨 - Contents.Num() = %d"), Contents.Num());
+
+        for (UNS_InventoryBaseItem* const& InventoryItem : InventoryReference->GetInventoryContents())
         {
             UInventoryItemSlot* ItemSlot = CreateWidget<UInventoryItemSlot>(this, InventorySlotClass);
             ItemSlot->SetItemReference(InventoryItem);

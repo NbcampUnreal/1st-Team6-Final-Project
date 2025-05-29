@@ -34,11 +34,12 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     BaseEyeHeight = 74.0f;
     // 인벤토리
     PlayerInventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("PlayerInventory"));
+    SetReplicates(true);
     PlayerInventory->SetSlotsCapacity(20);
     PlayerInventory->SetWeightCapacity(50.0f);
 }
 
-void ANS_PlayerCharacterBase::DropItem_Server_Implementation(ANS_BaseItem* ItemToDrop, int32 QuantityToDrop)
+void ANS_PlayerCharacterBase::DropItem_Server_Implementation(UNS_InventoryBaseItem* ItemToDrop, int32 QuantityToDrop)
 {
     if (PlayerInventory->FindMatchingItem(ItemToDrop))
     {
@@ -63,7 +64,7 @@ void ANS_PlayerCharacterBase::DropItem_Server_Implementation(ANS_BaseItem* ItemT
     }
 }
 
-void ANS_PlayerCharacterBase::DropItem(ANS_BaseItem* ItemToDrop, const int32 QuantityToDrop)
+void ANS_PlayerCharacterBase::DropItem(UNS_InventoryBaseItem* ItemToDrop, const int32 QuantityToDrop)
 {
     if (HasAuthority())
     {
@@ -79,8 +80,12 @@ void ANS_PlayerCharacterBase::Client_NotifyInventoryUpdated_Implementation()
 {
     if (PlayerInventory)
     {
-        PlayerInventory->OnInventoryUpdated.Broadcast(); // UI 갱신
-        UE_LOG(LogTemp, Warning, TEXT("Inventory update received for %s"), *GetOwner()->GetName());
+        FTimerHandle DelayHandle;
+        GetWorldTimerManager().SetTimer(DelayHandle, FTimerDelegate::CreateLambda([this]()
+            {
+                PlayerInventory->OnInventoryUpdated.Broadcast();
+                UE_LOG(LogTemp, Warning, TEXT("Client_NotifyInventoryUpdated - Inventory 갱신 (지연 호출)"));
+            }), 0.05f, false);
     }
 }
 
@@ -323,6 +328,7 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
     DOREPLIFETIME(ANS_PlayerCharacterBase, CamPitch);  // 카메라 상/하 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsAiming);  // 조준중인지 확인 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsReload);  // 장전중인지 확인 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, PlayerInventory);
 }
 
 void ANS_PlayerCharacterBase::SetMovementLockState_Server_Implementation(bool bLock)

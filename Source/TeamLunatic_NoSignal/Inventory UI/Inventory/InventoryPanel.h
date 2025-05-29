@@ -21,6 +21,7 @@ class TEAMLUNATIC_NOSIGNAL_API UInventoryPanel : public UUserWidget
 public:
 	UFUNCTION()
 	void RefreshInventory();
+	void TryBindInventory();
 
 	UPROPERTY(meta = (BindWidget))
 	UWrapBox* InventoryPanel;
@@ -44,6 +45,5 @@ protected:
 	void SetInfoText() const;
 	virtual void NativeOnInitialized() override;
 	void NativeConstruct();
-	void TryBindInventory();
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 };
