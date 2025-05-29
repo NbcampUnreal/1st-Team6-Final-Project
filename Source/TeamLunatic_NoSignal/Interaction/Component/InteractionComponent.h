@@ -68,6 +68,8 @@ private:
 	void FoundInteractable(AActor* NewInteractable);
 	void NoInteractableFound();
 	void Interact();
+	UFUNCTION(Server, Reliable)
+	void Interact_Server(AActor* Target);
 
 	FVector GetViewLocation() const;
 	FRotator GetViewRotation() const;

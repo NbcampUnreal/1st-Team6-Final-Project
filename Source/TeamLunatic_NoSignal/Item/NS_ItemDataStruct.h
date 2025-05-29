@@ -124,6 +124,9 @@ public:
 	GENERATED_USTRUCT_BODY()
 
 	//있어야 될 데이터
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName ItemDataRowName;
+
 	UPROPERTY(EditAnywhere)
 	EItemType ItemType;
 
@@ -151,4 +154,8 @@ public:
 	//상한 음식 체크
 	UPROPERTY(EditAnywhere)
 	bool isSpoiledfood;
+
+	/** 현재 수량 - 드롭/픽업 시 동기화용 */
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	int32 Quantity = 1;
 };

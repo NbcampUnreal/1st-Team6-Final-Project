@@ -1,40 +1,41 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "NS_ItemDataStruct.h"
+#include "UObject/NoExportTypes.h"
+#include "Inventory/InventoryComponent.h"
 #include "Engine/DataTable.h"
-#include "Interaction/InteractionInterface.h"
-#include "NS_BaseItem.generated.h"
+#include "Item/NS_ItemDataStruct.h"
+#include "NS_InventoryBaseItem.generated.h"
 
-class UInventoryComponent;
 
 UCLASS()
-class TEAMLUNATIC_NOSIGNAL_API ANS_BaseItem : public AActor, public IInteractionInterface
+class TEAMLUNATIC_NOSIGNAL_API UNS_InventoryBaseItem : public UObject
 {
 	GENERATED_BODY()
 	
-public:	
-	ANS_BaseItem();
+public:
+	UNS_InventoryBaseItem();
 
-	virtual void BeginPlay() override;
+	UInventoryComponent* OwingInventory;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Confige")
 	UDataTable* ItemsDataTable;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Confige")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Confige", Replicated)
 	FName ItemDataRowName;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData", Replicated)
 	EItemType ItemType;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData", Replicated)
 	EWeaponType WeaponType;
 
-	UPROPERTY(EditAnywhere,  Category = "ItemData")
+	UPROPERTY(EditAnywhere, Category = "ItemData")
 	FWeaponData WeaponData;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData", Replicated)
 	FText ItemName;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
@@ -49,22 +50,16 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	UTexture2D* Icon;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
-	UStaticMeshComponent* ItemStaticMesh;
-
-	UPROPERTY(EditAnywhere, Category = "PickUp")
-	FInteractableData InstanceInteractableData;
-
-	UPROPERTY(EditAnywhere, Category = "ItemData")
+	UPROPERTY(EditAnywhere, Category = "ItemData", Replicated)
 	FItemNumericData NumericData;
 
-	UPROPERTY(EditAnywhere, Category = "ItemData")
+	UPROPERTY(EditAnywhere, Category = "ItemData", Replicated)
 	FItemTextData TextData;
 
-	UPROPERTY(EditAnywhere, Category = "ItemData")
+	UPROPERTY(EditAnywhere, Category = "ItemData", Replicated)
 	FItemAssetData AssetData;
 
-	UPROPERTY(VisibleAnywhere, Category = "ItemData", meta = (UIMin=1, UIMax=100))
+	UPROPERTY(VisibleAnywhere, Category = "ItemData", meta = (UIMin = 1, UIMax = 100), Replicated)
 	int32 Quantity;
 
 	bool bisCopy;
@@ -72,8 +67,10 @@ public:
 
 	void ResetItemFlags();
 
-	ANS_BaseItem* CreateItemCopy();
-	
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
+
+	UNS_InventoryBaseItem* CreateItemCopy();
+
 	UFUNCTION(Category = "Item")
 	FORCEINLINE float GetItemStackWeight() const { return Quantity * NumericData.Weight; };
 
@@ -83,20 +80,17 @@ public:
 	UFUNCTION(Category = "Item")
 	FORCEINLINE bool IsFullItemStack() const { return Quantity == NumericData.MaxStack; };
 
-public:	
+	UFUNCTION(Category = "Item")
+	void SetQuantity(const int32 NewQuantity);
+public:
 	EItemType GetItemType() const { return ItemType; }
 	EWeaponType GetWeaponType() const { return WeaponType; }
 	FText GetItemName() const { return ItemName; }
 	float GetWeight() const { return Weight; }
 	const FNS_ItemDataStruct* GetItemData() const;
 
-	virtual void Tick(float DeltaTime) override;
-
 	virtual void OnUseItem();
-
-	virtual void BeginFocus() override;
-	virtual void EndFocus() override;
-
+	bool IsSupportedForNetworking() const;
 protected:
 	bool operator == (const FName& OtherID) const
 	{

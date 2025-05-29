@@ -33,5 +33,5 @@ protected:
 	virtual void EndFocus() override;
 	virtual void BeginInteract() override;
 	virtual void EndInteract() override;
-	virtual void Interact(AActor* InteractingActor) override;
+	virtual void Interact_Implementation(AActor* InteractingActor) override;
 };

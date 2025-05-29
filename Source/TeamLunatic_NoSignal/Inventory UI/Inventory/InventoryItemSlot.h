@@ -11,7 +11,7 @@
 
 class UInventoryTooltip;
 class UDragItemVisual;
-class ANS_BaseItem;
+class UNS_InventoryBaseItem;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UInventoryItemSlot : public UUserWidget
@@ -19,8 +19,8 @@ class TEAMLUNATIC_NOSIGNAL_API UInventoryItemSlot : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	FORCEINLINE void SetItemReference(ANS_BaseItem* ItemIn) { ItemReference = ItemIn; };
-	FORCEINLINE ANS_BaseItem* GetItemReference() const { return ItemReference; };
+	FORCEINLINE void SetItemReference(UNS_InventoryBaseItem* ItemIn) { ItemReference = ItemIn; };
+	FORCEINLINE UNS_InventoryBaseItem* GetItemReference() const { return ItemReference; };
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Inventory Slot")
 	TSubclassOf<UDragItemVisual> DragItemVisualClass;
@@ -29,7 +29,7 @@ protected:
 	TSubclassOf<UInventoryTooltip> TooltipClass;
 
 	UPROPERTY(VisibleAnywhere, Category = "Inventory Slot")
-	ANS_BaseItem* ItemReference;
+	UNS_InventoryBaseItem* ItemReference;
 
 	UPROPERTY(VisibleAnywhere, Category = "Inventory Slot", meta = (BindWidget))
 	UBorder* ItemBorder;
