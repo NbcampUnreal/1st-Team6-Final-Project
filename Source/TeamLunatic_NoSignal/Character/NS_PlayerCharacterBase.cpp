@@ -302,7 +302,6 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsKick);    // 발차기 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsSprint);  // 달리기 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsAttack);  // 공격 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsPickUp);  // 아이템줍기 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsHit);     // 맞는지 확인 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, CamYaw);    // 카메라 좌/우 변수
