@@ -41,6 +41,10 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_StatusComponent : public UActorComponent
 {
     GENERATED_BODY()
 
+private:
+    UPROPERTY()
+    TObjectPtr<ANS_PlayerCharacterBase> PlayerCharacter;
+
 public:
     UNS_StatusComponent();
 
@@ -61,7 +65,9 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Status|Stamina")
     float Stamina;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status|Stamina")
-	float StaminaRegenRate = 10.f; // 스태미너 재생 속도
+	float DefalutStaminaRegenRate = 10.f; // 스태미너 재생 속도
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status|Stamina")
+	float StaminaRegenRate; // 현재 스태미너 재생 속도
     // Sprint 중일 때 Stamina 감소/재생 속도
     UPROPERTY(EditDefaultsOnly, Category = "Status|Stamina", meta = (ClampMin = "0"))
     float SprintStaminaDecreasePerSecond = 10.f;
@@ -102,9 +108,16 @@ public:
     void AddHunger(float Value);
     void AddThirst(float Value);
     void AddFatigue(float Value);
-
+    void AddStaminaRegenRate(float Value);
 
 private:
+
+	FTimerHandle DamagedByHungerTimerHandle; // 허기로 인한 지속 피해 타이머 핸들
+	FTimerHandle DamagedByThirstTimerHandle; // 목마름으로 인한 지속 피해 타이머 핸들
+
+    void DamagedByHunger();
+	void DamagedByThirst();
+
     //틱 내부에서 업데이트하는 함수 모음
     void UpdateAllStatus(float DeltaTime);
 

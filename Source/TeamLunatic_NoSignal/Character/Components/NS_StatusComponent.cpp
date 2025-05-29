@@ -1,5 +1,7 @@
 ﻿#include "NS_StatusComponent.h"
 #include "Character/NS_PlayerCharacterBase.h"
+#include "TimerManager.h"
+#include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 UNS_StatusComponent::UNS_StatusComponent()
@@ -15,10 +17,13 @@ void UNS_StatusComponent::BeginPlay()
     // 기존값 초기화
     Health  = MaxHealth;
     UpdateMaxStamina();
+	AddStaminaRegenRate(1.5f);
     Stamina = MaxStamina;
     CurrentHunger  = MaxHunger;
     CurrentThirst  = MaxThirst;
     CurrentFatigue = MaxFatigue;
+	PlayerCharacter = Cast<ANS_PlayerCharacterBase>(GetOwner());
+
 }
 
 // 스탯 컴포넌트의 TickComponent 함수에서 매 프레임마다 스탯을 업데이트
@@ -95,15 +100,25 @@ void UNS_StatusComponent::ChangeStatusDueHunger(EHungerStatus NewStatus)
 	// 상태에 따른 효과 적용
 	switch (HungerStatus)
 	{
-	case EHungerStatus::Full:
+	case EHungerStatus::Full: // 치료 아이템 추가 회복 배율(1.5배), 인벤토리무가 중량 추가(10), 근접 공격력&킥 공격력 증가(1.5배), 지속피해 없음
+		PlayerCharacter->AddWeightInventory(10.f);
+		GetWorld()->GetTimerManager().ClearTimer(DamagedByHungerTimerHandle);
 		break;
-	case EHungerStatus::Normal:
+	case EHungerStatus::Normal: // 치료 아이템 추가 회복 배율(1배), 인벤토리 무게 추가(0), 근접 공격력&킥 공격력 증가(1배), 지속피해 없음
+		PlayerCharacter->AddWeightInventory(0.f);
+		GetWorld()->GetTimerManager().ClearTimer(DamagedByHungerTimerHandle);
 		break;
-	case EHungerStatus::LittleHungry:
+	case EHungerStatus::LittleHungry: // 치료 아이템 추가 회복 배율(0.8배), 인벤토리 무게 추가(0), 근접 공격력&킥 공격력 감소(0.8배), 지속피해 없음
+		PlayerCharacter->AddWeightInventory(0.f);
+		GetWorld()->GetTimerManager().ClearTimer(DamagedByHungerTimerHandle);
 		break;
-	case EHungerStatus::Hungry:
+	case EHungerStatus::Hungry: // 치료 아이템 추가 회복 배율(0.5배), 인벤토리 무게 추가(-10), 근접 공격력&킥 공격력 감소(0.5배), 지속피해 없음
+		PlayerCharacter->AddWeightInventory(-10.f);
+		GetWorld()->GetTimerManager().ClearTimer(DamagedByHungerTimerHandle);
 		break;
-	case EHungerStatus::Starving:
+	case EHungerStatus::Starving: // 치료 아이템 추가 회복 배율(0.1배), 인벤토리 무게 추가(-10), 근접 공격력&킥 공격력 감소(0.1배), 지속피해 있음
+		PlayerCharacter->AddWeightInventory(-10.f);
+		GetWorld()->GetTimerManager().SetTimer(DamagedByHungerTimerHandle, this, &UNS_StatusComponent::DamagedByHunger, 5.f, true);
 		break;
 	}
 }
@@ -114,15 +129,35 @@ void UNS_StatusComponent::ChangeStatusDueThirst(EThirstStatus NewStatus)
 	// 상태에 따른 효과 적용
 	switch (ThirstStatus)
 	{
-	case EThirstStatus::Full:
+	case EThirstStatus::Full: //이동속도 증가(1.5배), 스태미너 재생 속도 증가(1.5배), 수색속도 증가(0.5배), 지속피해 없음
+		PlayerCharacter->SetSpeedMultiply(1.5f);
+		AddStaminaRegenRate(1.5f);
+		PlayerCharacter->AddSearchTime(0.5f);
+		GetWorld()->GetTimerManager().ClearTimer(DamagedByThirstTimerHandle);
 		break;
-	case EThirstStatus::Normal:
+	case EThirstStatus::Normal: //이동속도 증가(1배), 스태미너 재생 속도 증가(1배), 수색속도 증가(1배), 지속피해 없음
+		PlayerCharacter->SetSpeedMultiply(1.0f);
+		AddStaminaRegenRate(1.f);
+		PlayerCharacter->AddSearchTime(1.f);
+		GetWorld()->GetTimerManager().ClearTimer(DamagedByThirstTimerHandle);
 		break;
-	case EThirstStatus::LittleThirsty:
+	case EThirstStatus::LittleThirsty: //이동속도 증가(1.0배), 스태미너 재생 속도 증가(0.8배), 수색속도 증가(1.5배), 지속피해 없음
+		PlayerCharacter->SetSpeedMultiply(1.0f);
+		AddStaminaRegenRate(0.8f);
+		PlayerCharacter->AddSearchTime(1.5f);
+		GetWorld()->GetTimerManager().ClearTimer(DamagedByThirstTimerHandle);
 		break;
-	case EThirstStatus::Thirsty:
+	case EThirstStatus::Thirsty: //이동속도 증가(0.5배), 스태미너 재생 속도 증가(0.5배), 수색속도 증가(1.5배), 지속피해 없음
+		PlayerCharacter->SetSpeedMultiply(0.5f);
+		AddStaminaRegenRate(0.5f);
+		PlayerCharacter->AddSearchTime(1.5f);
+		GetWorld()->GetTimerManager().ClearTimer(DamagedByThirstTimerHandle);
 		break;
-	case EThirstStatus::Dehydrated:
+	case EThirstStatus::Dehydrated: //이동속도 증가(0.5배), 스태미너 재생 속도 증가(0.1배), 수색속도 증가(1.5배), 지속피해 있음
+		PlayerCharacter->SetSpeedMultiply(0.5f);
+		AddStaminaRegenRate(0.1f);
+		PlayerCharacter->AddSearchTime(1.5f);
+		GetWorld()->GetTimerManager().SetTimer(DamagedByThirstTimerHandle, this, &UNS_StatusComponent::DamagedByThirst, 10.f, true);
 		break;
 	}
 }
@@ -133,15 +168,24 @@ void UNS_StatusComponent::ChangeStatusDueFatigue(EFatigueStatus NewStatus)
 	// 상태에 따른 효과 적용
 	switch (FatigueStatus)
 	{
-	case EFatigueStatus::Rested:
+	case EFatigueStatus::Rested: //(반동 또는 집탄률 좋게), 조준가능, 크래프팅 속도 증가(0.5배), (시야 또는 청각 방해 안함)
+		PlayerCharacter->SetAvailableAiming(true);
+		PlayerCharacter->AddCraftingSpeed(0.5f);
 		break;
-	case EFatigueStatus::Normal:
+	case EFatigueStatus::Normal://(반동 또는 집탄률 보통), 조준가능, 크래프팅 속도 증가(1배), (시야 또는 청각 방해 안함)
+		PlayerCharacter->SetAvailableAiming(true);
+		PlayerCharacter->AddCraftingSpeed(1.f);
 		break;
-	case EFatigueStatus::Tired:
+	case EFatigueStatus::Tired: //(반동 또는 집탄률 나쁘게), 조준가능, 크래프팅 속도 감소(1.5배), (시야 또는 청각 방해 안함)
+		PlayerCharacter->SetAvailableAiming(true);
+		PlayerCharacter->AddCraftingSpeed(1.5f);
 		break;
-	case EFatigueStatus::Exhausted:
+	case EFatigueStatus::Exhausted: //(반동 또는 집탄률 나쁘게), 조준가능, 크래프팅 속도 감소(1.5배), (시야 또는 청각 방해 발동)
+		PlayerCharacter->SetAvailableAiming(false);
+		PlayerCharacter->AddCraftingSpeed(1.5f);
 		break;
 	case EFatigueStatus::Unconscious:
+		//기절하기
 		break;
 	}
 }
@@ -215,4 +259,20 @@ void UNS_StatusComponent::AddFatigue(float Value)
 {
     CurrentFatigue = FMath::Clamp(CurrentFatigue + Value, 0.f, MaxFatigue);
 }
+
+void UNS_StatusComponent::AddStaminaRegenRate(float Value)
+{
+	StaminaRegenRate = DefalutStaminaRegenRate * Value; // 기본 재생 속도에 배율 적용
+}
 //================================================================
+
+// 상태치에 따른 데미지 처리 함수들 ====
+void UNS_StatusComponent::DamagedByHunger()
+{
+	UGameplayStatics::ApplyDamage(GetOwner(), 10.f, nullptr, nullptr, nullptr);
+}
+
+void UNS_StatusComponent::DamagedByThirst()
+{
+	UGameplayStatics::ApplyDamage(GetOwner(), 10.f, nullptr, nullptr, nullptr);
+}
