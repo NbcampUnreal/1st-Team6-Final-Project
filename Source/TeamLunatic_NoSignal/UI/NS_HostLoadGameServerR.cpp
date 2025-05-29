@@ -60,10 +60,11 @@ void UNS_HostLoadGameServerR::OnCreateServerButtonClicked()
                 MainMenu->GetWidget(EWidgetToggleType::MultiPlayer)->HideSubMenuWidget();
             });
 
-        GI->CreateSession(SessionName, bIsLAN, MaxPlayers);
+        GI->CreateDedicatedSessionViaHTTP(SessionName, bIsLAN, MaxPlayers);
     }
     else
     {
+
         UE_LOG(LogTemp, Warning, TEXT("게임 인스턴스 없음"));
     }
 }
