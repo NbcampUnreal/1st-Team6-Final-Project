@@ -22,12 +22,34 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
 {
 	GENERATED_BODY()
 
+private:
+
+	// ========== 이동 관련 =============
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta=(AllowPrivateAccess = "true"))
+	float DefaultWalkSpeed;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta=(AllowPrivateAccess = "true", UIMin = 0))
+	float SprintSpeedMultiplier;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta=(AllowPrivateAccess = "true", UIMin = 0, UIMax = 2))
+	float SpeedMultiAtStat = 1.0f; //버프|디버프 때 조절될 속도 배율
+
+
+	//조준이 가능한지 확인하는 변수
+	bool IsAvaliableAiming = true;
+
 public:
 	ANS_PlayerCharacterBase();
 
 	FORCEINLINE UInventoryComponent* GetInventory() const { return PlayerInventory; };
 
 	UInteractionComponent* GetInteractionComponent() const { return InteractionComponent; }
+
+	
+	void DropItem(ANS_BaseItem* ItemToDrop, const int32 QuantityToDrop);
+
+	//캐릭터의 스피드배율 변경용
+	FORCEINLINE void SetSpeedMultiply(float MultiplyValue) { SpeedMultiAtStat = MultiplyValue; };
+
+	FORCEINLINE void SetAvailableAiming(bool bAvailable) { IsAvaliableAiming = bAvailable; };
 
 	void DropItem(UNS_InventoryBaseItem* ItemToDrop, const int32 QuantityToDrop);
 
@@ -86,11 +108,7 @@ public:
 	float AimSendInterpSpeed = 10.f;
 
 	
-	// ========== 이동 관련 =============
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-	float DefaultWalkSpeed;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-	float SprintSpeedMultiplier;
+
 	// 점프가 가능하게 하는 변수 
 	bool IsCanJump = true;
 	// ====================================
@@ -221,4 +239,16 @@ public:
 
 	UFUNCTION()
 	void SwapWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass);
+
+	// 무게 증감
+	UFUNCTION(BlueprintCallable)
+	void AddWeightInventory(float Weight);
+
+	//수색 속도 증감
+	UFUNCTION(BluePrintCallable)
+	void AddSearchTime(float Multiple);
+
+	//크래프팅 속도 증감
+	UFUNCTION(BlueprintCallable)
+	void AddCraftingSpeed(float Multiple);
 };
