@@ -11,6 +11,9 @@
 #include "Kismet/KismetSystemLibrary.h"          // KismetSystemLibrary::QuitGame()
 #include "Blueprint/WidgetBlueprintLibrary.h"    // FInputModeGameOnly 등
 #include "GameFlow/NS_GameInstance.h"
+#include "GameFramework/PlayerController.h"
+#include "UI/NS_MasterMenuPanel.h"
+#include "UI/NS_UIManager.h"
 
 void UNS_InGameStartMenu::NativeConstruct()
 {
@@ -61,17 +64,15 @@ void UNS_InGameStartMenu::ShowWidgetD()
 
 void UNS_InGameStartMenu::OnResumeClicked()
 {
-    if (MainMenu)
+    if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
     {
-        MainMenu->RemoveFromParent();
-        MainMenu = nullptr;
+        if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
+           UIManager->HideInGameMenuWidget(GetWorld());
     }
-
- /*   bool bIsCurrentVisible = GetVisibility() == ESlateVisibility::Visible;
-    if (bIsCurrentVisible)
-        HideWidget();
-    else
-        ShowWidgetD();*/
+    HideSubMenuWidget();
+    HideWidget();
+    //if (APlayerController* PC = GetOwningPlayer())
+    //MainMenu->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void UNS_InGameStartMenu::OnSaveGameClicked()
