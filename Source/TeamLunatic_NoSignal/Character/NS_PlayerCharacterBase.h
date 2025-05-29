@@ -43,9 +43,6 @@ public:
 
 	UInteractionComponent* GetInteractionComponent() const { return InteractionComponent; }
 
-	
-	void DropItem(ANS_BaseItem* ItemToDrop, const int32 QuantityToDrop);
-
 	//캐릭터의 스피드배율 변경용
 	FORCEINLINE void SetSpeedMultiply(float MultiplyValue) { SpeedMultiAtStat = MultiplyValue; };
 
