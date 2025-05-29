@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
+#include "Item/NS_WeaponType.h"
 #include "NS_ItemDataStruct.generated.h"
 
 UENUM()
@@ -14,15 +15,6 @@ enum class EItemType : uint8
 	Material UMETA(DisplayName = "제작재료"),
 	Utility UMETA(DisplayName = "도구"),
 	EndingTrigger UMETA(DisplayName = "엔딩조건")
-};
-
-UENUM()
-enum class EWeaponType : uint8
-{
-	None,
-	Melee,
-	Ranged,
-	Ammo
 };
 
 USTRUCT()
@@ -138,8 +130,8 @@ public:
 	UPROPERTY(EditAnywhere)
 	EItemType ItemType;
 
-	UPROPERTY(EditAnywhere)
-	EWeaponType WeaponType;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponType")
+	EWeaponType  WeaponType;
 
 	UPROPERTY(EditAnywhere)
 	FItemTextData ItemTextData;

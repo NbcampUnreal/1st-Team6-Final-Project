@@ -19,8 +19,8 @@ ANS_AIController::ANS_AIController()
 	InitializingSightConfig();
 	InitializingHearingConfig();
 
-	Perception-> ConfigureSense(*SightConfig);
-	Perception-> ConfigureSense(*HearingConfig);
+	Perception -> ConfigureSense(*SightConfig);
+	Perception -> ConfigureSense(*HearingConfig);
 	
 	BehaviorTreeComp = CreateDefaultSubobject<UBehaviorTreeComponent>("BehaviorTreeComponent");
 	BlackboardComp = CreateDefaultSubobject<UBlackboardComponent>("BlackboardComponent");
@@ -63,6 +63,7 @@ void ANS_AIController::HandleSightStimulus()
 	else
 	{
 		BlackboardComp->ClearValue("TargetActor");
+		BlackboardComp->ClearValue("bIsDetecting");
 	}
 }
 

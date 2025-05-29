@@ -12,14 +12,19 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_BaseMeleeWeapon : public ANS_BaseWeapon
 {
 	GENERATED_BODY()
 	
-public:
+protected:
 	ANS_BaseMeleeWeapon();
 
-protected:
 	virtual void BeginPlay() override;
+
+public:
+	//나한테 안보임, 상대한테 보임
+	//ItemStaticMesh
+
+	//나한테 보임, 상대한테 안보임
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
+	UStaticMeshComponent* ArmsMesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Effects")
 	UParticleSystem* ImpactParticles;
-
-public:
 };

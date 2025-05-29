@@ -1,17 +1,19 @@
 #include "Item/NS_BaseRangedWeapon.h"
-#include "NiagaraSystem.h"
 #include "NiagaraComponent.h"
-
 
 ANS_BaseRangedWeapon::ANS_BaseRangedWeapon()
 {
 	PrimaryActorTick.bCanEverTick = false;
+	
+	RangedWeaponMeshComp = CreateDefaultSubobject<USkeletalMeshComponent>("I Can'tSee Mesh");
+	RangedWeaponMeshComp->SetOwnerNoSee(true);
+	RangedWeaponMeshComp->SetOnlyOwnerSee(false);
 
-	RangedWeaponMeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
-	RootComponent = RangedWeaponMeshComp;
-
-	NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Effect"));
-	NiagaraComponent->SetupAttachment(RootComponent);
+	ArmsMesh = CreateDefaultSubobject<USkeletalMeshComponent>("I See Mesh");
+	ArmsMesh->SetOwnerNoSee(false);
+	ArmsMesh->SetOnlyOwnerSee(true);
+	
+	NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Niagara"));
 }
 
 void ANS_BaseRangedWeapon::BeginPlay()
@@ -19,14 +21,7 @@ void ANS_BaseRangedWeapon::BeginPlay()
 	Super::BeginPlay();
 
 	const FNS_ItemDataStruct* ItemData = GetItemData();
-
-	if (ItemData)
-	{
-		RangedWeaponMesh = ItemData->ItemAssetData.SkeletalMesh;
-	}
-
-	RangedWeaponMeshComp->SetSkeletalMesh(RangedWeaponMesh);
-
+	
 	InstanceInteractableData.Quantity = 1;
 
 	InteractableData = InstanceInteractableData;
