@@ -7,6 +7,7 @@
 #include "Inventory/InventoryComponent.h"
 #include "Components/NS_EquipedWeaponComponent.h"
 #include "Character/Components/NS_StatusComponent.h"
+#include "Item/NS_BaseRangedWeapon.h"
 #include "Interaction/Component/InteractionComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "World/Pickup.h"
@@ -117,7 +118,6 @@ void ANS_PlayerCharacterBase::BeginPlay()
 void ANS_PlayerCharacterBase::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-    
 }
 
 void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

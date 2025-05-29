@@ -19,6 +19,9 @@ void UNS_PlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
     // AimOffset 업데이트
     UpdateAimOffset(DeltaSeconds);
+
+    // 왼손을 무기소켓에 부착 위치 업데이트
+    UpdateLeftHandIK(DeltaSeconds);
     
     // 이동 중이면 컨트롤러 회전을 계속 활성화
     const bool bIsMoving = PlayerCharacter->GetCharacterMovement()->Velocity.SizeSquared() > KINDA_SMALL_NUMBER;
@@ -60,15 +63,17 @@ void UNS_PlayerAnimInstance::UpdateAimOffset(float DeltaSeconds)
 
 void UNS_PlayerAnimInstance::UpdateLeftHandIK(float DeltaSeconds)
 {
-    if (ANS_BaseWeapon* Weapon = PlayerCharacter->EquipedWeaponComp->CurrentWeapon)
+    if (auto* Wpn = Cast<ANS_BaseRangedWeapon>(PlayerCharacter->EquipedWeaponComp->CurrentWeapon))
     {
-        if (auto Ranged = Cast<ANS_BaseRangedWeapon>(Weapon))
+        if (Wpn->RangedWeaponMeshComp)
         {
-            if (USkeletalMeshComponent* WeaponMesh = Ranged->RangedWeaponMeshComp)
-            {
-                // "LeftHand" 소켓 트랜스폼을 매 프레임 받아옴 --------------------- 하드코딩
-                LeftHandIKTransform = WeaponMesh->GetSocketTransform(TEXT("LeftHand"));
-            }
+            LeftHandIKTransform = 
+                Wpn->RangedWeaponMeshComp
+                   ->GetSocketTransform(TEXT("LeftHandSocket"), RTS_World);
         }
+    }
+    else
+    {
+        LeftHandIKTransform = FTransform::Identity;
     }
 }
