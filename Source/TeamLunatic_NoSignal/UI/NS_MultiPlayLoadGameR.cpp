@@ -11,7 +11,7 @@
 #include "Components/TextBlock.h"
 #include "GameFlow/NS_GameInstance.h"
 #include "UI/NS_SaveLoadHelper.h"
-#include "UI/NS_MainMenu.h"
+#include "UI/NS_BaseMainMenu.h"
 #include "UI/NS_HostNewGameServerR.h"
 #include "UI/NS_HostLoadGameServerR.h"
 
@@ -29,7 +29,7 @@ void UNS_MultiPlayLoadGameR::NativeConstruct()
     NewGameButton->RootButton->OnClicked.AddDynamic(this, &UNS_MultiPlayLoadGameR::NewGame);
 
 }
-void UNS_MultiPlayLoadGameR::Init(UNS_MainMenu* NsMainMenu)
+void UNS_MultiPlayLoadGameR::Init(UNS_BaseMainMenu* NsMainMenu)
 {
 	Super::Init(NsMainMenu);
 	//SubMenus.Add(EWidgetToggleType::HostServer,MainMenu->GetWidget(EWidgetToggleType::HostServer));

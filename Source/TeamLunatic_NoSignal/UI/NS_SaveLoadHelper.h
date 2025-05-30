@@ -10,13 +10,16 @@ class TEAMLUNATIC_NOSIGNAL_API NS_SaveLoadHelper
 {
 public:
 	static constexpr const TCHAR* MetaSlotName = TEXT("SaveGameMetaData");
-	static constexpr const TCHAR* GameLevelName = TEXT("MainWorld");//Showcase MainWorld
+	static constexpr const TCHAR* GameLevelName = TEXT("Showcase");//Showcase MainWorld
 
 
 	static bool SaveGame(const FString& SlotName, const FPlayerSaveData& PlayerData, const FLevelSaveData& LevelData);
 	static bool SaveGameMetaData(const FString& SlotName, const FString& LevelName);
 	static bool LoadGame(const FString& SlotName,  FPlayerSaveData& OutPlayerData, FLevelSaveData& OutLevelData);
 	static UNS_SaveGameMetaData* LoadSaveMetaData();
+
+	static void FixSaveData(); //문제생긴 세이브데이터 삭제.
+	static void DeleteAllSaves();
 
 	static bool FindExistingSave(const FString& SlotName);//같은 슬롯(이름)이 저장되어 있는지 체크
 	static bool DeleteExistingSave(const FString& SlotName);// Delete SaveData and SaveMetaData

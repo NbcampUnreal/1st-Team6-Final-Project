@@ -3,7 +3,7 @@
 
 #include "Inventory UI/Inventory/InventoryItemSlot.h"
 #include "Inventory UI/Inventory/InventoryTooltip.h"
-#include "Item/NS_BaseItem.h"
+#include "Item/NS_InventoryBaseItem.h"
 #include "Inventory UI/Inventory/DragItemVisual.h"
 #include "Inventory UI/Inventory/ItemDragDropOperation.h"
 

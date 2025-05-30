@@ -5,10 +5,12 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Interaction/InteractionInterface.h"
+#include "Net/UnrealNetwork.h"
+#include "Item/NS_ItemDataStruct.h"
 #include "Pickup.generated.h"
 
 class UDataTable;
-class ANS_BaseItem;
+class UNS_InventoryBaseItem;
 class ANS_PlayerCharacterBase;
 
 UCLASS()
@@ -19,13 +21,24 @@ class TEAMLUNATIC_NOSIGNAL_API APickup : public AActor, public IInteractionInter
 public:
 	APickup();
 
-	void InitializePickup(const TSubclassOf<ANS_BaseItem> BaseClass, const int32 InQuantity);
-	void InitializeDrop(ANS_BaseItem* ItemToDrop, const int32 InQuantity);
+	void InitializePickup(const TSubclassOf<UNS_InventoryBaseItem> BaseClass, const int32 InQuantity);
+	void InitializeDrop(UNS_InventoryBaseItem* ItemToDrop, const int32 InQuantity);
 
-	FORCEINLINE ANS_BaseItem* GetItemData() { return ItemReference; };
+	UPROPERTY(ReplicatedUsing = OnRep_ReplicatedItemData)
+	FNS_ItemDataStruct ReplicatedItemData;
+
+	// OnRep 함수 선언
+	UFUNCTION()
+	void OnRep_ReplicatedItemData();
+
+	FORCEINLINE UNS_InventoryBaseItem* GetItemData() { return ItemReference; };
 
 	virtual void BeginFocus() override;
 	virtual void EndFocus() override;
+
+	void TakePickup(ANS_PlayerCharacterBase* Taker);
+	UFUNCTION(Server, Reliable)
+	void Server_TakePickup(AActor* InteractingActor);
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Pickup | Components")
 	UStaticMeshComponent* PickupMesh;
@@ -37,7 +50,7 @@ protected:
 	FName DesiredItemID;
 
 	UPROPERTY(VisibleAnywhere, Category = "Pickup | ItemReference")
-	ANS_BaseItem* ItemReference;
+	UNS_InventoryBaseItem* ItemReference;
 
 	UPROPERTY(EditInstanceOnly, Category = "Pickup | ItemInitialization")
 	int32 ItemQuantity;
@@ -46,11 +59,11 @@ protected:
 	FInteractableData InstanceInteractableData;
 
 	virtual void BeginPlay() override;
-	virtual void Interact(AActor* InteractingActor) override;
+	virtual void Interact_Implementation(AActor* InteractingActor) override;
 	void UpdateInteractableData();
-	void TakePickup(ANS_PlayerCharacterBase* Taker);
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 #endif
 };

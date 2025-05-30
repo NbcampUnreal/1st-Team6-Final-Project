@@ -19,27 +19,30 @@ void UNS_NewGameR::OnStartGameClicked()
 {
     FString SaveName = GetSaveSlotName();
 
-    if (NS_SaveLoadHelper::FindExistingSave(SaveName))
-    {
-        if (!AreYouSureMenu)
-        {
-            UNS_MasterMenuPanel* WidgetA = MainMenu->GetWidget(EWidgetToggleType::AreYouSureMenu);
-            AreYouSureMenu = Cast<UNS_AreYouSureMenu>(WidgetA);
-        }
-        if (AreYouSureMenu)
-        {
-            AreYouSureMenu->YesButton->OnClicked.RemoveAll(this);
-            AreYouSureMenu->NoButton->OnClicked.RemoveAll(this);
-            AreYouSureMenu->YesButton->OnClicked.AddDynamic(this, &UNS_NewGameR::OnYesSelected);
-            AreYouSureMenu->NoButton->OnClicked.AddDynamic(this, &UNS_NewGameR::OnNoSelected);
-            // UI에 확인창 띄우기
-            ShowConfirmationMenu();
-        }
-        else
-            UE_LOG(LogTemp, Warning, TEXT("AreYouSureMenu is null"));
-    }
-    else
-        StartGame(); 
+    StartGame();
+    //밑에 코드는 세이브 중복 파일있으면 덮허쓰기 창 띄우는건데 NewGame 매뉴는 그냥 밀어버리는게 맥락상 맞을것같다. 밀어버리자.
+     
+    //if (NS_SaveLoadHelper::FindExistingSave(SaveName))
+    //{
+    //    if (!AreYouSureMenu)
+    //    {
+    //        UNS_MasterMenuPanel* WidgetA = MainMenu->GetWidget(EWidgetToggleType::AreYouSureMenu);
+    //        AreYouSureMenu = Cast<UNS_AreYouSureMenu>(WidgetA);
+    //    }
+    //    if (AreYouSureMenu)
+    //    {
+    //        AreYouSureMenu->YesButton->OnClicked.RemoveAll(this);
+    //        AreYouSureMenu->NoButton->OnClicked.RemoveAll(this);
+    //        AreYouSureMenu->YesButton->OnClicked.AddDynamic(this, &UNS_NewGameR::OnYesSelected);
+    //        AreYouSureMenu->NoButton->OnClicked.AddDynamic(this, &UNS_NewGameR::OnNoSelected);
+    //        // UI에 확인창 띄우기
+    //        ShowConfirmationMenu();
+    //    }
+    //    else
+    //        UE_LOG(LogTemp, Warning, TEXT("AreYouSureMenu is null"));
+    //}
+    //else
+    //    StartGame(); 
 }
 
 void UNS_NewGameR::OnYesSelected()//덮어쓰기 메세지 동의선택

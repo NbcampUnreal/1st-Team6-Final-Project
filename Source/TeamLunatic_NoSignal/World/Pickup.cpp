@@ -5,7 +5,7 @@
 #include "Engine/DataTable.h"
 #include "Item/NS_ItemDataStruct.h"
 #include "Item/NS_BaseWeapon.h"
-#include "Item/NS_BaseItem.h"
+#include "Item/NS_InventoryBaseItem.h"
 #include "Inventory/InventoryComponent.h"
 #include "Character/NS_PlayerCharacterBase.h"
 
@@ -13,6 +13,9 @@
 APickup::APickup()
 {
 	PrimaryActorTick.bCanEverTick = false;
+
+	bReplicates = true;
+	SetReplicatingMovement(true); // 움직이는 아이템이면
 
 	PickupMesh = CreateDefaultSubobject<UStaticMeshComponent>("PickupMesh");
 	PickupMesh->SetSimulatePhysics(true);
@@ -23,16 +26,27 @@ void APickup::BeginPlay()
 {
 	Super::BeginPlay();
 
-	InitializePickup(ANS_BaseItem::StaticClass(), ItemQuantity);
+	if (HasAuthority())
+	{
+		InitializePickup(UNS_InventoryBaseItem::StaticClass(), ItemQuantity);
+	}
+	else
+	{
+		OnRep_ReplicatedItemData();
+	}
 }
 
-void APickup::InitializePickup(const TSubclassOf<ANS_BaseItem> BaseClass, const int32 InQuantity)
+void APickup::InitializePickup(const TSubclassOf<UNS_InventoryBaseItem> BaseClass, const int32 InQuantity)
 {
 	if (ItemDataTable && !DesiredItemID.IsNone())
 	{
 		const FNS_ItemDataStruct* ItemData = ItemDataTable->FindRow<FNS_ItemDataStruct>(DesiredItemID, DesiredItemID.ToString());
 
-		ItemReference = NewObject<ANS_BaseItem>(this, BaseClass);
+		ReplicatedItemData = *ItemData;
+		ReplicatedItemData.Quantity = InQuantity > 0 ? InQuantity : 1;
+		OnRep_ReplicatedItemData();
+
+		ItemReference = NewObject<UNS_InventoryBaseItem>(this, BaseClass);
 
 		ItemReference->ItemType = ItemData->ItemType;
 		ItemReference->WeaponType = ItemData->WeaponType;
@@ -40,6 +54,7 @@ void APickup::InitializePickup(const TSubclassOf<ANS_BaseItem> BaseClass, const 
 		ItemReference->TextData = ItemData->ItemTextData;
 		ItemReference->NumericData = ItemData->ItemNumericData;
 		ItemReference->AssetData = ItemData->ItemAssetData;
+		ItemReference->ItemDataRowName = ItemData->ItemDataRowName;
 
 		InQuantity <= 0 ? ItemReference->SetQuantity(1) : ItemReference->SetQuantity(InQuantity);
 
@@ -49,12 +64,42 @@ void APickup::InitializePickup(const TSubclassOf<ANS_BaseItem> BaseClass, const 
 	}
 }
 
-void APickup::InitializeDrop(ANS_BaseItem* ItemToDrop, const int32 InQuantity)
+void APickup::InitializeDrop(UNS_InventoryBaseItem* ItemToDrop, const int32 InQuantity)
 {
 	ItemReference = ItemToDrop;
 	InQuantity <= 0 ? ItemReference->SetQuantity(1) : ItemReference->SetQuantity(InQuantity);
 	ItemReference->NumericData.Weight = ItemToDrop->GetItemSingleWeight();
 	PickupMesh->SetStaticMesh(ItemToDrop->AssetData.StaticMesh);
+
+	ReplicatedItemData.ItemDataRowName = ItemToDrop->ItemDataRowName;
+	ReplicatedItemData.ItemTextData = ItemToDrop->TextData;
+	ReplicatedItemData.ItemNumericData = ItemToDrop->NumericData;
+	ReplicatedItemData.ItemAssetData = ItemToDrop->AssetData;
+	ReplicatedItemData.WeaponData = ItemToDrop->WeaponData;
+	ReplicatedItemData.WeaponType = ItemToDrop->WeaponType;
+	ReplicatedItemData.ItemType = ItemToDrop->ItemType;
+
+	UpdateInteractableData();
+}
+
+void APickup::OnRep_ReplicatedItemData()
+{
+	if (!ItemReference)
+	{
+		ItemReference = NewObject<UNS_InventoryBaseItem>(this, UNS_InventoryBaseItem::StaticClass());
+	}
+
+	ItemReference->ItemDataRowName = ReplicatedItemData.ItemDataRowName;
+	ItemReference->ItemsDataTable = ItemDataTable;
+	ItemReference->TextData = ReplicatedItemData.ItemTextData;
+	ItemReference->NumericData = ReplicatedItemData.ItemNumericData;
+	ItemReference->AssetData = ReplicatedItemData.ItemAssetData;
+	ItemReference->WeaponData = ReplicatedItemData.WeaponData;
+	ItemReference->WeaponType = ReplicatedItemData.WeaponType;
+	ItemReference->ItemType = ReplicatedItemData.ItemType;
+	PickupMesh->SetStaticMesh(ReplicatedItemData.ItemAssetData.StaticMesh);
+
+	ItemReference->SetQuantity(ReplicatedItemData.Quantity);
 
 	UpdateInteractableData();
 }
@@ -84,16 +129,24 @@ void APickup::EndFocus()
 	}
 }
 
-void APickup::Interact(AActor* InteractingActor)
+void APickup::Interact_Implementation(AActor* InteractingActor)
 {
+	if (!HasAuthority())
+	{
+		Server_TakePickup(InteractingActor); // 클라에서 서버로 요청
+		return;
+	}
+
 	if (ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(InteractingActor))
 	{
-		TakePickup(PlayerCharacter);
+		TakePickup(PlayerCharacter); // 서버에서 처리
 	}
 }
 
 void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 {
+	if (!HasAuthority()) return;
+
 	if (!IsPendingKillPending())
 	{
 		if (ItemReference)
@@ -132,6 +185,14 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 	}
 }
 
+void APickup::Server_TakePickup_Implementation(AActor* InteractingActor)
+{
+	if (ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(InteractingActor))
+	{
+		TakePickup(PlayerCharacter);
+	}
+}
+
 void APickup::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
@@ -149,3 +210,10 @@ void APickup::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent
 		}
 	}
 }
+
+void APickup::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(APickup, ReplicatedItemData);
+}
+

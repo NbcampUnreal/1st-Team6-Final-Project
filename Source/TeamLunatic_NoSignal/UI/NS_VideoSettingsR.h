@@ -21,6 +21,11 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_VideoSettingsR : public UNS_MasterMenuPanel
 public:
 	virtual void NativeConstruct() override;
 
+	virtual void ShowWidget() override;
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void LoadVideoSetting();
+
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
 	UBorder* Backround;
 
@@ -65,5 +70,6 @@ public:
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
 	UNS_ScalerSettingR* BP_ScalerSetting_Shadows;
+
 
 };

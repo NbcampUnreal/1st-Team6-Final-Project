@@ -9,7 +9,7 @@
 #include "NS_TheSettingsWidget.generated.h"
 
 class UNS_MenuButtonWidget;
-class UNS_MainMenu;
+class UNS_BaseMainMenu;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UNS_TheSettingsWidget : public UNS_MasterMenuPanel
@@ -18,11 +18,11 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_TheSettingsWidget : public UNS_MasterMenuPane
 
 public:
 	virtual void NativeConstruct() override;
-	virtual void Init(UNS_MainMenu* NsMainMenu) override;
+	virtual void Init(UNS_BaseMainMenu* NsMainMenu) override;
 protected:
 
-	UPROPERTY(meta = (BindWidget))
-	UNS_MenuButtonWidget* BP_WidgetToggleButton_Game;
+	//UPROPERTY(meta = (BindWidget))
+	//UNS_MenuButtonWidget* BP_WidgetToggleButton_Game;
 
 	UPROPERTY(meta = (BindWidget))
 	UNS_MenuButtonWidget* BP_WidgetToggleButton_Video;
@@ -30,8 +30,8 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UNS_MenuButtonWidget* BP_WidgetToggleButton_Audio;
 
-	UPROPERTY(meta = (BindWidget))
-	UNS_MenuButtonWidget* BP_WidgetToggleButton_Controls;
+	//UPROPERTY(meta = (BindWidget))
+	//UNS_MenuButtonWidget* BP_WidgetToggleButton_Controls;
 
 	UPROPERTY(meta = (BindWidget))
 	UNS_MenuButtonWidget* BP_WidgetToggleButton_MainMenu;

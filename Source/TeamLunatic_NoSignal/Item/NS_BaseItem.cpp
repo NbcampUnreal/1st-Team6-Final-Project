@@ -70,7 +70,7 @@ void ANS_BaseItem::SetQuantity(const int32 NewQuantity)
 		{
 			if (Quantity <= 0)
 			{
-				OwingInventory->RemoveSingleInstanceOfItem(this);
+				//OwingInventory->RemoveSingleInstanceOfItem(this);
 			}
 		}
 	}

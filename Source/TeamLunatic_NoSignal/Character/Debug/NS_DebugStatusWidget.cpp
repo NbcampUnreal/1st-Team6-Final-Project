@@ -37,16 +37,16 @@ void UNS_DebugStatusWidget::NativeTick(const FGeometry& MyGeometry, float InDelt
 	// 배고픔
 	if (HungerBar)
 	{
-		HungerBar->SetPercent(StatusComp->Hunger / StatusComp->MaxHunger);
+		HungerBar->SetPercent(StatusComp->CurrentHunger / StatusComp->MaxHunger);
 	}
 	// 갈증
 	if (ThirstBar)
 	{
-		ThirstBar->SetPercent(StatusComp->Thirst / StatusComp->MaxThirst);
+		ThirstBar->SetPercent(StatusComp->CurrentThirst / StatusComp->MaxThirst);
 	}
 	// 졸림(피로)
 	if (FatigueBar)
 	{
-		FatigueBar->SetPercent(StatusComp->Fatigue / StatusComp->MaxFatigue);
+		FatigueBar->SetPercent(StatusComp->CurrentFatigue / StatusComp->MaxFatigue);
 	}
 }

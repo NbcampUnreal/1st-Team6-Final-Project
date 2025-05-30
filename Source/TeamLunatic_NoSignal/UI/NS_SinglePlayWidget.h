@@ -10,14 +10,14 @@
 
 //class UButton;
 class UNS_MenuButtonWidget;
-class UNS_MainMenu;
+class UNS_BaseMainMenu;
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UNS_SinglePlayWidget : public UNS_MasterMenuPanel
 {
 	GENERATED_BODY()
 public:
     virtual void NativeConstruct() override;
-    virtual void Init(UNS_MainMenu* NsMainMenu) override;
+    virtual void Init(UNS_BaseMainMenu* NsMainMenu) override;
 protected:
 
     UPROPERTY(meta = (BindWidget))

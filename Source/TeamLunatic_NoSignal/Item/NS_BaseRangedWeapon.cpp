@@ -21,14 +21,7 @@ void ANS_BaseRangedWeapon::BeginPlay()
 	Super::BeginPlay();
 
 	const FNS_ItemDataStruct* ItemData = GetItemData();
-
-	if (ItemData)
-	{
-		RangedWeaponMesh = ItemData->ItemAssetData.SkeletalMesh;
-	}
-
-	RangedWeaponMeshComp->SetSkeletalMesh(RangedWeaponMesh);
-
+	
 	InstanceInteractableData.Quantity = 1;
 
 	InteractableData = InstanceInteractableData;

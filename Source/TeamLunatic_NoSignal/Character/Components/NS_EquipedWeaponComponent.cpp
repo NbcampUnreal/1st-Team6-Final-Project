@@ -28,6 +28,8 @@ void UNS_EquipedWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProp
 	DOREPLIFETIME(UNS_EquipedWeaponComponent, IsReload); // 장전중인지 확인 변수
 	DOREPLIFETIME(UNS_EquipedWeaponComponent, IsEmpty); // 총알이 있는지 없는지 확인 변수
     DOREPLIFETIME(UNS_EquipedWeaponComponent, WeaponType); // 무기 타입 변수
+    DOREPLIFETIME(UNS_EquipedWeaponComponent, CurrentWeapon); // 현재 장착중인 무기 변수
+
 }
 
 void UNS_EquipedWeaponComponent::SwapWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass)
@@ -41,16 +43,27 @@ void UNS_EquipedWeaponComponent::ServerEquipWeapon_Implementation(TSubclassOf<AN
     MulticastEquipWeapon(WeaponClass);
 }
 
-
 void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf<ANS_BaseWeapon> WeaponClass)
 {
     // 기존 무기 제거
-    if (CurrentWeapon)
+    if (OwnerCharacter)
     {
-        CurrentWeapon->Destroy();
-        CurrentWeapon = nullptr;
-    }
+        TArray<AActor*> AttachedWeapons;
+        OwnerCharacter->GetAttachedActors(AttachedWeapons);
 
+        for (AActor* Attached : AttachedWeapons)
+        {
+            // 무기종류만
+            if (Attached->IsA<ANS_BaseWeapon>())
+            {
+                // 부모 컴포넌트에서 분리 (안정성 확보)
+                Attached->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+                // 월드에서 완전 제거
+                Attached->Destroy();
+            }
+        }
+    }
+    
     if (!WeaponClass || !OwnerCharacter) return;
 
     FActorSpawnParameters Params;
@@ -59,6 +72,7 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
 
     ANS_BaseWeapon* NewWpn = GetWorld()->SpawnActor<ANS_BaseWeapon>(
         WeaponClass, FVector::ZeroVector, FRotator::ZeroRotator, Params);
+
     if (!NewWpn) return;
 
     NewWpn->SetOwner(OwnerCharacter);
@@ -107,7 +121,6 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
 
     // 현재 무기 설정
     CurrentWeapon = NewWpn;
-    
     // 무기타입 갱신
     WeaponType = NewWpn->GetWeaponType();
 }
@@ -129,15 +142,16 @@ void UNS_EquipedWeaponComponent::StartAttack()
     }
 
 	// 무기 타입에 따라 공격 처리
-    if (CurrentWeapon->GetWeaponType() == EWeaponType::Ranged) // 원거리
+    if (CurrentWeapon->GetWeaponType() == EWeaponType::Ranged // 원거리
+        || CurrentWeapon->GetWeaponType() == EWeaponType::Pistol)
     {
-        // 현재 탄창 비어있음
+        // 현재 탄창 비어있으면 return
 		if (IsEmpty)
         {
             IsAttack = false;
             return;
         }
-
+        // 재장전 중이면 return
 		if (IsReload)
 		{
 			IsAttack = false;
@@ -145,7 +159,6 @@ void UNS_EquipedWeaponComponent::StartAttack()
 		}
 
 		IsAttack = true;
-
     }
     else if (CurrentWeapon->GetWeaponType() == EWeaponType::Melee)
     {

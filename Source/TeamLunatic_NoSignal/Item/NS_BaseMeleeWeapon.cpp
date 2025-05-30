@@ -19,15 +19,7 @@ void ANS_BaseMeleeWeapon::BeginPlay()
 	Super::BeginPlay();
 
 	const FNS_ItemDataStruct* ItemData = GetItemData();
-
-	if (ItemData)
-	{
-		ItemMesh = ItemData->ItemAssetData.StaticMesh;
-	}
-
-	ArmsMesh->SetStaticMesh(ItemMesh);
 	
-	ItemStaticMesh->SetStaticMesh(ItemMesh);
 
 	InstanceInteractableData.Quantity = 1;
 

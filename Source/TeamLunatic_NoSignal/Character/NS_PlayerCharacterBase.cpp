@@ -7,6 +7,7 @@
 #include "Inventory/InventoryComponent.h"
 #include "Components/NS_EquipedWeaponComponent.h"
 #include "Character/Components/NS_StatusComponent.h"
+#include "Item/NS_BaseRangedWeapon.h"
 #include "Interaction/Component/InteractionComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "World/Pickup.h"
@@ -16,7 +17,10 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
 {
     PrimaryActorTick.bCanEverTick = true;
 
+    bReplicates = true;
+
     DefaultWalkSpeed = 500.f;
+
     SprintSpeedMultiplier = 1.5f;
 
     // 카메라 설정
@@ -32,7 +36,7 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     FirstPersonArms->SetOnlyOwnerSee(true); // 플레이어 본인만 보이게 설정 (다른클라이언트는 안보이게)
     
     // 캐릭터 회전 및 이동 방향 설정
-    // bUseControllerRotationYaw는 Tick 함수에서 동적으로 제어될 것입니다.
+    // bUseControllerRotationYaw는 AnimInstance에서 이동여부에따라 이동중이면 true 이동중이 아니면 false로 설정되고있음
     bUseControllerRotationYaw = false; // 초기값은 false로 설정
     GetCharacterMovement()->bOrientRotationToMovement = false;
     GetCharacterMovement()->bUseControllerDesiredRotation = false;
@@ -46,11 +50,12 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     BaseEyeHeight = 74.0f;
     // 인벤토리
     PlayerInventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("PlayerInventory"));
+    SetReplicates(true);
     PlayerInventory->SetSlotsCapacity(20);
     PlayerInventory->SetWeightCapacity(50.0f);
 }
 
-void ANS_PlayerCharacterBase::DropItem(ANS_BaseItem* ItemToDrop, const int32 QuantityToDrop)
+void ANS_PlayerCharacterBase::DropItem_Server_Implementation(UNS_InventoryBaseItem* ItemToDrop, int32 QuantityToDrop)
 {
     if (PlayerInventory->FindMatchingItem(ItemToDrop))
     {
@@ -72,6 +77,31 @@ void ANS_PlayerCharacterBase::DropItem(ANS_BaseItem* ItemToDrop, const int32 Qua
     else
     {
         UE_LOG(LogTemp, Warning, TEXT("Item to drop was somehow null"));
+    }
+}
+
+void ANS_PlayerCharacterBase::DropItem(UNS_InventoryBaseItem* ItemToDrop, const int32 QuantityToDrop)
+{
+    if (HasAuthority())
+    {
+        DropItem_Server(ItemToDrop, QuantityToDrop);
+    }
+    else
+    {
+        DropItem_Server(ItemToDrop, QuantityToDrop); // 클라에서 서버로 요청
+    }
+}
+
+void ANS_PlayerCharacterBase::Client_NotifyInventoryUpdated_Implementation()
+{
+    if (PlayerInventory)
+    {
+        FTimerHandle DelayHandle;
+        GetWorldTimerManager().SetTimer(DelayHandle, FTimerDelegate::CreateLambda([this]()
+            {
+                PlayerInventory->OnInventoryUpdated.Broadcast();
+                UE_LOG(LogTemp, Warning, TEXT("Client_NotifyInventoryUpdated - Inventory 갱신 (지연 호출)"));
+            }), 0.05f, false);
     }
 }
 
@@ -117,7 +147,6 @@ void ANS_PlayerCharacterBase::BeginPlay()
 void ANS_PlayerCharacterBase::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-    
 }
 
 void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -270,13 +299,15 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
 void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsKick);
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsSprint);
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsPickUp);
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsHit);
-    DOREPLIFETIME(ANS_PlayerCharacterBase, CamYaw);
-    DOREPLIFETIME(ANS_PlayerCharacterBase, CamPitch);
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsAiming);
+
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsKick);    // 발차기 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsSprint);  // 달리기 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsPickUp);  // 아이템줍기 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsHit);     // 맞는지 확인 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, CamYaw);    // 카메라 좌/우 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, CamPitch);  // 카메라 상/하 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsAiming);  // 조준중인지 확인 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, PlayerInventory);
 }
 
 void ANS_PlayerCharacterBase::SetMovementLockState_Server_Implementation(bool bLock)
@@ -307,7 +338,7 @@ float ANS_PlayerCharacterBase::TakeDamage(
         return ActualDamage;
 
     // 캐릭터 체력 감소
-    StatusComp->ChangeHealthGauge(-ActualDamage);
+    StatusComp->AddHealthGauge(-ActualDamage);
 
     IsHit = true;
     
@@ -405,14 +436,14 @@ void ANS_PlayerCharacterBase::StartSprint_Server_Implementation(const FInputActi
 {
     IsSprint = true; 
     if (GetCharacterMovement()) 
-        GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier; 
+        GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier * SpeedMultiAtStat; 
 }
 
 void ANS_PlayerCharacterBase::StopSprint_Server_Implementation(const FInputActionValue& Value)
 {
     IsSprint = false; 
     if (GetCharacterMovement()) 
-        GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed; 
+        GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SpeedMultiAtStat;
 }
 
 void ANS_PlayerCharacterBase::KickAction_Server_Implementation(const FInputActionValue& Value)
@@ -461,7 +492,8 @@ void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputAct
 
 void ANS_PlayerCharacterBase::StartAimingAction_Server_Implementation(const FInputActionValue& Value)
 {
-    IsAiming = true; 
+    if(IsAvaliableAiming)
+        IsAiming = true; 
 }
 
 
@@ -506,4 +538,25 @@ void ANS_PlayerCharacterBase::UpdateAim_Server_Implementation(float NewCamYaw, f
 void ANS_PlayerCharacterBase::SwapWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass)
 {
     EquipedWeaponComp->SwapWeapon(WeaponClass); 
+}
+
+void ANS_PlayerCharacterBase::AddWeightInventory(float Weight)
+{
+	if (PlayerInventory)
+	{
+        //TODO: 인벤토리에 추가무게 넣기
+		//PlayerInventory->AddWeightCapacity(Weight);
+	}
+}
+
+void ANS_PlayerCharacterBase::AddSearchTime(float Multiple)
+{
+    //TODO: 아이템 찾기의 수색시간 증감(배율)
+	//??->AddSerachTime(Multiple)
+}
+
+void ANS_PlayerCharacterBase::AddCraftingSpeed(float Multiple)
+{
+	//TODO: 아이템 제작의 속도 증감(배율)
+	//??->AddCraftingSpeed(Multiple);
 }
