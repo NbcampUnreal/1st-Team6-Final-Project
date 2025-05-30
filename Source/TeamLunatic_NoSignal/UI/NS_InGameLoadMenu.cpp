@@ -11,6 +11,8 @@
 #include "Components/TextBlock.h"
 #include "GameFlow/NS_GameInstance.h"
 #include "UI/NS_SaveLoadHelper.h"
+#include "GameFlow/NS_GameInstance.h"
+#include "UI/NS_UIManager.h"
 
 UNS_InGameLoadMenu::UNS_InGameLoadMenu(const FObjectInitializer& ObjectInitializer)
 {
@@ -83,6 +85,11 @@ void UNS_InGameLoadMenu::StartGame()
         GI->SetGameModeType(EGameModeType::SinglePlayMode);
 
         UGameplayStatics::OpenLevel(this, FName(*LevelName));
+    }
+    if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
+    {
+        if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
+            UIManager->HideInGameMenuWidget(GetWorld());
     }
 }
 void UNS_InGameLoadMenu::OnClickedDeleteSlot(UNS_LoadGameMenuPanel* ChidPanel)
