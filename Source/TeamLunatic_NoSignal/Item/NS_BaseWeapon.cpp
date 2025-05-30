@@ -17,6 +17,7 @@ void ANS_BaseWeapon::BeginPlay()
 
 	if (ItemData)
 	{
+		Damage = ItemData->WeaponData.Damage;
 		WeaponType = ItemData->WeaponType;
 		Durability = ItemData->WeaponData.Durability;
 		Current_Durability = Durability;
