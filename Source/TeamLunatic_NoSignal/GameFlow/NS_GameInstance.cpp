@@ -47,37 +47,40 @@ void UNS_GameInstance::OnCreateSessionResponse(FHttpRequestPtr Request, FHttpRes
 {
 	if (!bWasSuccessful || !Response.IsValid())
 	{
-		UE_LOG(LogTemp, Error, TEXT("[OnCreateSessionResponse] HTTP request failed"));
+		UE_LOG(LogTemp, Error, TEXT("[OnCreateSessionResponse] HTTP 요청 실패"));
 		return;
 	}
 
+	// 1. HTTP 응답 문자열 얻기
 	FString ResponseString = Response->GetContentAsString();
 	UE_LOG(LogTemp, Log, TEXT("[OnCreateSessionResponse] HTTP Response: %s"), *ResponseString);
 
+	// 2. JSON 파싱
 	TSharedPtr<FJsonObject> JsonObject;
 	TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(ResponseString);
-
-	if (FJsonSerializer::Deserialize(Reader, JsonObject) && JsonObject.IsValid())
+	if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
 	{
-		FString Ip = JsonObject->GetStringField("ip");
-		int32 Port = JsonObject->GetIntegerField("port");
+		UE_LOG(LogTemp, Error, TEXT("[OnCreateSessionResponse] JSON 파싱 실패: %s"), *ResponseString);
+		return;
+	}
 
-		FString Address = FString::Printf(TEXT("%s:%d"), *Ip, Port);
-		UE_LOG(LogTemp, Log, TEXT("[OnCreateSessionResponse] Parsed IP: %s, Port: %d"), *Ip, Port);
-		UE_LOG(LogTemp, Display, TEXT("[OnCreateSessionResponse] ClientTravel to %s"), *Address);
+	// 3. ip, port 읽어서 "ip:port" 형태로 조합
+	FString Ip = JsonObject->GetStringField("ip");
+	int32   Port = JsonObject->GetIntegerField("port");
+	FString Address = FString::Printf(TEXT("%s:%d"), *Ip, Port);
+	UE_LOG(LogTemp, Log, TEXT("[OnCreateSessionResponse] 접속 주소: %s"), *Address);
 
-		if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+	// 4. PlayerController로 ClientTravel 호출
+	if (UWorld* World = GetWorld())
+	{
+		if (APlayerController* PC = UGameplayStatics::GetPlayerController(World, 0))
 		{
-			PC->ClientTravel(Address, TRAVEL_Absolute);
+			PC->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("[OnCreateSessionResponse] Failed to get PlayerController"));
+			UE_LOG(LogTemp, Error, TEXT("[OnCreateSessionResponse] PlayerController 획득 실패"));
 		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("[OnCreateSessionResponse] Failed to parse HTTP response: %s"), *ResponseString);
 	}
 }
 

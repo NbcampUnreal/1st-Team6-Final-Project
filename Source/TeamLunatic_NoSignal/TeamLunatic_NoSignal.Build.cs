@@ -16,10 +16,10 @@ public class TeamLunatic_NoSignal : ModuleRules
     "JsonUtilities",
     "Networking"});
 
-        if (Target.Platform == UnrealTargetPlatform.Win64)
-        {
-            DynamicallyLoadedModuleNames.Add("OnlineSubsystemSteam");
-        }
+        //if (Target.Platform == UnrealTargetPlatform.Win64)
+        //{
+        //    DynamicallyLoadedModuleNames.Add("OnlineSubsystemSteam");
+        //}
 
         PublicIncludePaths.AddRange(new string[] { "TeamLunatic_NoSignal" });
     }
