@@ -2,9 +2,12 @@
 
 
 #include "Zombie/BT/Task/NS_BTTask_SetZombieState.h"
+
+#include "MaterialHLSLTree.h"
+#include "BehaviorTree/BlackboardComponent.h"
 #include "Zombie/NS_ZombieBase.h"
 
-UNS_BTTask_SetZombieState::UNS_BTTask_SetZombieState() : NewState(Enum_ZombieState::PATROLL)
+UNS_BTTask_SetZombieState::UNS_BTTask_SetZombieState() : NewState(EZombieState::PATROLL)
 {
 }
 
@@ -14,8 +17,9 @@ EBTNodeResult::Type UNS_BTTask_SetZombieState::ExecuteTask(UBehaviorTreeComponen
 	if (AIController == nullptr) return EBTNodeResult::Failed;
 	ANS_ZombieBase* Zombie = Cast<ANS_ZombieBase>(AIController->GetPawn());
 	if (Zombie == nullptr) return EBTNodeResult::Failed;
-
-	Zombie->SetState(NewState);
 	
+	EZombieAttackType AttackType = static_cast<EZombieAttackType>(AIController->GetBlackboardComponent()->GetValueAsEnum("AttackType"));
+	Zombie->SetAttackType(AttackType);
+	Zombie->SetState(NewState);
 	return EBTNodeResult::Succeeded;
 }

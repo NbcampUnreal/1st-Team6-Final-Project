@@ -59,11 +59,12 @@ void ANS_AIController::HandleSightStimulus()
 	if (Actor)
 	{
 		BlackboardComp->SetValueAsObject("TargetActor", Actor);
+		bIsDetect = true;
 	}
 	else
 	{
 		BlackboardComp->ClearValue("TargetActor");
-		BlackboardComp->ClearValue("bIsDetecting");
+		bIsDetect = false;
 	}
 }
 
@@ -76,7 +77,6 @@ void ANS_AIController::HandleDamageStimulus(AActor* Attacker)
 {
 	BlackboardComp->SetValueAsObject("TargetActor", Attacker);
 }
-
 
 AActor* ANS_AIController::GetClosestSightTarget()
 {
