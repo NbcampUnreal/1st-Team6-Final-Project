@@ -32,13 +32,13 @@ public:
 	FOnCreateSessionSuccess OnCreateSessionSuccess;
 	void SetGameModeType(EGameModeType Type);
 	EGameModeType GetGameModeType() const { return GameModeType; }
-	void CreateDedicatedSessionViaHTTP(FName SessionName, bool bIsLAN, int32 MaxPlayers);
+	void CreateDedicatedSessionViaHTTP(FName SessionName, int32 MaxPlayers);
 	void OnCreateSessionResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 
 	UPROPERTY(EditAnywhere, Category = "Level")
 	TSoftObjectPtr<UWorld> WaitingRoom;
 
-	void FindSessions(bool bIsLAN);
+	void FindSessions();
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnSessionSearchSuccess, const TArray<FOnlineSessionSearchResult>&);
 	FOnSessionSearchSuccess OnSessionSearchSuccess;
 

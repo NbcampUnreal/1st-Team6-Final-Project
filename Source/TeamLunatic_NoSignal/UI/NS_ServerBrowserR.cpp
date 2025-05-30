@@ -19,18 +19,11 @@ void UNS_ServerBrowserR::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-    if (CheckBox_UseLAN)
-        CheckBox_UseLAN->OnCheckStateChanged.AddDynamic(this, &UNS_ServerBrowserR::OnUseLANCheckChanged);
 
     if (RefreshButton)
         RefreshButton->OnClicked.AddDynamic(this, &UNS_ServerBrowserR::OnRefreshButtonClicked);
 
     RefreshServerList(); // 최초 자동 로드
-}
-
-void UNS_ServerBrowserR::OnUseLANCheckChanged(bool bIsChecked)
-{
-    bUseLAN = bIsChecked;
 }
 
 void UNS_ServerBrowserR::OnRefreshButtonClicked()
@@ -109,7 +102,7 @@ void UNS_ServerBrowserR::RefreshServerList()
             });
 
 
-            NSGI->FindSessions(bUseLAN);
+            NSGI->FindSessions();
         }
     }
 }

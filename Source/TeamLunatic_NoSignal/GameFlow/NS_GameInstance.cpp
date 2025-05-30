@@ -38,10 +38,10 @@ void UNS_GameInstance::SetGameModeType(EGameModeType Type)
 	UE_LOG(LogTemp, Log, TEXT("[GameInstance] GameModeType set to %s"), *UEnum::GetValueAsString(Type));
 }
 
-void UNS_GameInstance::CreateDedicatedSessionViaHTTP(FName SessionName, bool bIsLAN, int32 MaxPlayers)
+void UNS_GameInstance::CreateDedicatedSessionViaHTTP(FName SessionName,int32 MaxPlayers)
 {
-	UE_LOG(LogTemp, Log, TEXT("[CreateDedicatedSessionViaHTTP] Sending HTTP POST: name=%s, is_lan=%d, max_players=%d"),
-		*SessionName.ToString(), bIsLAN, MaxPlayers);
+	UE_LOG(LogTemp, Log, TEXT("[CreateDedicatedSessionViaHTTP] Sending HTTP POST: name=%s, max_players=%d"),
+		*SessionName.ToString(), MaxPlayers);
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
 	Request->SetURL(TEXT("http://54.253.222.52:5000/create_session"));
@@ -50,7 +50,6 @@ void UNS_GameInstance::CreateDedicatedSessionViaHTTP(FName SessionName, bool bIs
 
 	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
 	JsonObject->SetStringField("name", SessionName.ToString());
-	JsonObject->SetBoolField("is_lan", bIsLAN);
 	JsonObject->SetNumberField("max_players", MaxPlayers);
 
 	FString RequestBody;
@@ -103,7 +102,7 @@ void UNS_GameInstance::OnCreateSessionResponse(FHttpRequestPtr Request, FHttpRes
 	}
 }
 
-void UNS_GameInstance::FindSessions(bool bIsLAN)
+void UNS_GameInstance::FindSessions()
 {
 	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
 	if (!Subsystem) return;
@@ -112,11 +111,8 @@ void UNS_GameInstance::FindSessions(bool bIsLAN)
 	if (!Sessions.IsValid()) return;
 
 	SessionSearch = MakeShareable(new FOnlineSessionSearch());
-	SessionSearch->bIsLanQuery = bIsLAN;
 	SessionSearch->MaxSearchResults = 100;
 	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
-
-	UE_LOG(LogTemp, Log, TEXT("[FindSessions] Searching for sessions... LAN: %d"), bIsLAN);
 
 	Sessions->OnFindSessionsCompleteDelegates.AddUObject(this, &UNS_GameInstance::OnFindSessionsComplete);
 	Sessions->FindSessions(0, SessionSearch.ToSharedRef());

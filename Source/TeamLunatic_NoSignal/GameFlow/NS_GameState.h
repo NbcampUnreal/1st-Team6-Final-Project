@@ -2,25 +2,34 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameStateBase.h"
-#include "Engine/DirectionalLight.h"
 #include "NS_GameState.generated.h"
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_GameState : public AGameStateBase
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
-	virtual void Tick(float DeltaTime) override;
-	virtual void BeginPlay() override;
-	ANS_GameState();
-protected:
-	UPROPERTY(VisibleAnywhere, Category = "DayNight")
-	ADirectionalLight* DirectionalLight = nullptr;
+    ANS_GameState();
 
-	UPROPERTY(EditAnywhere, Category = "DayNight")
-	float RotationSpeedDegreesPerSec = 6.0f; // 
+    // 현재 밤 상태 (서버에서 계산, 클라이언트에 복제)
+    UPROPERTY(ReplicatedUsing = OnRep_IsNight, BlueprintReadOnly, Category = "Time")
+    bool bIsNight;
+
+    // 현재 게임 시간 (0.0 ~ 24.0 기준)
+    UPROPERTY(BlueprintReadOnly, Category = "Time")
+    float TimeOfDay;
+
+    // Tick으로 시간 추적
+    virtual void Tick(float DeltaSeconds) override;
+    virtual bool ShouldTickIfViewportsOnly() const override { return true; }
+
+protected:
+    UFUNCTION()
+    void OnRep_IsNight();
+
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
-	float TimeAccumulator = 0.0f;
+    void UpdateTimeFromDaySequence();
 };
