@@ -15,8 +15,6 @@ class UNS_InventoryBaseItem;
 class UInventoryComponent;
 class UNS_EquipedWeaponComponent;
 
-
-
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
 {
