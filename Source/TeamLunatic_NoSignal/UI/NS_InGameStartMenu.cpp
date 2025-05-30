@@ -111,6 +111,12 @@ void UNS_InGameStartMenu::On_MainMenuClicked()
         }
     }
     UGameplayStatics::OpenLevel(GetWorld(), FName(TEXT("MainTitle")));//MenuMap / MainTitle
+
+    if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
+    {
+        if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
+            UIManager->HideInGameMenuWidget(GetWorld());
+    }
 }
 
 void UNS_InGameStartMenu::OnDisconnectClicked()
