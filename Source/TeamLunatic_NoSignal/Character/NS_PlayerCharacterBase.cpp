@@ -513,8 +513,7 @@ void ANS_PlayerCharacterBase::AddWeightInventory(float Weight)
 {
 	if (PlayerInventory)
 	{
-        //TODO: 인벤토리에 추가무게 넣기
-		//PlayerInventory->AddWeightCapacity(Weight);
+		PlayerInventory->AddWeightCapacity(Weight);
 	}
 }
 

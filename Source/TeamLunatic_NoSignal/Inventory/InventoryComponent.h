@@ -104,7 +104,17 @@ public:
 	UFUNCTION(Category = "Inventory")
 	FORCEINLINE void SetSlotsCapacity(const int32 NewSlotsCapacity) { InventorySlotsCapacity = NewSlotsCapacity; };
 	UFUNCTION(Category = "Inventory")
-	FORCEINLINE void SetWeightCapacity(const float NewWeightCapacity) { InventoryWeightCapacity = NewWeightCapacity; };
+	FORCEINLINE void SetWeightCapacity(const float NewWeightCapacity)
+	{ 
+		DefaultWeightCapacity = NewWeightCapacity;
+		InventoryWeightCapacity = DefaultWeightCapacity; 
+	};
+	
+	UFUNCTION(Category = "Inventory")
+	FORCEINLINE float AddWeightCapacity(const float AddWeight)
+	{
+		InventoryWeightCapacity = DefaultWeightCapacity + AddWeight;
+	}
 
 protected:
 	virtual void BeginPlay() override;
@@ -115,6 +125,9 @@ protected:
 	int32 InventorySlotsCapacity;
 	UPROPERTY(EditInstanceOnly, Category = "Inventory")
 	float InventoryWeightCapacity;
+
+	UPROPERTY(EditInstanceOnly, Category = "Inventory")
+	float DefaultWeightCapacity; // 기본 무게 용량
 
 	UPROPERTY(VisibleAnywhere, Category = "Inventory")
 	TArray<TObjectPtr<ANS_BaseItem>> InventoryContents;
