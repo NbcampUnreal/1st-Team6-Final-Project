@@ -16,5 +16,4 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_BTTask_Attack : public UBTTaskNode
 	UNS_BTTask_Attack();
 public:
 	// EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& Comp);
-	// EBTNodeResult::Type FinishTask(UBehaviorTreeComponent& Comp);
 };

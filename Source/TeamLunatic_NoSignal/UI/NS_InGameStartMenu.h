@@ -7,6 +7,7 @@
 #include "UI/NS_CommonType.h"
 #include "NS_InGameStartMenu.generated.h"
 
+
 class UNS_MenuButtonWidget;
 
 UCLASS()

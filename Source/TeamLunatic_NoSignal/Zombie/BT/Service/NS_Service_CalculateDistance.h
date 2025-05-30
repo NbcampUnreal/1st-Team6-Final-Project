@@ -6,6 +6,7 @@
 #include "BehaviorTree/BTService.h"
 #include "NS_Service_CalculateDistance.generated.h"
 
+enum class EZombieAttackType : uint8;
 /**
  * 
  */
@@ -17,7 +18,7 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_Service_CalculateDistance : public UBTService
 protected:
 	UPROPERTY(EditAnywhere)
 	float Distance;
-	
+	EZombieAttackType NewAttackType;
 public:
 	virtual void TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
 };

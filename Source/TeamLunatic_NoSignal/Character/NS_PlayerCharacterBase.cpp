@@ -36,7 +36,7 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     FirstPersonArms->SetOnlyOwnerSee(true); // 플레이어 본인만 보이게 설정 (다른클라이언트는 안보이게)
     
     // 캐릭터 회전 및 이동 방향 설정
-    // bUseControllerRotationYaw는 Tick 함수에서 동적으로 제어될 것입니다.
+    // bUseControllerRotationYaw는 AnimInstance에서 이동여부에따라 이동중이면 true 이동중이 아니면 false로 설정되고있음
     bUseControllerRotationYaw = false; // 초기값은 false로 설정
     GetCharacterMovement()->bOrientRotationToMovement = false;
     GetCharacterMovement()->bUseControllerDesiredRotation = false;
