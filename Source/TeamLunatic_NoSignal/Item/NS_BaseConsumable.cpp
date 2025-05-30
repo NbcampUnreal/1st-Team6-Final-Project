@@ -12,7 +12,6 @@ ANS_BaseConsumable::ANS_BaseConsumable()
 	SetReplicatingMovement(true);
 
 	ItemStaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemMesh"));
-	RootComponent = ItemStaticMesh;
 }
 
 void ANS_BaseConsumable::BeginPlay()
@@ -38,8 +37,7 @@ void ANS_BaseConsumable::Consume()
 {
 	Currentstack--;
 
-
-
+	PlayUseEffectSound();
 }
 
 void ANS_BaseConsumable::OnUseItem()
@@ -54,10 +52,22 @@ void ANS_BaseConsumable::OnUseItem()
 
 void ANS_BaseConsumable::AddItem(int32 Amount)
 {
+	if (Currentstack >= Maxstack)
+	{
+		return;
+	}
+
+	Currentstack += Amount;
 }
 
 void ANS_BaseConsumable::RemoveStack(int32 Amount)
 {
+	if (Currentstack <= 0)
+	{
+		return;
+	}
+
+	Currentstack -= Amount;
 }
 
 void ANS_BaseConsumable::PlayUseEffectSound()
@@ -65,5 +75,18 @@ void ANS_BaseConsumable::PlayUseEffectSound()
 	if (UseSound)
 	{
 		UGameplayStatics::PlaySound2D(this, UseSound);
+	}
+
+	if (UseEffect)
+	{
+		APawn* OwnerPawn = Cast<APawn>(GetOwner());
+		if (OwnerPawn)
+		{
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+				GetWorld(),
+				UseEffect,
+				OwnerPawn->GetActorLocation()
+			);
+		}
 	}
 }
