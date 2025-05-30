@@ -7,7 +7,7 @@ enum class EWeaponType : uint8
 {
 	Unarmed UMETA(DisplayName = "Unarmed"),
 	Melee UMETA(DisplayName = "Knife"),
-	Pistol UMETA(DisplayName = "P1191"),
+	Pistol UMETA(DisplayName = "P1911"),
 	Ranged UMETA(DisplayName = "M4A4"),
 	Ammo UMETA(DisplayName = "Ammo"),
 };
