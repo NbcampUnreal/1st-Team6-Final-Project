@@ -21,7 +21,7 @@ ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), C
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->bUseRVOAvoidance = true;
 	GetCharacterMovement()->AvoidanceConsiderationRadius = 100.f;
-	GetCharacterMovement()->RotationRate = FRotator(0.0f, 360.0f, 0.0f);
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, 36.0f, 0.0f);
 	
 	GetMesh()->SetRelativeLocation(FVector(0.f,0.f,-90.f));
 	GetMesh()->SetRelativeRotation(FRotator(0.f,-90.f,0.f));
