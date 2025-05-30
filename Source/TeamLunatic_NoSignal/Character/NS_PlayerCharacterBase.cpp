@@ -1,5 +1,4 @@
 #include "Character/NS_PlayerCharacterBase.h"
-#include "Character/Debug/NS_DebugStatusWidget.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.H"
 #include "Camera/CameraComponent.h"
@@ -115,19 +114,6 @@ void ANS_PlayerCharacterBase::BeginPlay()
         FirstPersonArms->SetOnlyOwnerSee(true);  // 팔 메시만 본인(플레이어)이 보이게
     }
     
-    // 디버그 위젯 생성 ======================== 차후 삭제필요
-    if (DebugWidgetClass && Controller)
-    {
-        if (APlayerController* PC = Cast<APlayerController>(Controller))
-        {
-            DebugWidgetInstance = CreateWidget<UNS_DebugStatusWidget>(PC, DebugWidgetClass);
-            if (DebugWidgetInstance)
-            {
-                DebugWidgetInstance->AddToViewport();
-            }
-        }
-    }
-
     // 입력 매핑 컨텍스트 등록
     if (APlayerController* PC = Cast<APlayerController>(Controller))
     {
