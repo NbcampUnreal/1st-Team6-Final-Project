@@ -15,14 +15,21 @@
 
 DECLARE_MULTICAST_DELEGATE(FOnCreateSessionSuccess);
 
+class UNS_UIManager;
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UNS_GameInstance : public UGameInstance
 {
 	GENERATED_BODY()
 
 public:
-	FOnCreateSessionSuccess OnCreateSessionSuccess;
+	UNS_GameInstance();
+	virtual void Init() override;
 
+	UFUNCTION(BlueprintCallable, Category = "UI")
+	UNS_UIManager* GetUIManager() const { return NS_UIManager; };
+
+	// == 세션 생성 담당 부분들 == 
+	FOnCreateSessionSuccess OnCreateSessionSuccess;
 	void SetGameModeType(EGameModeType Type);
 	EGameModeType GetGameModeType() const { return GameModeType; }
 	void CreateDedicatedSessionViaHTTP(FName SessionName, bool bIsLAN, int32 MaxPlayers);
@@ -39,6 +46,11 @@ public:
 	void JoinSession(const FOnlineSessionSearchResult& SessionResult);
 	FOnJoinSessionComplete OnJoinSessionComplete;
 
+	UPROPERTY()
+	UNS_UIManager* NS_UIManager;
+	UPROPERTY()
+	TSubclassOf<UNS_UIManager> UIManagerClass;
+	bool bIsSinglePlayer = true;
 private:
 	EGameModeType GameModeType = EGameModeType::SinglePlayMode;
 

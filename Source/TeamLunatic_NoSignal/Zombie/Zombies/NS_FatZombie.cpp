@@ -1,0 +1,42 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "Zombie/Zombies/NS_FatZombie.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Zombie/Enum/EZombieState.h"
+#include "Zombie/Enum/EZombieType.h"
+
+ANS_FatZombie::ANS_FatZombie()
+{
+	ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshAsset(TEXT("/Game/Infected_Zombie_Bundle/Infected_Zombie/Mesh/SK_Infected_zombie"));
+	if (MeshAsset.Succeeded())
+	{
+		GetMesh()->SetSkeletalMesh(MeshAsset.Object);
+	}
+	MaxHealth = 200.f;
+	CurrentHealth = MaxHealth;
+	BaseDamage = 40.f;
+	ZombieType = EZombieType::FAT;
+}
+
+void ANS_FatZombie::OnStateChanged(EZombieState NewState)
+{
+	switch (NewState)
+	{
+	case EZombieState::DEAD:
+	case EZombieState::IDLE:
+	case EZombieState::DETECTING:
+	case EZombieState::PUSHED:
+		TargetSpeed = 0.f;
+		break;
+	case EZombieState::PATROLL:
+		TargetSpeed = 20.f;
+		break;
+	case EZombieState::CHACING:
+	case EZombieState::ATTACK:
+		TargetSpeed = 70.f;
+		break;
+	default:
+		break;
+	}
+}

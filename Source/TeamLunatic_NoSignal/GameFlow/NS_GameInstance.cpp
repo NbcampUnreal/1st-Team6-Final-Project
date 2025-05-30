@@ -12,6 +12,25 @@
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonReader.h"
+#include "UI/NS_UIManager.h"
+
+UNS_GameInstance::UNS_GameInstance()
+{
+	static ConstructorHelpers::FClassFinder<UNS_UIManager> BP_UIManager(TEXT("/Game/UI/Blueprints/BP_NS_UIManager.BP_NS_UIManager_C"));
+	if (BP_UIManager.Succeeded())
+		UIManagerClass = BP_UIManager.Class;
+}
+void UNS_GameInstance::Init()
+{
+	Super::Init();
+
+	if (UIManagerClass)
+	{
+		NS_UIManager = NewObject<UNS_UIManager>(this, UIManagerClass);
+		NS_UIManager->InitUi(GetWorld());
+	}
+}
+
 
 void UNS_GameInstance::SetGameModeType(EGameModeType Type)
 {

@@ -5,13 +5,14 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "UI/NS_CommonType.h"
+#include "UI/NS_BaseMainMenu.h"
 #include "NS_MainMenu.generated.h"
 
 class UUserWidget;
 class UNS_MasterMenuPanel;
 
 UCLASS()
-class TEAMLUNATIC_NOSIGNAL_API UNS_MainMenu : public UUserWidget
+class TEAMLUNATIC_NOSIGNAL_API UNS_MainMenu : public UNS_BaseMainMenu//UUserWidget
 {
 	GENERATED_BODY()
 public:
@@ -25,20 +26,18 @@ public:
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* ShowL;
 
-	UFUNCTION(BlueprintCallable, Category = "Animation")
-	void PlayAnimationShowR();
-	UFUNCTION(BlueprintCallable, Category = "Animation")
-	void PlayAnimationShowL();
+	virtual void PlayAnimationShowR() override;
+	virtual void PlayAnimationShowL() override;
 
 
-	UFUNCTION(BlueprintCallable, Category = "Widget")
-	void SelectWidget(EWidgetToggleType ToggleType);
+	//UFUNCTION(BlueprintCallable, Category = "Widget")
+	//void SelectWidget(EWidgetToggleType ToggleType); //안쓰임 지울것!!
 
-	UNS_MasterMenuPanel* GetWidget(EWidgetToggleType ToggleType);
+	//UNS_MasterMenuPanel* GetWidget(EWidgetToggleType ToggleType);
 
-	void QuitNSGame();
+	//void QuitNSGame();
 
 private:
 	//UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Widget")
-	TMap<EWidgetToggleType, UNS_MasterMenuPanel*> WidgetMap;
+	//TMap<EWidgetToggleType, UNS_MasterMenuPanel*> WidgetMap;
 };

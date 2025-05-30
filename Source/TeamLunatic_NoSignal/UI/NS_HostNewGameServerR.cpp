@@ -67,7 +67,7 @@ void UNS_HostNewGameServerR::StartGame()
     FName SessionName = FName(*SlotName);
 
     // 3. 최대 접속 인원
-    int32 MaxPlayers = FCString::Atoi(*EditableTextBox_MaxPlayers->GetText().ToString());
+    int32 MaxPlayers = FCString::Atoi(*ComboBoxString->GetSelectedOption());
 
     // 4. 세션 생성 요청
     if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
@@ -75,7 +75,7 @@ void UNS_HostNewGameServerR::StartGame()
         // CreateSession 성공 시 호출되는 델리게이트 바인딩먼저해야  CreateSession 성공하면 broadcast되서 lamda가 호출됨.
         GI->OnCreateSessionSuccess.AddLambda([this, SelectedLevelName, SlotName, PlayerData, LevelData, GI]()
             {
-                UGameplayStatics::OpenLevel(this, FName(*SelectedLevelName), true);
+               // UGameplayStatics::OpenLevel(this, FName(*SelectedLevelName), true);
 
                 GI->SetGameModeType(EGameModeType::MultiPlayMode); // 게임 모드 타입 설정
 
@@ -92,6 +92,9 @@ void UNS_HostNewGameServerR::StartGame()
 }
 void UNS_HostNewGameServerR::OnCreateServerButtonClicked()
 {
+    StartGame();
+    if(1)return;
+
     const FString SlotName = GetSaveSlotName();
 
     if (NS_SaveLoadHelper::FindExistingSave(SlotName))

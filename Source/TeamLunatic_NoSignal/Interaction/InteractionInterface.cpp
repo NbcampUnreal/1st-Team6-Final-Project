@@ -21,6 +21,3 @@ void IInteractionInterface::EndInteract()
 {
 }
 
-void IInteractionInterface::Interact(AActor* InteractingActor)
-{
-}

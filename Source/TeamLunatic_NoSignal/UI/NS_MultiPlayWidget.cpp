@@ -7,7 +7,7 @@
 #include "UI/TempGameInstance.h"
 #include "UI/NS_UIManager.h"
 #include "UI/NS_CommonType.h"
-#include "UI/NS_MainMenu.h"
+#include "UI/NS_BaseMainMenu.h"
 #include "Kismet/GameplayStatics.h"
 
 void UNS_MultiPlayWidget::NativeConstruct()
@@ -24,7 +24,7 @@ void UNS_MultiPlayWidget::NativeConstruct()
         BP_WidgetToggleButton_MainMenu->RootButton->OnClicked.AddUniqueDynamic(this, &UNS_MultiPlayWidget::OnMainMenuClicked);
 }
 
-void UNS_MultiPlayWidget::Init(UNS_MainMenu* NsMainMenu)
+void UNS_MultiPlayWidget::Init(UNS_BaseMainMenu* NsMainMenu)
 {
     Super::Init(NsMainMenu);
     SubMenus.Add(EWidgetToggleType::HostServer, MainMenu->GetWidget(EWidgetToggleType::HostServer));
@@ -36,7 +36,8 @@ void UNS_MultiPlayWidget::Init(UNS_MainMenu* NsMainMenu)
 void UNS_MultiPlayWidget::OnHostServerClicked()
 {
     HideSubMenuWidget();
-    MainMenu->GetWidget(EWidgetToggleType::HostServer)->ShowWidget();
+   // MainMenu->GetWidget(EWidgetToggleType::HostServer)->ShowWidget();
+    MainMenu->GetWidget(EWidgetToggleType::HostNewGame)->ShowWidget();
 }
 
 void UNS_MultiPlayWidget::OnServerBrowserClicked()

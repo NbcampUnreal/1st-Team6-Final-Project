@@ -6,6 +6,7 @@
 #include "Inventory UI/NS_InventoryHUD.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/PlayerController.h"
+#include "Character/NS_PlayerCharacterBase.h"
 
 UInteractionComponent::UInteractionComponent()
 {
@@ -36,7 +37,6 @@ void UInteractionComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// ÀÏÁ¤ ½Ã°£¸¶´Ù PerformInteractionCheck() ½ÇÇà
 	if (GetWorld()->TimeSince(InteractionData.LastInteractionCheckTime) > InteractionCheckFrequency)
 	{
 		PerformInteractionCheck();
@@ -72,7 +72,7 @@ void UInteractionComponent::PerformInteractionCheck()
 
 	if (LookDirection > 0)
 	{
-		DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Red, false, 1.f, 0, 2.f);
+		// DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Red, false, 1.f, 0, 2.f);
 
 		FCollisionQueryParams QueryParams;
 		QueryParams.AddIgnoredActor(GetOwner());
@@ -142,6 +142,16 @@ void UInteractionComponent::NoInteractableFound()
 
 void UInteractionComponent::BeginInteract()
 {
+	// 현재 캐릭터가 이미 상호작용 중이라면 무시
+	if (const ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(GetOwner()))
+	{
+		if (PlayerCharacter->IsPickUp)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Already picking up item"));
+			return;
+		}
+	}
+
 	PerformInteractionCheck();
 
 	if (InteractionData.CurrentInteractable && IsValid(TargetInteractable.GetObject()))
@@ -175,6 +185,27 @@ void UInteractionComponent::Interact()
 
 	if (IsValid(TargetInteractable.GetObject()))
 	{
-		TargetInteractable->Interact(GetOwner());
+		if (!GetOwner()->HasAuthority())
+		{
+			// RPC로 서버에 요청
+			Interact_Server(Cast<AActor>(TargetInteractable.GetObject()));
+		}
+		else
+		{
+			// 서버에서 Execute 방식으로 안전하게 호출
+			if (TargetInteractable.GetObject()->GetClass()->ImplementsInterface(UInteractionInterface::StaticClass()))
+			{
+				IInteractionInterface::Execute_Interact(TargetInteractable.GetObject(), GetOwner());
+			}
+		}
 	}
 }
+
+void UInteractionComponent::Interact_Server_Implementation(AActor* Target)
+{
+	if (Target && Target->GetClass()->ImplementsInterface(UInteractionInterface::StaticClass()))
+	{
+		IInteractionInterface::Execute_Interact(Target, GetOwner());
+	}
+}
+

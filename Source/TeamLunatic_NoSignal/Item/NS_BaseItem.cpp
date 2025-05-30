@@ -24,6 +24,7 @@ void ANS_BaseItem::BeginPlay()
 	{
 		ItemType = ItemData->ItemType;
 		WeaponType = ItemData->WeaponType;
+		WeaponData = ItemData->WeaponData;
 		ItemName = ItemData->ItemTextData.ItemName;
 		NumericData = ItemData->ItemNumericData;
 		GetItemSound = ItemData->ItemAssetData.UseSound;
@@ -44,11 +45,13 @@ void ANS_BaseItem::ResetItemFlags()
 
 ANS_BaseItem* ANS_BaseItem::CreateItemCopy()
 {
-	ANS_BaseItem* ItemCopy = NewObject<ANS_BaseItem>(StaticClass());
+	ANS_BaseItem* ItemCopy = NewObject<ANS_BaseItem>(this, GetClass());
 
 	ItemCopy->ItemDataRowName = this->ItemDataRowName;
 	ItemCopy->ItemName = this->ItemName;
 	ItemCopy->ItemType = this->ItemType;
+	ItemCopy->WeaponType = this->WeaponType;
+	ItemCopy->WeaponData = this->WeaponData;
 	ItemCopy->TextData = this->TextData;
 	ItemCopy->NumericData = this->NumericData;
 	ItemCopy->AssetData = this->AssetData;
@@ -67,7 +70,7 @@ void ANS_BaseItem::SetQuantity(const int32 NewQuantity)
 		{
 			if (Quantity <= 0)
 			{
-				OwingInventory->RemoveSingleInstanceOfItem(this);
+				//OwingInventory->RemoveSingleInstanceOfItem(this);
 			}
 		}
 	}

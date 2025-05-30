@@ -3,22 +3,36 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
-#include "Character/Components/NS_StatusComponent.h"
 #include "Interaction/Component/InteractionComponent.h"
-#include "Kismet/GameplayStatics.h"
 #include "NS_PlayerCharacterBase.generated.h"
 
-class UInventoryComponent;
 class UInputMappingContext;
 class UInputAction;
 class UCameraComponent;
 class UNS_DebugStatusWidget;  // 디버그용 위젯 차후 삭제해야함
 class UNS_StatusComponent;
+class UNS_InventoryBaseItem;
+class UInventoryComponent;
+class UNS_EquipedWeaponComponent;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
 {
 	GENERATED_BODY()
+
+private:
+
+	// ========== 이동 관련 =============
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta=(AllowPrivateAccess = "true"))
+	float DefaultWalkSpeed;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta=(AllowPrivateAccess = "true", UIMin = 0))
+	float SprintSpeedMultiplier;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta=(AllowPrivateAccess = "true", UIMin = 0, UIMax = 2))
+	float SpeedMultiAtStat = 1.0f; //버프|디버프 때 조절될 속도 배율
+
+
+	//조준이 가능한지 확인하는 변수
+	bool IsAvaliableAiming = true;
 
 public:
 	ANS_PlayerCharacterBase();
@@ -26,6 +40,16 @@ public:
 	FORCEINLINE UInventoryComponent* GetInventory() const { return PlayerInventory; };
 
 	UInteractionComponent* GetInteractionComponent() const { return InteractionComponent; }
+
+	//캐릭터의 스피드배율 변경용
+	FORCEINLINE void SetSpeedMultiply(float MultiplyValue) { SpeedMultiAtStat = MultiplyValue; };
+
+	FORCEINLINE void SetAvailableAiming(bool bAvailable) { IsAvaliableAiming = bAvailable; };
+
+	void DropItem(UNS_InventoryBaseItem* ItemToDrop, const int32 QuantityToDrop);
+
+	UFUNCTION(Client, Reliable)
+	void Client_NotifyInventoryUpdated();
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
@@ -33,15 +57,11 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	// 피격
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
 public:
 	// 카메라를 붙일 소켓 이름 [에디터에서 변경 가능함] 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera")
 	FName CameraAttachSocketName = TEXT("head");
-
-	// 1인칭 카메라 컴포넌트 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
-	UCameraComponent* CameraComp;
-
 	
 	// ============== 디버그용 위젯 차후 삭제해야 함 ===================
 	// 에디터에서 할당할 위젯 Blueprint 클래스
@@ -54,6 +74,14 @@ public:
 	UNS_DebugStatusWidget* DebugWidgetInstance;
 
 	
+	////////////////////////////////////캐릭터 부착 컴포넌트들///////////////////////////////////////
+	// 1인칭 카메라 컴포넌트 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
+	UCameraComponent* CameraComp;
+	// 1인칭 팔스켈레탈 메시 컴포넌트
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "FirstPerson")
+	USkeletalMeshComponent* FirstPersonArms;
+
 	// 스탯 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
 	UNS_StatusComponent* StatusComp;
@@ -62,20 +90,24 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interaction", meta = (AllowPrivateAccess = "true"))
 	UInteractionComponent* InteractionComponent;
 
-	UPROPERTY(VisibleAnywhere, Category = "Inventory")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory", Replicated)
 	UInventoryComponent* PlayerInventory;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UNS_EquipedWeaponComponent* EquipedWeaponComp;
+	////////////////////////////////////캐릭터 부착 컴포넌트들 끝!///////////////////////////////////////
+
+
+	// LookAction에 카메라 회전값 보간 속도 ---> 8은 너무 느려서 10이상은 되어야할 듯
+	UPROPERTY(EditDefaultsOnly, Category = "Aim")
+	float AimSendInterpSpeed = 10.f;
+
 	
-	// 캐릭터 이동 중 바라보는 곳으로 몸 회전 속도 (1 ~ 10까지 해봤는데 5가 가장 적당함)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-	float CharacterTurnSpeed = 5.0f;
-	
-	// ========== 이동 관련 =============
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-	float DefaultWalkSpeed;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-	float SprintSpeedMultiplier;
+
 	// 점프가 가능하게 하는 변수 
 	bool IsCanJump = true;
+	// ====================================
+	
 
 	/////////////////////////////// 리플리케이션용 변수들////////////////////////////////
 	// 캐릭터가 바라보고있는 좌/우 값
@@ -91,24 +123,18 @@ public:
 	// 발차기 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsKick = false;
-	// 공격중인지 확인 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
-	bool IsAttack = false;
 	// 아이템을 줍고있는지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsPickUp = false;
-	// 차후에 지워야함
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
-	int32 IsChange = 0;
 	// 캐릭터가 맞고있는지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsHit = false;
 	// 조준중인지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsAiming = false;
-	// 장전중인지 확인 변수
+	// 무기 교체중인지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
-	bool IsReload = false;
+	bool IsChangingWeapon = false;
 	//////////////////////////////////////////////////////////////////////////////////////
 	
 	
@@ -137,10 +163,8 @@ public:
 	UInputAction* InputAimingAction;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputReloadAction;
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InteractAction;
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* ToggleMenuAction;
 	
@@ -183,6 +207,10 @@ public:
 	UFUNCTION(Server, Reliable)
 	void PickUpAction_Server(const FInputActionValue& Value);
 
+	// 아이템 버리기
+	UFUNCTION(Server, Reliable)
+	void DropItem_Server(UNS_InventoryBaseItem* ItemToDrop, int32 QuantityToDrop);
+
 	// 조준 
 	UFUNCTION(Server, Reliable)
 	void StartAimingAction_Server(const FInputActionValue& Value);
@@ -201,6 +229,21 @@ public:
 	void PlayDeath_Multicast();
 
 	// 카메라 Yaw값, Pitch값 서버로 전송
-	UFUNCTION(Server, Unreliable)
-	void UpdateAim_Server(float NewAimYaw, float NewAimPitch);
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void UpdateAim_Server(float NewCamYaw, float NewCamPitch);
+
+	UFUNCTION()
+	void SwapWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass);
+
+	// 무게 증감
+	UFUNCTION(BlueprintCallable)
+	void AddWeightInventory(float Weight);
+
+	//수색 속도 증감
+	UFUNCTION(BluePrintCallable)
+	void AddSearchTime(float Multiple);
+
+	//크래프팅 속도 증감
+	UFUNCTION(BlueprintCallable)
+	void AddCraftingSpeed(float Multiple);
 };

@@ -8,7 +8,7 @@
 #include "NS_MasterMenuPanel.generated.h"
 
 class ANS_MainUiPlayerController;
-class UNS_MainMenu;
+class UNS_BaseMainMenu;
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UNS_MasterMenuPanel : public UUserWidget
 {
@@ -25,11 +25,13 @@ public:
 
 	virtual void NativeConstruct() override;
 
-	UFUNCTION(BlueprintCallable, Category = "Widget")
-	void SetToggleType();
+	virtual void Init(UNS_BaseMainMenu* NsMainMenu);
 
 	UFUNCTION(BlueprintCallable, Category = "Widget")
-	void ShowWidget();
+	virtual void ShowWidget();
+
+	UFUNCTION(BlueprintCallable, Category = "Widget")
+	virtual void ShowWidgetD();
 
 	UFUNCTION(BlueprintCallable, Category = "Widget")
 	void HideWidget();
@@ -37,10 +39,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Widget")
 	void HideSubMenuWidget();
 
-	virtual void Init(UNS_MainMenu* NsMainMenu);
+	UFUNCTION(BlueprintCallable, Category = "Widget")
+	void SetToggleType();
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widget")//EditDefaultsOnly
-		UNS_MainMenu* MainMenu;
+		UNS_BaseMainMenu* MainMenu;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widget")
 	TMap< EWidgetToggleType, UNS_MasterMenuPanel*> SubMenus;//TArray<UNS_MasterMenuPanel*> SubMenus;

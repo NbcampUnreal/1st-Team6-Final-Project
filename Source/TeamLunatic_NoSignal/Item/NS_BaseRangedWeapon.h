@@ -12,18 +12,22 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_BaseRangedWeapon : public ANS_BaseWeapon
 {
 	GENERATED_BODY()
 	
-public:
+protected:
 	ANS_BaseRangedWeapon();
 
-protected:
 	virtual void BeginPlay() override;
-
+public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 	USkeletalMesh* RangedWeaponMesh;
 
+	//나한테 안보임, 상대한테 보임
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 	USkeletalMeshComponent* RangedWeaponMeshComp;
+	//나한테 보임, 상대한테 안보임
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
+	USkeletalMeshComponent* ArmsMesh;
 
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponFX")
 	UNiagaraComponent* NiagaraComponent;
 
