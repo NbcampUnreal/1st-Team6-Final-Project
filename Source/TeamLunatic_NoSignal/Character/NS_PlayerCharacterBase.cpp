@@ -237,7 +237,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
         {
             EnhancedInput->BindAction(
             InputAttackAction,
-             ETriggerEvent::Triggered,
+             ETriggerEvent::Started,
               this,
                &ANS_PlayerCharacterBase::StartAttackAction_Server);
             EnhancedInput->BindAction(

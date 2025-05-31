@@ -27,7 +27,7 @@ public:
 	USkeletalMeshComponent* RangedWeaponMeshComp;
 	//나한테 보임, 상대한테 안보임
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
-	USkeletalMeshComponent* ArmsMesh;
+	USkeletalMeshComponent* ArmsMeshComp;
 
 	//탄창 장착
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")

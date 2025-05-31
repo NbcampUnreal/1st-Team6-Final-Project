@@ -14,9 +14,9 @@ ANS_BaseRangedWeapon::ANS_BaseRangedWeapon()
 	RangedWeaponMeshComp->SetOwnerNoSee(true);
 	RangedWeaponMeshComp->SetOnlyOwnerSee(false);
 
-	ArmsMesh = CreateDefaultSubobject<USkeletalMeshComponent>("I See Mesh");
-	ArmsMesh->SetOwnerNoSee(false);
-	ArmsMesh->SetOnlyOwnerSee(true);
+	ArmsMeshComp = CreateDefaultSubobject<USkeletalMeshComponent>("I See Mesh");
+	ArmsMeshComp->SetOwnerNoSee(false);
+	ArmsMeshComp->SetOnlyOwnerSee(true);
 	
 	NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Niagara"));
 }
