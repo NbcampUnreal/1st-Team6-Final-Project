@@ -13,6 +13,8 @@
 #include "UI/NS_SaveLoadHelper.h"
 #include "GameFlow/NS_GameInstance.h"
 #include "UI/NS_UIManager.h"
+#include "UI/NS_BaseMainMenu.h"
+#include "UI/NS_InGameStartMenu.h"
 
 UNS_InGameLoadMenu::UNS_InGameLoadMenu(const FObjectInitializer& ObjectInitializer)
 {
@@ -37,12 +39,23 @@ void UNS_InGameLoadMenu::NativeConstruct()
     LoadSaveSlotsToUI();
 
     StartGameButton->RootButton->OnClicked.AddDynamic(this, &UNS_InGameLoadMenu::StartGame);
+   // MainMenuButton->RootButton->OnClicked.AddDynamic(this, &UNS_InGameLoadMenu::ReturnMainMenu);
+  //  MainMenuButton->SetVisibility(ESlateVisibility::Hidden);
 }
 void UNS_InGameLoadMenu::ShowWidgetD()
 {
     Super::ShowWidgetD();
     LoadSaveSlotsToUI();
 }
+//void UNS_InGameLoadMenu::LoadGameWidgetOfGameOver()
+//{
+//    MainMenuButton->SetVisibility(ESlateVisibility::Visible);
+//}
+//void UNS_InGameLoadMenu::ReturnMainMenu()
+//{
+//    Cast<UNS_InGameStartMenu>(MainMenu->GetWidget(EWidgetToggleType::InGamemStartMenu))->On_MainMenuClicked();
+//    //MainMenuButton->SetVisibility(ESlateVisibility::Visible);
+//}
 void UNS_InGameLoadMenu::StartGame()
 {
     if (!SelectChildPanel)

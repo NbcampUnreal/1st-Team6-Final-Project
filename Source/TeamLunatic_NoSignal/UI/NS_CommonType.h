@@ -39,6 +39,8 @@ enum class EWidgetToggleType : uint8
     SaveNameMenu,
 	AreYouSureMenu,
 	PopUpMsg,
+    GameOverMsg,
+    LoadMenuInGameOver,
     None,
     //LoadingGame
 };
