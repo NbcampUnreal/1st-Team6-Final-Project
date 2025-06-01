@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Item/NS_BaseWeapon.h"
 #include "Item/NS_EAmmoType.h"
+#include "Item/NS_WeaponType.h"
 #include "NS_BaseRangedWeapon.generated.h"
 
 class UNiagaraComponent;
@@ -13,7 +14,8 @@ UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_BaseRangedWeapon : public ANS_BaseWeapon
 {
 	GENERATED_BODY()
-	
+
+	 
 protected:
 	ANS_BaseRangedWeapon();
 
@@ -28,7 +30,7 @@ public:
 	//나한테 보임, 상대한테 안보임
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 	USkeletalMeshComponent* ArmsMeshComp;
-
+	
 	//탄창 장착
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 	USoundBase* AttachMagSound;

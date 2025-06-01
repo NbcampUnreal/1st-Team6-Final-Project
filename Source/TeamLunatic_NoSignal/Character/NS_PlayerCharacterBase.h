@@ -156,6 +156,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* ToggleMenuAction;
 	
+	
 	// 이동 입력 잠금 제어 함수 
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category="Input")
 	void SetMovementLockState_Server(bool bLock);

@@ -12,6 +12,14 @@ enum class EWeaponType : uint8
 	Ammo UMETA(DisplayName = "Ammo"),
 };
 
+UENUM(BlueprintType)
+enum class ERangeChangeFireMode : uint8
+{
+	Manual UMETA(DisplayName = "Manual"),
+	Auto UMETA(DisplayName = "Auto"),
+};
+
+
 
 
 
