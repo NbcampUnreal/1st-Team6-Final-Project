@@ -1,5 +1,6 @@
 #include "UI/NS_UIManager.h"
 #include "UI/NS_BaseMainMenu.h"
+#include "UI/NS_InGameMenu.h"
 #include "UI/NS_InGameStartMenu.h"
 #include "UI/NS_MasterMenuPanel.h"
 #include "UI/NS_Msg_GameOver.h"
@@ -164,7 +165,7 @@ bool UNS_UIManager::ShowInGameMenuWidget(UWorld* World)
     if (!InGameMenuWidget || InGameMenuWidget && !InGameMenuWidget->IsInViewport())//!IsValid(InGameMenuWidget))
     {
         if (InGameMenuWidgetClass)
-            InGameMenuWidget = CreateWidget<UNS_BaseMainMenu>(PC, InGameMenuWidgetClass);
+            InGameMenuWidget = CreateWidget<UNS_InGameMenu>(PC, InGameMenuWidgetClass);
         else
         {
             UE_LOG(LogTemp, Warning, TEXT("ERROR!!! EMPTY InGameMenuWidgetClass!!!!!"));
@@ -174,8 +175,7 @@ bool UNS_UIManager::ShowInGameMenuWidget(UWorld* World)
     }
     if (InGameMenuWidget)
     {
-        InGameMenuWidget->SetVisibility(ESlateVisibility::Visible);
-        InGameMenuWidget->GetWidget(EWidgetToggleType::InGamemStartMenu)->ShowWidgetD();
+        InGameMenuWidget->ShowWidget();
 
         SetFInputModeGameAndUI(PC, InGameMenuWidget);
 
@@ -193,7 +193,7 @@ void UNS_UIManager::HideInGameMenuWidget(UWorld* World)
 {
     if (InGameMenuWidget && InGameMenuWidget->IsInViewport())
     {
-        InGameMenuWidget->SetVisibility(ESlateVisibility::Hidden);
+        InGameMenuWidget->HideWidget();
 
         APlayerController* PC = World->GetFirstPlayerController();
         SetFInputModeGameOnly(PC);

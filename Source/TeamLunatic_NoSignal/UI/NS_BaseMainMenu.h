@@ -16,6 +16,7 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_BaseMainMenu : public UUserWidget
 
 public:
 	virtual void NativeConstruct() override;
+
 public:
 	UFUNCTION(BlueprintCallable, Category = "Animation")
 	virtual void PlayAnimationShowR();
@@ -28,6 +29,8 @@ public:
 	virtual void QuitNSGame();
 
 protected:
+	virtual void ShowWidget();
+	virtual void HideWidget();
 	//UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Widget")
 	TMap<EWidgetToggleType, UNS_MasterMenuPanel*> WidgetMap;
 };

@@ -22,7 +22,7 @@ public:
 
     virtual void NativeConstruct() override;
 
-    virtual void ShowWidgetD() override;
+    virtual void ShowWidget() override;
      
    // void LoadGameWidgetOfGameOver();
 

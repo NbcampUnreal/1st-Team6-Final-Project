@@ -54,12 +54,12 @@ void UNS_InGameStartMenu::Init(UNS_BaseMainMenu* NsMainMenu)
     SubMenus.Add(EWidgetToggleType::SaveGame, MainMenu->GetWidget(EWidgetToggleType::SaveGame));
     SubMenus.Add(EWidgetToggleType::LoadGame, MainMenu->GetWidget(EWidgetToggleType::LoadGame));
     SubMenus.Add(EWidgetToggleType::Settings, MainMenu->GetWidget(EWidgetToggleType::Settings));
-    SubMenus.Add(EWidgetToggleType::Settings, MainMenu->GetWidget(EWidgetToggleType::LoadMenuInGameOver));
+    SubMenus.Add(EWidgetToggleType::LoadMenuInGameOver, MainMenu->GetWidget(EWidgetToggleType::LoadMenuInGameOver));
 }
 
-void UNS_InGameStartMenu::ShowWidgetD()
+void UNS_InGameStartMenu::ShowWidget()
 {
-    Super::ShowWidgetD();
+    Super::ShowWidget();
     HideSubMenuWidget();
 }
 
@@ -80,14 +80,14 @@ void UNS_InGameStartMenu::OnSaveGameClicked()
 {
     HideSubMenuWidget();
     if (UNS_MasterMenuPanel* Widget = MainMenu->GetWidget(EWidgetToggleType::SaveGame))
-        Widget->ShowWidgetD();
+        Widget->ShowWidget();
 }
 
 void UNS_InGameStartMenu::OnLoadGameClicked()
 {
     HideSubMenuWidget();
     if (UNS_MasterMenuPanel* Widget = MainMenu->GetWidget(EWidgetToggleType::LoadGame))
-        Widget->ShowWidgetD();
+        Widget->ShowWidget();
 }
 
 void UNS_InGameStartMenu::OnSettingsClicked()
@@ -95,7 +95,7 @@ void UNS_InGameStartMenu::OnSettingsClicked()
     HideSubMenuWidget();
     HideWidget();
     if (UNS_MasterMenuPanel* Widget = MainMenu->GetWidget(EWidgetToggleType::Settings))
-        Widget->ShowWidgetD();
+        Widget->ShowWidget();
 }
 
 void UNS_InGameStartMenu::On_MainMenuClicked()

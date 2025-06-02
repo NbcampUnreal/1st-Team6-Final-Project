@@ -42,9 +42,9 @@ void UNS_InGameLoadMenu::NativeConstruct()
    // MainMenuButton->RootButton->OnClicked.AddDynamic(this, &UNS_InGameLoadMenu::ReturnMainMenu);
   //  MainMenuButton->SetVisibility(ESlateVisibility::Hidden);
 }
-void UNS_InGameLoadMenu::ShowWidgetD()
+void UNS_InGameLoadMenu::ShowWidget()
 {
-    Super::ShowWidgetD();
+    Super::ShowWidget();
     LoadSaveSlotsToUI();
 }
 //void UNS_InGameLoadMenu::LoadGameWidgetOfGameOver()

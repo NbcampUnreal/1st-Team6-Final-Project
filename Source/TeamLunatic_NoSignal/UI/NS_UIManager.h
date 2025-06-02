@@ -9,6 +9,7 @@ class UNS_Msg_GameOver;
 class UNS_InGameMsg;
 class UNS_PlayerHUD;
 class UNS_CircleProgressBar;
+class UNS_InGameMenu;
 
 UCLASS(Blueprintable)
 class TEAMLUNATIC_NOSIGNAL_API UNS_UIManager : public UObject
@@ -25,7 +26,7 @@ public:
 	bool IsInViewportInGameMenuWidget();
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
-	UNS_BaseMainMenu* GetNS_MainMenuWidget()const { return InGameMenuWidget; }
+	UNS_InGameMenu* GetNS_MainMenuWidget()const { return InGameMenuWidget; }
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	bool ShowInGameMenuWidget(UWorld* World);
@@ -53,7 +54,7 @@ public:
 
 protected:
 	UPROPERTY()
-	UNS_BaseMainMenu* InGameMenuWidget;
+	UNS_InGameMenu* InGameMenuWidget;
 	UNS_Msg_GameOver* NS_Msg_GameOveWidget;
 	UNS_InGameMsg* NS_InGameMsgWidget;
 	UNS_PlayerHUD* NS_PlayerHUDWidget;

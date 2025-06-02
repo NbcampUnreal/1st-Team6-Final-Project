@@ -26,6 +26,7 @@ UENUM(BlueprintType)
 enum class EWidgetToggleType : uint8
 {
     MainMenu,
+    InGamemStartMenu,
     SinglePlayer,
     MultiPlayer,
     Settings,
@@ -39,7 +40,6 @@ enum class EWidgetToggleType : uint8
     HostServer,
 	HostNewGame,
 	HostLoadGame,
-	InGamemStartMenu,
     Disconnect,
     Resume,
     NewGame,
