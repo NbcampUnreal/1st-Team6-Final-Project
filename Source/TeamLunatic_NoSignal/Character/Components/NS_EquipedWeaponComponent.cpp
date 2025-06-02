@@ -165,12 +165,12 @@ void UNS_EquipedWeaponComponent::StartAttack()
  //        IsAttack = true;
  //    }
 
-    // IsAttack = true;
+    IsAttack = true;
 }
 
 void UNS_EquipedWeaponComponent::StopAttack()
 {	
-	// IsAttack = false;
+	IsAttack = false;
 }
 
 
