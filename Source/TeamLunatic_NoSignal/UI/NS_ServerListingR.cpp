@@ -21,7 +21,7 @@ void UNS_ServerListingR::OnJoinButtonClicked()
 {
     if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
-        GI->JoinSession(SessionResult);
+        GI->TryJoinSession(SessionResult);
     }
 }
 

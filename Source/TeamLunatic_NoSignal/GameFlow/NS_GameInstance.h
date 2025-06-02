@@ -48,7 +48,7 @@ public:
 	FOnSessionSearchSuccess OnSessionSearchSuccess;
 
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnJoinSessionComplete, bool);
-	void JoinSession(const FOnlineSessionSearchResult& SessionResult);
+	void TryJoinSession(const FOnlineSessionSearchResult& SessionResult);
 	FOnJoinSessionComplete OnJoinSessionComplete;
 
 	UPROPERTY()

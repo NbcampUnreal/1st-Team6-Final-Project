@@ -20,14 +20,32 @@ UNS_GameInstance::UNS_GameInstance()
 	if (BP_UIManager.Succeeded())
 		UIManagerClass = BP_UIManager.Class;
 }
+//void UNS_GameInstance::Init()
+//{
+//	Super::Init();
+//
+//	if (UIManagerClass)
+//	{
+//		NS_UIManager = NewObject<UNS_UIManager>(this, UIManagerClass);
+//		NS_UIManager->InitUi(GetWorld());
+//	}
+//}
 void UNS_GameInstance::Init()
 {
 	Super::Init();
 
 	if (UIManagerClass)
 	{
+		// NS_UIManager 생성까지만 하고
 		NS_UIManager = NewObject<UNS_UIManager>(this, UIManagerClass);
-		NS_UIManager->InitUi(GetWorld());
+
+		// InitUi()는 BeginPlay 시점으로 미루기
+		// 예: 타이머로 0초 딜레이 호출
+		FTimerHandle TempHandle;
+		GetWorld()->GetTimerManager().SetTimer(TempHandle, [this]()
+		{
+			NS_UIManager->InitUi(GetWorld());
+		}, 0.01f, false);
 	}
 }
 
@@ -143,7 +161,7 @@ void UNS_GameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 	}
 }
 
-void UNS_GameInstance::JoinSession(const FOnlineSessionSearchResult& SessionResult)
+void UNS_GameInstance::TryJoinSession(const FOnlineSessionSearchResult& SessionResult)
 {
 	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
 	if (!Subsystem) return;
@@ -154,6 +172,7 @@ void UNS_GameInstance::JoinSession(const FOnlineSessionSearchResult& SessionResu
 	Sessions->OnJoinSessionCompleteDelegates.AddUObject(this, &UNS_GameInstance::OnJoinSessionCompleteInternal);
 	Sessions->JoinSession(0, NAME_GameSession, SessionResult);
 }
+
 
 void UNS_GameInstance::OnJoinSessionCompleteInternal(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
 {
