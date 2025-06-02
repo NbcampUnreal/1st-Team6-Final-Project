@@ -19,6 +19,8 @@ public:
     virtual void Init(UNS_BaseMainMenu* NsMainMenu) override;
     virtual void ShowWidgetD() override;
 
+    UFUNCTION()
+    void On_MainMenuClicked();
 protected:
 
     UPROPERTY(meta = (BindWidget))
@@ -50,8 +52,7 @@ protected:
     void OnLoadGameClicked();
     UFUNCTION()
     void OnSettingsClicked();
-    UFUNCTION()
-    void On_MainMenuClicked();
+
     UFUNCTION()
     void OnDisconnectClicked();
     UFUNCTION()

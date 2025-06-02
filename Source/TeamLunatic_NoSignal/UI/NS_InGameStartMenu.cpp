@@ -54,6 +54,7 @@ void UNS_InGameStartMenu::Init(UNS_BaseMainMenu* NsMainMenu)
     SubMenus.Add(EWidgetToggleType::SaveGame, MainMenu->GetWidget(EWidgetToggleType::SaveGame));
     SubMenus.Add(EWidgetToggleType::LoadGame, MainMenu->GetWidget(EWidgetToggleType::LoadGame));
     SubMenus.Add(EWidgetToggleType::Settings, MainMenu->GetWidget(EWidgetToggleType::Settings));
+    SubMenus.Add(EWidgetToggleType::Settings, MainMenu->GetWidget(EWidgetToggleType::LoadMenuInGameOver));
 }
 
 void UNS_InGameStartMenu::ShowWidgetD()

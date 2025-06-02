@@ -44,6 +44,14 @@ void UInventoryTooltip::NativeConstruct()
 			WeaponType->SetText(FText::FromString(TEXT("원거리 무기")));
 			DamageValue->SetVisibility(ESlateVisibility::Visible);
 			break;
+		case EWeaponType::Pistol:
+			WeaponType->SetText(FText::FromString(TEXT("원거리 무기")));
+			DamageValue->SetVisibility(ESlateVisibility::Visible);
+			break;
+		case EWeaponType::Magazine:
+			WeaponType->SetText(FText::FromString(TEXT("탄창")));
+			DamageValue->SetVisibility(ESlateVisibility::Collapsed);
+			break;
 		case EWeaponType::Ammo:
 			WeaponType->SetText(FText::FromString(TEXT("탄약")));
 			DamageValue->SetVisibility(ESlateVisibility::Visible);

@@ -2,9 +2,17 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+#include "Engine/DataTable.h"
+#include "UObject/SoftObjectPtr.h" 
 #include "EGameModeType.h"  
 #include "Interfaces/OnlineSessionInterface.h"
 #include "OnlineSessionSettings.h"
+#include "HttpModule.h"
+#include "Interfaces/IHttpRequest.h"
+#include "Interfaces/IHttpResponse.h"
+#include "Dom/JsonObject.h"
+#include "Serialization/JsonSerializer.h"
+#include "Serialization/JsonReader.h"
 #include "NS_GameInstance.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnCreateSessionSuccess);
@@ -19,6 +27,9 @@ public:
 	UNS_GameInstance();
 	virtual void Init() override;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Inventory|Config")
+	UDataTable* GlobalItemDataTable;
+
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	UNS_UIManager* GetUIManager() const { return NS_UIManager; };
 
@@ -26,19 +37,17 @@ public:
 	FOnCreateSessionSuccess OnCreateSessionSuccess;
 	void SetGameModeType(EGameModeType Type);
 	EGameModeType GetGameModeType() const { return GameModeType; }
-	void CreateSession(FName SessionName, bool bIsLAN, int32 MaxPlayers);
+	void CreateDedicatedSessionViaHTTP(FName SessionName, int32 MaxPlayers);
+	void OnCreateSessionResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 
 	UPROPERTY(EditAnywhere, Category = "Level")
 	TSoftObjectPtr<UWorld> WaitingRoom;
 
-	// == 세션 검색 담당 부분들 == 
-	void FindSessions(bool bIsLAN);
+	void FindSessions();
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnSessionSearchSuccess, const TArray<FOnlineSessionSearchResult>&);
 	FOnSessionSearchSuccess OnSessionSearchSuccess;
 
-	// == 세션 조인 담당 
-	DECLARE_MULTICAST_DELEGATE_OneParam(FOnJoinSessionComplete, bool /*bWasSuccessful*/);
-
+	DECLARE_MULTICAST_DELEGATE_OneParam(FOnJoinSessionComplete, bool);
 	void JoinSession(const FOnlineSessionSearchResult& SessionResult);
 	FOnJoinSessionComplete OnJoinSessionComplete;
 
@@ -57,4 +66,4 @@ private:
 	TSharedPtr<FOnlineSessionSearch> SessionSearch;
 
 	void OnJoinSessionCompleteInternal(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
-}; 
+};

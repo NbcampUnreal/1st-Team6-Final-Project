@@ -10,6 +10,7 @@ enum class EWeaponType : uint8
 	Pistol UMETA(DisplayName = "P1911"),
 	Ranged UMETA(DisplayName = "M4A4"),
 	Ammo UMETA(DisplayName = "Ammo"),
+	Magazine UMETA(DisplayName = "Magazine")
 };
 
 UENUM(BlueprintType)

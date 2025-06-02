@@ -5,6 +5,15 @@
 #include "CoreMinimal.h"
 #include "NS_CommonType.generated.h"
 
+UENUM(BlueprintType)
+enum class EStatusType : uint8
+{
+    Health,
+    Stamina,
+    Hunger,
+    Thirst,
+    Fatigue,
+};
 
 UENUM(BlueprintType)
 enum class ENewGameState : uint8
@@ -39,6 +48,8 @@ enum class EWidgetToggleType : uint8
     SaveNameMenu,
 	AreYouSureMenu,
 	PopUpMsg,
+    GameOverMsg,
+    LoadMenuInGameOver,
     None,
     //LoadingGame
 };

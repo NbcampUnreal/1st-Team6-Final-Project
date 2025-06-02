@@ -39,7 +39,7 @@ public:
 	void TakePickup(ANS_PlayerCharacterBase* Taker);
 	UFUNCTION(Server, Reliable)
 	void Server_TakePickup(AActor* InteractingActor);
-protected:
+
 	UPROPERTY(VisibleAnywhere, Category = "Pickup | Components")
 	UStaticMeshComponent* PickupMesh;
 
@@ -62,8 +62,9 @@ protected:
 	virtual void Interact_Implementation(AActor* InteractingActor) override;
 	void UpdateInteractableData();
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
-	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 #endif
 };
