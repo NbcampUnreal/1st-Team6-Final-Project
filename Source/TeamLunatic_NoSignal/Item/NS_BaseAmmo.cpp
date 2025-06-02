@@ -21,7 +21,7 @@ void ANS_BaseAmmo::BeginPlay()
 		InstanceInteractableData.Quantity = ItemData->ItemNumericData.MaxStack;
 	}
 
-	ItemStaticMesh->SetStaticMesh(ItemMesh);
+	//ItemStaticMesh->SetStaticMesh(ItemMesh);
 	InteractableData = InstanceInteractableData;
 }
 

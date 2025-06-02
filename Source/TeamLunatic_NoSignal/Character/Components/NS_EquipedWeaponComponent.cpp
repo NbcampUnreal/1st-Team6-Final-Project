@@ -85,9 +85,9 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
     {
         // 플레이어한테만 보이는 메쉬를 팔에 부착
         // ArmsMesh가 유효한지 확인
-        if (Melee->ArmsMesh) 
+        if (Melee->ArmsMeshComp) 
         {
-            Melee->ArmsMesh->AttachToComponent(
+            Melee->ArmsMeshComp->AttachToComponent(
                 OwnerCharacter->FirstPersonArms, Rules, SocketName);
         }
         
@@ -112,9 +112,9 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
         
         // 다른 플레이어에게 보이게 메쉬를 몸에 부착
         // ArmsMesh가 유효한지 확인
-        if (Ranged->ArmsMesh)
+        if (Ranged->ArmsMeshComp)
         {
-            Ranged->ArmsMesh->AttachToComponent(
+            Ranged->ArmsMeshComp->AttachToComponent(
                 OwnerCharacter->FirstPersonArms, Rules, SocketName);
         }
     }
@@ -127,45 +127,45 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
 
 void UNS_EquipedWeaponComponent::StartAttack()
 {
-    // 비무장 : 공격없음
-    if (!CurrentWeapon)
-    {
-        IsAttack = false;
-        return;
-    }
+    // // 비무장 : 공격없음
+    // if (!CurrentWeapon)
+    // {
+    //     IsAttack = false;
+    //     return;
+    // }
 
-    // 무기 변경중이면 공격 불가
-	if (OwnerCharacter && OwnerCharacter->IsChangingWeapon)
-    {
-        IsAttack = false;
-        return;
-    }
+ //    // 무기 변경중이면 공격 불가
+	// if (OwnerCharacter && OwnerCharacter->IsChangingWeapon)
+ //    {
+ //        IsAttack = false;
+ //        return;
+ //    }
+ //
+	// // 무기 타입에 따라 공격 처리
+ //    if (CurrentWeapon->GetWeaponType() == EWeaponType::Ranged // 원거리
+ //        && CurrentWeapon->GetWeaponType() == EWeaponType::Pistol)
+ //    {
+ //        // 현재 탄창 비어있으면 return
+	// 	if (IsEmpty)
+ //        {
+ //            IsAttack = false;
+ //            return;
+ //        }
+ //        // 재장전 중이면 return
+	// 	if (IsReload)
+	// 	{
+	// 		IsAttack = false;
+	// 		return;
+	// 	}
+ //
+	// 	IsAttack = true;
+ //    }
+ //    else if (CurrentWeapon->GetWeaponType() == EWeaponType::Melee)
+ //    {
+ //        IsAttack = true;
+ //    }
 
-	// 무기 타입에 따라 공격 처리
-    if (CurrentWeapon->GetWeaponType() == EWeaponType::Ranged // 원거리
-        || CurrentWeapon->GetWeaponType() == EWeaponType::Pistol)
-    {
-        // 현재 탄창 비어있으면 return
-		if (IsEmpty)
-        {
-            IsAttack = false;
-            return;
-        }
-        // 재장전 중이면 return
-		if (IsReload)
-		{
-			IsAttack = false;
-			return;
-		}
-
-		IsAttack = true;
-    }
-    else if (CurrentWeapon->GetWeaponType() == EWeaponType::Melee)
-    {
-        IsAttack = true;
-    }
-
-
+    IsAttack = true;
 }
 
 void UNS_EquipedWeaponComponent::StopAttack()
