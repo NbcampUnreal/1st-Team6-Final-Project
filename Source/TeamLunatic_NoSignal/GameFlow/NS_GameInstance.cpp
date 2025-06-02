@@ -44,7 +44,7 @@ void UNS_GameInstance::CreateDedicatedSessionViaHTTP(FName SessionName,int32 Max
 		*SessionName.ToString(), MaxPlayers);
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("http://54.253.222.52:5000/create_session"));
+	Request->SetURL(TEXT("http://54.66.83.157:5000/create_session"));
 	Request->SetVerb(TEXT("POST"));
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 

@@ -20,7 +20,7 @@ public:
 	virtual void NativeConstruct() override;
 
 	UFUNCTION()
-	void OnJoinServerButtonClicked();
+	void OnJoinButtonClicked();
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
 	UTextBlock* ServerNameText;
@@ -32,7 +32,7 @@ public:
 	UTextBlock* PingText;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
-	UButton* JoinServerButton;
+	UButton* JoinButton;
 
 	FOnlineSessionSearchResult SessionResult;
 
