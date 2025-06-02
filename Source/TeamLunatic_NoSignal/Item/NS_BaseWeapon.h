@@ -43,24 +43,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	USoundBase* UnEquipSound = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
-	USphereComponent* SphereComponent;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
-	UBoxComponent* BoxComponent;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
-	UCapsuleComponent* CapsuleComponent;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|HitDetection")
-	bool bUseBoxComponent;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|HitDetection")
-	bool bUseSphereComponent;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|HitDetection")
-	bool bUseCapsuleComponent;
-
 	EWeaponType GetWeaponType() const { return WeaponType; }
 
 	FName GetAttachSocketName() const { return AttachSocketName; }
