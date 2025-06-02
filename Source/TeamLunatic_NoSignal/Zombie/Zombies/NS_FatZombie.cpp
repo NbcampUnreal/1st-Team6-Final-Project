@@ -3,8 +3,8 @@
 
 #include "Zombie/Zombies/NS_FatZombie.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Zombie/Enum/Enum_ZombieState.h"
-#include "Zombie/Enum/Enum_ZombieType.h"
+#include "Zombie/Enum/EZombieState.h"
+#include "Zombie/Enum/EZombieType.h"
 
 ANS_FatZombie::ANS_FatZombie()
 {
@@ -14,26 +14,27 @@ ANS_FatZombie::ANS_FatZombie()
 		GetMesh()->SetSkeletalMesh(MeshAsset.Object);
 	}
 	MaxHealth = 200.f;
+	CurrentHealth = MaxHealth;
 	BaseDamage = 40.f;
-	ZombieType = Enum_ZombieType::FAT;
+	ZombieType = EZombieType::FAT;
 }
 
-void ANS_FatZombie::OnStateChanged(Enum_ZombieState NewState)
+void ANS_FatZombie::OnStateChanged(EZombieState NewState)
 {
 	switch (NewState)
 	{
-	case Enum_ZombieState::DEAD:
-	case Enum_ZombieState::IDLE:
-	case Enum_ZombieState::DETECTING:
-	case Enum_ZombieState::PUSHED:
-		GetCharacterMovement()->MaxWalkSpeed = 0.f;
+	case EZombieState::DEAD:
+	case EZombieState::IDLE:
+	case EZombieState::DETECTING:
+	case EZombieState::PUSHED:
+		TargetSpeed = 0.f;
 		break;
-	case Enum_ZombieState::PATROLL:
-		GetCharacterMovement()->MaxWalkSpeed = 10.f;
+	case EZombieState::PATROLL:
+		TargetSpeed = 20.f;
 		break;
-	case Enum_ZombieState::CHACING:
-	case Enum_ZombieState::ATTACK:
-		GetCharacterMovement()->MaxWalkSpeed = 100.f;
+	case EZombieState::CHACING:
+	case EZombieState::ATTACK:
+		TargetSpeed = 70.f;
 		break;
 	default:
 		break;

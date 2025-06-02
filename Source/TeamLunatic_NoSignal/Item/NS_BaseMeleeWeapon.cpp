@@ -9,9 +9,9 @@ ANS_BaseMeleeWeapon::ANS_BaseMeleeWeapon()
 	ItemStaticMesh->SetOwnerNoSee(true);
 	ItemStaticMesh->SetOnlyOwnerSee(false);
 
-	ArmsMesh = CreateDefaultSubobject<UStaticMeshComponent>("I See Mesh");
-	ArmsMesh->SetOwnerNoSee(false);
-	ArmsMesh->SetOnlyOwnerSee(true);
+	ArmsMeshComp = CreateDefaultSubobject<UStaticMeshComponent>("I See Mesh");
+	ArmsMeshComp->SetOwnerNoSee(false);
+	ArmsMeshComp->SetOnlyOwnerSee(true);
 }
 
 void ANS_BaseMeleeWeapon::BeginPlay()

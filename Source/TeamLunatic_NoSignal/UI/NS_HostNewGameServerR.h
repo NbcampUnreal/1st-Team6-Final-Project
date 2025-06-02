@@ -48,9 +48,6 @@ public:
     UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
     UEditableTextBox* EditableTextBox_MaxPlayers;
 
-    UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-    UCheckBox* CheckBox_UseLAN;
-
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
     UButton* CreateServerButton;
 

@@ -3,6 +3,8 @@
 
 #include "Zombie/BT/Service/NS_Service_CalculateDistance.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "Zombie/NS_ZombieBase.h"
+#include "Zombie/Enum/EZombieAttackType.h"
 #include "Zombie/AIController/NS_AIController.h"
 
 UNS_Service_CalculateDistance::UNS_Service_CalculateDistance()
@@ -27,6 +29,15 @@ void UNS_Service_CalculateDistance::TickNode(UBehaviorTreeComponent& OwnerComp, 
 				{
 					Distance = FVector::Dist(Pawn->GetActorLocation(), TargetActor->GetActorLocation());
 					BlackboardComponent->SetValueAsFloat("Distance", Distance);
+					if (Distance < 200.f && Distance > 50.f)
+					{
+						NewAttackType = EZombieAttackType::CHARGE;
+					}
+					else if (Distance <= 50.f && Distance > 0.f)
+					{
+						NewAttackType = EZombieAttackType::BASIC;
+					}
+					BlackboardComponent->SetValueAsEnum("AttackType", static_cast<uint8>(NewAttackType));
 				}
 			}
 		}

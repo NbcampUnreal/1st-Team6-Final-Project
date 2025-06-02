@@ -9,13 +9,10 @@
 class UInputMappingContext;
 class UInputAction;
 class UCameraComponent;
-class UNS_DebugStatusWidget;  // 디버그용 위젯 차후 삭제해야함
 class UNS_StatusComponent;
 class UNS_InventoryBaseItem;
 class UInventoryComponent;
 class UNS_EquipedWeaponComponent;
-
-
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
@@ -65,22 +62,11 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera")
 	FName CameraAttachSocketName = TEXT("head");
 	
-	// ============== 디버그용 위젯 차후 삭제해야 함 ===================
-	// 에디터에서 할당할 위젯 Blueprint 클래스
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
-	TSubclassOf<UNS_DebugStatusWidget> DebugWidgetClass;
-
-	
-	// 런타임에 생성될 위젯 ============= 차후 삭제 필요
-	UPROPERTY()
-	UNS_DebugStatusWidget* DebugWidgetInstance;
-
-	
 	////////////////////////////////////캐릭터 부착 컴포넌트들///////////////////////////////////////
 	// 1인칭 카메라 컴포넌트 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	UCameraComponent* CameraComp;
-	// 1인칭 팔스켈레탈 메시 컴포넌트
+	// 1인칭 팔 스켈레탈 메시 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "FirstPerson")
 	USkeletalMeshComponent* FirstPersonArms;
 
@@ -169,6 +155,7 @@ public:
 	UInputAction* InteractAction;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* ToggleMenuAction;
+	
 	
 	// 이동 입력 잠금 제어 함수 
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category="Input")
