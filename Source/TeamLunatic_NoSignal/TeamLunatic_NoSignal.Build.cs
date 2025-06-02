@@ -8,10 +8,13 @@ public class TeamLunatic_NoSignal : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;   
         PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput","UMG", "AIModule", "GameplayTasks", "NavigationSystem", "Niagara",
-    "OnlineSubsystem",
-    "OnlineSubsystemUtils",
-    "Sockets",
-    "Networking"});
+            "OnlineSubsystem",
+            "OnlineSubsystemUtils",
+            "Sockets",
+            "Networking",
+            "Slate",
+            "SlateCore" 
+        });
         PublicIncludePaths.AddRange(new string[] { "TeamLunatic_NoSignal" });
     }
 }

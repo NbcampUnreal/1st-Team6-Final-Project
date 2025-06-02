@@ -15,6 +15,12 @@ void ANS_PlayerController::BeginPlay()
    
     SetInputMode(FInputModeGameOnly());
     bShowMouseCursor = false;
+
+    if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
+    {
+        if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
+            UIManager->ShowPlayerHUDWidget(GetWorld());
+    }
 }
 
 void ANS_PlayerController::SetupInputComponent()

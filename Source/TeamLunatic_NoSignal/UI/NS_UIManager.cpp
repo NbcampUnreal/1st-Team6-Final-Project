@@ -4,6 +4,7 @@
 #include "UI/NS_MasterMenuPanel.h"
 #include "UI/NS_Msg_GameOver.h"
 #include "UI/NS_InGameMsg.h"
+#include "UI/NS_PlayerHUD.h"
 
 UNS_UIManager::UNS_UIManager()
 {
@@ -32,12 +33,47 @@ UNS_UIManager::UNS_UIManager()
         else
             UE_LOG(LogTemp, Warning, TEXT("NS_InGameMsgWidgetClass: %s"), *GetNameSafe(NS_InGameMsgWidgetClass));
     }
+
+    if (!NS_PlayerHUDWidgetClass)
+    {
+        static ConstructorHelpers::FClassFinder<UNS_PlayerHUD> WBP_PlayerHUD(TEXT("/Game/SurvivalGameKitV2/Blueprints/Widgets/WBP_PlayerHUD.WBP_PlayerHUD_C"));
+        if (WBP_PlayerHUD.Succeeded())
+            NS_PlayerHUDWidgetClass = WBP_PlayerHUD.Class;
+        else
+            UE_LOG(LogTemp, Warning, TEXT("NS_PlayerHUDWidgetClass: %s"), *GetNameSafe(NS_PlayerHUDWidgetClass));
+    }
 }
 
 void UNS_UIManager::InitUi(UWorld* World)
 {
     //if (InGameMenuWidgetClass)
     //    InGameMenuWidget = CreateWidget<UNS_BaseMainMenu>(World, InGameMenuWidgetClass);
+}
+bool UNS_UIManager::ShowPlayerHUDWidget( UWorld* World)
+{
+    APlayerController* PC = World->GetFirstPlayerController();
+    if (!NS_PlayerHUDWidget || NS_PlayerHUDWidget && !NS_PlayerHUDWidget->IsInViewport())
+    {
+        if (NS_PlayerHUDWidgetClass)
+            NS_PlayerHUDWidget = CreateWidget<UNS_PlayerHUD>(PC, NS_PlayerHUDWidgetClass);
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("ERROR!!! EMPTY NS_PlayerHUDWidgetClass!!!!!"));
+            return false;
+        }
+        NS_PlayerHUDWidget->AddToViewport();
+    }
+    if (NS_PlayerHUDWidget)
+    {
+        NS_PlayerHUDWidget->ShowWidget();
+        return true;
+    }
+    return false;
+}
+void UNS_UIManager::HidePlayerHUDWidget(UWorld* World)
+{
+    if (NS_PlayerHUDWidget && NS_PlayerHUDWidget->IsInViewport())
+        NS_PlayerHUDWidget->HideWidget();
 }
 bool UNS_UIManager::ShowGameMsgWidget(FString& GameMsg, UWorld* World)
 {
@@ -136,16 +172,8 @@ bool UNS_UIManager::ShowInGameMenuWidget(UWorld* World)
         }
         InGameMenuWidget->AddToViewport();
     }
-
- /*   APlayerController* PC = World->GetFirstPlayerController();
-    if (!InGameMenuWidget && InGameMenuWidgetClass && World)
-        InGameMenuWidget = CreateWidget<UNS_BaseMainMenu>(PC, InGameMenuWidgetClass);*/
-   
     if (InGameMenuWidget)
     {
-    /*    if (!InGameMenuWidget->IsInViewport())
-            InGameMenuWidget->AddToViewport();*/
-
         InGameMenuWidget->SetVisibility(ESlateVisibility::Visible);
         InGameMenuWidget->GetWidget(EWidgetToggleType::InGamemStartMenu)->ShowWidgetD();
 

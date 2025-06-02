@@ -7,6 +7,8 @@
 class UNS_BaseMainMenu;
 class UNS_Msg_GameOver;
 class UNS_InGameMsg;
+class UNS_PlayerHUD;
+class UNS_CircleProgressBar;
 
 UCLASS(Blueprintable)
 class TEAMLUNATIC_NOSIGNAL_API UNS_UIManager : public UObject
@@ -18,6 +20,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void InitUi(UWorld* World);
+
 
 	bool IsInViewportInGameMenuWidget();
 
@@ -40,6 +43,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void HideGameMsgWidget(UWorld* World);
 
+	UFUNCTION(BlueprintCallable, Category = "UI")
+	bool ShowPlayerHUDWidget( UWorld* World);
+	UFUNCTION(BlueprintCallable, Category = "UI")
+	void HidePlayerHUDWidget(UWorld* World);
+
 	void SetFInputModeGameAndUI(APlayerController* PC, UUserWidget* Widget);
 	void SetFInputModeGameOnly(APlayerController* PC);
 
@@ -48,6 +56,7 @@ protected:
 	UNS_BaseMainMenu* InGameMenuWidget;
 	UNS_Msg_GameOver* NS_Msg_GameOveWidget;
 	UNS_InGameMsg* NS_InGameMsgWidget;
+	UNS_PlayerHUD* NS_PlayerHUDWidget;
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UNS_BaseMainMenu> InGameMenuWidgetClass;
@@ -57,7 +66,10 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UNS_InGameMsg> NS_InGameMsgWidgetClass;
-	/// Script / UMGEditor.WidgetBlueprint'/Game/UI/Blueprints/WBP_InGameMessage.WBP_InGameMessage'
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UNS_PlayerHUD> NS_PlayerHUDWidgetClass;
+	
 private:
-	UWorld* CurrentWorld;
+
 };
