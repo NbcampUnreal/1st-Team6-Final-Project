@@ -6,6 +6,7 @@
 #include "Item/NS_InventoryBaseItem.h"
 #include "Inventory UI/Inventory/DragItemVisual.h"
 #include "Inventory UI/Inventory/ItemDragDropOperation.h"
+#include "Character/NS_PlayerCharacterBase.h"
 
 void UInventoryItemSlot::NativeOnInitialized()
 {
@@ -78,6 +79,20 @@ FReply UInventoryItemSlot::NativeOnMouseButtonDown(const FGeometry& InGeometry, 
 	{
 		return Reply.Handled().DetectDrag(TakeWidget(), EKeys::LeftMouseButton);
 	}
+	else if (InMouseEvent.GetEffectingButton() == EKeys::RightMouseButton)
+	{
+		// 우클릭 시 아이템 사용
+		if (ItemReference)
+		{
+			if (auto* Player = Cast<ANS_PlayerCharacterBase>(GetOwningPlayerPawn()))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("[Client] 우클릭 - 서버에 아이템 사용 요청: %s"), *ItemReference->GetName());
+				Player->Server_UseInventoryItem(ItemReference); // 서버에 요청
+			}
+		}
+		return Reply.Handled();
+	}
+
 	return Reply.Unhandled();
 }
 
