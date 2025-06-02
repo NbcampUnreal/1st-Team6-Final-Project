@@ -1,5 +1,4 @@
 #include "Character/NS_PlayerCharacterBase.h"
-#include "Character/Debug/NS_DebugStatusWidget.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.H"
 #include "Camera/CameraComponent.h"
@@ -37,7 +36,7 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     FirstPersonArms->SetOnlyOwnerSee(true); // 플레이어 본인만 보이게 설정 (다른클라이언트는 안보이게)
     
     // 캐릭터 회전 및 이동 방향 설정
-    // bUseControllerRotationYaw는 Tick 함수에서 동적으로 제어될 것입니다.
+    // bUseControllerRotationYaw는 AnimInstance에서 이동여부에따라 이동중이면 true 이동중이 아니면 false로 설정되고있음
     bUseControllerRotationYaw = false; // 초기값은 false로 설정
     GetCharacterMovement()->bOrientRotationToMovement = false;
     GetCharacterMovement()->bUseControllerDesiredRotation = false;
@@ -124,19 +123,6 @@ void ANS_PlayerCharacterBase::BeginPlay()
         FirstPersonArms->SetOnlyOwnerSee(true);  // 팔 메시만 본인(플레이어)이 보이게
     }
     
-    // 디버그 위젯 생성 ======================== 차후 삭제필요
-    if (DebugWidgetClass && Controller)
-    {
-        if (APlayerController* PC = Cast<APlayerController>(Controller))
-        {
-            DebugWidgetInstance = CreateWidget<UNS_DebugStatusWidget>(PC, DebugWidgetClass);
-            if (DebugWidgetInstance)
-            {
-                DebugWidgetInstance->AddToViewport();
-            }
-        }
-    }
-
     // 입력 매핑 컨텍스트 등록
     if (APlayerController* PC = Cast<APlayerController>(Controller))
     {
@@ -260,7 +246,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
         {
             EnhancedInput->BindAction(
             InputAttackAction,
-             ETriggerEvent::Triggered,
+             ETriggerEvent::Started,
               this,
                &ANS_PlayerCharacterBase::StartAttackAction_Server);
             EnhancedInput->BindAction(

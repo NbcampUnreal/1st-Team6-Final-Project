@@ -36,12 +36,6 @@ void UNS_HostLoadGameServerR::OnCreateServerButtonClicked()
     }
 
     // 1. LAN 체크박스 상태 확인
-    bool bIsLAN = false;
-    if (CheckBox_Use_LAN)
-    {
-        bIsLAN = CheckBox_Use_LAN->IsChecked();
-    }
-
     // 2. 세션 이름 정의 (슬롯 이름 사용)
     FName SessionName = FName(*LoadSlotName);
 
@@ -60,10 +54,11 @@ void UNS_HostLoadGameServerR::OnCreateServerButtonClicked()
                 MainMenu->GetWidget(EWidgetToggleType::MultiPlayer)->HideSubMenuWidget();
             });
 
-        GI->CreateSession(SessionName, bIsLAN, MaxPlayers);
+        GI->CreateDedicatedSessionViaHTTP(SessionName, MaxPlayers);
     }
     else
     {
+
         UE_LOG(LogTemp, Warning, TEXT("게임 인스턴스 없음"));
     }
 }

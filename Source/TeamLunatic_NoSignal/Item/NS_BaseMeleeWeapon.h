@@ -23,7 +23,7 @@ public:
 
 	//나한테 보임, 상대한테 안보임
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
-	UStaticMeshComponent* ArmsMesh;
+	UStaticMeshComponent* ArmsMeshComp;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Effects")
 	UParticleSystem* ImpactParticles;

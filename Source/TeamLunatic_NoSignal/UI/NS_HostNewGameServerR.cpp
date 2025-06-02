@@ -57,11 +57,6 @@ void UNS_HostNewGameServerR::StartGame()
     LevelData.TempClearKeyItemPosition = FVector(100, 200, 300); //임의의 아이템의 position 임시로 작성해본거임.변경 or 삭제해야함.
     //NS_SaveLoadHelper::SaveGame(SlotName, PlayerData, LevelData);
 
-    bool bIsLAN = false;
-    if (CheckBox_UseLAN)
-    {
-        bIsLAN = CheckBox_UseLAN->IsChecked();
-    }
 
     // 2. 세션 이름 정의 (슬롯 이름 사용)
     FName SessionName = FName(*SlotName);
@@ -85,7 +80,7 @@ void UNS_HostNewGameServerR::StartGame()
                 MainMenu->GetWidget(EWidgetToggleType::MultiPlayer)->HideSubMenuWidget();
             });
       
-        GI->CreateSession(SessionName, bIsLAN, MaxPlayers);
+        GI->CreateDedicatedSessionViaHTTP(SessionName, MaxPlayers);
     }
     else
         UE_LOG(LogTemp, Warning, TEXT("게임 인스턴스 없음"));
