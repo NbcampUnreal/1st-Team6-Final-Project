@@ -207,6 +207,7 @@ FItemAddResult UInventoryComponent::HandleNonStackableItems(UNS_InventoryBaseIte
 	AddNewItem(InputItem, 1);
 	return FItemAddResult::AddedAll(1, FText::Format(FText::FromString("Successfully added a single {0} to the Inventory."), InputItem->TextData.ItemName));
 }
+
 // 스택 가능한 아이템 처리
 int32 UInventoryComponent::HandleStackableItems(UNS_InventoryBaseItem* ItemIn, int32 RequestedAddAmount)
 {
@@ -301,6 +302,7 @@ int32 UInventoryComponent::CalculateNumberForFullStack(UNS_InventoryBaseItem* St
 
 	return FMath::Min(InitialRequestedAddAmount, AddAmountToMakeFullStack);
 }
+
 //  새 아이템 인벤토리에 추가
 void UInventoryComponent::AddNewItem(UNS_InventoryBaseItem* Item, const int32 AmountToAdd)
 {
