@@ -38,6 +38,8 @@ void ANS_BaseConsumable::Consume()
 	Currentstack--;
 
 	PlayUseEffectSound();
+
+	bIsBeingUsed = false;
 }
 
 void ANS_BaseConsumable::OnUseItem()

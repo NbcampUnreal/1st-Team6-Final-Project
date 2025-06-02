@@ -29,8 +29,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ammo")
 	TSubclassOf< ANS_BaseAmmo> AmmoClass;
 
+
 	int32 GetMaxAmmo() const { return MaxAmmo; }
+
+	UFUNCTION(BlueprintCallable, Category = "Magazine")
 	int32 GetCurrentAmmo() const { return CurrentAmmo; }
+
 	EAmmoType GetAmmoType() const { return AmmoType; }
 
 	//빈공간 체크

@@ -124,3 +124,4 @@ void ANS_BaseRangedWeapon::PerformHitScan(int32 damage)
 
 }
 
+//탄환 확인
