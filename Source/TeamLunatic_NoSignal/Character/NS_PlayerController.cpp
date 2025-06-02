@@ -30,7 +30,8 @@ void ANS_PlayerController::SetupInputComponent()
     if (InputComponent)
     {
         InputComponent->BindAction("ToggleInGameMenu", IE_Pressed, this, &ANS_PlayerController::ToggleInGameMenu);
-        InputComponent->BindAction("Test1", IE_Pressed, this, &ANS_PlayerController::Test1);
+        InputComponent->BindAction("TestGameOver", IE_Pressed, this, &ANS_PlayerController::TestGameOver);
+        InputComponent->BindAction("TestGameMsg", IE_Pressed, this, &ANS_PlayerController::TestGameMsg);
     }
     else
         UE_LOG(LogTemp, Warning, TEXT("InputComponent is null in SetupInputComponent!"));
@@ -51,15 +52,26 @@ void ANS_PlayerController::ToggleInGameMenu()
         }
     }
 }
-void ANS_PlayerController::Test1()
+void ANS_PlayerController::TestGameOver()
 {
     if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
     {
         if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
         {
             FString Msg = TEXT("TEST!! HELLOW!~~~~");
-            UIManager->ShowGameMsgWidget( Msg, GetWorld());
-           // UIManager->ShowGameOverWidget(GetWorld());
+            UIManager->ShowGameOverWidget(GetWorld());
+        }
+    }
+}
+void ANS_PlayerController::TestGameMsg()
+{
+    if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
+    {
+        if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
+        {
+            FString Msg = TEXT("TEST!! HELLOW!~~~~");
+            UIManager->ShowGameMsgWidget(Msg, GetWorld());
+            // UIManager->ShowGameOverWidget(GetWorld());
         }
     }
 }

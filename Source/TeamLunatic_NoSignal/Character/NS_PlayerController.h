@@ -15,6 +15,11 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	void SetupInputComponent();
+
+	UFUNCTION()
 	void ToggleInGameMenu();
-	void Test1();
+	UFUNCTION()
+	void TestGameOver();
+	UFUNCTION()
+	void TestGameMsg();
 };
