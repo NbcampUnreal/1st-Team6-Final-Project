@@ -8,6 +8,7 @@
 #include "Item/NS_InventoryBaseItem.h"
 #include "Inventory/InventoryComponent.h"
 #include "Character/NS_PlayerCharacterBase.h"
+#include "Item/NS_BaseMagazine.h"
 
 
 APickup::APickup()
@@ -47,7 +48,6 @@ void APickup::InitializePickup(const TSubclassOf<UNS_InventoryBaseItem> BaseClas
 		OnRep_ReplicatedItemData();
 
 		ItemReference = NewObject<UNS_InventoryBaseItem>(this, BaseClass);
-
 		ItemReference->ItemType = ItemData->ItemType;
 		ItemReference->WeaponType = ItemData->WeaponType;
 		ItemReference->WeaponData = ItemData->WeaponData;
@@ -57,6 +57,8 @@ void APickup::InitializePickup(const TSubclassOf<UNS_InventoryBaseItem> BaseClas
 		ItemReference->ItemDataRowName = ItemData->ItemDataRowName;
 
 		InQuantity <= 0 ? ItemReference->SetQuantity(1) : ItemReference->SetQuantity(InQuantity);
+
+		ItemReference->SetOwningActor(this);
 
 		PickupMesh->SetStaticMesh(ItemData->ItemAssetData.StaticMesh);
 
@@ -79,6 +81,8 @@ void APickup::InitializeDrop(UNS_InventoryBaseItem* ItemToDrop, const int32 InQu
 	ReplicatedItemData.WeaponType = ItemToDrop->WeaponType;
 	ReplicatedItemData.ItemType = ItemToDrop->ItemType;
 
+	ItemReference->SetOwningActor(this);
+
 	UpdateInteractableData();
 }
 
@@ -87,6 +91,7 @@ void APickup::OnRep_ReplicatedItemData()
 	if (!ItemReference)
 	{
 		ItemReference = NewObject<UNS_InventoryBaseItem>(this, UNS_InventoryBaseItem::StaticClass());
+		ItemReference->SetOwningActor(this);
 	}
 
 	ItemReference->ItemDataRowName = ReplicatedItemData.ItemDataRowName;
@@ -171,7 +176,9 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 					break;
 				}
 
-				UE_LOG(LogTemp, Warning, TEXT("%s"), *AddResult.ResultMessage.ToString());
+				UE_LOG(LogTemp, Warning, TEXT("[TakePickup] AddResult: %d, Message: %s"),
+					(int32)AddResult.OperationResult,
+					*AddResult.ResultMessage.ToString());
 			}
 			else
 			{

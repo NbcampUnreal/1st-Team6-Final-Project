@@ -316,6 +316,14 @@ void UInventoryComponent::AddNewItem(UNS_InventoryBaseItem* Item, const int32 Am
 		NewItem = Item->CreateItemCopy();
 	}
 
+	// OwningActor가 유효하면 복제한 아이템에 적용
+	if (Item->GetOwningActor())
+	{
+		NewItem->SetOwningActor(Item->GetOwningActor());
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("[AddNewItem] NewItem OwningActor: %s"), *GetNameSafe(NewItem->GetOwningActor()));
+
 	NewItem->OwingInventory = this;
 	NewItem->SetQuantity(AmountToAdd);
 

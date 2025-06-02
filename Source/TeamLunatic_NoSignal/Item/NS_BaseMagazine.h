@@ -1,14 +1,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Item/NS_BaseItem.h"
+#include "Item/NS_BaseWeapon.h"
 #include "NS_EAmmoType.h"
 #include "NS_BaseMagazine.generated.h"
 
 class ANS_BaseAmmo;
+class UNS_InventoryBaseItem;
 
 UCLASS()
-class TEAMLUNATIC_NOSIGNAL_API ANS_BaseMagazine : public ANS_BaseItem
+class TEAMLUNATIC_NOSIGNAL_API ANS_BaseMagazine : public ANS_BaseWeapon
 {
 	GENERATED_BODY()
 	
@@ -64,6 +65,8 @@ public:
 	//남은 공간 확인
 	UFUNCTION(BlueprintCallable, Category = "Magazine")
 	int32 GetRemainingCapacity() const;
+
+	void InitializeFromItem(UNS_InventoryBaseItem* Item);
 
 	TSubclassOf<ANS_BaseAmmo> GetAmmoClass() const { return AmmoClass; }
 };

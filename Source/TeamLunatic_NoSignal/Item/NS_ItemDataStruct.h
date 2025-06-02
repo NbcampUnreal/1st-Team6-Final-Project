@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
 #include "Item/NS_WeaponType.h"
+#include "Item/NS_EAmmoType.h"
 #include "NS_ItemDataStruct.generated.h"
 
 class ANS_BaseWeapon;
@@ -116,6 +117,9 @@ struct FWeaponData
 
 	UPROPERTY(EditAnywhere)
 	int32 MaxAmmo;
+
+	UPROPERTY(EditAnywhere)
+	EAmmoType AmmoType;
 };
 
 

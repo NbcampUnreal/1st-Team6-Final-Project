@@ -69,6 +69,11 @@ void ANS_PlayerCharacterBase::DropItem_Server_Implementation(UNS_InventoryBaseIt
         const FTransform SpawnTransform(GetActorRotation(), SpawnLocation);
 
         const int32 RemovedQuantity = PlayerInventory->RemoveAmountOfItem(ItemToDrop, QuantityToDrop);
+        if (RemovedQuantity <= 0)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("DropItem_Server: 제거할 수량이 0 이하입니다."));
+            return;
+        }
 
         APickup* Pickup = GetWorld()->SpawnActor<APickup>(APickup::StaticClass(), SpawnTransform, SpawnParams);
 
@@ -84,7 +89,7 @@ void ANS_PlayerCharacterBase::DropItem(UNS_InventoryBaseItem* ItemToDrop, const 
 {
     if (HasAuthority())
     {
-        DropItem_Server(ItemToDrop, QuantityToDrop);
+        DropItem_Server_Implementation(ItemToDrop, QuantityToDrop);
     }
     else
     {
