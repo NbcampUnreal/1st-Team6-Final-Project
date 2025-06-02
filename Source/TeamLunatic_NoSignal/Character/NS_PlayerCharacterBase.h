@@ -66,7 +66,7 @@ public:
 	// 1인칭 카메라 컴포넌트 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	UCameraComponent* CameraComp;
-	// 1인칭 팔스켈레탈 메시 컴포넌트
+	// 1인칭 팔 스켈레탈 메시 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "FirstPerson")
 	USkeletalMeshComponent* FirstPersonArms;
 
