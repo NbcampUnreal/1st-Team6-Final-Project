@@ -27,6 +27,9 @@ public:
 	// 에디터 뷰포트에서도 Tick 작동
 	virtual bool ShouldTickIfViewportsOnly() const override { return true; }
 
+	UFUNCTION(BlueprintPure)
+	bool IsNight() const { return bIsNight; }
+
 protected:
 	// 클라이언트에서 bIsNight 갱신 시 호출
 	UFUNCTION()
