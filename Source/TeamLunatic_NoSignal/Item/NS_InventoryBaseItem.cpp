@@ -3,6 +3,11 @@
 
 #include "Item/NS_InventoryBaseItem.h"
 #include "Net/UnrealNetwork.h"
+#include "Character/NS_PlayerCharacterBase.h"
+#include "Character/Components/NS_EquipedWeaponComponent.h"
+#include "Item/NS_BaseWeapon.h"
+#include "Engine/DataTable.h"
+#include "GameFlow/NS_GameInstance.h"
 
 UNS_InventoryBaseItem::UNS_InventoryBaseItem() : bisCopy(false), bisPickup(false)
 {
@@ -22,6 +27,7 @@ void UNS_InventoryBaseItem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	DOREPLIFETIME(UNS_InventoryBaseItem, ItemDataRowName);
 	DOREPLIFETIME(UNS_InventoryBaseItem, ItemType);
 	DOREPLIFETIME(UNS_InventoryBaseItem, WeaponType);
+	DOREPLIFETIME(UNS_InventoryBaseItem, WeaponData);
 	DOREPLIFETIME(UNS_InventoryBaseItem, ItemName);
 	DOREPLIFETIME(UNS_InventoryBaseItem, NumericData);
 	DOREPLIFETIME(UNS_InventoryBaseItem, AssetData);
@@ -94,6 +100,59 @@ const FNS_ItemDataStruct* UNS_InventoryBaseItem::GetItemData() const
 
 void UNS_InventoryBaseItem::OnUseItem()
 {
+	if (!ItemsDataTable)
+	{
+		if (const UWorld* World = GetWorld())
+		{
+			if (const UNS_GameInstance* GI = Cast<UNS_GameInstance>(World->GetGameInstance()))
+			{
+				ItemsDataTable = GI->GlobalItemDataTable;
+				UE_LOG(LogTemp, Warning, TEXT("[OnUseItem] GameInstance에서 DataTable 재설정: %s"),
+					*GetNameSafe(ItemsDataTable));
+			}
+		}
+	}
+	// 먼저 RowName과 DataTable 상태 확인
+	UE_LOG(LogTemp, Warning, TEXT("[OnUseItem] Called on: %s"), *GetName());
+	UE_LOG(LogTemp, Warning, TEXT("[OnUseItem] ItemDataRowName: %s"), *ItemDataRowName.ToString());
+	UE_LOG(LogTemp, Warning, TEXT("[OnUseItem] ItemsDataTable: %s"),
+		ItemsDataTable ? *ItemsDataTable->GetName() : TEXT("NULL"));
+
+	const FNS_ItemDataStruct* ItemData = GetItemData();
+	if (!ItemData)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[OnUseItem] 데이터 테이블 또는 RowName 없음"));
+		return;
+	}
+
+	// 아이템 데이터가 정상적으로 파싱되었는지 확인
+	UE_LOG(LogTemp, Warning, TEXT("[OnUseItem] ItemName: %s, Type: %d, WeaponClass: %s"),
+		*ItemData->ItemTextData.ItemName.ToString(),
+		(int32)ItemData->ItemType,
+		*GetNameSafe(ItemData->WeaponActorClass));
+
+	// 실제 장비 장착
+	if (ItemData->ItemType == EItemType::Equipment && ItemData->WeaponActorClass)
+	{
+		if (auto* Player = Cast<ANS_PlayerCharacterBase>(OwingInventory ? OwingInventory->GetOwner() : nullptr))
+		{
+			if (auto* WeaponComp = Player->FindComponentByClass<UNS_EquipedWeaponComponent>())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("[OnUseItem] 장착 시도: %s"), *ItemData->WeaponActorClass->GetName());
+
+				WeaponComp->SwapWeapon(ItemData->WeaponActorClass);
+				OwingInventory->RemoveSingleInstanceOfItem(this);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("[OnUseItem] WeaponComponent 없음"));
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("[OnUseItem] Player 캐스팅 실패"));
+		}
+	}
 }
 
 bool UNS_InventoryBaseItem::IsSupportedForNetworking() const

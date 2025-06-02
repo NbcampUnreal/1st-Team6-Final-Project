@@ -32,7 +32,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData", Replicated)
 	EWeaponType WeaponType;
 
-	UPROPERTY(EditAnywhere, Category = "ItemData")
+	UPROPERTY(EditAnywhere, Category = "ItemData", Replicated)
 	FWeaponData WeaponData;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData", Replicated)

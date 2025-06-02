@@ -5,6 +5,8 @@
 #include "Item/NS_WeaponType.h"
 #include "NS_ItemDataStruct.generated.h"
 
+class ANS_BaseWeapon;
+
 UENUM()
 enum class EItemType : uint8
 {
@@ -150,6 +152,10 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	FItemAssetData ItemAssetData;
+	
+	// 장착 가능한 무기 클래스 (스폰용)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn")
+	TSubclassOf<class ANS_BaseWeapon> WeaponActorClass;
 
 	//상한 음식 체크
 	UPROPERTY(EditAnywhere)

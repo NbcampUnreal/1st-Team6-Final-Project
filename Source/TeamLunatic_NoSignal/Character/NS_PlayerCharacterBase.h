@@ -52,6 +52,9 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void Client_NotifyInventoryUpdated();
+
+	UFUNCTION(Server, Reliable)
+	void Server_UseInventoryItem(UNS_InventoryBaseItem* Item);
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;

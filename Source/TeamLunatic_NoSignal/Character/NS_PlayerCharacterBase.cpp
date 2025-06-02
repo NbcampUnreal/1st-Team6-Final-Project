@@ -5,6 +5,7 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Inventory/InventoryComponent.h"
+#include "Item/NS_InventoryBaseItem.h"
 #include "Components/NS_EquipedWeaponComponent.h"
 #include "Character/Components/NS_StatusComponent.h"
 #include "Item/NS_BaseRangedWeapon.h"
@@ -89,6 +90,14 @@ void ANS_PlayerCharacterBase::DropItem(UNS_InventoryBaseItem* ItemToDrop, const 
     else
     {
         DropItem_Server(ItemToDrop, QuantityToDrop); // 클라에서 서버로 요청
+    }
+}
+
+void ANS_PlayerCharacterBase::Server_UseInventoryItem_Implementation(UNS_InventoryBaseItem* Item)
+{
+    if (Item)
+    {
+        Item->OnUseItem(); // 서버에서 처리
     }
 }
 
@@ -241,7 +250,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
         {
             EnhancedInput->BindAction(
                 ToggleMenuAction,
-                ETriggerEvent::Triggered,
+                ETriggerEvent::Started,
                 InteractionComponent,
                 &UInteractionComponent::ToggleMenu
             );

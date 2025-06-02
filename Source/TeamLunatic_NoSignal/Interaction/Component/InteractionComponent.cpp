@@ -12,7 +12,7 @@ UInteractionComponent::UInteractionComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 }
-
+// UI 위젯 갱신 (HUD를 통해 상호작용 대상 정보 전달)
 void UInteractionComponent::UpdateInteractionWidget()
 {
 	if (IsValid(TargetInteractable.GetObject()))
@@ -42,13 +42,13 @@ void UInteractionComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 		PerformInteractionCheck();
 	}
 }
-
+// 시야 위치 (캐릭터 기준 약간 위로)
 FVector UInteractionComponent::GetViewLocation() const
 {
 	const AActor* Owner = GetOwner();
 	return Owner ? Owner->GetActorLocation() + FVector(0, 0, 50.f) : FVector::ZeroVector;
 }
-
+// 시야 방향 (카메라 방향)
 FRotator UInteractionComponent::GetViewRotation() const
 {
 	if (const APawn* Pawn = Cast<APawn>(GetOwner()))
@@ -60,14 +60,14 @@ FRotator UInteractionComponent::GetViewRotation() const
 	}
 	return GetOwner()->GetActorRotation();
 }
-
+// 상호작용 대상 감지 (라인 트레이스 사용)
 void UInteractionComponent::PerformInteractionCheck()
 {
 	InteractionData.LastInteractionCheckTime = GetWorld()->GetTimeSeconds();
 
 	FVector TraceStart = GetViewLocation();
 	FVector TraceEnd = TraceStart + (GetViewRotation().Vector() * InteractionCheckDistance);
-
+	// 플레이어가 바라보는 방향 확인
 	float LookDirection = FVector::DotProduct(GetOwner()->GetActorForwardVector(), GetViewRotation().Vector());
 
 	if (LookDirection > 0)
@@ -84,10 +84,11 @@ void UInteractionComponent::PerformInteractionCheck()
 			{
 				if (TraceHit.GetActor() != InteractionData.CurrentInteractable)
 				{
+					// 새로운 대상 발견 시 처리
 					FoundInteractable(TraceHit.GetActor());
 					return;
 				}
-
+				// 같은 대상이면 그대로 유지
 				if (TraceHit.GetActor() == InteractionData.CurrentInteractable)
 				{
 					return;
@@ -95,32 +96,35 @@ void UInteractionComponent::PerformInteractionCheck()
 			}
 		}
 	}
+	// 감지 실패 시 처리
 	NoInteractableFound();
 }
-
+// 새로운 상호작용 대상 발견
 void UInteractionComponent::FoundInteractable(AActor* NewInteractable)
 {
+	// 상호작용 중이면 종료
 	if (IsInteracting())
 	{
 		EndInteract();
 	}
-
+	// 이전 대상이 있다면 포커스 종료
 	if (InteractionData.CurrentInteractable)
 	{
 		TargetInteractable = InteractionData.CurrentInteractable;
 		TargetInteractable->EndFocus();
 	}
-
+	// 새로운 대상 등록 및 위젯 갱신
 	InteractionData.CurrentInteractable = NewInteractable;
 	TargetInteractable = NewInteractable;
 
 	HUD->UpdateInteractionWidget(&TargetInteractable->InteractableData);
-
+	// 포커스 시작
 	TargetInteractable->BeginFocus();
 }
-
+// 상호작용 대상이 없는 경우 처리
 void UInteractionComponent::NoInteractableFound()
 {
+	// 상호작용 중이면 타이머 해제
 	if (IsInteracting())
 	{
 		GetWorld()->GetTimerManager().ClearTimer(TimerHandle_Interaction);
@@ -128,18 +132,19 @@ void UInteractionComponent::NoInteractableFound()
 
 	if (InteractionData.CurrentInteractable)
 	{
+		// 포커스 종료
 		if (IsValid(TargetInteractable.GetObject()))
 		{
 			TargetInteractable->EndFocus();
 		}
-
+		// 위젯 숨기기
 		HUD->HideInteractionWidget();
-
+		// 현재 대상 초기화
 		InteractionData.CurrentInteractable = nullptr;
 		TargetInteractable = nullptr;
 	}
 }
-
+// 상호작용 시작
 void UInteractionComponent::BeginInteract()
 {
 	// 현재 캐릭터가 이미 상호작용 중이라면 무시
@@ -151,7 +156,7 @@ void UInteractionComponent::BeginInteract()
 			return;
 		}
 	}
-
+	// 대상 감지 시도
 	PerformInteractionCheck();
 
 	if (InteractionData.CurrentInteractable && IsValid(TargetInteractable.GetObject()))
@@ -168,7 +173,7 @@ void UInteractionComponent::BeginInteract()
 		}
 	}
 }
-
+// 상호작용 종료
 void UInteractionComponent::EndInteract()
 {
 	GetWorld()->GetTimerManager().ClearTimer(TimerHandle_Interaction);
@@ -178,7 +183,7 @@ void UInteractionComponent::EndInteract()
 		TargetInteractable->EndInteract();
 	}
 }
-
+// 실제 상호작용 실행
 void UInteractionComponent::Interact()
 {
 	GetWorld()->GetTimerManager().ClearTimer(TimerHandle_Interaction);
@@ -200,7 +205,7 @@ void UInteractionComponent::Interact()
 		}
 	}
 }
-
+// 서버에서 상호작용 처리
 void UInteractionComponent::Interact_Server_Implementation(AActor* Target)
 {
 	if (Target && Target->GetClass()->ImplementsInterface(UInteractionInterface::StaticClass()))

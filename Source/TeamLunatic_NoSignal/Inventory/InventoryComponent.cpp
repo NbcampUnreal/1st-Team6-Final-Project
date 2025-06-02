@@ -21,6 +21,7 @@ void UInventoryComponent::InitializeComponent()
 	bWantsInitializeComponent = true;
 }
 
+// Subobject(UObject 기반 인벤토리 아이템) 복제 처리
 bool UInventoryComponent::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags)
 {
 	bool bWroteSomething = Super::ReplicateSubobjects(Channel, Bunch, RepFlags);
@@ -48,6 +49,7 @@ void UInventoryComponent::BeginPlay()
 
 }
 
+// 서버와 클라이언트에게 인벤토리 UI 갱신 요청
 void UInventoryComponent::BroadcastInventoryUpdate()
 {
 	UE_LOG(LogTemp, Warning, TEXT(" BroadcastInventoryUpdate() called"));
@@ -64,6 +66,7 @@ void UInventoryComponent::BroadcastInventoryUpdate()
 	}
 }
 
+// 인벤토리 관련 변수 복제 설정
 void UInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -110,6 +113,7 @@ FItemAddResult UInventoryComponent::HandleAddItem(UNS_InventoryBaseItem* InputIt
 	return FItemAddResult::AddedNone(FText::FromString("TryAddItem fallthrough error. GetOwner() check somehow failed."));
 }
 
+// 인벤토리에 동일한 아이템이 있는지 확인
 UNS_InventoryBaseItem* UInventoryComponent::FindMatchingItem(UNS_InventoryBaseItem* ItemIn) const
 {
 	if (ItemIn)
@@ -122,6 +126,7 @@ UNS_InventoryBaseItem* UInventoryComponent::FindMatchingItem(UNS_InventoryBaseIt
 	return nullptr;
 }
 
+// 동일한 ID를 가진 다음 아이템을 찾음
 UNS_InventoryBaseItem* UInventoryComponent::FindNextItemByID(UNS_InventoryBaseItem* ItemIn) const
 {
 	if (ItemIn)
@@ -134,6 +139,7 @@ UNS_InventoryBaseItem* UInventoryComponent::FindNextItemByID(UNS_InventoryBaseIt
 	return nullptr;
 }
 
+// 스택이 가득 차지 않은 아이템 중 동일한 아이템 찾기
 UNS_InventoryBaseItem* UInventoryComponent::FindNextPartialStack(UNS_InventoryBaseItem* ItemIn) const
 {
 	if (const TArray<TObjectPtr<UNS_InventoryBaseItem>>::ElementType* Result = InventoryContents.FindByPredicate([&ItemIn](const UNS_InventoryBaseItem* InventoryItem)
@@ -148,12 +154,14 @@ UNS_InventoryBaseItem* UInventoryComponent::FindNextPartialStack(UNS_InventoryBa
 	return nullptr;
 }
 
+// 인벤토리에서 특정 아이템을 하나 제거
 void UInventoryComponent::RemoveSingleInstanceOfItem(UNS_InventoryBaseItem* ItemToRemove)
 {
 	InventoryContents.RemoveSingle(ItemToRemove);
 	BroadcastInventoryUpdate();
 }
 
+// 특정 수량만큼 아이템 제거
 int32 UInventoryComponent::RemoveAmountOfItem(UNS_InventoryBaseItem* ItemIn, int32 DesiredAmountToRemove)
 {
 	const int32 ActualAmountToRemove = FMath::Min(DesiredAmountToRemove, ItemIn->Quantity);
@@ -167,6 +175,7 @@ int32 UInventoryComponent::RemoveAmountOfItem(UNS_InventoryBaseItem* ItemIn, int
 	return ActualAmountToRemove;
 }
 
+// 기존 스택을 분할해서 새로운 스택 생성
 void UInventoryComponent::SplitExistingStack(UNS_InventoryBaseItem* ItemIn, const int32 AmountToSplit)
 {
 	if (!(InventoryContents.Num() + 1 > InventorySlotsCapacity))
@@ -179,17 +188,17 @@ void UInventoryComponent::SplitExistingStack(UNS_InventoryBaseItem* ItemIn, cons
 // 스택 불가능한 아이템 처리
 FItemAddResult UInventoryComponent::HandleNonStackableItems(UNS_InventoryBaseItem* InputItem)
 {
-	// 무게 또는 슬롯 제한 체크
+	// 유효하지 않은 무게
 	if (FMath::IsNearlyZero(InputItem->GetItemSingleWeight()) || InputItem->GetItemSingleWeight() < 0)
 	{
 		return FItemAddResult::AddedNone(FText::Format(FText::FromString("Could not add{0} to the Inventory. Item has invalid weight value."), InputItem->TextData.ItemName));
 	}
-
+	// 무게 초과
 	if (InventoryTotalWeight + InputItem->GetItemSingleWeight() > GetWeightCapacity())
 	{
 		return FItemAddResult::AddedNone(FText::Format(FText::FromString("Could not add{0} to the Inventory. Item would overflow weight limit."), InputItem->TextData.ItemName));
 	}
-
+	// 슬롯 초과
 	if (InventoryContents.Num() + 1 > InventorySlotsCapacity)
 	{
 		return FItemAddResult::AddedNone(FText::Format(FText::FromString("Could not add{0} to the Inventory. All Inventory slots are full."), InputItem->TextData.ItemName));
@@ -274,6 +283,7 @@ int32 UInventoryComponent::HandleStackableItems(UNS_InventoryBaseItem* ItemIn, i
 	return RequestedAddAmount - AmountToDistribute;
 }
 
+// 무게 제한을 고려한 수량 계산
 int32 UInventoryComponent::CalculateWeightAddAmount(UNS_InventoryBaseItem* ItemIn, int32 RequestedAddAmount)
 {
 	const int32 WeightMaxAddAmount = FMath::FloorToInt((GetWeightCapacity() - InventoryTotalWeight) / ItemIn->GetItemSingleWeight());
@@ -284,6 +294,7 @@ int32 UInventoryComponent::CalculateWeightAddAmount(UNS_InventoryBaseItem* ItemI
 	return WeightMaxAddAmount;
 }
 
+// 스택을 가득 채우기 위해 필요한 수량 계산
 int32 UInventoryComponent::CalculateNumberForFullStack(UNS_InventoryBaseItem* StackableItem, int32 InitialRequestedAddAmount)
 {
 	const int32 AddAmountToMakeFullStack = StackableItem->NumericData.MaxStack - StackableItem->Quantity;
