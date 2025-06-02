@@ -11,9 +11,9 @@ void UNS_ServerListingR::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    if (JoinButton)
+    if (JoinServerButton)
     {
-        JoinButton->OnClicked.AddDynamic(this, &UNS_ServerListingR::OnJoinButtonClicked);
+        JoinServerButton->OnClicked.AddDynamic(this, &UNS_ServerListingR::OnJoinButtonClicked);
     }
 }
 

@@ -32,7 +32,7 @@ public:
 	UTextBlock* PingText;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
-	UButton* JoinButton;
+	UButton* JoinServerButton;
 
 	FOnlineSessionSearchResult SessionResult;
 
