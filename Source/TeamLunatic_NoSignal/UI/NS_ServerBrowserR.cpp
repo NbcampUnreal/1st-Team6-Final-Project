@@ -19,18 +19,11 @@ void UNS_ServerBrowserR::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-    if (CheckBox_UseLAN)
-        CheckBox_UseLAN->OnCheckStateChanged.AddDynamic(this, &UNS_ServerBrowserR::OnUseLANCheckChanged);
 
     if (RefreshButton)
         RefreshButton->OnClicked.AddDynamic(this, &UNS_ServerBrowserR::OnRefreshButtonClicked);
 
     RefreshServerList(); // 최초 자동 로드
-}
-
-void UNS_ServerBrowserR::OnUseLANCheckChanged(bool bIsChecked)
-{
-    bUseLAN = bIsChecked;
 }
 
 void UNS_ServerBrowserR::OnRefreshButtonClicked()
@@ -86,18 +79,30 @@ void UNS_ServerBrowserR::RefreshServerList()
     {
         if (UNS_GameInstance* NSGI = Cast<UNS_GameInstance>(GI))
         {
+            NSGI->OnSessionSearchSuccess.Clear();
+
             NSGI->OnSessionSearchSuccess.AddLambda([this](const TArray<FOnlineSessionSearchResult>& Results)
             {
                 for (const FOnlineSessionSearchResult& Result : Results)
                 {
-                    AddServerEntry(Result);
+                    if (!Result.IsValid())
+                        continue;
+
+                    const FOnlineSession& Session = Result.Session;
+
+                    if (Session.NumOpenPublicConnections > 0 &&
+                        !Session.OwningUserName.IsEmpty())
+                    {
+                        AddServerEntry(Result);
+                    }
                 }
 
                 if (CircularThrobber_Image)
                     CircularThrobber_Image->SetVisibility(ESlateVisibility::Hidden);
             });
 
-            NSGI->FindSessions(bUseLAN);
+
+            NSGI->FindSessions();
         }
     }
 }
@@ -152,7 +157,7 @@ void UNS_ServerBrowserR::AddServerEntry(const FOnlineSessionSearchResult& Sessio
     Entry->PlayerContText->SetText(FText::FromString(PlayerCount));
 
     FString Ping = FString::Printf(TEXT("%d ms"), SessionResult.PingInMs);
-    Entry->PingText->SetText(FText::FromString(Ping));
+//    Entry->PingText->SetText(FText::FromString(Ping));
 
     ServerVerticalBox->AddChild(Entry);
 }

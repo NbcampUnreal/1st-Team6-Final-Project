@@ -20,6 +20,14 @@ public:
 
 	UInventoryComponent* OwingInventory;
 
+	AActor* OwningActor = nullptr;
+
+	UFUNCTION(BlueprintCallable)
+	void SetOwningActor(AActor* NewOwner);
+
+	UFUNCTION(BlueprintCallable)
+	AActor* GetOwningActor() const;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Confige")
 	UDataTable* ItemsDataTable;
 
@@ -32,7 +40,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData", Replicated)
 	EWeaponType WeaponType;
 
-	UPROPERTY(EditAnywhere, Category = "ItemData")
+	UPROPERTY(EditAnywhere, Category = "ItemData", Replicated)
 	FWeaponData WeaponData;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData", Replicated)
@@ -90,6 +98,9 @@ public:
 	const FNS_ItemDataStruct* GetItemData() const;
 
 	virtual void OnUseItem();
+	void EquipWeapon(const FNS_ItemDataStruct* ItemData);
+	void EquipMagazine(const FNS_ItemDataStruct* ItemData);
+	void UseAmmo(const FNS_ItemDataStruct* ItemData);
 	bool IsSupportedForNetworking() const;
 protected:
 	bool operator == (const FName& OtherID) const

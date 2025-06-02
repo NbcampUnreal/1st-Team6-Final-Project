@@ -85,9 +85,9 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
     {
         // 플레이어한테만 보이는 메쉬를 팔에 부착
         // ArmsMesh가 유효한지 확인
-        if (Melee->ArmsMesh) 
+        if (Melee->ArmsMeshComp) 
         {
-            Melee->ArmsMesh->AttachToComponent(
+            Melee->ArmsMeshComp->AttachToComponent(
                 OwnerCharacter->FirstPersonArms, Rules, SocketName);
         }
         
@@ -112,9 +112,9 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
         
         // 다른 플레이어에게 보이게 메쉬를 몸에 부착
         // ArmsMesh가 유효한지 확인
-        if (Ranged->ArmsMesh)
+        if (Ranged->ArmsMeshComp)
         {
-            Ranged->ArmsMesh->AttachToComponent(
+            Ranged->ArmsMeshComp->AttachToComponent(
                 OwnerCharacter->FirstPersonArms, Rules, SocketName);
         }
     }
@@ -127,45 +127,45 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
 
 void UNS_EquipedWeaponComponent::StartAttack()
 {
-    // 비무장 : 공격없음
-    if (!CurrentWeapon)
-    {
-        IsAttack = false;
-        return;
-    }
+    // // 비무장 : 공격없음
+    // if (!CurrentWeapon)
+    // {
+    //     IsAttack = false;
+    //     return;
+    // }
 
-    // 무기 변경중이면 공격 불가
-	if (OwnerCharacter && OwnerCharacter->IsChangingWeapon)
-    {
-        IsAttack = false;
-        return;
-    }
+ //    // 무기 변경중이면 공격 불가
+	// if (OwnerCharacter && OwnerCharacter->IsChangingWeapon)
+ //    {
+ //        IsAttack = false;
+ //        return;
+ //    }
+ //
+	// // 무기 타입에 따라 공격 처리
+ //    if (CurrentWeapon->GetWeaponType() == EWeaponType::Ranged // 원거리
+ //        && CurrentWeapon->GetWeaponType() == EWeaponType::Pistol)
+ //    {
+ //        // 현재 탄창 비어있으면 return
+	// 	if (IsEmpty)
+ //        {
+ //            IsAttack = false;
+ //            return;
+ //        }
+ //        // 재장전 중이면 return
+	// 	if (IsReload)
+	// 	{
+	// 		IsAttack = false;
+	// 		return;
+	// 	}
+ //
+	// 	IsAttack = true;
+ //    }
+ //    else if (CurrentWeapon->GetWeaponType() == EWeaponType::Melee)
+ //    {
+ //        IsAttack = true;
+ //    }
 
-	// 무기 타입에 따라 공격 처리
-    if (CurrentWeapon->GetWeaponType() == EWeaponType::Ranged // 원거리
-        || CurrentWeapon->GetWeaponType() == EWeaponType::Pistol)
-    {
-        // 현재 탄창 비어있으면 return
-		if (IsEmpty)
-        {
-            IsAttack = false;
-            return;
-        }
-        // 재장전 중이면 return
-		if (IsReload)
-		{
-			IsAttack = false;
-			return;
-		}
-
-		IsAttack = true;
-    }
-    else if (CurrentWeapon->GetWeaponType() == EWeaponType::Melee)
-    {
-        IsAttack = true;
-    }
-
-
+    IsAttack = true;
 }
 
 void UNS_EquipedWeaponComponent::StopAttack()
@@ -176,19 +176,37 @@ void UNS_EquipedWeaponComponent::StopAttack()
 
 void UNS_EquipedWeaponComponent::Reload()
 {
-	// 원거리 무장 아님 : 재장전 무조건 false
-	if (CurrentWeapon && CurrentWeapon->GetWeaponType() != EWeaponType::Ranged)
-	{
-		IsReload = false;
-		return;
-	}
+    // 현재 무기가 없거나, 원거리 무기가 아니면 재장전 불가
+    if (!CurrentWeapon || CurrentWeapon->GetWeaponType() != EWeaponType::Ranged)
+    {
+        IsReload = false;
+        return;
+    }
 
-    //TODO 인벤토리 살펴보기
-    //인벤토리내 무기에 맞는 탄창or탄약이 있는지 체크
-    //if(탄창으로 구현) : 현재 탄창을 인벤토리에 넣고 (인벤 칸 모자름 : 현재탄창 버려야함), 다음 탄창을 꺼내서 장착
-    //if(탄창으로 구현) : 다음 탄창이 뭔지 어떻게 알아야 할까? : 들어온 탄창순으로 고유번호를 주고 QUEUE구조로 돌려야할까? 아니면 대기표를 뽑아줄까?
-    //else if(탄약으로 구현) : 걍 최대 탄약수만큼 빼면 쉬움[탄창보다 딸깍이네]
+    // 현재 무기를 원거리 무기로 캐스팅
+    auto* RangedWeapon = Cast<ANS_BaseRangedWeapon>(CurrentWeapon);
+    if (!RangedWeapon)
+    {
+        IsReload = false;
+        return;
+    }
 
+    // 이미 탄약이 최대치면 재장전할 필요 없음
+    if (RangedWeapon->CurrentAmmo >= RangedWeapon->MaxAmmo)
+    {
+        UE_LOG(LogTemp, Log, TEXT("현재 탄약이 이미 최대입니다."));
+        IsReload = false;
+        return;
+    }
+
+    // 실제 탄약 수를 인벤토리에서 가져오는 로직은 나중에 추가 예정
+    // 현재는 단순히 탄약을 최대치로 채워줌
+    RangedWeapon->CurrentAmmo = RangedWeapon->MaxAmmo;
+
+    // 재장전 상태를 true로 설정 (애니메이션 등에 활용 가능)
     IsReload = true;
+
+    // 로그 출력: 재장전된 탄약 수 표시
+    UE_LOG(LogTemp, Log, TEXT("재장전 완료: %d / %d"), RangedWeapon->CurrentAmmo, RangedWeapon->MaxAmmo);
 }
 

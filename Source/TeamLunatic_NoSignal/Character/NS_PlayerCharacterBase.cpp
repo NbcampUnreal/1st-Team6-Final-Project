@@ -1,10 +1,10 @@
 #include "Character/NS_PlayerCharacterBase.h"
-#include "Character/Debug/NS_DebugStatusWidget.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.H"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Inventory/InventoryComponent.h"
+#include "Item/NS_InventoryBaseItem.h"
 #include "Components/NS_EquipedWeaponComponent.h"
 #include "Character/Components/NS_StatusComponent.h"
 #include "Item/NS_BaseRangedWeapon.h"
@@ -69,6 +69,11 @@ void ANS_PlayerCharacterBase::DropItem_Server_Implementation(UNS_InventoryBaseIt
         const FTransform SpawnTransform(GetActorRotation(), SpawnLocation);
 
         const int32 RemovedQuantity = PlayerInventory->RemoveAmountOfItem(ItemToDrop, QuantityToDrop);
+        if (RemovedQuantity <= 0)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("DropItem_Server: 제거할 수량이 0 이하입니다."));
+            return;
+        }
 
         APickup* Pickup = GetWorld()->SpawnActor<APickup>(APickup::StaticClass(), SpawnTransform, SpawnParams);
 
@@ -84,11 +89,19 @@ void ANS_PlayerCharacterBase::DropItem(UNS_InventoryBaseItem* ItemToDrop, const 
 {
     if (HasAuthority())
     {
-        DropItem_Server(ItemToDrop, QuantityToDrop);
+        DropItem_Server_Implementation(ItemToDrop, QuantityToDrop);
     }
     else
     {
         DropItem_Server(ItemToDrop, QuantityToDrop); // 클라에서 서버로 요청
+    }
+}
+
+void ANS_PlayerCharacterBase::Server_UseInventoryItem_Implementation(UNS_InventoryBaseItem* Item)
+{
+    if (Item)
+    {
+        Item->OnUseItem(); // 서버에서 처리
     }
 }
 
@@ -115,19 +128,6 @@ void ANS_PlayerCharacterBase::BeginPlay()
         FirstPersonArms->SetOnlyOwnerSee(true);  // 팔 메시만 본인(플레이어)이 보이게
     }
     
-    // 디버그 위젯 생성 ======================== 차후 삭제필요
-    if (DebugWidgetClass && Controller)
-    {
-        if (APlayerController* PC = Cast<APlayerController>(Controller))
-        {
-            DebugWidgetInstance = CreateWidget<UNS_DebugStatusWidget>(PC, DebugWidgetClass);
-            if (DebugWidgetInstance)
-            {
-                DebugWidgetInstance->AddToViewport();
-            }
-        }
-    }
-
     // 입력 매핑 컨텍스트 등록
     if (APlayerController* PC = Cast<APlayerController>(Controller))
     {
@@ -241,7 +241,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
         {
             EnhancedInput->BindAction(
                 ToggleMenuAction,
-                ETriggerEvent::Triggered,
+                ETriggerEvent::Started,
                 InteractionComponent,
                 &UInteractionComponent::ToggleMenu
             );
@@ -251,7 +251,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
         {
             EnhancedInput->BindAction(
             InputAttackAction,
-             ETriggerEvent::Triggered,
+             ETriggerEvent::Started,
               this,
                &ANS_PlayerCharacterBase::StartAttackAction_Server);
             EnhancedInput->BindAction(
