@@ -41,19 +41,19 @@ struct FItemStates
 	GENERATED_USTRUCT_BODY()
 
 	UPROPERTY(EditAnywhere)
-	int32 HealAmount;
+	float HealAmount;
 
 	UPROPERTY(EditAnywhere)
-	int32 StaminaRecovery;
+	float StaminaRecovery;
 
 	UPROPERTY(EditAnywhere)
-	int32 HungerRestore;
+	float HungerRestore;
 
 	UPROPERTY(EditAnywhere)
-	int32 ThirstRestore;
+	float ThirstRestore;
 
 	UPROPERTY(EditAnywhere)
-	int32 TiredRestore;
+	float TiredRestore;
 };
 
 USTRUCT()
