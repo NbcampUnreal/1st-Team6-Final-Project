@@ -102,15 +102,9 @@ void UNS_InGameStartMenu::On_MainMenuClicked()
 {
     //HideSubMenuWidget();
     HideWidget();
-    IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
-    if (OnlineSub)
-    {
-        IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
-        if (SessionInterface.IsValid())
-        {
-            SessionInterface->DestroySession(NAME_GameSession);
-        }
-    }
+
+    OnDisconnectClicked();
+    
     UGameplayStatics::OpenLevel(GetWorld(), FName(TEXT("MainTitle")));//MenuMap / MainTitle
 
     if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
@@ -127,9 +121,7 @@ void UNS_InGameStartMenu::OnDisconnectClicked()
     {
         IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
         if (SessionInterface.IsValid())
-        {
             SessionInterface->DestroySession(NAME_GameSession);
-        }
     }
 }
 
