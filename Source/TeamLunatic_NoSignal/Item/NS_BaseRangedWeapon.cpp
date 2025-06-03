@@ -26,6 +26,11 @@ void ANS_BaseRangedWeapon::BeginPlay()
 	Super::BeginPlay();
 
 	const FNS_ItemDataStruct* ItemData = GetItemData();
+
+	if (ItemData)
+	{
+		MaxAmmo = ItemData->WeaponData.MaxAmmo;
+	}
 	
 	InstanceInteractableData.Quantity = 1;
 
