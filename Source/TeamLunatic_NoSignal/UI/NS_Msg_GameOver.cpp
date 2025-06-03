@@ -24,6 +24,13 @@ void UNS_Msg_GameOver::Init(UNS_BaseMainMenu* NsMainMenu)
 void UNS_Msg_GameOver::ShowWidgetD()
 {
 	Super::ShowWidgetD();
+	if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
+	{
+		if (NS_GameInstance->bIsSinglePlayer)
+			LoadSavedGameBtn->SetVisibility(ESlateVisibility::Visible);
+		else
+			LoadSavedGameBtn->SetVisibility(ESlateVisibility::Collapsed);
+	}
 	PlayOpenAnimation();
 }
 
