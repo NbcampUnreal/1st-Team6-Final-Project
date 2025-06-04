@@ -14,6 +14,9 @@ public:
     virtual void PostLogin(APlayerController* NewPlayer) override;
     virtual void BeginPlay() override;
 
+    UPROPERTY(EditDefaultsOnly, Category = "Lobby")
+    TSubclassOf<APawn> WaitingRoomPawnClass;
+
 protected:
     AActor* FindSpawnPointByIndex(int32 Index);
 };

@@ -11,8 +11,24 @@
 
 ANS_LobbyMode::ANS_LobbyMode()
 {
-    UE_LOG(LogTemp, Warning, TEXT("[GameMode] BeginPlay: %s"), *GetName());
+    DefaultPawnClass = nullptr; // 자동 생성 방지
+
+    static ConstructorHelpers::FClassFinder<APawn> PawnBPClass(
+        TEXT("/Game/Character/WaitingRoomPawn/WaitingRoomPawn1")
+    );
+
+    if (PawnBPClass.Succeeded())
+    {
+        WaitingRoomPawnClass = PawnBPClass.Class;
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("❌ Failed to load WaitingRoomPawn1 blueprint class."));
+    }
 }
+
+
+
 
 void ANS_LobbyMode::BeginPlay()
 {
