@@ -57,10 +57,8 @@ void ANS_LobbyMode::PostLogin(APlayerController* NewPlayer)
 {
     Super::PostLogin(NewPlayer);
 
-    // PlayerIndex 부여
     int32 PlayerIndex = GetGameState<AGameState>()->PlayerArray.Num() - 1;
 
-    // 스폰 위치 찾기
     AActor* StartSpot = FindSpawnPointByIndex(PlayerIndex);
     if (!StartSpot)
     {
@@ -68,24 +66,30 @@ void ANS_LobbyMode::PostLogin(APlayerController* NewPlayer)
         return;
     }
 
-    // Pawn 생성 + Possess
     FTransform SpawnTransform = StartSpot->GetActorTransform();
-    APawn* SpawnedPawn = GetWorld()->SpawnActor<APawn>(DefaultPawnClass, SpawnTransform);
+
+    // FIX: DefaultPawnClass → WaitingRoomPawnClass
+    APawn* SpawnedPawn = GetWorld()->SpawnActor<APawn>(WaitingRoomPawnClass, SpawnTransform);
     if (SpawnedPawn)
     {
         NewPlayer->Possess(SpawnedPawn);
+        UE_LOG(LogTemp, Log, TEXT("✅ Spawned & Possessed Pawn: %s"), *SpawnedPawn->GetName());
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("❌ Pawn spawn failed."));
     }
 
-    // PlayerState 인덱스 지정
     if (ANS_PlayerState* PS = Cast<ANS_PlayerState>(NewPlayer->PlayerState))
     {
         PS->SetPlayerIndex(PlayerIndex);
     }
     else
     {
-        UE_LOG(LogTemp, Error, TEXT("PlayerState cast to ANS_PlayerState failed. Class = %s"), *NewPlayer->PlayerState->GetClass()->GetName());
+        UE_LOG(LogTemp, Error, TEXT("PlayerState cast to ANS_PlayerState failed."));
     }
 }
+
 
 AActor* ANS_LobbyMode::FindSpawnPointByIndex(int32 Index)
 {
