@@ -247,20 +247,6 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
             );
         }
 
-        if (InputAttackAction)
-        {
-            EnhancedInput->BindAction(
-            InputAttackAction,
-             ETriggerEvent::Started,
-              this,
-               &ANS_PlayerCharacterBase::StartAttackAction_Server);
-            EnhancedInput->BindAction(
-            InputAttackAction,
-             ETriggerEvent::Completed,
-              this,
-               &ANS_PlayerCharacterBase::StopAttackAction_Server);
-        }
-
         if (InteractAction)
         {
             EnhancedInput->BindAction(
@@ -289,7 +275,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
         {
             EnhancedInput->BindAction(
             InputReloadAction,
-             ETriggerEvent::Triggered,
+             ETriggerEvent::Started,
               this,
                &ANS_PlayerCharacterBase::ReloadAction_Server);
         }
@@ -307,6 +293,7 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
     DOREPLIFETIME(ANS_PlayerCharacterBase, CamYaw);    // 카메라 좌/우 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, CamPitch);  // 카메라 상/하 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsAiming);  // 조준중인지 확인 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsReload); // 장전중인지 확인 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, TurnLeft);  // 몸을 왼쪽으로 회전시키는 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, TurnRight); // 몸을 오른쪽으로 회전시키는 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, NowFire);   // 사격시 몸전체Mesh 사격 애니메이션 재생 용 변수
@@ -463,18 +450,6 @@ void ANS_PlayerCharacterBase::KickAction_Server_Implementation(const FInputActio
     );
 }
 
-void ANS_PlayerCharacterBase::StartAttackAction_Server_Implementation(const FInputActionValue& Value)
-{
-    if (GetCharacterMovement()->IsFalling()) {return;} 
-
-    EquipedWeaponComp->StartAttack();
-}
-
-void ANS_PlayerCharacterBase::StopAttackAction_Server_Implementation(const FInputActionValue& Value)
-{
-    EquipedWeaponComp->StopAttack();
-}
-
 void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputActionValue& Value)
 {
     if (GetCharacterMovement()->IsFalling()) {return;} 
@@ -505,10 +480,25 @@ void ANS_PlayerCharacterBase::StopAimingAction_Server_Implementation(const FInpu
 
 void ANS_PlayerCharacterBase::ReloadAction_Server_Implementation(const FInputActionValue& Value)
 {
-	EquipedWeaponComp->Reload();
+    // 실제 총알 재장전 로직은 애님노티파이로 애니메이션 안에서 EquipedWeapon에있는 Server_Reload()함수를 블루프린트로 실행 할 예정
+    
+    // 현재 무기가 없거나, 원거리 무기가 아니면 재장전 불가
+    if (!EquipedWeaponComp->CurrentWeapon)// 현재 무기가 없으면 return
+    {
+        return;
+    }
 
+    // 근거리 무기면 return
+    if (EquipedWeaponComp->CurrentWeapon->GetWeaponType() == EWeaponType::Melee)
+    {
+        return;
+    }
+    
+	IsReload = true;
 }
+
 //////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
+
 
 void ANS_PlayerCharacterBase::PlayDeath_Server_Implementation()
 {

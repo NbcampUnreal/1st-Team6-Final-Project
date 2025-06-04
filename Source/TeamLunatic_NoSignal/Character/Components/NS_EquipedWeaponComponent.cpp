@@ -25,7 +25,6 @@ void UNS_EquipedWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProp
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(UNS_EquipedWeaponComponent, CurrentWeapon); // 현재 무기 변수
 	DOREPLIFETIME(UNS_EquipedWeaponComponent, IsAttack); // 공격중인지 확인 변수
-	DOREPLIFETIME(UNS_EquipedWeaponComponent, IsReload); // 장전중인지 확인 변수
 	DOREPLIFETIME(UNS_EquipedWeaponComponent, IsEmpty); // 총알이 있는지 없는지 확인 변수
     DOREPLIFETIME(UNS_EquipedWeaponComponent, WeaponType); // 무기 타입 변수
     DOREPLIFETIME(UNS_EquipedWeaponComponent, CurrentWeapon); // 현재 장착중인 무기 변수
@@ -125,88 +124,33 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
     WeaponType = NewWpn->GetWeaponType();
 }
 
-void UNS_EquipedWeaponComponent::StartAttack()
+void UNS_EquipedWeaponComponent::Server_Reload_Implementation()
 {
-    // // 비무장 : 공격없음
-    // if (!CurrentWeapon)
-    // {
-    //     IsAttack = false;
-    //     return;
-    // }
-
- //    // 무기 변경중이면 공격 불가
-	// if (OwnerCharacter && OwnerCharacter->IsChangingWeapon)
- //    {
- //        IsAttack = false;
- //        return;
- //    }
- //
-	// // 무기 타입에 따라 공격 처리
- //    if (CurrentWeapon->GetWeaponType() == EWeaponType::Ranged // 원거리
- //        && CurrentWeapon->GetWeaponType() == EWeaponType::Pistol)
- //    {
- //        // 현재 탄창 비어있으면 return
-	// 	if (IsEmpty)
- //        {
- //            IsAttack = false;
- //            return;
- //        }
- //        // 재장전 중이면 return
-	// 	if (IsReload)
-	// 	{
-	// 		IsAttack = false;
-	// 		return;
-	// 	}
- //
-	// 	IsAttack = true;
- //    }
- //    else if (CurrentWeapon->GetWeaponType() == EWeaponType::Melee)
- //    {
- //        IsAttack = true;
- //    }
-
-    // IsAttack = true;
+    Multicast_Reload();
 }
 
-void UNS_EquipedWeaponComponent::StopAttack()
-{	
-	// IsAttack = false;
-}
-
-
-void UNS_EquipedWeaponComponent::Reload()
+void UNS_EquipedWeaponComponent::Multicast_Reload_Implementation()
 {
     // 현재 무기가 없거나, 원거리 무기가 아니면 재장전 불가
-    if (!CurrentWeapon || CurrentWeapon->GetWeaponType() != EWeaponType::Ranged)
+    if (!CurrentWeapon ||
+        CurrentWeapon->GetWeaponType() != EWeaponType::Ranged ||
+        CurrentWeapon->GetWeaponType() != EWeaponType::Pistol )
     {
-        IsReload = false;
         return;
     }
 
     // 현재 무기를 원거리 무기로 캐스팅
-    auto* RangedWeapon = Cast<ANS_BaseRangedWeapon>(CurrentWeapon);
-    if (!RangedWeapon)
-    {
-        IsReload = false;
-        return;
-    }
+    auto* CurrentWeaponBullet = Cast<ANS_BaseRangedWeapon>(CurrentWeapon);
 
     // 이미 탄약이 최대치면 재장전할 필요 없음
-    if (RangedWeapon->CurrentAmmo >= RangedWeapon->MaxAmmo)
+    if (CurrentWeaponBullet->CurrentAmmo >= CurrentWeaponBullet->MaxAmmo)
     {
         UE_LOG(LogTemp, Log, TEXT("현재 탄약이 이미 최대입니다."));
-        IsReload = false;
         return;
     }
 
     // 실제 탄약 수를 인벤토리에서 가져오는 로직은 나중에 추가 예정
     // 현재는 단순히 탄약을 최대치로 채워줌
-    RangedWeapon->CurrentAmmo = RangedWeapon->MaxAmmo;
-
-    // 재장전 상태를 true로 설정 (애니메이션 등에 활용 가능)
-    IsReload = true;
-
-    // 로그 출력: 재장전된 탄약 수 표시
-    UE_LOG(LogTemp, Log, TEXT("재장전 완료: %d / %d"), RangedWeapon->CurrentAmmo, RangedWeapon->MaxAmmo);
+    CurrentWeaponBullet->CurrentAmmo = CurrentWeaponBullet->MaxAmmo;
 }
 
