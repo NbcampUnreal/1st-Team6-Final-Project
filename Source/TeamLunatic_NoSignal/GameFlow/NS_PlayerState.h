@@ -22,6 +22,10 @@ public:
 	// 레디 상태 설정 (서버에서만 호출)
 	void SetIsReady(bool bReady);
 
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Lobby")
+	int32 PlayerIndex;
+
+	void SetPlayerIndex(int32 Index); 
 protected:
 	UFUNCTION()
 	void OnRep_IsReady();
