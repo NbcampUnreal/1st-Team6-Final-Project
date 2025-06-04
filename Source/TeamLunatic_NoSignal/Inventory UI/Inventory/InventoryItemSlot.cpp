@@ -7,6 +7,7 @@
 #include "Inventory UI/Inventory/DragItemVisual.h"
 #include "Inventory UI/Inventory/ItemDragDropOperation.h"
 #include "Character/NS_PlayerCharacterBase.h"
+#include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
 
 void UInventoryItemSlot::NativeOnInitialized()
 {
@@ -88,6 +89,21 @@ FReply UInventoryItemSlot::NativeOnMouseButtonDown(const FGeometry& InGeometry, 
 			{
 				UE_LOG(LogTemp, Warning, TEXT("[Client] 우클릭 - 서버에 아이템 사용 요청: %s"), *ItemReference->GetName());
 				Player->Server_UseInventoryItem(ItemReference); // 서버에 요청
+
+				// 퀵슬롯 자동 배정 로직 추가
+				if (Player->QuickSlotPanel)
+				{
+					if (ItemReference)
+					{
+						UNS_InventoryBaseItem* ClonedItem = ItemReference->CreateItemCopy();
+						if (ClonedItem)
+						{
+							Player->QuickSlotPanel->AssignToFirstEmptySlot(ClonedItem);
+							UE_LOG(LogTemp, Warning, TEXT("[Client] 복제 후 퀵슬롯 등록 시도: %s (%s)"),
+								*ClonedItem->GetName(), *ClonedItem->ItemDataRowName.ToString());
+						}
+					}
+				}
 			}
 		}
 		return Reply.Handled();
