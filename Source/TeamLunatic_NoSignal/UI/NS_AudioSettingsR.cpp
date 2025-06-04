@@ -169,3 +169,4 @@ void UNS_AudioSettingsR::UpdateVolumeValuesFromSliders()
     if (AmbientSlider) AmbientVolume = AmbientSlider->GetValue();
     if (MusicSlider) MusicVolume = MusicSlider->GetValue();
 }
+

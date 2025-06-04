@@ -5,8 +5,6 @@
 #include "Engine/DataTable.h"
 #include "UObject/SoftObjectPtr.h" 
 #include "EGameModeType.h"  
-#include "Interfaces/OnlineSessionInterface.h"
-#include "OnlineSessionSettings.h"
 #include "HttpModule.h"
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
@@ -16,8 +14,10 @@
 #include "NS_GameInstance.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnCreateSessionSuccess);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnSessionListReceived, const TArray<TSharedPtr<FJsonObject>>&);
 
 class UNS_UIManager;
+
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UNS_GameInstance : public UGameInstance
 {
@@ -33,37 +33,30 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	UNS_UIManager* GetUIManager() const { return NS_UIManager; };
 
-	// == 세션 생성 담당 부분들 == 
-	FOnCreateSessionSuccess OnCreateSessionSuccess;
 	void SetGameModeType(EGameModeType Type);
 	EGameModeType GetGameModeType() const { return GameModeType; }
+
 	void CreateDedicatedSessionViaHTTP(FName SessionName, int32 MaxPlayers);
 	void OnCreateSessionResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
+
+	// HTTP 세션 리스트 요청
+	void RequestSessionListFromServer();
+	void OnReceiveSessionList(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 
 	UPROPERTY(EditAnywhere, Category = "Level")
 	TSoftObjectPtr<UWorld> WaitingRoom;
 
-	void FindSessions();
-	DECLARE_MULTICAST_DELEGATE_OneParam(FOnSessionSearchSuccess, const TArray<FOnlineSessionSearchResult>&);
-	FOnSessionSearchSuccess OnSessionSearchSuccess;
-
-	DECLARE_MULTICAST_DELEGATE_OneParam(FOnJoinSessionComplete, bool);
-	void TryJoinSession(const FOnlineSessionSearchResult& SessionResult);
-	FOnJoinSessionComplete OnJoinSessionComplete;
+	// 세션 리스트 받아오면 UI에서 처리 가능하도록 이벤트 델리게이트
+	FOnSessionListReceived OnSessionListReceived;
 
 	UPROPERTY()
 	UNS_UIManager* NS_UIManager;
+
 	UPROPERTY()
 	TSubclassOf<UNS_UIManager> UIManagerClass;
+
 	bool bIsSinglePlayer = true;
+
 private:
 	EGameModeType GameModeType = EGameModeType::SinglePlayMode;
-
-	void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
-	TSharedPtr<FOnlineSessionSettings> SessionSettings;
-
-	void OnFindSessionsComplete(bool bWasSuccessful);
-	TSharedPtr<FOnlineSessionSearch> SessionSearch;
-
-	void OnJoinSessionCompleteInternal(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 };

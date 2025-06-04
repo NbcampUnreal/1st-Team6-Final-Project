@@ -28,8 +28,8 @@ public:
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
 	UTextBlock* PlayerContText;
 
-	/*UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UTextBlock* PingText;*/
+	FString CustomAddress;
+	FString CustomServerName;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
 	UButton* JoinServerButton;
