@@ -118,14 +118,15 @@ public:
 	// 오른쪽으로 몸을 회전시키는 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool TurnRight = false;
-
 	// 사격시 몸전체Mesh 사격 애니메이션 재생 용 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool NowFire = false;
-	
 	// 달리고있는 상태인지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsSprint = false;
+	// 재장전 실행 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool IsReload = false;
 	// 발차기 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsKick = false;
@@ -204,11 +205,6 @@ public:
 	UFUNCTION(Server, Reliable)
 	void KickAction_Server(const FInputActionValue& Value);
 
-	// 공격
-	UFUNCTION(Server, Reliable)
-	void StartAttackAction_Server(const FInputActionValue& Value);
-	UFUNCTION(Server, Reliable)
-	void StopAttackAction_Server(const FInputActionValue& Value);
 
 	// 아이템 줍기
 	UFUNCTION(Server, Reliable)
@@ -225,7 +221,7 @@ public:
 	void StopAimingAction_Server(const FInputActionValue& Value);
 
 	// 재장전
-	UFUNCTION(Server, Reliable)
+	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void ReloadAction_Server(const FInputActionValue& Value);
 	//////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
 	
