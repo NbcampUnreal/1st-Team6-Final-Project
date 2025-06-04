@@ -119,6 +119,17 @@ AActor* ANS_AIController::GetClosestSightTarget()
 	return nullptr;
 }
 
+void ANS_AIController::SetDisableAttackTimer()
+{
+	BlackboardComp->SetValueAsBool("bCanAttackAgain", false);
+}
+
+void ANS_AIController::SetEnableAttackTimer()
+{
+	BlackboardComp->SetValueAsBool("bCanAttackAgain", true);
+}
+
+
 void ANS_AIController::InitializeAttackRange(APawn* PossesedPawn)
 {
 	ANS_ZombieBase* Zombie = Cast<ANS_ZombieBase>(PossesedPawn);

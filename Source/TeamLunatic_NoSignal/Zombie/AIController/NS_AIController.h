@@ -35,7 +35,8 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI")
 	bool bIsDetect;
-
+	
+	
 public:
 	virtual void BeginPlay() override;
 	virtual void OnPossess(APawn* PossessedPawn) override;
@@ -47,7 +48,11 @@ public:
 	void HandleDamageStimulus(AActor* Attacker);
 	
 	AActor* GetClosestSightTarget();
-
+	UFUNCTION()
+	void SetDisableAttackTimer();
+	UFUNCTION()
+	void SetEnableAttackTimer();
+	
 	void InitializeAttackRange(APawn* PossessedPawn);
 	//Perception Configs
 	void InitializingSightConfig();

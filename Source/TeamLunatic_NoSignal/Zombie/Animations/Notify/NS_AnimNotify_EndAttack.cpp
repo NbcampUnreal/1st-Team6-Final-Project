@@ -16,7 +16,9 @@ void UNS_AnimNotify_EndAttack::Notify(USkeletalMeshComponent* MeshComp, UAnimSeq
 	if (!Controller) return;
 	UBlackboardComponent* BlackboardComponent = Controller->GetBlackboardComponent();
 	if (!BlackboardComponent) return;
-	
+
+	Controller->GetWorldTimerManager().SetTimer(Timer,Controller,&ANS_AIController::SetEnableAttackTimer,1.5f,false); 
 	BlackboardComponent->SetValueAsBool("bIsAttacking", false);
-	return;
 }
+
+
