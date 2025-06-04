@@ -157,7 +157,7 @@ void UNS_ServerBrowserR::AddServerEntry(const FOnlineSessionSearchResult& Sessio
     Entry->PlayerContText->SetText(FText::FromString(PlayerCount));
 
     FString Ping = FString::Printf(TEXT("%d ms"), SessionResult.PingInMs);
-    Entry->PingText->SetText(FText::FromString(Ping));
+//    Entry->PingText->SetText(FText::FromString(Ping));
 
     ServerVerticalBox->AddChild(Entry);
 }

@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Blueprint/UserWidget.h"
-#include "NS_InGameMainHUD.generated.h"
+#include "UI/NS_MasterMenuPanel.h"
+#include "NS_CommonInGameMsg.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class TEAMLUNATIC_NOSIGNAL_API UNS_InGameMainHUD : public UUserWidget
+class TEAMLUNATIC_NOSIGNAL_API UNS_CommonInGameMsg : public UNS_MasterMenuPanel
 {
 	GENERATED_BODY()
 	

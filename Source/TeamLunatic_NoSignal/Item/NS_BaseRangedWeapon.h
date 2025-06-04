@@ -31,6 +31,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 	USoundBase* UnFireSound;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
+	USoundBase* ReloadSound;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponFX")
 	UNiagaraComponent* NiagaraComponent;
 
@@ -49,13 +52,5 @@ public:
 	FORCEINLINE int32 GetMaxAmmo() const { return MaxAmmo; }
 	FORCEINLINE int32 GetCurrentAmmo() const { return CurrentAmmo; }
 
-	UFUNCTION(BlueprintCallable)
-	bool CanFire() const;
-
-	UFUNCTION(BlueprintCallable)
-	void Fire();
-
 	void Reload(int32 AmmoToAdd);
-
-	void PerformHitScan(int32 InDamage);
 };

@@ -1,5 +1,5 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "UI/NS_InGameMainHUD.h"
+#include "UI/NS_CommonInGameMsg.h"
 

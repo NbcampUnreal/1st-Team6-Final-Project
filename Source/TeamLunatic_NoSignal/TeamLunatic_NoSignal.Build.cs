@@ -14,7 +14,10 @@ public class TeamLunatic_NoSignal : ModuleRules
     "HTTP",
     "Json",
     "JsonUtilities",
-    "Networking"});
+    "Networking",
+    "Slate",
+    "SlateCore" 
+            });
 
         //if (Target.Platform == UnrealTargetPlatform.Win64)
         //{
