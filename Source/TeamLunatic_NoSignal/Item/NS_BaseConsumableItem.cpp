@@ -1,32 +1,43 @@
 #include "Item/NS_BaseConsumableItem.h"
+#include "Character/NS_PlayerCharacterBase.h"
+#include "Character/Components/NS_StatusComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "NiagaraSystem.h"
+#include "NiagaraFunctionLibrary.h"
 
 UNS_BaseConsumableItem::UNS_BaseConsumableItem()
 {
-	if (ItemsDataTable && !ItemDataRowName.IsNone())
+}
+
+void UNS_BaseConsumableItem::OnUseItem(ANS_PlayerCharacterBase* Character)
+{
+	if (!Character) return;
+
+	UNS_StatusComponent* State = Character->StatusComp;
+	if (State)
 	{
-		InitializeFromDataTable();
+		State->AddHealthGauge(ItemStates.HealAmount);
+		State->AddHunger(ItemStates.HungerRestore);
+		State->AddStamina(ItemStates.StaminaRecovery);
+		State->AddThirst(ItemStates.ThirstRestore);
+		State->AddFatigue(ItemStates.TiredRestore);
 	}
-}
 
-void UNS_BaseConsumableItem::OnUseItem()
-{
-}
+	
 
-void UNS_BaseConsumableItem::ApplyConsumableEffect()
-{
-}
-
-void UNS_BaseConsumableItem::InitializeFromDataTable()
-{
-	if (!ItemsDataTable) return;
-
-	const FNS_ItemDataStruct* ItemData = ItemsDataTable->FindRow<FNS_ItemDataStruct>(ItemDataRowName, TEXT(""));
-
-	if (ItemData)
+	if (ConsumableItemAssetData.UseSound)
 	{
-		ItemName = ItemData->ItemTextData.ItemName;
-
+		UGameplayStatics::PlaySound2D(Character, ConsumableItemAssetData.UseSound);
 	}
+
+	//if (ConsumableItemAssetData.UseEffect)
+	//{
+	//	UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+	//		Character->GetWorld(),
+	//		ConsumableItemAssetData.UseEffect,
+	//		Character->GetActorLocation()
+	//	);
+	//}
 }
 
 

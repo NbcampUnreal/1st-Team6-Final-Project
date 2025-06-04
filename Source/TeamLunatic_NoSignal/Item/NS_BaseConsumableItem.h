@@ -12,11 +12,7 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_BaseConsumableItem : public UNS_InventoryBase
 public:
 	UNS_BaseConsumableItem();
 
-	virtual void OnUseItem() override;
-
-	void ApplyConsumableEffect();
-
-	void InitializeFromDataTable();
+	virtual void OnUseItem(ANS_PlayerCharacterBase* Character) override;
 
 protected:
 
