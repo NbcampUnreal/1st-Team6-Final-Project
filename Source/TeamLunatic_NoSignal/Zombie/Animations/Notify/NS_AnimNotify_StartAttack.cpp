@@ -15,6 +15,7 @@ void UNS_AnimNotify_StartAttack::Notify(USkeletalMeshComponent* MeshComp, UAnimS
 	if (!Controller) return;
 	UBlackboardComponent* BlackboardComponent = Controller->GetBlackboardComponent();
 	if (!BlackboardComponent) return;
-
+	
+	Controller->SetDisableAttackTimer();
 	BlackboardComponent->SetValueAsBool("bIsAttacking", true);
 }
