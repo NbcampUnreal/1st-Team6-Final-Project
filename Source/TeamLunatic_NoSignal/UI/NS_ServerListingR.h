@@ -20,7 +20,7 @@ public:
 	virtual void NativeConstruct() override;
 
 	UFUNCTION()
-	void OnJoinServerButtonClicked();
+	void OnJoinButtonClicked();
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
 	UTextBlock* ServerNameText;
@@ -28,8 +28,8 @@ public:
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
 	UTextBlock* PlayerContText;
 
-	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UTextBlock* PingText;
+	FString CustomAddress;
+	FString CustomServerName;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
 	UButton* JoinServerButton;

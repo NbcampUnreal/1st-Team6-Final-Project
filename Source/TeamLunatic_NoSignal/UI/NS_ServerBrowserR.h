@@ -28,10 +28,9 @@ public:
     UFUNCTION()
     void OnRefreshButtonClicked();
 
-    UFUNCTION()
-    void OnUseLANCheckChanged(bool bIsChecked);
-
     void RefreshServerList();
+
+    void AddServerEntryAddress(const FString& Name, const FString& Address, const FString& PlayerCount);
 
 protected:
 
@@ -67,11 +66,6 @@ protected:
 
     UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
     UButton* RefreshButton;
-
-    UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-    UCheckBox* CheckBox_UseLAN;
-
-    bool bUseLAN = false;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Server", meta = (AllowPrivateAccess = "true"))
     TSubclassOf<UNS_ServerListingR> ServerEntryClass;

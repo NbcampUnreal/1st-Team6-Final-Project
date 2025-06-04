@@ -54,3 +54,13 @@ void UNS_BaseMainMenu::QuitNSGame()
 {
 	UKismetSystemLibrary::QuitGame(this, GetOwningPlayer(), EQuitPreference::Quit, true);
 }
+
+void UNS_BaseMainMenu::ShowWidget()
+{
+	SetVisibility(ESlateVisibility::Visible);
+}
+
+void UNS_BaseMainMenu::HideWidget()
+{
+	SetVisibility(ESlateVisibility::Hidden);
+}

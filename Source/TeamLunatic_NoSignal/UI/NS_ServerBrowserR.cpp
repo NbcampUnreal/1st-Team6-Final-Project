@@ -19,18 +19,11 @@ void UNS_ServerBrowserR::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-    if (CheckBox_UseLAN)
-        CheckBox_UseLAN->OnCheckStateChanged.AddDynamic(this, &UNS_ServerBrowserR::OnUseLANCheckChanged);
 
     if (RefreshButton)
         RefreshButton->OnClicked.AddDynamic(this, &UNS_ServerBrowserR::OnRefreshButtonClicked);
 
     RefreshServerList(); // 최초 자동 로드
-}
-
-void UNS_ServerBrowserR::OnUseLANCheckChanged(bool bIsChecked)
-{
-    bUseLAN = bIsChecked;
 }
 
 void UNS_ServerBrowserR::OnRefreshButtonClicked()
@@ -82,25 +75,53 @@ void UNS_ServerBrowserR::RefreshServerList()
     if (ServerVerticalBox)
         ServerVerticalBox->ClearChildren();
 
-    if (UGameInstance* GI = GetGameInstance())
+    if (UNS_GameInstance* NSGI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
-        if (UNS_GameInstance* NSGI = Cast<UNS_GameInstance>(GI))
+        NSGI->OnSessionListReceived.Clear();
+
+        NSGI->OnSessionListReceived.AddLambda([this](const TArray<TSharedPtr<FJsonObject>>& Sessions)
         {
-            NSGI->OnSessionSearchSuccess.AddLambda([this](const TArray<FOnlineSessionSearchResult>& Results)
+            for (const TSharedPtr<FJsonObject>& SessionObj : Sessions)
             {
-                for (const FOnlineSessionSearchResult& Result : Results)
-                {
-                    AddServerEntry(Result);
-                }
+                FString ServerName = SessionObj->GetStringField("name");
+                FString IP = SessionObj->GetStringField("ip");
+                int32 Port = SessionObj->GetIntegerField("port");
 
-                if (CircularThrobber_Image)
-                    CircularThrobber_Image->SetVisibility(ESlateVisibility::Hidden);
-            });
+                FString Address = FString::Printf(TEXT("%s:%d"), *IP, Port);
 
-            NSGI->FindSessions(bUseLAN);
-        }
+                int32 MaxPlayers = SessionObj->GetIntegerField("max_players");
+                int32 CurrentPlayers = SessionObj->GetIntegerField("current_players");
+
+                FString PlayerInfo = FString::Printf(TEXT("%d/%d"), CurrentPlayers, MaxPlayers);
+
+                AddServerEntryAddress(ServerName, Address, PlayerInfo);
+            }
+
+            if (CircularThrobber_Image)
+                CircularThrobber_Image->SetVisibility(ESlateVisibility::Hidden);
+        });
+
+
+        NSGI->RequestSessionListFromServer();
     }
 }
+
+void UNS_ServerBrowserR::AddServerEntryAddress(const FString& Name, const FString& Address, const FString& PlayerCount)
+{
+    if (!ServerEntryClass) return;
+
+    UNS_ServerListingR* Entry = CreateWidget<UNS_ServerListingR>(GetWorld(), ServerEntryClass);
+    if (!Entry) return;
+
+    Entry->CustomServerName = Name;
+    Entry->CustomAddress = Address;
+
+    Entry->ServerNameText->SetText(FText::FromString(Name));
+    Entry->PlayerContText->SetText(FText::FromString(PlayerCount));
+
+    ServerVerticalBox->AddChild(Entry);
+}
+
 
 
 void UNS_ServerBrowserR::HandleFindSessionsComplete(bool bWasSuccessful)
@@ -152,7 +173,7 @@ void UNS_ServerBrowserR::AddServerEntry(const FOnlineSessionSearchResult& Sessio
     Entry->PlayerContText->SetText(FText::FromString(PlayerCount));
 
     FString Ping = FString::Printf(TEXT("%d ms"), SessionResult.PingInMs);
-    Entry->PingText->SetText(FText::FromString(Ping));
+//    Entry->PingText->SetText(FText::FromString(Ping));
 
     ServerVerticalBox->AddChild(Entry);
 }

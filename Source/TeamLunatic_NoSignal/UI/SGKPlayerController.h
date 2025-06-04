@@ -17,5 +17,4 @@ class TEAMLUNATIC_NOSIGNAL_API ASGKPlayerController : public APlayerController
 public:
 	ASGKPlayerController();
 
-	bool bIsSinglePlayer = true; 
 };

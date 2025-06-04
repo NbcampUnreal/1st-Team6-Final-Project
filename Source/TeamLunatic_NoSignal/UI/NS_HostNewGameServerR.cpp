@@ -43,10 +43,8 @@ void UNS_HostNewGameServerR::ShowConfirmationMenu()
 void UNS_HostNewGameServerR::StartGame()
 {
     const FString SlotName = GetSaveSlotName();
+    FString SelectedLevelName = NS_SaveLoadHelper::GameLevelName;
 
-    FString SelectedLevelName = NS_SaveLoadHelper::GameLevelName; //ComboBoxString->GetSelectedOption();
-
-    //이부분  PlayerData.Health,SavePosition => "Game Level 기획Table" 같은거에 받아서 적용되어야함. 임시로 그냥 넣은거임.
     FPlayerSaveData PlayerData;
     PlayerData.PlayerName = SlotName;
     PlayerData.Health = 100.f;
@@ -54,42 +52,29 @@ void UNS_HostNewGameServerR::StartGame()
 
     FLevelSaveData LevelData;
     LevelData.LevelName = SelectedLevelName;
-    LevelData.TempClearKeyItemPosition = FVector(100, 200, 300); //임의의 아이템의 position 임시로 작성해본거임.변경 or 삭제해야함.
-    //NS_SaveLoadHelper::SaveGame(SlotName, PlayerData, LevelData);
+    LevelData.TempClearKeyItemPosition = FVector(100, 200, 300);
 
-    bool bIsLAN = false;
-    if (CheckBox_UseLAN)
-    {
-        bIsLAN = CheckBox_UseLAN->IsChecked();
-    }
-
-    // 2. 세션 이름 정의 (슬롯 이름 사용)
+    // 세션 정보
     FName SessionName = FName(*SlotName);
-
-    // 3. 최대 접속 인원
     int32 MaxPlayers = FCString::Atoi(*ComboBoxString->GetSelectedOption());
 
-    // 4. 세션 생성 요청
     if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
-        // CreateSession 성공 시 호출되는 델리게이트 바인딩먼저해야  CreateSession 성공하면 broadcast되서 lamda가 호출됨.
-        GI->OnCreateSessionSuccess.AddLambda([this, SelectedLevelName, SlotName, PlayerData, LevelData, GI]()
-            {
-               // UGameplayStatics::OpenLevel(this, FName(*SelectedLevelName), true);
+        GI->SetGameModeType(EGameModeType::MultiPlayMode);
 
-                GI->SetGameModeType(EGameModeType::MultiPlayMode); // 게임 모드 타입 설정
+        //저장은 여기서 해도 괜찮지만, 실패 복구 고려 시 나중으로 미루는 것도 방법
+        NS_SaveLoadHelper::SaveGame(SlotName, PlayerData, LevelData);
 
-                NS_SaveLoadHelper::SaveGame(SlotName, PlayerData, LevelData);
+        GI->CreateDedicatedSessionViaHTTP(SessionName, MaxPlayers);
 
-                MainMenu->GetWidget(EWidgetToggleType::HostServer)->HideSubMenuWidget();
-                MainMenu->GetWidget(EWidgetToggleType::MultiPlayer)->HideSubMenuWidget();
-            });
-      
-        GI->CreateSession(SessionName, bIsLAN, MaxPlayers);
+        // 맵 이동 이후 자동으로 UI가 정리될 것이므로 따로 Hide 안 해도 됨
     }
     else
+    {
         UE_LOG(LogTemp, Warning, TEXT("게임 인스턴스 없음"));
+    }
 }
+
 void UNS_HostNewGameServerR::OnCreateServerButtonClicked()
 {
     StartGame();

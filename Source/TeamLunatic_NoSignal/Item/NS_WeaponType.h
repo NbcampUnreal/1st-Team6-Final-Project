@@ -7,10 +7,19 @@ enum class EWeaponType : uint8
 {
 	Unarmed UMETA(DisplayName = "Unarmed"),
 	Melee UMETA(DisplayName = "Knife"),
-	Pistol UMETA(DisplayName = "P1191"),
+	Pistol UMETA(DisplayName = "P1911"),
 	Ranged UMETA(DisplayName = "M4A4"),
 	Ammo UMETA(DisplayName = "Ammo"),
+	Magazine UMETA(DisplayName = "Magazine")
 };
+
+UENUM(BlueprintType)
+enum class ERangeChangeFireMode : uint8
+{
+	Manual UMETA(DisplayName = "Manual"),
+	Auto UMETA(DisplayName = "Auto"),
+};
+
 
 
 

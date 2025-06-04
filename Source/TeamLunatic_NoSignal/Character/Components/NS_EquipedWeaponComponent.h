@@ -23,20 +23,21 @@ public:
 	// 공격중인지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsAttack = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
-	bool IsReload = false;
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsEmpty = false;
 
 	// 현재 장착중인 무기 타입 변수
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Replicated, Category="Replicated Variables")
 	EWeaponType WeaponType = EWeaponType::Unarmed;
-
+	
 	// 현재 장착 중인 무기 액터 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Replicated, Category="Replicated Variables")	ANS_BaseWeapon* CurrentWeapon;
 	///////////////////////////////////////////////////////////////////////////////////////////
+	
+	// 현재 원거리무기에 사격 모드 설정
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Range Weapon Fire Mode")
+	ERangeChangeFireMode CurrentFireMode;
 
 	// 서버-클라이언트 복제 설정
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -52,17 +53,14 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastEquipWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass);
 
-	// 현재 장착 무기로 발사 or 공격
-	UFUNCTION(BlueprintCallable)
-	void StartAttack();
-
-	UFUNCTION(BlueprintCallable)
-	void StopAttack();
-
 	// 현재 장착 무기가 원기리일때는 재장전 
-	UFUNCTION(BlueprintCallable)
-	void Reload();
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void Server_Reload();
+	// 재장전 멀티캐스트
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_Reload();
 
+	
 	// 현재 플레이하는 캐릭터 변수
 	UPROPERTY()
 	ANS_PlayerCharacterBase* OwnerCharacter;

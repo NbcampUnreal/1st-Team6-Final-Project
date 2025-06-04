@@ -9,11 +9,11 @@
 class UInputMappingContext;
 class UInputAction;
 class UCameraComponent;
-class UNS_DebugStatusWidget;  // 디버그용 위젯 차후 삭제해야함
 class UNS_StatusComponent;
 class UNS_InventoryBaseItem;
 class UInventoryComponent;
 class UNS_EquipedWeaponComponent;
+class UNS_QuickSlotPanel;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
@@ -50,6 +50,9 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void Client_NotifyInventoryUpdated();
+
+	UFUNCTION(Server, Reliable)
+	void Server_UseInventoryItem(UNS_InventoryBaseItem* Item);
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
@@ -63,22 +66,11 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera")
 	FName CameraAttachSocketName = TEXT("head");
 	
-	// ============== 디버그용 위젯 차후 삭제해야 함 ===================
-	// 에디터에서 할당할 위젯 Blueprint 클래스
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
-	TSubclassOf<UNS_DebugStatusWidget> DebugWidgetClass;
-
-	
-	// 런타임에 생성될 위젯 ============= 차후 삭제 필요
-	UPROPERTY()
-	UNS_DebugStatusWidget* DebugWidgetInstance;
-
-	
 	////////////////////////////////////캐릭터 부착 컴포넌트들///////////////////////////////////////
 	// 1인칭 카메라 컴포넌트 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	UCameraComponent* CameraComp;
-	// 1인칭 팔스켈레탈 메시 컴포넌트
+	// 1인칭 팔 스켈레탈 메시 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "FirstPerson")
 	USkeletalMeshComponent* FirstPersonArms;
 
@@ -92,6 +84,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory", Replicated)
 	UInventoryComponent* PlayerInventory;
+
+	UPROPERTY()
+	UNS_QuickSlotPanel* QuickSlotPanel;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UNS_EquipedWeaponComponent* EquipedWeaponComp;
@@ -111,15 +106,27 @@ public:
 
 	/////////////////////////////// 리플리케이션용 변수들////////////////////////////////
 	// 캐릭터가 바라보고있는 좌/우 값
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	float CamYaw;
 	// 캐릭터가 바라보고있는 상/하 값
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	float CamPitch;
-	
+
+	// 왼쪽으로 몸을 회전시키는 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool TurnLeft = false;
+	// 오른쪽으로 몸을 회전시키는 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool TurnRight = false;
+	// 사격시 몸전체Mesh 사격 애니메이션 재생 용 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool NowFire = false;
 	// 달리고있는 상태인지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsSprint = false;
+	// 재장전 실행 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool IsReload = false;
 	// 발차기 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsKick = false;
@@ -168,6 +175,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* ToggleMenuAction;
 	
+	
 	// 이동 입력 잠금 제어 함수 
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category="Input")
 	void SetMovementLockState_Server(bool bLock);
@@ -197,11 +205,6 @@ public:
 	UFUNCTION(Server, Reliable)
 	void KickAction_Server(const FInputActionValue& Value);
 
-	// 공격
-	UFUNCTION(Server, Reliable)
-	void StartAttackAction_Server(const FInputActionValue& Value);
-	UFUNCTION(Server, Reliable)
-	void StopAttackAction_Server(const FInputActionValue& Value);
 
 	// 아이템 줍기
 	UFUNCTION(Server, Reliable)
@@ -218,7 +221,7 @@ public:
 	void StopAimingAction_Server(const FInputActionValue& Value);
 
 	// 재장전
-	UFUNCTION(Server, Reliable)
+	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void ReloadAction_Server(const FInputActionValue& Value);
 	//////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
 	

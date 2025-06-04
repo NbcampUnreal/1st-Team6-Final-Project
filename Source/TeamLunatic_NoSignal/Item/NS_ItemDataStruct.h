@@ -2,8 +2,13 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
+#include "Sound/SoundBase.h"
+#include "NiagaraSystem.h"
 #include "Item/NS_WeaponType.h"
+#include "Item/NS_EAmmoType.h"
 #include "NS_ItemDataStruct.generated.h"
+
+class ANS_BaseWeapon;
 
 UENUM()
 enum class EItemType : uint8
@@ -38,19 +43,19 @@ struct FItemStates
 	GENERATED_USTRUCT_BODY()
 
 	UPROPERTY(EditAnywhere)
-	int32 HealAmount;
+	float HealAmount;
 
 	UPROPERTY(EditAnywhere)
-	int32 StaminaRecovery;
+	float StaminaRecovery;
 
 	UPROPERTY(EditAnywhere)
-	int32 HungerRestore;
+	float HungerRestore;
 
 	UPROPERTY(EditAnywhere)
-	int32 ThirstRestore;
+	float ThirstRestore;
 
 	UPROPERTY(EditAnywhere)
-	int32 TiredRestore;
+	float TiredRestore;
 };
 
 USTRUCT()
@@ -98,7 +103,19 @@ struct FItemAssetData
 	USkeletalMesh* SkeletalMesh;
 
 	UPROPERTY(EditAnywhere)
+	USoundBase* GetSound = nullptr;
+};
+
+USTRUCT()
+struct FConsumAbleItemAssetData
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY(EditAnywhere)
 	USoundBase* UseSound = nullptr;
+
+	UPROPERTY(EditAnywhere)
+	UNiagaraSystem* UseEffect;
 };
 
 USTRUCT()
@@ -114,6 +131,9 @@ struct FWeaponData
 
 	UPROPERTY(EditAnywhere)
 	int32 MaxAmmo;
+
+	UPROPERTY(EditAnywhere)
+	EAmmoType AmmoType;
 };
 
 
@@ -150,6 +170,13 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	FItemAssetData ItemAssetData;
+
+	UPROPERTY(EditAnywhere)
+	FConsumAbleItemAssetData ConsumableItemAssetData;
+	
+	// 장착 가능한 무기 클래스 (스폰용)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn")
+	TSubclassOf<class ANS_BaseWeapon> WeaponActorClass;
 
 	//상한 음식 체크
 	UPROPERTY(EditAnywhere)

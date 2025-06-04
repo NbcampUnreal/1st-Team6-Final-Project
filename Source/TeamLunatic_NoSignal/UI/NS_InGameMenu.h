@@ -16,6 +16,16 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_InGameMenu : public UNS_BaseMainMenu
 public:
 	virtual void NativeConstruct() override;
 public:
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	UWidgetAnimation* ShowR;
+
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	UWidgetAnimation* ShowL;
+
+	virtual void PlayAnimationShowR() override;
+	virtual void PlayAnimationShowL() override;
+	virtual void HideWidget() override;
+	virtual void ShowWidget() override;
 	//UNS_MasterMenuPanel* GetWidget(EWidgetToggleType ToggleType);
 
 	//void QuitNSGame();

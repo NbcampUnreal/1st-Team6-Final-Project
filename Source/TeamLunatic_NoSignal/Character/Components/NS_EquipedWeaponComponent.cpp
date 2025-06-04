@@ -1,13 +1,15 @@
 ﻿#include "NS_EquipedWeaponComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Character/NS_PlayerCharacterBase.h"
+#include "Item/NS_InventoryBaseItem.h"
 #include "Item/NS_BaseMeleeWeapon.h"
 #include "Item/NS_BaseRangedWeapon.h"
 #include "GameFramework/Character.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "Components/StaticMeshComponent.h"   
+#include "Components/StaticMeshComponent.h"  
+#include "GameFlow/NS_GameInstance.h"
 
 UNS_EquipedWeaponComponent::UNS_EquipedWeaponComponent()
 {
@@ -25,7 +27,6 @@ void UNS_EquipedWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProp
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(UNS_EquipedWeaponComponent, CurrentWeapon); // 현재 무기 변수
 	DOREPLIFETIME(UNS_EquipedWeaponComponent, IsAttack); // 공격중인지 확인 변수
-	DOREPLIFETIME(UNS_EquipedWeaponComponent, IsReload); // 장전중인지 확인 변수
 	DOREPLIFETIME(UNS_EquipedWeaponComponent, IsEmpty); // 총알이 있는지 없는지 확인 변수
     DOREPLIFETIME(UNS_EquipedWeaponComponent, WeaponType); // 무기 타입 변수
     DOREPLIFETIME(UNS_EquipedWeaponComponent, CurrentWeapon); // 현재 장착중인 무기 변수
@@ -85,9 +86,9 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
     {
         // 플레이어한테만 보이는 메쉬를 팔에 부착
         // ArmsMesh가 유효한지 확인
-        if (Melee->ArmsMesh) 
+        if (Melee->ArmsMeshComp) 
         {
-            Melee->ArmsMesh->AttachToComponent(
+            Melee->ArmsMeshComp->AttachToComponent(
                 OwnerCharacter->FirstPersonArms, Rules, SocketName);
         }
         
@@ -112,9 +113,9 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
         
         // 다른 플레이어에게 보이게 메쉬를 몸에 부착
         // ArmsMesh가 유효한지 확인
-        if (Ranged->ArmsMesh)
+        if (Ranged->ArmsMeshComp)
         {
-            Ranged->ArmsMesh->AttachToComponent(
+            Ranged->ArmsMeshComp->AttachToComponent(
                 OwnerCharacter->FirstPersonArms, Rules, SocketName);
         }
     }
@@ -125,70 +126,82 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
     WeaponType = NewWpn->GetWeaponType();
 }
 
-void UNS_EquipedWeaponComponent::StartAttack()
+void UNS_EquipedWeaponComponent::Server_Reload_Implementation()
 {
-    // 비무장 : 공격없음
-    if (!CurrentWeapon)
+    Multicast_Reload();
+}
+
+void UNS_EquipedWeaponComponent::Multicast_Reload_Implementation()
+{
+    // 유효성 검사: 캐릭터나 무기 없으면 종료
+    if (!OwnerCharacter || !CurrentWeapon)
+        return;
+
+    // 무기 타입 확인: 원거리 무기 또는 권총이 아니면 재장전 불가
+    const EWeaponType CurrentType = CurrentWeapon->GetWeaponType();
+    if (CurrentType != EWeaponType::Ranged && CurrentType != EWeaponType::Pistol)
+        return;
+
+    // 원거리 무기로 캐스팅 시도
+    auto* RangedWeapon = Cast<ANS_BaseRangedWeapon>(CurrentWeapon);
+    if (!RangedWeapon)
+        return;
+
+    // 이미 최대 탄약이면 재장전할 필요 없음
+    if (RangedWeapon->CurrentAmmo >= RangedWeapon->MaxAmmo)
     {
-        IsAttack = false;
+        UE_LOG(LogTemp, Warning, TEXT("[Reload] 이미 탄약이 가득 참"));
         return;
     }
 
-    // 무기 변경중이면 공격 불가
-	if (OwnerCharacter && OwnerCharacter->IsChangingWeapon)
-    {
-        IsAttack = false;
-        return;
-    }
+    // 필요한 탄약량 계산
+    const int32 NeededAmmo = RangedWeapon->MaxAmmo - RangedWeapon->CurrentAmmo;
 
-	// 무기 타입에 따라 공격 처리
-    if (CurrentWeapon->GetWeaponType() == EWeaponType::Ranged // 원거리
-        || CurrentWeapon->GetWeaponType() == EWeaponType::Pistol)
+    // 인벤토리에서 탄약 찾기
+    if (auto* Inventory = OwnerCharacter->FindComponentByClass<UInventoryComponent>())
     {
-        // 현재 탄창 비어있으면 return
-		if (IsEmpty)
+        bool bReloaded = false;
+
+        for (UNS_InventoryBaseItem* Item : Inventory->GetInventoryContents())
         {
-            IsAttack = false;
-            return;
+            if (!Item || Item->GetQuantity() <= 0)
+                continue;
+
+            // 🔻 데이터 테이블이 없을 경우, GameInstance에서 바인딩
+            if (!Item->ItemsDataTable && OwnerCharacter->GetWorld())
+            {
+                if (const auto* GI = Cast<UNS_GameInstance>(OwnerCharacter->GetWorld()->GetGameInstance()))
+                {
+                    Item->ItemsDataTable = GI->GlobalItemDataTable;
+                }
+            }
+
+            const FNS_ItemDataStruct* Data = Item->GetItemData();
+            if (!Data)
+                continue;
+
+            // 탄약 아이템인지 확인
+            if (Data->ItemType == EItemType::Equipment && Data->WeaponType == EWeaponType::Ammo)
+            {
+                const int32 AmmoAvailable = Item->GetQuantity();
+                const int32 AmmoToLoad = FMath::Min(NeededAmmo, AmmoAvailable);
+
+                if (AmmoToLoad > 0)
+                {
+                    RangedWeapon->Reload(AmmoToLoad);
+                    Item->SetQuantity(AmmoAvailable - AmmoToLoad);
+
+                    UE_LOG(LogTemp, Log, TEXT("[Reload] %d발 장전 완료. 남은 인벤토리 탄약: %d"), AmmoToLoad, Item->GetQuantity());
+                    bReloaded = true;
+                    break; // 장전 성공했으니 더 이상 탐색할 필요 없음
+                }
+            }
         }
-        // 재장전 중이면 return
-		if (IsReload)
-		{
-			IsAttack = false;
-			return;
-		}
 
-		IsAttack = true;
+        if (!bReloaded)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("[Reload] 사용할 수 있는 탄약 없음 또는 탄약 수량 부족"));
+        }
     }
-    else if (CurrentWeapon->GetWeaponType() == EWeaponType::Melee)
-    {
-        IsAttack = true;
-    }
-
-
-}
-
-void UNS_EquipedWeaponComponent::StopAttack()
-{	
-	IsAttack = false;
-}
-
-
-void UNS_EquipedWeaponComponent::Reload()
-{
-	// 원거리 무장 아님 : 재장전 무조건 false
-	if (CurrentWeapon && CurrentWeapon->GetWeaponType() != EWeaponType::Ranged)
-	{
-		IsReload = false;
-		return;
-	}
-
-    //TODO 인벤토리 살펴보기
-    //인벤토리내 무기에 맞는 탄창or탄약이 있는지 체크
-    //if(탄창으로 구현) : 현재 탄창을 인벤토리에 넣고 (인벤 칸 모자름 : 현재탄창 버려야함), 다음 탄창을 꺼내서 장착
-    //if(탄창으로 구현) : 다음 탄창이 뭔지 어떻게 알아야 할까? : 들어온 탄창순으로 고유번호를 주고 QUEUE구조로 돌려야할까? 아니면 대기표를 뽑아줄까?
-    //else if(탄약으로 구현) : 걍 최대 탄약수만큼 빼면 쉬움[탄창보다 딸깍이네]
-
-    IsReload = true;
 }
 

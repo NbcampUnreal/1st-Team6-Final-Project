@@ -1,16 +1,17 @@
 #include "Character/NS_PlayerCharacterBase.h"
-#include "Character/Debug/NS_DebugStatusWidget.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.H"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Inventory/InventoryComponent.h"
+#include "Item/NS_InventoryBaseItem.h"
 #include "Components/NS_EquipedWeaponComponent.h"
 #include "Character/Components/NS_StatusComponent.h"
 #include "Item/NS_BaseRangedWeapon.h"
 #include "Interaction/Component/InteractionComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "World/Pickup.h"
+#include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
 #include <Net/UnrealNetwork.h>
 
 ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
@@ -69,10 +70,15 @@ void ANS_PlayerCharacterBase::DropItem_Server_Implementation(UNS_InventoryBaseIt
         const FTransform SpawnTransform(GetActorRotation(), SpawnLocation);
 
         const int32 RemovedQuantity = PlayerInventory->RemoveAmountOfItem(ItemToDrop, QuantityToDrop);
+        if (RemovedQuantity <= 0)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("DropItem_Server: 제거할 수량이 0 이하입니다."));
+            return;
+        }
 
-        APickup* Pickup = GetWorld()->SpawnActor<APickup>(APickup::StaticClass(), SpawnTransform, SpawnParams);
+//        APickup* Pickup = GetWorld()->SpawnActor<APickup>(APickup::StaticClass(), SpawnTransform, SpawnParams);
 
-        Pickup->InitializeDrop(ItemToDrop, RemovedQuantity);
+  //      Pickup->InitializeDrop(ItemToDrop, RemovedQuantity);
     }
     else
     {
@@ -84,11 +90,28 @@ void ANS_PlayerCharacterBase::DropItem(UNS_InventoryBaseItem* ItemToDrop, const 
 {
     if (HasAuthority())
     {
-        DropItem_Server(ItemToDrop, QuantityToDrop);
+        DropItem_Server_Implementation(ItemToDrop, QuantityToDrop);
     }
     else
     {
         DropItem_Server(ItemToDrop, QuantityToDrop); // 클라에서 서버로 요청
+    }
+}
+
+void ANS_PlayerCharacterBase::Server_UseInventoryItem_Implementation(UNS_InventoryBaseItem* Item)
+{
+    if (Item)
+    {
+        Item->OnUseItem(this); // 서버에서 처리
+
+        // 아이템이 장비 타입 + 무기류일 때만 퀵슬롯 자동 등록
+        if (Item->ItemType == EItemType::Equipment &&
+            Item->WeaponType != EWeaponType::Ammo &&
+            QuickSlotPanel)
+        {
+            QuickSlotPanel->AssignToFirstEmptySlot(Item); // 자동 빈 슬롯 탐색
+            UE_LOG(LogTemp, Warning, TEXT("[Server] 장착된 아이템 퀵슬롯 자동 등록 시도: %s"), *Item->GetName());
+        }
     }
 }
 
@@ -115,19 +138,6 @@ void ANS_PlayerCharacterBase::BeginPlay()
         FirstPersonArms->SetOnlyOwnerSee(true);  // 팔 메시만 본인(플레이어)이 보이게
     }
     
-    // 디버그 위젯 생성 ======================== 차후 삭제필요
-    if (DebugWidgetClass && Controller)
-    {
-        if (APlayerController* PC = Cast<APlayerController>(Controller))
-        {
-            DebugWidgetInstance = CreateWidget<UNS_DebugStatusWidget>(PC, DebugWidgetClass);
-            if (DebugWidgetInstance)
-            {
-                DebugWidgetInstance->AddToViewport();
-            }
-        }
-    }
-
     // 입력 매핑 컨텍스트 등록
     if (APlayerController* PC = Cast<APlayerController>(Controller))
     {
@@ -241,24 +251,10 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
         {
             EnhancedInput->BindAction(
                 ToggleMenuAction,
-                ETriggerEvent::Triggered,
+                ETriggerEvent::Started,
                 InteractionComponent,
                 &UInteractionComponent::ToggleMenu
             );
-        }
-
-        if (InputAttackAction)
-        {
-            EnhancedInput->BindAction(
-            InputAttackAction,
-             ETriggerEvent::Triggered,
-              this,
-               &ANS_PlayerCharacterBase::StartAttackAction_Server);
-            EnhancedInput->BindAction(
-            InputAttackAction,
-             ETriggerEvent::Completed,
-              this,
-               &ANS_PlayerCharacterBase::StopAttackAction_Server);
         }
 
         if (InteractAction)
@@ -289,7 +285,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
         {
             EnhancedInput->BindAction(
             InputReloadAction,
-             ETriggerEvent::Triggered,
+             ETriggerEvent::Started,
               this,
                &ANS_PlayerCharacterBase::ReloadAction_Server);
         }
@@ -307,6 +303,10 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
     DOREPLIFETIME(ANS_PlayerCharacterBase, CamYaw);    // 카메라 좌/우 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, CamPitch);  // 카메라 상/하 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsAiming);  // 조준중인지 확인 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsReload); // 장전중인지 확인 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, TurnLeft);  // 몸을 왼쪽으로 회전시키는 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, TurnRight); // 몸을 오른쪽으로 회전시키는 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, NowFire);   // 사격시 몸전체Mesh 사격 애니메이션 재생 용 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, PlayerInventory);
 }
 
@@ -387,9 +387,7 @@ void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
     const FRotator ActorRot   = GetActorRotation(); 
     const FRotator ControlRot = Controller->GetControlRotation(); 
     const FRotator DeltaRot   = UKismetMathLibrary::NormalizedDeltaRotator(ControlRot, ActorRot); 
-
-    const float RawYaw   = DeltaRot.Yaw; 
-    const float RawPitch = DeltaRot.Pitch; 
+    
     const float DeltaTime = GetWorld()->GetDeltaSeconds();
     
     CamYaw   = FMath::FInterpTo(CamYaw,   DeltaRot.Yaw,   DeltaTime, AimSendInterpSpeed); 
@@ -462,18 +460,6 @@ void ANS_PlayerCharacterBase::KickAction_Server_Implementation(const FInputActio
     );
 }
 
-void ANS_PlayerCharacterBase::StartAttackAction_Server_Implementation(const FInputActionValue& Value)
-{
-    if (GetCharacterMovement()->IsFalling()) {return;} 
-
-    EquipedWeaponComp->StartAttack();
-}
-
-void ANS_PlayerCharacterBase::StopAttackAction_Server_Implementation(const FInputActionValue& Value)
-{
-    EquipedWeaponComp->StopAttack();
-}
-
 void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputActionValue& Value)
 {
     if (GetCharacterMovement()->IsFalling()) {return;} 
@@ -504,10 +490,25 @@ void ANS_PlayerCharacterBase::StopAimingAction_Server_Implementation(const FInpu
 
 void ANS_PlayerCharacterBase::ReloadAction_Server_Implementation(const FInputActionValue& Value)
 {
-	EquipedWeaponComp->Reload();
+    // 실제 총알 재장전 로직은 애님노티파이로 애니메이션 안에서 EquipedWeapon에있는 Server_Reload()함수를 블루프린트로 실행 할 예정
+    
+    // 현재 무기가 없거나, 원거리 무기가 아니면 재장전 불가
+    if (!EquipedWeaponComp->CurrentWeapon)// 현재 무기가 없으면 return
+    {
+        return;
+    }
 
+    // 근거리 무기면 return
+    if (EquipedWeaponComp->CurrentWeapon->GetWeaponType() == EWeaponType::Melee)
+    {
+        return;
+    }
+    
+	IsReload = true;
 }
+
 //////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
+
 
 void ANS_PlayerCharacterBase::PlayDeath_Server_Implementation()
 {

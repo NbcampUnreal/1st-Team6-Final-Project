@@ -4,6 +4,7 @@
 #include "UI/NS_InGameMenu.h"
 #include "Blueprint/WidgetTree.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "UI/NS_MasterMenuPanel.h"
 
 void UNS_InGameMenu::NativeConstruct()
 {
@@ -51,3 +52,28 @@ void UNS_InGameMenu::NativeConstruct()
 //{
 //	UKismetSystemLibrary::QuitGame(this, GetOwningPlayer(), EQuitPreference::Quit, true);
 //}
+void UNS_InGameMenu::PlayAnimationShowR()
+{
+	PlayAnimation(ShowR);
+}
+
+void UNS_InGameMenu::PlayAnimationShowL()
+{
+	PlayAnimation(ShowL);
+}
+void UNS_InGameMenu::ShowWidget()
+{
+	Super::ShowWidget();
+	GetWidget(EWidgetToggleType::InGamemStartMenu)->ShowWidget();
+}
+
+void UNS_InGameMenu::HideWidget()
+{
+	Super::HideWidget();
+	GetWidget(EWidgetToggleType::InGamemStartMenu)->HideSubMenuWidget();
+	GetWidget(EWidgetToggleType::Settings)->HideSubMenuWidget();
+	GetWidget(EWidgetToggleType::SaveNameMenu)->HideWidget();
+	GetWidget(EWidgetToggleType::AreYouSureMenu)->HideWidget();
+	GetWidget(EWidgetToggleType::LoadMenuInGameOver)->HideWidget();
+	GetWidget(EWidgetToggleType::PopUpMsg)->HideWidget();
+}
