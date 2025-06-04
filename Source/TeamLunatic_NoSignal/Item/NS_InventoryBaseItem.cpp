@@ -205,3 +205,8 @@ AActor* UNS_InventoryBaseItem::GetOwningActor() const
 {
 	return OwningActor;
 }
+
+int32 UNS_InventoryBaseItem::GetQuantity() const
+{
+	return Quantity;
+}

@@ -28,6 +28,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	AActor* GetOwningActor() const;
 
+	UFUNCTION(BlueprintCallable, Category = "ItemData")
+	int32 GetQuantity() const;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Confige")
 	UDataTable* ItemsDataTable;
 
