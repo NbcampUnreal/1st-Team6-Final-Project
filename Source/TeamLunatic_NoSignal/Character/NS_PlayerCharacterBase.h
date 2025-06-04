@@ -13,6 +13,7 @@ class UNS_StatusComponent;
 class UNS_InventoryBaseItem;
 class UInventoryComponent;
 class UNS_EquipedWeaponComponent;
+class UNS_QuickSlotPanel;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
@@ -83,6 +84,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory", Replicated)
 	UInventoryComponent* PlayerInventory;
+
+	UPROPERTY()
+	UNS_QuickSlotPanel* QuickSlotPanel;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UNS_EquipedWeaponComponent* EquipedWeaponComp;

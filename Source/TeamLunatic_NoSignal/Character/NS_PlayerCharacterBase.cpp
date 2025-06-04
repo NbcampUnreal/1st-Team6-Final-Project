@@ -11,6 +11,7 @@
 #include "Interaction/Component/InteractionComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "World/Pickup.h"
+#include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
 #include <Net/UnrealNetwork.h>
 
 ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
@@ -102,6 +103,15 @@ void ANS_PlayerCharacterBase::Server_UseInventoryItem_Implementation(UNS_Invento
     if (Item)
     {
         Item->OnUseItem(this); // 서버에서 처리
+
+        // 아이템이 장비 타입 + 무기류일 때만 퀵슬롯 자동 등록
+        if (Item->ItemType == EItemType::Equipment &&
+            Item->WeaponType != EWeaponType::Ammo &&
+            QuickSlotPanel)
+        {
+            QuickSlotPanel->AssignToFirstEmptySlot(Item); // 자동 빈 슬롯 탐색
+            UE_LOG(LogTemp, Warning, TEXT("[Server] 장착된 아이템 퀵슬롯 자동 등록 시도: %s"), *Item->GetName());
+        }
     }
 }
 

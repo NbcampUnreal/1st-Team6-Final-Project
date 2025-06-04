@@ -8,6 +8,8 @@
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
+#include "Zombie/NS_ZombieBase.h"
+#include "Zombie/Enum/EZombieType.h"
 
 ANS_AIController::ANS_AIController()
 {
@@ -29,12 +31,18 @@ ANS_AIController::ANS_AIController()
 void ANS_AIController::BeginPlay()
 {
 	Super::BeginPlay();
+
+}
+
+void ANS_AIController::OnPossess(APawn* PossessedPawn)
+{
+	Super::OnPossess(PossessedPawn);
 	if (UseBlackboard(BehaviorTreeAsset->BlackboardAsset, BlackboardComp))
 	{
 		RunBehaviorTree(BehaviorTreeAsset);
 	}
-
 	Perception->OnTargetPerceptionUpdated.AddDynamic(this, &ANS_AIController::OnPerceptionUpdated);
+	InitializeAttackRange(PossessedPawn);
 }
 
 void ANS_AIController::OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
@@ -42,7 +50,14 @@ void ANS_AIController::OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
 	FString SenseName = Stimulus.Type.Name.ToString();
 	if (SenseName == "Default__AISense_Sight")
 	{
-		HandleSightStimulus();
+		if (Stimulus.WasSuccessfullySensed())
+		{
+			HandleSightStimulus();
+		}
+		else
+		{
+			BlackboardComp->SetValueAsFloat("Distance", 5000.f);
+		}
 	}
 	else if (SenseName == "Default__AISense_Hearing")
 	{
@@ -50,6 +65,10 @@ void ANS_AIController::OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
 	}
 	else if (SenseName == "Default__AISense_Damage"){
 		HandleDamageStimulus(Actor);
+	}
+	else
+	{
+		BlackboardComp->SetValueAsFloat("Distance", 5000.f);
 	}
 }
 
@@ -59,12 +78,10 @@ void ANS_AIController::HandleSightStimulus()
 	if (Actor)
 	{
 		BlackboardComp->SetValueAsObject("TargetActor", Actor);
-		bIsDetect = true;
 	}
 	else
 	{
 		BlackboardComp->ClearValue("TargetActor");
-		bIsDetect = false;
 	}
 }
 
@@ -100,6 +117,31 @@ AActor* ANS_AIController::GetClosestSightTarget()
 	}
 	if (ClosestSightTarget) return ClosestSightTarget;
 	return nullptr;
+}
+
+void ANS_AIController::InitializeAttackRange(APawn* PossesedPawn)
+{
+	ANS_ZombieBase* Zombie = Cast<ANS_ZombieBase>(PossesedPawn);
+	if (!Zombie) return;
+	EZombieType Type = Zombie->GetType();
+	float AttackRange = 0.f;
+	switch (Type)
+	{
+	case EZombieType::BASIC:
+		AttackRange=100.f;
+		BlackboardComp->SetValueAsFloat("AttackRange", AttackRange);
+		break;
+	case EZombieType::RUNNER:
+		AttackRange=300.f;
+		BlackboardComp->SetValueAsFloat("AttackRange", AttackRange);
+		break;
+	case EZombieType::FAT:
+		AttackRange=200.f;
+		BlackboardComp->SetValueAsFloat("AttackRange", AttackRange);
+		break;
+	default:
+		break;
+	}
 }
 
 void ANS_AIController::InitializingSightConfig()

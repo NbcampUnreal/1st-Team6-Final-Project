@@ -1,13 +1,15 @@
 ﻿#include "NS_EquipedWeaponComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Character/NS_PlayerCharacterBase.h"
+#include "Item/NS_InventoryBaseItem.h"
 #include "Item/NS_BaseMeleeWeapon.h"
 #include "Item/NS_BaseRangedWeapon.h"
 #include "GameFramework/Character.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "Components/StaticMeshComponent.h"   
+#include "Components/StaticMeshComponent.h"  
+#include "GameFlow/NS_GameInstance.h"
 
 UNS_EquipedWeaponComponent::UNS_EquipedWeaponComponent()
 {
@@ -131,26 +133,75 @@ void UNS_EquipedWeaponComponent::Server_Reload_Implementation()
 
 void UNS_EquipedWeaponComponent::Multicast_Reload_Implementation()
 {
-    // 현재 무기가 없거나, 원거리 무기가 아니면 재장전 불가
-    if (!CurrentWeapon ||
-        CurrentWeapon->GetWeaponType() != EWeaponType::Ranged ||
-        CurrentWeapon->GetWeaponType() != EWeaponType::Pistol )
+    // 유효성 검사: 캐릭터나 무기 없으면 종료
+    if (!OwnerCharacter || !CurrentWeapon)
+        return;
+
+    // 무기 타입 확인: 원거리 무기 또는 권총이 아니면 재장전 불가
+    const EWeaponType CurrentType = CurrentWeapon->GetWeaponType();
+    if (CurrentType != EWeaponType::Ranged && CurrentType != EWeaponType::Pistol)
+        return;
+
+    // 원거리 무기로 캐스팅 시도
+    auto* RangedWeapon = Cast<ANS_BaseRangedWeapon>(CurrentWeapon);
+    if (!RangedWeapon)
+        return;
+
+    // 이미 최대 탄약이면 재장전할 필요 없음
+    if (RangedWeapon->CurrentAmmo >= RangedWeapon->MaxAmmo)
     {
+        UE_LOG(LogTemp, Warning, TEXT("[Reload] 이미 탄약이 가득 참"));
         return;
     }
 
-    // 현재 무기를 원거리 무기로 캐스팅
-    auto* CurrentWeaponBullet = Cast<ANS_BaseRangedWeapon>(CurrentWeapon);
+    // 필요한 탄약량 계산
+    const int32 NeededAmmo = RangedWeapon->MaxAmmo - RangedWeapon->CurrentAmmo;
 
-    // 이미 탄약이 최대치면 재장전할 필요 없음
-    if (CurrentWeaponBullet->CurrentAmmo >= CurrentWeaponBullet->MaxAmmo)
+    // 인벤토리에서 탄약 찾기
+    if (auto* Inventory = OwnerCharacter->FindComponentByClass<UInventoryComponent>())
     {
-        UE_LOG(LogTemp, Log, TEXT("현재 탄약이 이미 최대입니다."));
-        return;
-    }
+        bool bReloaded = false;
 
-    // 실제 탄약 수를 인벤토리에서 가져오는 로직은 나중에 추가 예정
-    // 현재는 단순히 탄약을 최대치로 채워줌
-    CurrentWeaponBullet->CurrentAmmo = CurrentWeaponBullet->MaxAmmo;
+        for (UNS_InventoryBaseItem* Item : Inventory->GetInventoryContents())
+        {
+            if (!Item || Item->GetQuantity() <= 0)
+                continue;
+
+            // 🔻 데이터 테이블이 없을 경우, GameInstance에서 바인딩
+            if (!Item->ItemsDataTable && OwnerCharacter->GetWorld())
+            {
+                if (const auto* GI = Cast<UNS_GameInstance>(OwnerCharacter->GetWorld()->GetGameInstance()))
+                {
+                    Item->ItemsDataTable = GI->GlobalItemDataTable;
+                }
+            }
+
+            const FNS_ItemDataStruct* Data = Item->GetItemData();
+            if (!Data)
+                continue;
+
+            // 탄약 아이템인지 확인
+            if (Data->ItemType == EItemType::Equipment && Data->WeaponType == EWeaponType::Ammo)
+            {
+                const int32 AmmoAvailable = Item->GetQuantity();
+                const int32 AmmoToLoad = FMath::Min(NeededAmmo, AmmoAvailable);
+
+                if (AmmoToLoad > 0)
+                {
+                    RangedWeapon->Reload(AmmoToLoad);
+                    Item->SetQuantity(AmmoAvailable - AmmoToLoad);
+
+                    UE_LOG(LogTemp, Log, TEXT("[Reload] %d발 장전 완료. 남은 인벤토리 탄약: %d"), AmmoToLoad, Item->GetQuantity());
+                    bReloaded = true;
+                    break; // 장전 성공했으니 더 이상 탐색할 필요 없음
+                }
+            }
+        }
+
+        if (!bReloaded)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("[Reload] 사용할 수 있는 탄약 없음 또는 탄약 수량 부족"));
+        }
+    }
 }
 
