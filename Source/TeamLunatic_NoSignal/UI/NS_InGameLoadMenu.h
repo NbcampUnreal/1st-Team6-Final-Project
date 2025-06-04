@@ -22,10 +22,12 @@ public:
 
     virtual void NativeConstruct() override;
 
-    virtual void ShowWidgetD() override;
+    virtual void ShowWidget() override;
+     
+   // void LoadGameWidgetOfGameOver();
 
     UFUNCTION(BlueprintCallable, Category = "Load UI")
-    void LoadSaveSlotsToUI();
+    virtual void LoadSaveSlotsToUI();
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Load UI")
     TSubclassOf<UNS_LoadGameMenuPanel> LoadGameDataElementClass;
@@ -52,6 +54,9 @@ protected:
 
     UFUNCTION()
     void StartGame();
+
+   /* UFUNCTION()
+    void ReturnMainMenu();*/
 
     UFUNCTION()
     void OnClickedDeleteSlot(UNS_LoadGameMenuPanel* ChidPanel);

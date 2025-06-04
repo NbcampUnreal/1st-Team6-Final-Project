@@ -101,7 +101,7 @@ void ANS_PlayerCharacterBase::Server_UseInventoryItem_Implementation(UNS_Invento
 {
     if (Item)
     {
-        Item->OnUseItem(); // 서버에서 처리
+        Item->OnUseItem(this); // 서버에서 처리
     }
 }
 
@@ -307,6 +307,9 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
     DOREPLIFETIME(ANS_PlayerCharacterBase, CamYaw);    // 카메라 좌/우 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, CamPitch);  // 카메라 상/하 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsAiming);  // 조준중인지 확인 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, TurnLeft);  // 몸을 왼쪽으로 회전시키는 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, TurnRight); // 몸을 오른쪽으로 회전시키는 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, NowFire);   // 사격시 몸전체Mesh 사격 애니메이션 재생 용 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, PlayerInventory);
 }
 
@@ -387,9 +390,7 @@ void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
     const FRotator ActorRot   = GetActorRotation(); 
     const FRotator ControlRot = Controller->GetControlRotation(); 
     const FRotator DeltaRot   = UKismetMathLibrary::NormalizedDeltaRotator(ControlRot, ActorRot); 
-
-    const float RawYaw   = DeltaRot.Yaw; 
-    const float RawPitch = DeltaRot.Pitch; 
+    
     const float DeltaTime = GetWorld()->GetDeltaSeconds();
     
     CamYaw   = FMath::FInterpTo(CamYaw,   DeltaRot.Yaw,   DeltaTime, AimSendInterpSpeed); 

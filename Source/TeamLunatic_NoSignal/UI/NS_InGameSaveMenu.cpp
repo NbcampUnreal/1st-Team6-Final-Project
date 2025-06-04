@@ -35,9 +35,9 @@ void  UNS_InGameSaveMenu::Init(UNS_BaseMainMenu* NsMainMenu)
     UNS_PopUpMsg* PopUp = Cast<UNS_PopUpMsg>(MainMenu->GetWidget(EWidgetToggleType::PopUpMsg));
     PopUp->OnSuccessOkButtonEvent.AddDynamic(this, &UNS_InGameSaveMenu::LoadSaveSlotsToUI);
 }
-void UNS_InGameSaveMenu::ShowWidgetD()
+void UNS_InGameSaveMenu::ShowWidget()
 {
-    Super::ShowWidgetD();
+    Super::ShowWidget();
     LoadSaveSlotsToUI();
 }
 

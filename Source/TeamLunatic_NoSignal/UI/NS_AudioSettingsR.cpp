@@ -1,26 +1,28 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "UI/NS_AudioSettingsR.h"
 #include "Components/Slider.h"
 #include "Components/Button.h"
 #include "Kismet/GameplayStatics.h"
+#include "Misc/Paths.h"
+#include "Misc/FileHelper.h"
 
-static  FString CustomIniFile = FPaths::ProjectSavedDir() / TEXT("Config/WindowsEditor/GameUserSettings1.ini");
-
+static FString CustomIniFile;
 void UNS_AudioSettingsR::NativeConstruct()
 {
-	Super::NativeConstruct();
+    Super::NativeConstruct();
+
+#if WITH_EDITOR
+    CustomIniFile = FPaths::ProjectSavedDir() / TEXT("Config/WindowsEditor/AudioSettings.ini");
+#else
+    CustomIniFile = FPaths::GeneratedConfigDir() / TEXT("Windows/AudioSettings.ini");
+#endif
 
     LoadSoundSettings();
     ApplyVolumes();
 
     if (SaveButton)
         SaveButton->OnClicked.AddDynamic(this, &UNS_AudioSettingsR::OnSaveButtonClicked);
-
     if (ResetButton)
         ResetButton->OnClicked.AddDynamic(this, &UNS_AudioSettingsR::OnResetButtonClicked);
-
     if (MasterSlider)
         MasterSlider->OnValueChanged.AddDynamic(this, &UNS_AudioSettingsR::OnSliderValueChanged);
     if (EffectSlider)
@@ -29,30 +31,26 @@ void UNS_AudioSettingsR::NativeConstruct()
         AmbientSlider->OnValueChanged.AddDynamic(this, &UNS_AudioSettingsR::OnSliderValueChanged);
     if (MusicSlider)
         MusicSlider->OnValueChanged.AddDynamic(this, &UNS_AudioSettingsR::OnSliderValueChanged);
-
 }
 void UNS_AudioSettingsR::OnSliderValueChanged(float)
 {
     ApplyVolumes();
 }
-
 void UNS_AudioSettingsR::OnResetButtonClicked()
 {
     MasterVolume = 0.5f;
     EffectVolume = 0.5f;
     AmbientVolume = 0.5f;
     MusicVolume = 0.5f;
-
     if (MasterSlider)
-	    MasterSlider->SetValue(MasterVolume);
-	if (EffectSlider)
-		EffectSlider->SetValue(EffectVolume);
-	if (AmbientSlider)
-		AmbientSlider->SetValue(AmbientVolume);
-	if (MusicSlider)
-		MusicSlider->SetValue(MusicVolume);
+        MasterSlider->SetValue(MasterVolume);
+    if (EffectSlider)
+        EffectSlider->SetValue(EffectVolume);
+    if (AmbientSlider)
+        AmbientSlider->SetValue(AmbientVolume);
+    if (MusicSlider)
+        MusicSlider->SetValue(MusicVolume);
 }
-
 void UNS_AudioSettingsR::ApplyVolumes()
 {
     if (MasterSlider)
@@ -64,65 +62,34 @@ void UNS_AudioSettingsR::ApplyVolumes()
     if (MusicSlider)
         UGameplayStatics::SetSoundMixClassOverride(this, nullptr, nullptr, MusicSlider->GetValue());
 }
-
 void UNS_AudioSettingsR::OnSaveButtonClicked()
 {
     SaveSoundSettings();
 }
-
 void UNS_AudioSettingsR::SaveSoundSettings()
 {
     FString FileContent;
     FileContent += TEXT("[Audio]\n");
-    FileContent += FString::Printf(TEXT("MasterVolume=%.2f\n"), MasterSlider->GetValue());
-    FileContent += FString::Printf(TEXT("EffectVolume=%.2f\n"), EffectSlider->GetValue());
-    FileContent += FString::Printf(TEXT("AmbientVolume=%.2f\n"), AmbientSlider->GetValue());
-    FileContent += FString::Printf(TEXT("MusicVolume=%.2f\n"), MusicSlider->GetValue());
-
-    FFileHelper::SaveStringToFile(FileContent, *CustomIniFile);
-
-    UE_LOG(LogTemp, Warning, TEXT("직접 파일 생성 및 저장 완료: %s"), *CustomIniFile);
-
- // 
-    //GConfig->SetFloat(TEXT("Audio"), TEXT("MasterVolume"), MasterSlider->GetValue(), CustomIniFile);
-    //GConfig->SetFloat(TEXT("Audio"), TEXT("EffectVolume"), EffectSlider->GetValue(), CustomIniFile);
-    //GConfig->SetFloat(TEXT("Audio"), TEXT("AmbientVolume"), AmbientSlider->GetValue(), CustomIniFile);
-    //GConfig->SetFloat(TEXT("Audio"), TEXT("MusicVolume"), MusicSlider->GetValue(), CustomIniFile);
-    //GConfig->Flush(false, CustomIniFile);
-    //UE_LOG(LogTemp, Warning, TEXT("저장 파일 경로: %s"), *CustomIniFile);
-
-    /*
-    FString FilePath = FPaths::ProjectSavedDir() / TEXT("Config/WindowsEditor/GameUserSettings1.ini");
-    TArray<FString> Lines;
-
-    // 1. 기존 파일 읽기
-    if (FFileHelper::LoadFileToStringArray(Lines, *FilePath))
+    FileContent += FString::Printf(TEXT("MasterVolume=%.2f\n"), MasterSlider ? MasterSlider->GetValue() : MasterVolume);
+    FileContent += FString::Printf(TEXT("EffectVolume=%.2f\n"), EffectSlider ? EffectSlider->GetValue() : EffectVolume);
+    FileContent += FString::Printf(TEXT("AmbientVolume=%.2f\n"), AmbientSlider ? AmbientSlider->GetValue() : AmbientVolume);
+    FileContent += FString::Printf(TEXT("MusicVolume=%.2f\n"), MusicSlider ? MusicSlider->GetValue() : MusicVolume);
+    if (FFileHelper::SaveStringToFile(FileContent, *CustomIniFile))
     {
-        // 2. 각 줄을 돌면서 MasterVolume만 찾아서 바꿔치기
-        for (FString& Line : Lines)
-        {
-            if (Line.StartsWith(TEXT("MasterVolume=")))
-            {
-                Line = FString::Printf(TEXT("MasterVolume=%.2f"), NewMasterVolume);
-                break;
-            }
-        }
+        UE_LOG(LogTemp, Warning, TEXT("사운드 설정 저장 완료: %s"), *CustomIniFile);
     }
     else
     {
-        // 파일이 없으면 새로 생성
-        Lines.Add(TEXT("[Audio]"));
-        Lines.Add(FString::Printf(TEXT("MasterVolume=%.2f"), NewMasterVolume));
+        UE_LOG(LogTemp, Error, TEXT("사운드 설정 저장 실패: %s"), *CustomIniFile);
     }
-
-    // 3. 파일로 다시 저장 (덮어쓰기)
-    FFileHelper::SaveStringArrayToFile(Lines, *FilePath);
-
-    UE_LOG(LogTemp, Warning, TEXT("MasterVolume만 업데이트 완료: %s"), *FilePath);*/
 }
-
 void UNS_AudioSettingsR::LoadSoundSettings()
 {
+    if (!FPaths::FileExists(CustomIniFile))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("설정 파일이 존재하지 않습니다: %s"), *CustomIniFile);
+        return;
+    }
     FString FileContent;
     if (FFileHelper::LoadFileToString(FileContent, *CustomIniFile))
     {
@@ -140,27 +107,20 @@ void UNS_AudioSettingsR::LoadSoundSettings()
             else if (Line.StartsWith(TEXT("MusicVolume=")))
                 MusicVolume = FCString::Atof(*Line.RightChop(12));
         }
-        // 슬라이더 반영
-        MasterSlider->SetValue(MasterVolume);
-        EffectSlider->SetValue(EffectVolume);
-        AmbientSlider->SetValue(AmbientVolume);
-        MusicSlider->SetValue(MusicVolume);
-        UE_LOG(LogTemp, Warning, TEXT("직접 파일 로드 및 슬라이더 반영 완료"));
+        if (MasterSlider)
+            MasterSlider->SetValue(MasterVolume);
+        if (EffectSlider)
+            EffectSlider->SetValue(EffectVolume);
+        if (AmbientSlider)
+            AmbientSlider->SetValue(AmbientVolume);
+        if (MusicSlider)
+            MusicSlider->SetValue(MusicVolume);
+        UE_LOG(LogTemp, Warning, TEXT("사운드 설정 로드 및 슬라이더 반영 완료"));
     }
     else
     {
-        UE_LOG(LogTemp, Warning, TEXT("파일 로드 실패: %s"), *CustomIniFile);
+        UE_LOG(LogTemp, Error, TEXT("사운드 설정 로드 실패: %s"), *CustomIniFile);
     }
-
-    //float Volume = 1.f;
-    //if (MasterSlider && GConfig->GetFloat(TEXT("Audio"), TEXT("MasterVolume"), MasterVolume, CustomIniFile))
-    //    MasterSlider->SetValue(MasterVolume);
-    //if (EffectSlider && GConfig->GetFloat(TEXT("Audio"), TEXT("EffectVolume"), EffectVolume, CustomIniFile))
-    //    EffectSlider->SetValue(EffectVolume);
-    //if (AmbientSlider && GConfig->GetFloat(TEXT("Audio"), TEXT("AmbientVolume"), AmbientVolume, CustomIniFile))
-    //    AmbientSlider->SetValue(AmbientVolume);
-    //if (MusicSlider && GConfig->GetFloat(TEXT("Audio"), TEXT("MusicVolume"), MusicVolume, CustomIniFile))
-    //    MusicSlider->SetValue(MusicVolume);
 }
 void UNS_AudioSettingsR::UpdateVolumeValuesFromSliders()
 {
@@ -169,4 +129,3 @@ void UNS_AudioSettingsR::UpdateVolumeValuesFromSliders()
     if (AmbientSlider) AmbientVolume = AmbientSlider->GetValue();
     if (MusicSlider) MusicVolume = MusicSlider->GetValue();
 }
-
