@@ -2,10 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimNotifies/AnimNotifyState.h"
-#include "NS_MoveStopandStartNotify.generated.h"
+#include "NS_ANS_MoveStopandStartNotify.generated.h"
 
 UCLASS()
-class TEAMLUNATIC_NOSIGNAL_API UNS_MoveStopandStartNotify : public UAnimNotifyState
+class TEAMLUNATIC_NOSIGNAL_API UNS_ANS_MoveStopandStartNotify : public UAnimNotifyState
 {
 	GENERATED_BODY()
 

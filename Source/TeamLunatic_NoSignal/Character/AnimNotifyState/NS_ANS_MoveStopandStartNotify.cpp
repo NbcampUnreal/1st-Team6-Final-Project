@@ -1,7 +1,7 @@
-﻿#include "NS_MoveStopandStartNotify.h"
+﻿#include "NS_ANS_MoveStopandStartNotify.h"
 #include "Character/NS_PlayerCharacterBase.h"
 
-void UNS_MoveStopandStartNotify::NotifyBegin(USkeletalMeshComponent* MeshComp,
+void UNS_ANS_MoveStopandStartNotify::NotifyBegin(USkeletalMeshComponent* MeshComp,
 											  UAnimSequenceBase* Animation,
 											  float TotalDuration)
 {
@@ -9,7 +9,7 @@ void UNS_MoveStopandStartNotify::NotifyBegin(USkeletalMeshComponent* MeshComp,
 		Char->SetMovementLockState_Server(true);
 }
 
-void UNS_MoveStopandStartNotify::NotifyEnd(USkeletalMeshComponent* MeshComp,
+void UNS_ANS_MoveStopandStartNotify::NotifyEnd(USkeletalMeshComponent* MeshComp,
 											UAnimSequenceBase* Animation)
 {
 	if (auto* Char = Cast<ANS_PlayerCharacterBase>(MeshComp->GetOwner()))
