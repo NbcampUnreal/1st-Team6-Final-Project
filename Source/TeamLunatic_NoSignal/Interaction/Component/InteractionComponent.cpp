@@ -81,8 +81,6 @@ void UInteractionComponent::PerformInteractionCheck()
 
 	if (LookDirection > 0)
 	{
-		//DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Red, false, 1.f, 0, 2.f);
-
 		FCollisionQueryParams QueryParams;
 		QueryParams.AddIgnoredActor(GetOwner());
 
