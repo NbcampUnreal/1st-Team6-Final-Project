@@ -4,6 +4,7 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Inventory/InventoryComponent.h"
+#include "Item/NS_InventoryBaseItem.h"
 #include "Components/NS_EquipedWeaponComponent.h"
 #include "Character/Components/NS_StatusComponent.h"
 #include "Item/NS_BaseRangedWeapon.h"
@@ -68,6 +69,11 @@ void ANS_PlayerCharacterBase::DropItem_Server_Implementation(UNS_InventoryBaseIt
         const FTransform SpawnTransform(GetActorRotation(), SpawnLocation);
 
         const int32 RemovedQuantity = PlayerInventory->RemoveAmountOfItem(ItemToDrop, QuantityToDrop);
+        if (RemovedQuantity <= 0)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("DropItem_Server: 제거할 수량이 0 이하입니다."));
+            return;
+        }
 
         APickup* Pickup = GetWorld()->SpawnActor<APickup>(APickup::StaticClass(), SpawnTransform, SpawnParams);
 
@@ -83,11 +89,19 @@ void ANS_PlayerCharacterBase::DropItem(UNS_InventoryBaseItem* ItemToDrop, const 
 {
     if (HasAuthority())
     {
-        DropItem_Server(ItemToDrop, QuantityToDrop);
+        DropItem_Server_Implementation(ItemToDrop, QuantityToDrop);
     }
     else
     {
         DropItem_Server(ItemToDrop, QuantityToDrop); // 클라에서 서버로 요청
+    }
+}
+
+void ANS_PlayerCharacterBase::Server_UseInventoryItem_Implementation(UNS_InventoryBaseItem* Item)
+{
+    if (Item)
+    {
+        Item->OnUseItem(); // 서버에서 처리
     }
 }
 
@@ -227,7 +241,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
         {
             EnhancedInput->BindAction(
                 ToggleMenuAction,
-                ETriggerEvent::Triggered,
+                ETriggerEvent::Started,
                 InteractionComponent,
                 &UInteractionComponent::ToggleMenu
             );
@@ -293,6 +307,9 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
     DOREPLIFETIME(ANS_PlayerCharacterBase, CamYaw);    // 카메라 좌/우 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, CamPitch);  // 카메라 상/하 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsAiming);  // 조준중인지 확인 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, TurnLeft);  // 몸을 왼쪽으로 회전시키는 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, TurnRight); // 몸을 오른쪽으로 회전시키는 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, NowFire);   // 사격시 몸전체Mesh 사격 애니메이션 재생 용 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, PlayerInventory);
 }
 
@@ -373,9 +390,7 @@ void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
     const FRotator ActorRot   = GetActorRotation(); 
     const FRotator ControlRot = Controller->GetControlRotation(); 
     const FRotator DeltaRot   = UKismetMathLibrary::NormalizedDeltaRotator(ControlRot, ActorRot); 
-
-    const float RawYaw   = DeltaRot.Yaw; 
-    const float RawPitch = DeltaRot.Pitch; 
+    
     const float DeltaTime = GetWorld()->GetDeltaSeconds();
     
     CamYaw   = FMath::FInterpTo(CamYaw,   DeltaRot.Yaw,   DeltaTime, AimSendInterpSpeed); 

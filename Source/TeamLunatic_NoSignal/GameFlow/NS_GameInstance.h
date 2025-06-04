@@ -2,7 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
-#include "EGameModeType.h"
+#include "Engine/DataTable.h"
+#include "UObject/SoftObjectPtr.h" 
+#include "EGameModeType.h"  
 #include "Interfaces/OnlineSessionInterface.h"
 #include "OnlineSessionSettings.h"
 #include "HttpModule.h"
@@ -24,6 +26,9 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_GameInstance : public UGameInstance
 public:
 	UNS_GameInstance();
 	virtual void Init() override;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Inventory|Config")
+	UDataTable* GlobalItemDataTable;
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	UNS_UIManager* GetUIManager() const { return NS_UIManager; };

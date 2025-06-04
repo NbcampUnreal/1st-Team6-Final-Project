@@ -49,6 +49,9 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void Client_NotifyInventoryUpdated();
+
+	UFUNCTION(Server, Reliable)
+	void Server_UseInventoryItem(UNS_InventoryBaseItem* Item);
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
@@ -99,11 +102,22 @@ public:
 
 	/////////////////////////////// 리플리케이션용 변수들////////////////////////////////
 	// 캐릭터가 바라보고있는 좌/우 값
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	float CamYaw;
 	// 캐릭터가 바라보고있는 상/하 값
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	float CamPitch;
+
+	// 왼쪽으로 몸을 회전시키는 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool TurnLeft = false;
+	// 오른쪽으로 몸을 회전시키는 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool TurnRight = false;
+
+	// 사격시 몸전체Mesh 사격 애니메이션 재생 용 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool NowFire = false;
 	
 	// 달리고있는 상태인지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
