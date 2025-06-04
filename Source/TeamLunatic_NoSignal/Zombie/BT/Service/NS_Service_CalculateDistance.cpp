@@ -29,15 +29,15 @@ void UNS_Service_CalculateDistance::TickNode(UBehaviorTreeComponent& OwnerComp, 
 				{
 					Distance = FVector::Dist(Pawn->GetActorLocation(), TargetActor->GetActorLocation());
 					BlackboardComponent->SetValueAsFloat("Distance", Distance);
-					if (Distance < 200.f && Distance > 50.f)
+					float AttackRange = BlackboardComponent->GetValueAsFloat("AttackRange");
+					if (AttackRange>Distance)
 					{
-						NewAttackType = EZombieAttackType::CHARGE;
+						BlackboardComponent->SetValueAsBool("bIsAttackable", true);
 					}
-					else if (Distance <= 50.f && Distance > 0.f)
+					else
 					{
-						NewAttackType = EZombieAttackType::BASIC;
+						BlackboardComponent->SetValueAsBool("bIsAttackable", false);
 					}
-					BlackboardComponent->SetValueAsEnum("AttackType", static_cast<uint8>(NewAttackType));
 				}
 			}
 		}
