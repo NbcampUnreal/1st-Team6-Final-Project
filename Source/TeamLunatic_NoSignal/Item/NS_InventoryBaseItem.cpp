@@ -10,6 +10,7 @@
 #include "Item/NS_BaseRangedWeapon.h"
 #include "Item/NS_BaseMagazine.h"
 #include "Item/NS_BaseAmmo.h"
+#include "Character/Components/NS_StatusComponent.h"
 #include "GameFlow/NS_GameInstance.h"
 
 UNS_InventoryBaseItem::UNS_InventoryBaseItem() : bisCopy(false), bisPickup(false)
@@ -121,24 +122,33 @@ void UNS_InventoryBaseItem::OnUseItem(ANS_PlayerCharacterBase* Character)
 
 	const FNS_ItemDataStruct* ItemData = GetItemData();
 	if (!ItemData) return;
-	// 장비 아이템일 경우 무기/탄창/탄약 분기 처리
-	if (ItemData->ItemType == EItemType::Equipment)
+	// 아이템 타입에 따른 처리
+	switch (ItemData->ItemType)
 	{
+	case EItemType::Consumable:
+	case EItemType::Medical:
+	case EItemType::Utility:
+		UseConsumableItem(Character, *ItemData); // 소모품 처리
+		break;
+
+	case EItemType::Equipment:
 		switch (ItemData->WeaponType)
 		{
 		case EWeaponType::Melee:
 		case EWeaponType::Ranged:
 		case EWeaponType::Pistol:
-			EquipWeapon(ItemData);
-			break;
-
-		case EWeaponType::Ammo:
-			UseAmmo(ItemData);
+			EquipWeapon(ItemData); // 장비 처리
 			break;
 
 		default:
+			UE_LOG(LogTemp, Warning, TEXT("[OnUseItem] 지원하지 않는 무기 타입입니다."));
 			break;
 		}
+		break;
+
+	default:
+		UE_LOG(LogTemp, Warning, TEXT("[OnUseItem] 사용 처리되지 않은 아이템 타입입니다: %d"), (uint8)ItemData->ItemType);
+		break;
 	}
 }
 
@@ -157,37 +167,32 @@ void UNS_InventoryBaseItem::EquipWeapon(const FNS_ItemDataStruct* ItemData)
 	}
 }
 
-// 탄약 사용 처리
-void UNS_InventoryBaseItem::UseAmmo(const FNS_ItemDataStruct* ItemData)
+void UNS_InventoryBaseItem::UseConsumableItem(ANS_PlayerCharacterBase* Character, const FNS_ItemDataStruct& ItemData)
 {
-	// 아이템 데이터나 인벤토리가 유효하지 않으면 종료
-	if (!ItemData || !OwingInventory) return;
+	if (!Character) return;
 
-	// 인벤토리를 소유한 액터가 플레이어 캐릭터인지 확인
-	if (auto* Player = Cast<ANS_PlayerCharacterBase>(OwingInventory->GetOwner()))
+	// 상태 회복 처리
+	if (auto* State = Character->StatusComp)
 	{
-		// 플레이어가 무기 장착 컴포넌트를 보유하고 있는지 확인
-		if (auto* WeaponComp = Player->FindComponentByClass<UNS_EquipedWeaponComponent>())
-		{
-			// 현재 장착 중인 무기가 원거리 무기인지 확인
-			if (auto* RangedWeapon = Cast<ANS_BaseRangedWeapon>(WeaponComp->CurrentWeapon))
-			{
-				int32 AmmoToReload = FMath::Min(Quantity, RangedWeapon->GetMaxAmmo() - RangedWeapon->GetCurrentAmmo());
+		State->AddHealthGauge(ItemData.ItemStates.HealAmount);
+		State->AddStamina(ItemData.ItemStates.StaminaRecovery);
+		State->AddHunger(ItemData.ItemStates.HungerRestore);
+		State->AddThirst(ItemData.ItemStates.ThirstRestore);
+		State->AddFatigue(ItemData.ItemStates.TiredRestore);
 
-				if (AmmoToReload > 0)
-				{
-					RangedWeapon->Reload(AmmoToReload);
-					Quantity -= AmmoToReload;
-
-					UE_LOG(LogTemp, Log, TEXT("[UseAmmo] %d발 장전됨. 남은 수량: %d"), AmmoToReload, Quantity);
-				}
-				else
-				{
-					UE_LOG(LogTemp, Warning, TEXT("[UseAmmo] 탄약이 이미 가득 참"));
-				}
-			}
-		}
+		UE_LOG(LogTemp, Log, TEXT("[UseConsumableItem] 체력 +%.1f, 스태미나 +%.1f, 허기 +%.1f, 갈증 +%.1f, 피로도 +%.1f"),
+			ItemData.ItemStates.HealAmount,
+			ItemData.ItemStates.StaminaRecovery,
+			ItemData.ItemStates.HungerRestore,
+			ItemData.ItemStates.ThirstRestore,
+			ItemData.ItemStates.TiredRestore
+		);
 	}
+
+	// 무게까지 포함한 수량 감소
+	const int32 Removed = OwingInventory->RemoveAmountOfItem(this, 1);
+
+	UE_LOG(LogTemp, Warning, TEXT("[UseConsumableItem] %s 사용됨. 제거된 수량: %d"), *ItemData.ItemTextData.ItemName.ToString(), Removed);
 }
 
 // 네트워크에서 UObject 복제를 허용
