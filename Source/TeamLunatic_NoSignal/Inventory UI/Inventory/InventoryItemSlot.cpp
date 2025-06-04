@@ -8,6 +8,7 @@
 #include "Inventory UI/Inventory/ItemDragDropOperation.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
+#include "GameFlow/NS_GameInstance.h"
 
 void UInventoryItemSlot::NativeOnInitialized()
 {
@@ -91,16 +92,37 @@ FReply UInventoryItemSlot::NativeOnMouseButtonDown(const FGeometry& InGeometry, 
 				Player->Server_UseInventoryItem(ItemReference); // 서버에 요청
 
 				// 퀵슬롯 자동 배정 로직 추가
-				if (Player->QuickSlotPanel)
+				if (Player->QuickSlotPanel && ItemReference)
 				{
-					if (ItemReference)
+					UNS_InventoryBaseItem* ClonedItem = ItemReference->CreateItemCopy();
+					if (ClonedItem)
 					{
-						UNS_InventoryBaseItem* ClonedItem = ItemReference->CreateItemCopy();
-						if (ClonedItem)
+						// 복제 후 데이터 보장
+						if (!ClonedItem->ItemsDataTable)
+						{
+							if (const UWorld* World = Player->GetWorld())
+							{
+								if (const UNS_GameInstance* GI = Cast<UNS_GameInstance>(World->GetGameInstance()))
+								{
+									ClonedItem->ItemsDataTable = GI->GlobalItemDataTable;
+								}
+							}
+						}
+
+						const FNS_ItemDataStruct* ItemData = ClonedItem->GetItemData();
+						if (ItemData &&
+							ItemData->ItemType == EItemType::Equipment &&
+							(ItemData->WeaponType == EWeaponType::Melee ||
+								ItemData->WeaponType == EWeaponType::Ranged ||
+								ItemData->WeaponType == EWeaponType::Pistol))
 						{
 							Player->QuickSlotPanel->AssignToFirstEmptySlot(ClonedItem);
 							UE_LOG(LogTemp, Warning, TEXT("[Client] 복제 후 퀵슬롯 등록 시도: %s (%s)"),
 								*ClonedItem->GetName(), *ClonedItem->ItemDataRowName.ToString());
+						}
+						else
+						{
+							UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 무기 아님: %s"), *ClonedItem->GetName());
 						}
 					}
 				}
