@@ -39,7 +39,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	USoundBase* EquipSound = nullptr;
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	USoundBase* UnEquipSound = nullptr;
 
