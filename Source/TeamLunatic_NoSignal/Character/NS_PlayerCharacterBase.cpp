@@ -101,7 +101,7 @@ void ANS_PlayerCharacterBase::Server_UseInventoryItem_Implementation(UNS_Invento
 {
     if (Item)
     {
-        Item->OnUseItem(); // 서버에서 처리
+        Item->OnUseItem(this); // 서버에서 처리
     }
 }
 

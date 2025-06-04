@@ -27,7 +27,7 @@ void ANS_BaseItem::BeginPlay()
 		WeaponData = ItemData->WeaponData;
 		ItemName = ItemData->ItemTextData.ItemName;
 		NumericData = ItemData->ItemNumericData;
-		GetItemSound = ItemData->ItemAssetData.UseSound;
+		GetItemSound = ItemData->ItemAssetData.GetSound;
 		ItemMesh = ItemData->ItemAssetData.StaticMesh;
 		Icon = ItemData->ItemAssetData.Icon;
 	}

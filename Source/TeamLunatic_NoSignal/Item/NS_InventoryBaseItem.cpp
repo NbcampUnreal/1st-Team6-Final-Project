@@ -64,6 +64,7 @@ UNS_InventoryBaseItem* UNS_InventoryBaseItem::CreateItemCopy()
 	ItemCopy->TextData = this->TextData;
 	ItemCopy->NumericData = this->NumericData;
 	ItemCopy->AssetData = this->AssetData;
+	ItemCopy->ConsumableItemAssetData = this->ConsumableItemAssetData;
 	ItemCopy->ItemsDataTable = this->ItemsDataTable;
 	ItemCopy->bisCopy = true;
 
@@ -104,7 +105,7 @@ const FNS_ItemDataStruct* UNS_InventoryBaseItem::GetItemData() const
 	return ItemsDataTable->FindRow<FNS_ItemDataStruct>(ItemDataRowName, TEXT(""));
 }
 // 아이템 사용 시 타입에 따라 분기 처리
-void UNS_InventoryBaseItem::OnUseItem()
+void UNS_InventoryBaseItem::OnUseItem(ANS_PlayerCharacterBase* Character)
 {
 	// 데이터 테이블이 없으면 GameInstance에서 재설정
 	if (!ItemsDataTable)
@@ -140,6 +141,7 @@ void UNS_InventoryBaseItem::OnUseItem()
 		}
 	}
 }
+
 // 무기 장착 처리
 void UNS_InventoryBaseItem::EquipWeapon(const FNS_ItemDataStruct* ItemData)
 {
