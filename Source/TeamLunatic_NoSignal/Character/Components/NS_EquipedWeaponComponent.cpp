@@ -167,44 +167,37 @@ void UNS_EquipedWeaponComponent::Multicast_Reload_Implementation()
             if (!Item || Item->GetQuantity() <= 0)
                 continue;
 
-            // 🔻 데이터 테이블이 없을 경우, GameInstance에서 바인딩
-            if (!Item->ItemsDataTable && OwnerCharacter->GetWorld())
-            {
-                if (const auto* GI = Cast<UNS_GameInstance>(OwnerCharacter->GetWorld()->GetGameInstance()))
-                {
-                    Item->ItemsDataTable = GI->GlobalItemDataTable;
-                }
-            }
-
-            const FNS_ItemDataStruct* Data = Item->GetItemData();
-            if (!Data)
-                continue;
+            UE_LOG(LogTemp, Warning, TEXT("[Reload] 검사 중인 아이템: %p | Name: %s | 수량: %d"),
+                Item, *Item->GetName(), Item->GetQuantity());
 
             // 탄약 아이템인지 확인
-            if (Data->ItemType == EItemType::Equipment && Data->WeaponType == EWeaponType::Ammo)
+            if (Item->ItemType == EItemType::Equipment && Item->WeaponType == EWeaponType::Ammo)
             {
                 const int32 AmmoAvailable = Item->GetQuantity();
                 const int32 AmmoToLoad = FMath::Min(NeededAmmo, AmmoAvailable);
+
+                UE_LOG(LogTemp, Warning, TEXT("[Reload] 아이템: %p | OwingInventory: %s"),
+                    Item, *GetNameSafe(Item->OwingInventory));
 
                 if (AmmoToLoad > 0)
                 {
                     RangedWeapon->Reload(AmmoToLoad);
 
-                    // 무게까지 고려하여 제거
-                    if (auto* Inven = Item->OwingInventory)
+                    if (Item->OwingInventory)
                     {
-                        Inven->RemoveAmountOfItem(Item, AmmoToLoad);
+                        const int32 RemovedAmmo = Item->OwingInventory->RemoveAmountOfItem(Item, AmmoToLoad);
+                        UE_LOG(LogTemp, Warning, TEXT("[Reload] %d발 장전 완료. 남은 탄약: %d"), AmmoToLoad, Item->GetQuantity());
                     }
-
-                    UE_LOG(LogTemp, Log, TEXT("[Reload] %d발 장전 완료. 남은 인벤토리 탄약: %d"),
-                        AmmoToLoad, Item->GetQuantity());
+                    else
+                    {
+                        UE_LOG(LogTemp, Error, TEXT("[Reload] OwingInventory가 null입니다! Remove 실패"));
+                    }
 
                     bReloaded = true;
                     break;
                 }
             }
         }
-
         if (!bReloaded)
         {
             UE_LOG(LogTemp, Warning, TEXT("[Reload] 사용할 수 있는 탄약 없음 또는 탄약 수량 부족"));

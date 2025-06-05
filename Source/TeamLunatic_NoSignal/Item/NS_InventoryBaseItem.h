@@ -18,6 +18,7 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_InventoryBaseItem : public UObject
 public:
 	UNS_InventoryBaseItem();
 
+	UPROPERTY(Replicated)
 	UInventoryComponent* OwingInventory;
 
 	AActor* OwningActor = nullptr;

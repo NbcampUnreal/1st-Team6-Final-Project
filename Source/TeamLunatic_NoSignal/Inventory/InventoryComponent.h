@@ -74,6 +74,7 @@ public:
 	FOnInventoryUpdated OnInventoryUpdated;
 
 	void BroadcastInventoryUpdate();
+	void CleanUpZeroQuantityItems();
 
 	UInventoryComponent();
 	virtual void InitializeComponent() override;
