@@ -540,24 +540,3 @@ void ANS_PlayerCharacterBase::SwapWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass
 {
     EquipedWeaponComp->SwapWeapon(WeaponClass); 
 }
-
-void ANS_PlayerCharacterBase::AddWeightInventory(float Weight)
-{
-	if (PlayerInventory)
-	{
-        //TODO: 인벤토리에 추가무게 넣기
-		//PlayerInventory->AddWeightCapacity(Weight);
-	}
-}
-
-void ANS_PlayerCharacterBase::AddSearchTime(float Multiple)
-{
-    //TODO: 아이템 찾기의 수색시간 증감(배율)
-	//??->AddSerachTime(Multiple)
-}
-
-void ANS_PlayerCharacterBase::AddCraftingSpeed(float Multiple)
-{
-	//TODO: 아이템 제작의 속도 증감(배율)
-	//??->AddCraftingSpeed(Multiple);
-}
