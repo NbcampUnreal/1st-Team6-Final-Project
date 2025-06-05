@@ -64,10 +64,6 @@ void UNS_PlayerHUD::ShowWidget()
            
             SafeThis->WBP_StatusProgressbar_Health->UpdatePercent( SafeThis->CachedMyCharacter->StatusComp->Health*0.01f );
             SafeThis->WBP_StatusProgressbar_Stamina->UpdatePercent( SafeThis->CachedMyCharacter->StatusComp->Stamina * 0.01f);
-            SafeThis->WBP_StatusProgressbar_Hunger->UpdatePercent( SafeThis->CachedMyCharacter->StatusComp->CurrentHunger * 0.01f);
-            SafeThis->WBP_StatusProgressbar_Thirst->UpdatePercent( SafeThis->CachedMyCharacter->StatusComp->CurrentThirst * 0.01f);
-            SafeThis->WBP_StatusProgressbar_Fatigue->UpdatePercent( SafeThis->CachedMyCharacter->StatusComp->CurrentFatigue * 0.01f);
-
         }), 0.05f, true
     );
 }

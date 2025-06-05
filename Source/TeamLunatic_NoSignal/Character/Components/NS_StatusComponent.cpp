@@ -32,7 +32,6 @@ void UNS_StatusComponent::TickComponent(float DeltaTime,
 {
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-    UpdateAllStatus(DeltaTime); // 상태들 가감하기
 	UpdateStamina(DeltaTime); // 스태미너 업데이트
 }
 
