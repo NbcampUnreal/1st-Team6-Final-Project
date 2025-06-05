@@ -142,28 +142,21 @@ void ANS_ZombieBase::SetAttackType(EZombieAttackType NewAttackType)
 	} 
 	else
 	{
-		Sever_SetAttackType_Implementation(NewAttackType);
+		Server_SetAttackType_Implementation(NewAttackType);
 	}
 }
 
 void ANS_ZombieBase::Server_SetState_Implementation(EZombieState NewState)
 {
 	CurrentState = NewState;
-	OnStateChanged(NewState);
-}
-
-void ANS_ZombieBase::OnRep_State()
-{
 	OnStateChanged(CurrentState);
 }
 
-void ANS_ZombieBase::OnRep_AttackType()
-{
-}
 
-void ANS_ZombieBase::Sever_SetAttackType_Implementation(EZombieAttackType NewAttackType)
+void ANS_ZombieBase::Server_SetAttackType_Implementation(EZombieAttackType NewAttackType)
 {
-	SetAttackType(NewAttackType);
+	CurrentAttackType = NewAttackType;
+	SetAttackType(CurrentAttackType);
 }
 
 

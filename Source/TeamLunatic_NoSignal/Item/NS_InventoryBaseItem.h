@@ -108,8 +108,7 @@ public:
 
 	virtual void OnUseItem(class ANS_PlayerCharacterBase* Character);
 	void EquipWeapon(const FNS_ItemDataStruct* ItemData);
-	void EquipMagazine(const FNS_ItemDataStruct* ItemData);
-	void UseAmmo(const FNS_ItemDataStruct* ItemData);
+	void UseConsumableItem(ANS_PlayerCharacterBase* Character, const FNS_ItemDataStruct& ItemData);
 	bool IsSupportedForNetworking() const;
 protected:
 	bool operator == (const FName& OtherID) const

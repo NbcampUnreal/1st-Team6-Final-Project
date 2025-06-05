@@ -76,9 +76,9 @@ void ANS_PlayerCharacterBase::DropItem_Server_Implementation(UNS_InventoryBaseIt
             return;
         }
 
-//        APickup* Pickup = GetWorld()->SpawnActor<APickup>(APickup::StaticClass(), SpawnTransform, SpawnParams);
+        APickup* Pickup = GetWorld()->SpawnActor<APickup>(APickup::StaticClass(), SpawnTransform, SpawnParams);
 
-  //      Pickup->InitializeDrop(ItemToDrop, RemovedQuantity);
+        Pickup->InitializeDrop(ItemToDrop, RemovedQuantity);
     }
     else
     {
