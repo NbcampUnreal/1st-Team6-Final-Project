@@ -10,6 +10,7 @@ class UNS_InGameMsg;
 class UNS_PlayerHUD;
 class UNS_CircleProgressBar;
 class UNS_InGameMenu;
+class UNS_QuickSlotPanel;
 
 UCLASS(Blueprintable)
 class TEAMLUNATIC_NOSIGNAL_API UNS_UIManager : public UObject
@@ -22,6 +23,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void InitUi(UWorld* World);
 
+	UNS_QuickSlotPanel* GetQuickSlotPanel();
 
 	bool IsInViewportInGameMenuWidget();
 
@@ -70,7 +72,7 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UNS_PlayerHUD> NS_PlayerHUDWidgetClass;
-	
+
 private:
 
 };
