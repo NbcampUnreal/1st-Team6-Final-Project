@@ -75,3 +75,16 @@ void ANS_LobbyController::Server_RequestStartGame_Implementation()
 	}
 }
 
+void ANS_LobbyController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+
+	for (TActorIterator<ACameraActor> It(GetWorld()); It; ++It)
+	{
+		if (It->ActorHasTag(FName("LobbyCamera")))
+		{
+			SetViewTargetWithBlend(*It, 0.3f);
+			break;
+		}
+	}
+}

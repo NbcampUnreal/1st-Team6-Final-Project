@@ -16,6 +16,8 @@ protected:
 
 	virtual void BeginPlay() override;
 
+	virtual void OnPossess(APawn* InPawn) override;
+
 	// 입력 바인딩 초기화
 	virtual void SetupInputComponent() override;
 
