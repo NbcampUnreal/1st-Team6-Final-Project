@@ -27,8 +27,6 @@ void ANS_PlayerController::BeginPlay()
     }
 }
 
-
-
 void ANS_PlayerController::SetupInputComponent()
 {
     Super::SetupInputComponent();
