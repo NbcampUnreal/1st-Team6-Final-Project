@@ -7,7 +7,6 @@
 #include "NS_HeadLamp.generated.h"
 
 class UStaticMeshComponent;
-class USpotLightComponent;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_HeadLamp : public AActor
@@ -20,8 +19,4 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UStaticMeshComponent* MeshComponent;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	USpotLightComponent* HeadLamp;
-
 };
