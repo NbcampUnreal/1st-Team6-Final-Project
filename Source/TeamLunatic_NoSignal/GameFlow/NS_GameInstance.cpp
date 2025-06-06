@@ -136,3 +136,8 @@ void UNS_GameInstance::OnReceiveSessionList(FHttpRequestPtr Request, FHttpRespon
 
 	OnSessionListReceived.Broadcast(ParsedSessions);
 }
+
+void UNS_GameInstance::SetCurrentSaveSlot(FString SlotNameInfo)
+{
+	CurrentSaveSlotName = SlotNameInfo;
+}
