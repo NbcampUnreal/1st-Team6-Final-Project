@@ -169,6 +169,21 @@ void UInteractionComponent::BeginInteract()
 	if (InteractionData.CurrentInteractable && IsValid(TargetInteractable.GetObject()))
 	{
 		TargetInteractable->BeginInteract();
+		if (TargetInteractable.GetObject()->GetClass()->ImplementsInterface(UInteractionInterface::StaticClass()))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("인터페이스 구현 확인됨"));
+
+			if (GetOwner()->HasAuthority())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("서버 권한 있음 → Execute 호출"));
+				IInteractionInterface::Execute_OpenDoorInteract(TargetInteractable.GetObject(), GetOwner());
+			}
+			else
+			{
+				// 클라라면 서버에게 요청 (optional)
+				Server_OpenDoorInteract(Cast<AActor>(TargetInteractable.GetObject()));
+			}
+		}
 
 		if (FMath::IsNearlyZero(TargetInteractable->InteractableData.InteractionDuration, 0.1f))
 		{
@@ -218,6 +233,14 @@ void UInteractionComponent::Interact_Server_Implementation(AActor* Target)
 	if (Target && Target->GetClass()->ImplementsInterface(UInteractionInterface::StaticClass()))
 	{
 		IInteractionInterface::Execute_Interact(Target, GetOwner());
+	}
+}
+
+void UInteractionComponent::Server_OpenDoorInteract_Implementation(AActor* Target)
+{
+	if (Target && Target->GetClass()->ImplementsInterface(UInteractionInterface::StaticClass()))
+	{
+		IInteractionInterface::Execute_OpenDoorInteract(Target, GetOwner());
 	}
 }
 

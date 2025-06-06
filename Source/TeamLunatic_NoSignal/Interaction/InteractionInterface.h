@@ -67,6 +67,8 @@ public:
 	virtual void BeginInteract();
 	virtual void EndInteract();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void OpenDoorInteract(AActor* InteractingActor);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void Interact(AActor* InteractingActor);
 
 	FInteractableData InteractableData;
