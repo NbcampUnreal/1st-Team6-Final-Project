@@ -164,11 +164,17 @@ void UInventoryComponent::RemoveSingleInstanceOfItem(UNS_InventoryBaseItem* Item
 // 특정 수량만큼 아이템 제거
 int32 UInventoryComponent::RemoveAmountOfItem(UNS_InventoryBaseItem* ItemIn, int32 DesiredAmountToRemove)
 {
+	if (!ItemIn || DesiredAmountToRemove <= 0)
+		return 0;
+
 	const int32 ActualAmountToRemove = FMath::Min(DesiredAmountToRemove, ItemIn->Quantity);
-
 	ItemIn->SetQuantity(ItemIn->Quantity - ActualAmountToRemove);
-
 	InventoryTotalWeight -= ActualAmountToRemove * ItemIn->GetItemSingleWeight();
+
+	if (ItemIn->Quantity <= 0)
+	{
+		RemoveSingleInstanceOfItem(ItemIn);
+	}
 
 	BroadcastInventoryUpdate();
 
@@ -318,22 +324,48 @@ void UInventoryComponent::AddNewItem(UNS_InventoryBaseItem* Item, const int32 Am
 		NewItem = Item->CreateItemCopy();
 	}
 
-	// OwningActor가 유효하면 복제한 아이템에 적용
-	if (Item->GetOwningActor())
-	{
-		NewItem->SetOwningActor(Item->GetOwningActor());
-	}
-
-	UE_LOG(LogTemp, Warning, TEXT("[AddNewItem] NewItem OwningActor: %s"), *GetNameSafe(NewItem->GetOwningActor()));
-
 	NewItem->OwingInventory = this;
 	NewItem->SetQuantity(AmountToAdd);
 
 	InventoryContents.Add(NewItem);
 	InventoryTotalWeight += NewItem->GetItemStackWeight();
 	BroadcastInventoryUpdate();
-	UE_LOG(LogTemp, Warning, TEXT("[Inventory] Added %s"),
-		*NewItem->GetName());
+	UE_LOG(LogTemp, Warning, TEXT("[Inventory] Added %s"), *NewItem->GetName());
+	UE_LOG(LogTemp, Warning, TEXT("[Inventory] NewItem OwingInventory: %s"), *GetNameSafe(NewItem->OwingInventory));
+}
+
+void UInventoryComponent::CleanUpZeroQuantityItems()
+{
+	int32 BeforeNum = InventoryContents.Num();
+	float WeightToRemove = 0.f;
+
+	// 제거 대상 아이템을 따로 모아서 무게 합산
+	TArray<UNS_InventoryBaseItem*> ItemsToRemove;
+	for (UNS_InventoryBaseItem* Item : InventoryContents)
+	{
+		if (!IsValid(Item) || Item->Quantity <= 0)
+		{
+			if (IsValid(Item))
+			{
+				WeightToRemove += Item->GetItemStackWeight(); // 스택 전체 무게 합산
+			}
+			ItemsToRemove.Add(Item);
+		}
+	}
+
+	// 실제 제거
+	for (UNS_InventoryBaseItem* Item : ItemsToRemove)
+	{
+		InventoryContents.RemoveSingle(Item);
+	}
+
+	if (ItemsToRemove.Num() > 0)
+	{
+		InventoryTotalWeight -= WeightToRemove;
+		InventoryTotalWeight = FMath::Max(0.f, InventoryTotalWeight); // 음수 방지
+
+		BroadcastInventoryUpdate();
+	}
 }
 
 

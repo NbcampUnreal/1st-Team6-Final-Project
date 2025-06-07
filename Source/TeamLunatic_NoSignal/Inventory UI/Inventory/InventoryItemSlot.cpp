@@ -89,7 +89,7 @@ FReply UInventoryItemSlot::NativeOnMouseButtonDown(const FGeometry& InGeometry, 
 			if (auto* Player = Cast<ANS_PlayerCharacterBase>(GetOwningPlayerPawn()))
 			{
 				UE_LOG(LogTemp, Warning, TEXT("[Client] 우클릭 - 서버에 아이템 사용 요청: %s"), *ItemReference->GetName());
-				Player->Server_UseInventoryItem(ItemReference); // 서버에 요청
+				Player->Server_UseInventoryItem(ItemReference->ItemDataRowName); // 서버에 요청
 
 				// 퀵슬롯 자동 배정 로직 추가
 				if (Player->QuickSlotPanel && ItemReference)
