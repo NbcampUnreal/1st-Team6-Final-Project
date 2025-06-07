@@ -27,20 +27,20 @@ void ANS_SinglePlayMode::BeginPlay()
 
 void ANS_SinglePlayMode::SpawnPlayer()
 {
-	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
-	if (!PC || !PlayerPawnClass) return;
+	//APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+	//if (!PC || !PlayerPawnClass) return;
 
-	APlayerStart* Start = Cast<APlayerStart>(UGameplayStatics::GetActorOfClass(this, APlayerStart::StaticClass()));
-	if (!Start) return;
+	//APlayerStart* Start = Cast<APlayerStart>(UGameplayStatics::GetActorOfClass(this, APlayerStart::StaticClass()));
+	//if (!Start) return;
 
-	CachedPlayerStart = Start;
+	//CachedPlayerStart = Start;
 
-	APawn* PlayerPawn = GetWorld()->SpawnActor<APawn>(PlayerPawnClass, Start->GetActorLocation(), Start->GetActorRotation());
-	if (PlayerPawn)
-	{
-		PC->Possess(PlayerPawn);
-		UE_LOG(LogTemp, Log, TEXT("Player spawned and possessed."));
-	}
+	//APawn* PlayerPawn = GetWorld()->SpawnActor<APawn>(PlayerPawnClass, Start->GetActorLocation(), Start->GetActorRotation());
+	//if (PlayerPawn)
+	//{
+	//	PC->Possess(PlayerPawn);
+	//	UE_LOG(LogTemp, Log, TEXT("Player spawned and possessed."));
+	//}
 }
 
 void ANS_SinglePlayMode::SpawnTrackerZombie()
