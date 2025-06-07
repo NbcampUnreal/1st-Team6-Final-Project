@@ -189,11 +189,18 @@ void UNS_EquipedWeaponComponent::Multicast_Reload_Implementation()
                 if (AmmoToLoad > 0)
                 {
                     RangedWeapon->Reload(AmmoToLoad);
-                    Item->SetQuantity(AmmoAvailable - AmmoToLoad);
 
-                    UE_LOG(LogTemp, Log, TEXT("[Reload] %d발 장전 완료. 남은 인벤토리 탄약: %d"), AmmoToLoad, Item->GetQuantity());
+                    // 무게까지 고려하여 제거
+                    if (auto* Inven = Item->OwingInventory)
+                    {
+                        Inven->RemoveAmountOfItem(Item, AmmoToLoad);
+                    }
+
+                    UE_LOG(LogTemp, Log, TEXT("[Reload] %d발 장전 완료. 남은 인벤토리 탄약: %d"),
+                        AmmoToLoad, Item->GetQuantity());
+
                     bReloaded = true;
-                    break; // 장전 성공했으니 더 이상 탐색할 필요 없음
+                    break;
                 }
             }
         }

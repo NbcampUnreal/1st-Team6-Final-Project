@@ -7,6 +7,8 @@
 #include "GameFramework/Actor.h"
 #include "GameFramework/PlayerController.h"
 #include "Character/NS_PlayerCharacterBase.h"
+#include "Camera/CameraComponent.h"
+
 
 UInteractionComponent::UInteractionComponent()
 {
@@ -64,16 +66,21 @@ FRotator UInteractionComponent::GetViewRotation() const
 void UInteractionComponent::PerformInteractionCheck()
 {
 	InteractionData.LastInteractionCheckTime = GetWorld()->GetTimeSeconds();
+	
+	// CameraComponent 기준으로 라인트레이스
+	const AActor* OwnerActor = GetOwner();
+	if (!OwnerActor) return;
 
-	FVector TraceStart = GetViewLocation();
-	FVector TraceEnd = TraceStart + (GetViewRotation().Vector() * InteractionCheckDistance);
+	UCameraComponent* CameraComp = OwnerActor->FindComponentByClass<UCameraComponent>();
+	if (!CameraComp) return;
+
+	FVector TraceStart = CameraComp->GetComponentLocation();
+	FVector TraceEnd = TraceStart + (CameraComp->GetForwardVector() * InteractionCheckDistance);
 	// 플레이어가 바라보는 방향 확인
 	float LookDirection = FVector::DotProduct(GetOwner()->GetActorForwardVector(), GetViewRotation().Vector());
 
 	if (LookDirection > 0)
 	{
-		DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Red, false, 1.f, 0, 2.f);
-
 		FCollisionQueryParams QueryParams;
 		QueryParams.AddIgnoredActor(GetOwner());
 

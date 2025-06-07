@@ -56,78 +56,6 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     PlayerInventory->SetWeightCapacity(50.0f);
 }
 
-void ANS_PlayerCharacterBase::DropItem_Server_Implementation(UNS_InventoryBaseItem* ItemToDrop, int32 QuantityToDrop)
-{
-    if (PlayerInventory->FindMatchingItem(ItemToDrop))
-    {
-        FActorSpawnParameters SpawnParams;
-        SpawnParams.Owner = this;
-        SpawnParams.bNoFail = true;
-        SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-
-        const FVector ForwardOffset = GetActorForwardVector() * 100.0f; // 플레이어 앞 100cm
-        const FVector SpawnLocation = GetActorLocation() + ForwardOffset + FVector(0.f, 0.f, 50.f); // 약간 위로 올림
-        const FTransform SpawnTransform(GetActorRotation(), SpawnLocation);
-
-        const int32 RemovedQuantity = PlayerInventory->RemoveAmountOfItem(ItemToDrop, QuantityToDrop);
-        if (RemovedQuantity <= 0)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("DropItem_Server: 제거할 수량이 0 이하입니다."));
-            return;
-        }
-
-//        APickup* Pickup = GetWorld()->SpawnActor<APickup>(APickup::StaticClass(), SpawnTransform, SpawnParams);
-
-  //      Pickup->InitializeDrop(ItemToDrop, RemovedQuantity);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Item to drop was somehow null"));
-    }
-}
-
-void ANS_PlayerCharacterBase::DropItem(UNS_InventoryBaseItem* ItemToDrop, const int32 QuantityToDrop)
-{
-    if (HasAuthority())
-    {
-        DropItem_Server_Implementation(ItemToDrop, QuantityToDrop);
-    }
-    else
-    {
-        DropItem_Server(ItemToDrop, QuantityToDrop); // 클라에서 서버로 요청
-    }
-}
-
-void ANS_PlayerCharacterBase::Server_UseInventoryItem_Implementation(UNS_InventoryBaseItem* Item)
-{
-    if (Item)
-    {
-        Item->OnUseItem(this); // 서버에서 처리
-
-        // 아이템이 장비 타입 + 무기류일 때만 퀵슬롯 자동 등록
-        if (Item->ItemType == EItemType::Equipment &&
-            Item->WeaponType != EWeaponType::Ammo &&
-            QuickSlotPanel)
-        {
-            QuickSlotPanel->AssignToFirstEmptySlot(Item); // 자동 빈 슬롯 탐색
-            UE_LOG(LogTemp, Warning, TEXT("[Server] 장착된 아이템 퀵슬롯 자동 등록 시도: %s"), *Item->GetName());
-        }
-    }
-}
-
-void ANS_PlayerCharacterBase::Client_NotifyInventoryUpdated_Implementation()
-{
-    if (PlayerInventory)
-    {
-        FTimerHandle DelayHandle;
-        GetWorldTimerManager().SetTimer(DelayHandle, FTimerDelegate::CreateLambda([this]()
-            {
-                PlayerInventory->OnInventoryUpdated.Broadcast();
-                UE_LOG(LogTemp, Warning, TEXT("Client_NotifyInventoryUpdated - Inventory 갱신 (지연 호출)"));
-            }), 0.05f, false);
-    }
-}
-
 void ANS_PlayerCharacterBase::BeginPlay()
 {
     Super::BeginPlay();
@@ -221,15 +149,6 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                &ANS_PlayerCharacterBase::StopSprint_Server);
         }
 
-        if (InputKickAction)
-        {
-            EnhancedInput->BindAction(
-            InputKickAction,
-             ETriggerEvent::Triggered,
-              this,
-               &ANS_PlayerCharacterBase::KickAction_Server);
-        }
-
         if (InteractAction)
         {
             EnhancedInput->BindAction(
@@ -296,7 +215,6 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsKick);    // 발차기 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsSprint);  // 달리기 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsPickUp);  // 아이템줍기 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsHit);     // 맞는지 확인 변수
@@ -317,12 +235,22 @@ void ANS_PlayerCharacterBase::SetMovementLockState_Server_Implementation(bool bL
 
 void ANS_PlayerCharacterBase::SetMovementLockState_Multicast_Implementation(bool bLock)
 {
-    if (auto* MoveComp = GetCharacterMovement())
+    if (APlayerController* PC = Cast<APlayerController>(Controller))
     {
-        if (bLock)
-            MoveComp->DisableMovement();
-        else
-            MoveComp->SetMovementMode(EMovementMode::MOVE_Walking);
+        if (ULocalPlayer* LocalPlayer = PC->GetLocalPlayer())
+        {
+            if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer))
+            {
+                if (bLock)
+                {
+                    Subsystem->RemoveMappingContext(DefaultMappingContext);
+                }
+                else
+                {
+                    Subsystem->AddMappingContext(DefaultMappingContext, 0);
+                }
+            }
+        }
     }
 }
 
@@ -420,7 +348,7 @@ void ANS_PlayerCharacterBase::JumpAction(const FInputActionValue& Value)
 void ANS_PlayerCharacterBase::StartCrouch(const FInputActionValue& Value)
 {
 	//점프 중이거나 발차기 중일 때는 앉지 않음
-    if (GetCharacterMovement()->IsFalling() || IsKick) { return; } 
+    if (GetCharacterMovement()->IsFalling()) { return; } 
     
     Crouch(); 
 }
@@ -442,22 +370,6 @@ void ANS_PlayerCharacterBase::StopSprint_Server_Implementation(const FInputActio
     IsSprint = false; 
     if (GetCharacterMovement()) 
         GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SpeedMultiAtStat;
-}
-
-void ANS_PlayerCharacterBase::KickAction_Server_Implementation(const FInputActionValue& Value)
-{
-    if (GetCharacterMovement()->IsFalling()) {return;} 
-
-    IsKick = true; 
-
-    // 1.2초간 실행 후 IsKick변수는 false로 변경
-    FTimerHandle ResettKickTime; 
-    GetWorldTimerManager().SetTimer( 
-        ResettKickTime, 
-        FTimerDelegate::CreateLambda([this]() { IsKick = false; }), 
-        1.2f, 
-        false 
-    );
 }
 
 void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputActionValue& Value)
@@ -528,6 +440,80 @@ void ANS_PlayerCharacterBase::PlayDeath_Multicast_Implementation()
     GetMesh()->bBlendPhysics = true; 
     SetLifeSpan(5.f); 
 }
+
+
+void ANS_PlayerCharacterBase::DropItem_Server_Implementation(UNS_InventoryBaseItem* ItemToDrop, int32 QuantityToDrop)
+{
+    if (PlayerInventory->FindMatchingItem(ItemToDrop))
+    {
+        FActorSpawnParameters SpawnParams;
+        SpawnParams.Owner = this;
+        SpawnParams.bNoFail = true;
+        SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+        const FVector ForwardOffset = GetActorForwardVector() * 100.0f; // 플레이어 앞 100cm
+        const FVector SpawnLocation = GetActorLocation() + ForwardOffset + FVector(0.f, 0.f, 50.f); // 약간 위로 올림
+        const FTransform SpawnTransform(GetActorRotation(), SpawnLocation);
+
+        const int32 RemovedQuantity = PlayerInventory->RemoveAmountOfItem(ItemToDrop, QuantityToDrop);
+        if (RemovedQuantity <= 0)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("DropItem_Server: 제거할 수량이 0 이하입니다."));
+            return;
+        }
+
+        APickup* Pickup = GetWorld()->SpawnActor<APickup>(APickup::StaticClass(), SpawnTransform, SpawnParams);
+
+        Pickup->InitializeDrop(ItemToDrop, RemovedQuantity);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Item to drop was somehow null"));
+    }
+}
+
+void ANS_PlayerCharacterBase::DropItem(UNS_InventoryBaseItem* ItemToDrop, const int32 QuantityToDrop)
+{
+    if (HasAuthority())
+    {
+        DropItem_Server_Implementation(ItemToDrop, QuantityToDrop);
+    }
+    else
+    {
+        DropItem_Server(ItemToDrop, QuantityToDrop); // 클라에서 서버로 요청
+    }
+}
+
+void ANS_PlayerCharacterBase::Server_UseInventoryItem_Implementation(UNS_InventoryBaseItem* Item)
+{
+    if (Item)
+    {
+        Item->OnUseItem(this); // 서버에서 처리
+
+        // 아이템이 장비 타입 + 무기류일 때만 퀵슬롯 자동 등록
+        if (Item->ItemType == EItemType::Equipment &&
+            Item->WeaponType != EWeaponType::Ammo &&
+            QuickSlotPanel)
+        {
+            QuickSlotPanel->AssignToFirstEmptySlot(Item); // 자동 빈 슬롯 탐색
+            UE_LOG(LogTemp, Warning, TEXT("[Server] 장착된 아이템 퀵슬롯 자동 등록 시도: %s"), *Item->GetName());
+        }
+    }
+}
+
+void ANS_PlayerCharacterBase::Client_NotifyInventoryUpdated_Implementation()
+{
+    if (PlayerInventory)
+    {
+        FTimerHandle DelayHandle;
+        GetWorldTimerManager().SetTimer(DelayHandle, FTimerDelegate::CreateLambda([this]()
+            {
+                PlayerInventory->OnInventoryUpdated.Broadcast();
+                UE_LOG(LogTemp, Warning, TEXT("Client_NotifyInventoryUpdated - Inventory 갱신 (지연 호출)"));
+            }), 0.05f, false);
+    }
+}
+
 
 // 클라이언트면 서버로 클라이언트 자신에 Yaw값과 Pitch값을 서버로 전송
 void ANS_PlayerCharacterBase::UpdateAim_Server_Implementation(float NewCamYaw, float NewCamPitch)

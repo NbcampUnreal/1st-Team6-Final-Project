@@ -1,7 +1,7 @@
 
 #include "UI/NS_NewGameR.h"
 #include "Kismet/GameplayStatics.h"
-#include "UI/TempGameInstance.h"
+#include "GameFlow/NS_GameInstance.h"
 #include "UI/NS_SaveGame.h"
 #include "UI/NS_CommonType.h"
 #include "UI/NS_MainMenu.h"
@@ -93,13 +93,13 @@ void UNS_NewGameR::HideConfirmationMenu()
     if (AreYouSureMenu)
         AreYouSureMenu->SetVisibility(ESlateVisibility::Hidden);
 }
+
+
 void UNS_NewGameR::StartGame()
 {
     const FString SlotName = GetSaveSlotName();
+    FString SelectedLevelName = TEXT("/Game/Maps/MainWorld");
 
-    FString SelectedLevelName = TEXT("/Game/Maps/MainWorld");//ComboBoxString_mapName->GetSelectedOption();
-	
-    //이부분  PlayerData.Health,SavePosition => "Game Level 기획Table" 같은거에 받아서 적용되어야함. 임시로 그냥 넣은거임.
     FPlayerSaveData PlayerData;
     PlayerData.PlayerName = SlotName;
     PlayerData.Health = 100.f;
@@ -107,12 +107,25 @@ void UNS_NewGameR::StartGame()
 
     FLevelSaveData LevelData;
     LevelData.LevelName = SelectedLevelName;
-	LevelData.TempClearKeyItemPosition = FVector(100, 200, 300); //임의의 아이템의 position 임시로 작성해본거임.변경 or 삭제해야함.
+    LevelData.TempClearKeyItemPosition = FVector(100, 200, 300);
 
     NS_SaveLoadHelper::SaveGame(SlotName, PlayerData, LevelData);
 
-    if (UTempGameInstance* GI = Cast<UTempGameInstance>(GetGameInstance()))
+    if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+    {
         GI->SetCurrentSaveSlot(SlotName);
-    UGameplayStatics::OpenLevel(this, FName(*SelectedLevelName));
+
+        // 싱글 모드 전용 GameMode 지정
+        FString GameModePath = TEXT("Game=/Game/GameFlowBP/BP_NS_SinglePlayMode.BP_NS_SinglePlayMode_C");
+
+        UE_LOG(LogTemp, Warning, TEXT("[StartGame] Opening level with options: %s"), *GameModePath);
+
+        UGameplayStatics::OpenLevel(this, FName(*SelectedLevelName), true, GameModePath);
+    }
+    else
+    {
+        // fallback: GameMode 없이 오픈
+        UGameplayStatics::OpenLevel(this, FName(*SelectedLevelName));
+    }
 }
 
