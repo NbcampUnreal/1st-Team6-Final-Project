@@ -8,7 +8,7 @@ ANS_GameState::ANS_GameState()
 	bReplicates = true;
 
 	bIsNight = false;
-	TimeOfDay = 9.0f; // 시작 시간: 09:00
+	TimeOfDay = 17.0f; // 시작 시간: 09:00
 	TimeScale = 24.0f / SecondsPerGameDay; // 1초당 게임 내 시간: 약 0.0166
 }
 
