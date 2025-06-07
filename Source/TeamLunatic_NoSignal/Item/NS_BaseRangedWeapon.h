@@ -7,8 +7,7 @@
 
 class UNiagaraComponent;
 class UNiagaraSystem;
-// 캐릭터 전방선언 지우지마세요 
-class ANS_PlayerCharacterBase;
+
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_BaseRangedWeapon : public ANS_BaseWeapon
 {
@@ -20,10 +19,6 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
-	// // 무기별 사격 애니메이션때문에 캐릭터 변수가 필요해서 지우면 안됩니다 사운드랑 나이아가라변수만 지워주세요
-	// UPROPERTY(BlueprintReadWrite, Category = "Owner")
-	// ANS_PlayerCharacterBase* OwnerCharacter;
-	//
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponData")
 	USkeletalMesh* RangedWeaponMesh;
 
