@@ -442,6 +442,8 @@ void ANS_PlayerCharacterBase::ReloadAction_Server_Implementation(const FInputAct
     }
     
 	IsReload = true;
+
+    // 노티파이로 IsReload 변수값을 false로 변경하고 있음
 }
 
 //////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////

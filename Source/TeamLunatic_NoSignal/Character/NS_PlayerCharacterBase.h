@@ -69,8 +69,8 @@ protected:
 
 public:
 	// 카메라를 붙일 소켓 이름 [에디터에서 변경 가능함] 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera")
-	FName CameraAttachSocketName = TEXT("head");
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AttachSocket")
+	FName CameraAttachSocketName;
 	
 	////////////////////////////////////캐릭터 부착 컴포넌트들///////////////////////////////////////
 	// 1인칭 카메라 컴포넌트 
@@ -79,7 +79,7 @@ public:
 	// 1인칭 팔 스켈레탈 메시 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "FirstPerson")
 	USkeletalMeshComponent* FirstPersonArms;
-
+	
 	// 스탯 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
 	UNS_StatusComponent* StatusComp;
@@ -94,6 +94,7 @@ public:
 	UPROPERTY()
 	UNS_QuickSlotPanel* QuickSlotPanel;
 
+	// 장착 무기 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UNS_EquipedWeaponComponent* EquipedWeaponComp;
 	////////////////////////////////////캐릭터 부착 컴포넌트들 끝!///////////////////////////////////////
@@ -186,6 +187,10 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputQuickSlot3;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* ToggleHeadLampAction;
+	
+	
 	
 	// 캐릭터 EnhancedInput을 없앴다가 다시 부착하는는 함수 IMC를 지워웠다가 다시 장착하게해서 AnimNotify로 발차기 공격동안 IMC없앰
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category="Input")

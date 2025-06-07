@@ -40,7 +40,7 @@ protected:
 
 private:
 	// 실제 하루는 24분(1440초)
-	static constexpr float SecondsPerGameDay = 1440.0f;
+	static constexpr float SecondsPerGameDay = 120.0f;
 
 	// 1초에 흐르는 게임 내 시간량
 	float TimeScale;
