@@ -208,6 +208,31 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
               this,
                &ANS_PlayerCharacterBase::ReloadAction_Server);
         }
+
+        if (InputQuickSlot1)
+        {
+            EnhancedInput->BindAction(
+                InputQuickSlot1, 
+                ETriggerEvent::Started, 
+                this, 
+                &ANS_PlayerCharacterBase::UseQuickSlot1);
+        }
+        if (InputQuickSlot2)
+        {
+            EnhancedInput->BindAction(
+                InputQuickSlot2,
+                ETriggerEvent::Started,
+                this,
+                &ANS_PlayerCharacterBase::UseQuickSlot2);
+        }       
+        if (InputQuickSlot3)
+        {
+            EnhancedInput->BindAction(
+                InputQuickSlot3,
+                ETriggerEvent::Started,
+                this,
+                &ANS_PlayerCharacterBase::UseQuickSlot3);
+        }
     }
 }
 
@@ -484,21 +509,40 @@ void ANS_PlayerCharacterBase::DropItem(UNS_InventoryBaseItem* ItemToDrop, const 
     }
 }
 
-void ANS_PlayerCharacterBase::Server_UseInventoryItem_Implementation(UNS_InventoryBaseItem* Item)
-{
-    if (Item)
-    {
-        Item->OnUseItem(this); // 서버에서 처리
+void ANS_PlayerCharacterBase::UseQuickSlot1() { UseQuickSlotByIndex(0); }
+void ANS_PlayerCharacterBase::UseQuickSlot2() { UseQuickSlotByIndex(1); }
+void ANS_PlayerCharacterBase::UseQuickSlot3() { UseQuickSlotByIndex(2); }
 
-        // 아이템이 장비 타입 + 무기류일 때만 퀵슬롯 자동 등록
-        if (Item->ItemType == EItemType::Equipment &&
-            Item->WeaponType != EWeaponType::Ammo &&
-            QuickSlotPanel)
+void ANS_PlayerCharacterBase::UseQuickSlotByIndex(int32 Index)
+{
+    if (QuickSlotPanel)
+    {
+        QuickSlotPanel->UseSlot(Index);
+        UE_LOG(LogTemp, Log, TEXT("[QuickSlot] %d번 슬롯 사용"), Index + 1);
+    }
+}
+
+void ANS_PlayerCharacterBase::Server_UseInventoryItem_Implementation(FName ItemRowName)
+{
+    for (UNS_InventoryBaseItem* Item : PlayerInventory->GetInventoryContents())
+    {
+        if (Item && Item->ItemDataRowName == ItemRowName)
         {
-            QuickSlotPanel->AssignToFirstEmptySlot(Item); // 자동 빈 슬롯 탐색
-            UE_LOG(LogTemp, Warning, TEXT("[Server] 장착된 아이템 퀵슬롯 자동 등록 시도: %s"), *Item->GetName());
+            Item->OnUseItem(this);
+
+            if (Item->ItemType == EItemType::Equipment &&
+                Item->WeaponType != EWeaponType::Ammo &&
+                QuickSlotPanel)
+            {
+                QuickSlotPanel->AssignToFirstEmptySlot(Item);
+                UE_LOG(LogTemp, Warning, TEXT("[Server] 아이템 재검색 후 퀵슬롯 자동 등록: %s"), *Item->GetName());
+            }
+
+            return;
         }
     }
+
+    UE_LOG(LogTemp, Error, TEXT("[Server] RowName으로 아이템 찾기 실패: %s"), *ItemRowName.ToString());
 }
 
 void ANS_PlayerCharacterBase::Client_NotifyInventoryUpdated_Implementation()

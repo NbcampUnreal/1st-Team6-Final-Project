@@ -16,11 +16,28 @@ public:
 	// Sets default values for this actor's properties
 	ANS_Device();
 
-	UPROPERTY(VisibleInstanceOnly, Category = "Device | Interaction")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device")
+	UStaticMeshComponent* DoorA;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device")
+	UStaticMeshComponent* DoorB;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device")
+	UStaticMeshComponent* Frame;
+	UPROPERTY(EditInstanceOnly, Category = "Device | Interaction")
 	FInteractableData InstanceInteractableData;
+	UPROPERTY(ReplicatedUsing = OnRep_InteractableData)
+	FInteractableData InteractableData;
+	UFUNCTION()
+	void OnRep_InteractableData();
 
+	virtual void BeginFocus() override;
+
+	virtual void EndFocus()override;
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	void UpdateInteractableData();
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
