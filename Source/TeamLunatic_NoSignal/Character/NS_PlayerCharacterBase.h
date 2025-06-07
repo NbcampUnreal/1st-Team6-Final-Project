@@ -88,6 +88,7 @@ public:
 	UPROPERTY()
 	UNS_QuickSlotPanel* QuickSlotPanel;
 
+	// 장착 무기 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UNS_EquipedWeaponComponent* EquipedWeaponComp;
 	////////////////////////////////////캐릭터 부착 컴포넌트들 끝!///////////////////////////////////////
