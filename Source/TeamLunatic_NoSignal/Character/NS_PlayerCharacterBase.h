@@ -63,8 +63,8 @@ protected:
 
 public:
 	// 카메라를 붙일 소켓 이름 [에디터에서 변경 가능함] 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera")
-	FName CameraAttachSocketName = TEXT("head");
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AttachSocket")
+	FName CameraAttachSocketName;
 	
 	////////////////////////////////////캐릭터 부착 컴포넌트들///////////////////////////////////////
 	// 1인칭 카메라 컴포넌트 
@@ -73,7 +73,7 @@ public:
 	// 1인칭 팔 스켈레탈 메시 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "FirstPerson")
 	USkeletalMeshComponent* FirstPersonArms;
-
+	
 	// 스탯 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
 	UNS_StatusComponent* StatusComp;
@@ -88,6 +88,7 @@ public:
 	UPROPERTY()
 	UNS_QuickSlotPanel* QuickSlotPanel;
 
+	// 장착 무기 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UNS_EquipedWeaponComponent* EquipedWeaponComp;
 	////////////////////////////////////캐릭터 부착 컴포넌트들 끝!///////////////////////////////////////
