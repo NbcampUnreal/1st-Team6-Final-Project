@@ -65,6 +65,8 @@ void UInventoryPanel::RefreshInventory()
 {
     if (InventoryReference && InventorySlotClass)
     {
+        InventoryReference->CleanUpZeroQuantityItems();
+
         InventoryPanel->ClearChildren();
 
         const auto& Contents = InventoryReference->GetInventoryContents();
@@ -73,6 +75,9 @@ void UInventoryPanel::RefreshInventory()
 
         for (UNS_InventoryBaseItem* const& InventoryItem : InventoryReference->GetInventoryContents())
         {
+            if (!IsValid(InventoryItem) || InventoryItem->GetQuantity() <= 0)
+                continue;
+
             UInventoryItemSlot* ItemSlot = CreateWidget<UInventoryItemSlot>(this, InventorySlotClass);
             ItemSlot->SetItemReference(InventoryItem);
 
