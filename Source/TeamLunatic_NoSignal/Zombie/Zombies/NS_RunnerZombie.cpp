@@ -19,26 +19,9 @@ ANS_RunnerZombie::ANS_RunnerZombie()
 	BaseDamage = 10.f;
 }
 
-void ANS_RunnerZombie::OnStateChanged(EZombieState NewState)
+void ANS_RunnerZombie::OnChaseState()
 {
-	switch (NewState)
-	{
-	case EZombieState::IDLE:
-	case EZombieState::DEAD:
-	case EZombieState::DETECTING:
-	case EZombieState::PUSHED:
-		TargetSpeed = 0.f;
-		break;
-	case EZombieState::PATROLL:
-		TargetSpeed = 20.f;
-		break;
-	case EZombieState::CHACING:
-	case EZombieState::ATTACK:
-		TargetSpeed = 350.f;
-		break;
-	default:
-		break;
-	}
+	TargetSpeed = 350.f;
 }
 
 

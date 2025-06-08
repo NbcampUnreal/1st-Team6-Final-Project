@@ -31,13 +31,6 @@ void UNS_Service_RandomLocation::TickNode(UBehaviorTreeComponent& OwnerComp, uin
 
 	if (NavSys->GetRandomReachablePointInRadius(Origin, Radius, RandomLocation))
 	{
-		GEngine->AddOnScreenDebugMessage(
-		-1,                      
-		2.0f,                    
-		FColor::Green,           
-		TEXT("서비스가 호출되었습니다!") 
-		);
-
 		OwnerComp.GetBlackboardComponent()->SetValueAsVector(RandomLocationKey.SelectedKeyName,RandomLocation.Location);
 	}
 }
