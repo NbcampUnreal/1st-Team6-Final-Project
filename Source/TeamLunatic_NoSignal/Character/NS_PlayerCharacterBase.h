@@ -48,11 +48,17 @@ public:
 
 	void DropItem(UNS_InventoryBaseItem* ItemToDrop, const int32 QuantityToDrop);
 
+	void UseQuickSlot1();
+	void UseQuickSlot2();
+	void UseQuickSlot3();
+
+	void UseQuickSlotByIndex(int32 Index);
+
 	UFUNCTION(Client, Reliable)
 	void Client_NotifyInventoryUpdated();
 
 	UFUNCTION(Server, Reliable)
-	void Server_UseInventoryItem(UNS_InventoryBaseItem* Item);
+	void Server_UseInventoryItem(FName ItemRowName);
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
@@ -63,8 +69,8 @@ protected:
 
 public:
 	// 카메라를 붙일 소켓 이름 [에디터에서 변경 가능함] 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera")
-	FName CameraAttachSocketName = TEXT("head");
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AttachSocket")
+	FName CameraAttachSocketName;
 	
 	////////////////////////////////////캐릭터 부착 컴포넌트들///////////////////////////////////////
 	// 1인칭 카메라 컴포넌트 
@@ -73,7 +79,7 @@ public:
 	// 1인칭 팔 스켈레탈 메시 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "FirstPerson")
 	USkeletalMeshComponent* FirstPersonArms;
-
+	
 	// 스탯 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
 	UNS_StatusComponent* StatusComp;
@@ -88,6 +94,7 @@ public:
 	UPROPERTY()
 	UNS_QuickSlotPanel* QuickSlotPanel;
 
+	// 장착 무기 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UNS_EquipedWeaponComponent* EquipedWeaponComp;
 	////////////////////////////////////캐릭터 부착 컴포넌트들 끝!///////////////////////////////////////
@@ -127,9 +134,6 @@ public:
 	// 재장전 실행 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsReload = false;
-	// 발차기 확인 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
-	bool IsKick = false;
 	// 아이템을 줍고있는지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsPickUp = false;
@@ -174,9 +178,21 @@ public:
 	UInputAction* InteractAction;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* ToggleMenuAction;
+	//퀵슬롯 바인딩
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* InputQuickSlot1;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* InputQuickSlot2;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* InputQuickSlot3;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* ToggleHeadLampAction;
 	
 	
-	// 이동 입력 잠금 제어 함수 
+	
+	// 캐릭터 EnhancedInput을 없앴다가 다시 부착하는는 함수 IMC를 지워웠다가 다시 장착하게해서 AnimNotify로 발차기 공격동안 IMC없앰
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category="Input")
 	void SetMovementLockState_Server(bool bLock);
 	UFUNCTION(NetMulticast, Reliable)
@@ -200,11 +216,6 @@ public:
 	void StartSprint_Server(const FInputActionValue& Value);
 	UFUNCTION(Server, Reliable)
 	void StopSprint_Server(const FInputActionValue& Value);
-	
-	// 발차기
-	UFUNCTION(Server, Reliable)
-	void KickAction_Server(const FInputActionValue& Value);
-
 
 	// 아이템 줍기
 	UFUNCTION(Server, Reliable)

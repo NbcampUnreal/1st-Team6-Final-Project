@@ -58,12 +58,16 @@ void ANS_LobbyController::Server_RequestStartGame_Implementation()
 		UE_LOG(LogTemp, Log, TEXT("[LobbyController] Server_RequestStartGame called by PlayerId=%d, Name=%s"),
 			PS->GetPlayerId(), *PS->GetPlayerName());
 
-		if (PS->PlayerIndex == 0) 
+		if (PS->PlayerIndex == 0)
 		{
-			UE_LOG(LogTemp, Log, TEXT("[LobbyController] Host verified. Starting level..."));
+			UE_LOG(LogTemp, Log, TEXT("[LobbyController] Host verified. Starting level with GameMode..."));
 
-			GetWorld()->ServerTravel("/Game/Maps/MainWorld?listen");
+			const FString LevelPath = TEXT("/Game/Maps/MainWorld");
+			const FString Options = TEXT("Game=/Game/GameFlowBP/BP_NS_MultiPlayMode.BP_NS_MultiPlayMode_C");
+
+			GetWorld()->ServerTravel(LevelPath + TEXT("?") + Options);
 		}
+
 		else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("[LobbyController] PlayerId=%d is not host. Ignoring start request."), PS->GetPlayerId());
@@ -75,3 +79,16 @@ void ANS_LobbyController::Server_RequestStartGame_Implementation()
 	}
 }
 
+void ANS_LobbyController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+
+	for (TActorIterator<ACameraActor> It(GetWorld()); It; ++It)
+	{
+		if (It->ActorHasTag(FName("LobbyCamera")))
+		{
+			SetViewTargetWithBlend(*It, 0.3f);
+			break;
+		}
+	}
+}

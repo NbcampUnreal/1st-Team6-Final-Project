@@ -27,6 +27,12 @@ public:
 	UNS_GameInstance();
 	virtual void Init() override;
 
+	UPROPERTY(BlueprintReadOnly, Category = "SaveGame")
+	FString CurrentSaveSlotName;
+
+	void SetCurrentSaveSlot(FString SlotNameInfo);
+
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Inventory|Config")
 	UDataTable* GlobalItemDataTable;
 

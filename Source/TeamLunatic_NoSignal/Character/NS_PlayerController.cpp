@@ -11,15 +11,19 @@ ANS_PlayerController::ANS_PlayerController()
 
 void ANS_PlayerController::BeginPlay()
 {
-	Super::BeginPlay();
-   
+    Super::BeginPlay();
+
     SetInputMode(FInputModeGameOnly());
     bShowMouseCursor = false;
+
+    if (!IsLocalController()) return; // 서버일 경우 바로 반환해서 UI 안 띄움
 
     if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
     {
         if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
+        {
             UIManager->ShowPlayerHUDWidget(GetWorld());
+        }
     }
 }
 

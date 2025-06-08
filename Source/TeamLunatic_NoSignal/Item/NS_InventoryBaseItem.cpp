@@ -27,6 +27,7 @@ void UNS_InventoryBaseItem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	DOREPLIFETIME(UNS_InventoryBaseItem, OwingInventory);
 	DOREPLIFETIME(UNS_InventoryBaseItem, Quantity);
 	DOREPLIFETIME(UNS_InventoryBaseItem, ItemDataRowName);
 	DOREPLIFETIME(UNS_InventoryBaseItem, ItemType);
@@ -84,14 +85,6 @@ void UNS_InventoryBaseItem::SetQuantity(const int32 NewQuantity)
 	{
 		// 스택 가능 여부에 따라 최대 수량 제한
 		Quantity = FMath::Clamp(NewQuantity, 0, NumericData.isStackable ? NumericData.MaxStack : 1);
-		// 수량이 0 이하이면 인벤토리에서 제거
-		if (OwingInventory)
-		{
-			if (Quantity <= 0)
-			{
-				OwingInventory->RemoveSingleInstanceOfItem(this);
-			}
-		}
 	}
 }
 // 데이터 테이블로부터 해당 아이템의 데이터를 조회
