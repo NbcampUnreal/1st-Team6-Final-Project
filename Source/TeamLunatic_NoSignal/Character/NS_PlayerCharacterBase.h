@@ -248,16 +248,4 @@ public:
 
 	UFUNCTION()
 	void SwapWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass);
-
-	// 무게 증감
-	UFUNCTION(BlueprintCallable)
-	void AddWeightInventory(float Weight);
-
-	//수색 속도 증감
-	UFUNCTION(BluePrintCallable)
-	void AddSearchTime(float Multiple);
-
-	//크래프팅 속도 증감
-	UFUNCTION(BlueprintCallable)
-	void AddCraftingSpeed(float Multiple);
 };
