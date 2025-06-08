@@ -123,8 +123,32 @@ void UInteractionComponent::FoundInteractable(AActor* NewInteractable)
 	// 새로운 대상 등록 및 위젯 갱신
 	InteractionData.CurrentInteractable = NewInteractable;
 	TargetInteractable = NewInteractable;
+	
+	// 여기에서 복제된 데이터 유효성 로그 출력
+	if (TargetInteractable.GetObject())
+	{
+		const FInteractableData& Data = TargetInteractable->InteractableData;
 
-	HUD->UpdateInteractionWidget(&TargetInteractable->InteractableData);
+		UE_LOG(LogTemp, Warning, TEXT("[FoundInteractable] InteractableData 상태 - Name: %s, Action: %s, Type: %s"),
+			*Data.Name.ToString(),
+			*Data.Action.ToString(),
+			*UEnum::GetValueAsString(Data.InteractableType));
+
+		if (Data.Name.IsEmpty() || Data.InteractableType == EInteractableType::None)
+		{
+			UE_LOG(LogTemp, Error, TEXT("[경고] InteractableData 복제되지 않았거나 초기화되지 않았습니다."));
+		}
+	}
+
+	//  튕김 가능성 있는 지점 - 반드시 HUD null 체크도 병행 추천
+	if (HUD)
+	{
+		HUD->UpdateInteractionWidget(&TargetInteractable->InteractableData);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("[FoundInteractable] HUD가 nullptr입니다."));
+	}
 	// 포커스 시작
 	TargetInteractable->BeginFocus();
 }
@@ -172,17 +196,6 @@ void UInteractionComponent::BeginInteract()
 		if (TargetInteractable.GetObject()->GetClass()->ImplementsInterface(UInteractionInterface::StaticClass()))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("인터페이스 구현 확인됨"));
-
-			if (GetOwner()->HasAuthority())
-			{
-				UE_LOG(LogTemp, Warning, TEXT("서버 권한 있음 → Execute 호출"));
-				IInteractionInterface::Execute_OpenDoorInteract(TargetInteractable.GetObject(), GetOwner());
-			}
-			else
-			{
-				// 클라라면 서버에게 요청 (optional)
-				Server_OpenDoorInteract(Cast<AActor>(TargetInteractable.GetObject()));
-			}
 		}
 
 		if (FMath::IsNearlyZero(TargetInteractable->InteractableData.InteractionDuration, 0.1f))
@@ -233,14 +246,6 @@ void UInteractionComponent::Interact_Server_Implementation(AActor* Target)
 	if (Target && Target->GetClass()->ImplementsInterface(UInteractionInterface::StaticClass()))
 	{
 		IInteractionInterface::Execute_Interact(Target, GetOwner());
-	}
-}
-
-void UInteractionComponent::Server_OpenDoorInteract_Implementation(AActor* Target)
-{
-	if (Target && Target->GetClass()->ImplementsInterface(UInteractionInterface::StaticClass()))
-	{
-		IInteractionInterface::Execute_OpenDoorInteract(Target, GetOwner());
 	}
 }
 

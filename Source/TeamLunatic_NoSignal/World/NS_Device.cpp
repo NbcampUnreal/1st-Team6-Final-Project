@@ -24,6 +24,7 @@ ANS_Device::ANS_Device()
 	DoorB->SetupAttachment(Frame);
 
 	SetReplicates(true);
+	SetReplicateMovement(true);
 }
 
 // Called when the game starts or when spawned
@@ -31,44 +32,7 @@ void ANS_Device::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (HasAuthority())
-	{
-		UpdateInteractableData(); // 서버에서만
-	}
-	else
-	{
-		OnRep_InteractableData(); // 클라에서도 복제 없이 직접 초기화
-	}
-}
-
-void ANS_Device::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(ANS_Device, InteractableData);
-}
-
-void ANS_Device::UpdateInteractableData()
-{
-	InstanceInteractableData.InteractableType = EInteractableType::Device;
-	InstanceInteractableData.Action = FText::FromString(TEXT("Open"));
-	InstanceInteractableData.Name = FText::FromString(TEXT("Door"));
-	InstanceInteractableData.Quantity = 0;
 	InteractableData = InstanceInteractableData;
-
-	UE_LOG(LogTemp, Warning, TEXT("Device UpdateInteractableData 호출 - Name: %s, Action: %s"),
-		*InteractableData.Name.ToString(),
-		*InteractableData.Action.ToString());
-}
-
-void ANS_Device::OnRep_InteractableData()
-{
-	InstanceInteractableData = InteractableData;
-
-	UE_LOG(LogTemp, Warning, TEXT("OnRep_InteractableData - Name: %s, Action: %s, Type: %s"),
-		*InteractableData.Name.ToString(),
-		*InteractableData.Action.ToString(),
-		*UEnum::GetValueAsString(InteractableData.InteractableType));
 }
 
 void ANS_Device::BeginFocus()
@@ -83,6 +47,9 @@ void ANS_Device::EndFocus()
 	if (Frame)  Frame->SetRenderCustomDepth(false);
 	if (DoorA)  DoorA->SetRenderCustomDepth(false);
 	if (DoorB)  DoorB->SetRenderCustomDepth(false);
+}
+void ANS_Device::Interact_Implementation(AActor* InteractingActor)
+{
 }
 // Called every frame
 void ANS_Device::Tick(float DeltaTime)
