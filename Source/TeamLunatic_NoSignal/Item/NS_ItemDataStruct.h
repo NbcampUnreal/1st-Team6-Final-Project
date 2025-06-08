@@ -178,6 +178,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawn")
 	TSubclassOf<class ANS_BaseWeapon> WeaponActorClass;
 
+	UPROPERTY(EditAnywhere)
+	float SpawnWeight;
+
 	//상한 음식 체크
 	UPROPERTY(EditAnywhere)
 	bool isSpoiledfood;
