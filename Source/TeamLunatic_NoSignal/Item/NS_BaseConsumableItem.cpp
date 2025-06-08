@@ -17,10 +17,7 @@ void UNS_BaseConsumableItem::OnUseItem(ANS_PlayerCharacterBase* Character)
 	if (State)
 	{
 		State->AddHealthGauge(ItemStates.HealAmount);
-		State->AddHunger(ItemStates.HungerRestore);
 		State->AddStamina(ItemStates.StaminaRecovery);
-		State->AddThirst(ItemStates.ThirstRestore);
-		State->AddFatigue(ItemStates.TiredRestore);
 	}
 
 	
