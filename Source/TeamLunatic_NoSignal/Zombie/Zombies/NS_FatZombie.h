@@ -16,5 +16,5 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_FatZombie : public ANS_ZombieBase
 	ANS_FatZombie();
 
 protected:
-	virtual void OnStateChanged(EZombieState NewState) override;
+	virtual void OnChaseState() override;
 };

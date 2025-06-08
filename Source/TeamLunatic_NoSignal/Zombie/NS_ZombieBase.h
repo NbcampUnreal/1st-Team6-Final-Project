@@ -29,7 +29,9 @@ protected:
 	float CurrentHealth;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "Stat")
 	float BaseDamage;
-
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "Stat")
+	bool bIsDead;
+	
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "Speed")
 	float PatrolSpeed;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "Speed")
@@ -40,25 +42,45 @@ protected:
 	float TargetSpeed;
 	
 	
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Replicated, Category = "Stat")
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Replicated, Category = "State")
 	EZombieState CurrentState;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "Stat")
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "State")
 	EZombieType ZombieType;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Replicated, Category = "Stat")
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Replicated, Category = "State")
 	EZombieAttackType CurrentAttackType;
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Replicated, Category = "State")
+	bool bIsGotHit;
 	
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 	UFUNCTION(NetMulticast, reliable)
 	void Die_Multicast();
-public:	
+public:
+	
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	//상태 패턴
 	UFUNCTION()
 	void SetState(EZombieState NewState);
 	UFUNCTION()
 	virtual void OnStateChanged(EZombieState State);
 	UFUNCTION()
 	void SetAttackType(EZombieAttackType NewAttackType);
+
+	//상태 별 전환 함수.
+	void OnIdleState();
+	void OnPatrolState();
+	virtual void OnDetectState();
+	virtual void OnChaseState();
+	virtual void OnAttackState();
+	void OnDeadState();
+	
+	//사운드 관련 함수
+	void StartSoundTimer(float Interval, USoundCue* Sound);
+	void StopSoundTimer();
+	UFUNCTION()
+	void PlaySoundLoop();
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multicast_PlaySound(USoundCue* Sound);
 	
 	UFUNCTION(Server, Reliable)
 	void Server_SetState(EZombieState NewState);
@@ -70,16 +92,28 @@ public:
 								UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
 								bool bFromSweep, const FHitResult& SweepResult);
 	
-	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Attack")
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Sound")
 	USphereComponent* SphereComp;
-	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Attack")
-	UAnimMontage* BasicAttack;
-	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Attack")
-	UAnimMontage* ChargeAttack;
-	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Attack")
-	UAnimMontage* JumpAttack;
-	
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Sound")
+	USoundCue* IdleSound;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Sound")
+	USoundCue* AttackSound;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Sound")
+	USoundCue* DetectSound;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Sound")
+	USoundCue* ChaseSound;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Sound")
+	USoundCue* DeadSound;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Sound")
+	USoundCue* HitSound;
+	UPROPERTY(EditDefaultsOnly,Replicated, Category = "Sound")
+	USoundCue* CurrentSound;
 
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Montage")
+	UAnimMontage* DetectionMontage;
+	
+	FTimerHandle SoundTimerHandle;
+	
 	FORCEINLINE const EZombieAttackType GetZombieAttackType() {return CurrentAttackType;}
 	FORCEINLINE const EZombieState GetState() const {return CurrentState;};
 	FORCEINLINE const EZombieType GetType() const {return ZombieType;}
