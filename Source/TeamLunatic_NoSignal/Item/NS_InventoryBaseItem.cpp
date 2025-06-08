@@ -169,16 +169,10 @@ void UNS_InventoryBaseItem::UseConsumableItem(ANS_PlayerCharacterBase* Character
 	{
 		State->AddHealthGauge(ItemData.ItemStates.HealAmount);
 		State->AddStamina(ItemData.ItemStates.StaminaRecovery);
-		State->AddHunger(ItemData.ItemStates.HungerRestore);
-		State->AddThirst(ItemData.ItemStates.ThirstRestore);
-		State->AddFatigue(ItemData.ItemStates.TiredRestore);
 
-		UE_LOG(LogTemp, Log, TEXT("[UseConsumableItem] 체력 +%.1f, 스태미나 +%.1f, 허기 +%.1f, 갈증 +%.1f, 피로도 +%.1f"),
+		UE_LOG(LogTemp, Log, TEXT("[UseConsumableItem] 체력 +%.1f, 스태미나 +%.1f"),
 			ItemData.ItemStates.HealAmount,
-			ItemData.ItemStates.StaminaRecovery,
-			ItemData.ItemStates.HungerRestore,
-			ItemData.ItemStates.ThirstRestore,
-			ItemData.ItemStates.TiredRestore
+			ItemData.ItemStates.StaminaRecovery
 		);
 	}
 
