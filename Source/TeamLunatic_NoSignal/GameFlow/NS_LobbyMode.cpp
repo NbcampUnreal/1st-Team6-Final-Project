@@ -23,7 +23,7 @@ ANS_LobbyMode::ANS_LobbyMode()
     }
     else
     {
-        UE_LOG(LogTemp, Error, TEXT("❌ Failed to load WaitingRoomPawn1 blueprint class."));
+        UE_LOG(LogTemp, Error, TEXT("Failed to load WaitingRoomPawn1 blueprint class."));
     }
 }
 
@@ -50,7 +50,7 @@ void ANS_LobbyMode::BeginPlay()
 
     Sessions->CreateSession(0, NAME_GameSession, SessionSettings);
 
-    UE_LOG(LogTemp, Warning, TEXT("✅ Dedicated Server에서 CreateSession 호출됨"));
+    UE_LOG(LogTemp, Warning, TEXT("Dedicated Server에서 CreateSession 호출됨"));
 }
 
 void ANS_LobbyMode::PostLogin(APlayerController* NewPlayer)
@@ -73,11 +73,11 @@ void ANS_LobbyMode::PostLogin(APlayerController* NewPlayer)
     if (SpawnedPawn)
     {
         NewPlayer->Possess(SpawnedPawn);
-        UE_LOG(LogTemp, Log, TEXT("✅ Spawned & Possessed Pawn: %s"), *SpawnedPawn->GetName());
+        UE_LOG(LogTemp, Log, TEXT("Spawned & Possessed Pawn: %s"), *SpawnedPawn->GetName());
     }
     else
     {
-        UE_LOG(LogTemp, Error, TEXT("❌ Pawn spawn failed."));
+        UE_LOG(LogTemp, Error, TEXT("Pawn spawn failed."));
     }
 
     if (ANS_PlayerState* PS = Cast<ANS_PlayerState>(NewPlayer->PlayerState))

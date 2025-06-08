@@ -9,6 +9,7 @@
 UENUM()
 enum class EInteractableType : uint8
 {
+	None UMETA(DisplayName = "None"),
 	Pickup UMETA(DisplayName = "Pickup"),
 	NonPlayerCharacter UMETA(DisplayName = "NonPlayerCharacter"),
 	Device UMETA(DisplayName = "Device"),
@@ -22,7 +23,7 @@ struct FInteractableData
 	GENERATED_USTRUCT_BODY()
 
 	FInteractableData() : 
-		InteractableType(EInteractableType::Pickup),
+		InteractableType(EInteractableType::None),
 		Name(FText::GetEmpty()),
 		Action(FText::GetEmpty()),
 		Quantity(0),
@@ -41,7 +42,7 @@ struct FInteractableData
 	FText Action;
 
 	UPROPERTY(EditInstanceOnly)
-	int8 Quantity;
+	int32 Quantity;
 
 	UPROPERTY(EditInstanceOnly)
 	float InteractionDuration;

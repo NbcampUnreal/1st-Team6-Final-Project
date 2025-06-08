@@ -24,7 +24,7 @@ void UNS_QuickSlotSlotWidget::UseAssignedItem()
     {
         if (auto* Player = Cast<ANS_PlayerCharacterBase>(GetOwningPlayerPawn()))
         {
-            Player->Server_UseInventoryItem(AssignedItem);
+            Player->Server_UseInventoryItem(AssignedItem->ItemDataRowName);
         }
     }
 }

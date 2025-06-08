@@ -48,11 +48,17 @@ public:
 
 	void DropItem(UNS_InventoryBaseItem* ItemToDrop, const int32 QuantityToDrop);
 
+	void UseQuickSlot1();
+	void UseQuickSlot2();
+	void UseQuickSlot3();
+
+	void UseQuickSlotByIndex(int32 Index);
+
 	UFUNCTION(Client, Reliable)
 	void Client_NotifyInventoryUpdated();
 
 	UFUNCTION(Server, Reliable)
-	void Server_UseInventoryItem(UNS_InventoryBaseItem* Item);
+	void Server_UseInventoryItem(FName ItemRowName);
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
@@ -172,6 +178,15 @@ public:
 	UInputAction* InteractAction;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* ToggleMenuAction;
+	//퀵슬롯 바인딩
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* InputQuickSlot1;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* InputQuickSlot2;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* InputQuickSlot3;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* ToggleHeadLampAction;
 	
