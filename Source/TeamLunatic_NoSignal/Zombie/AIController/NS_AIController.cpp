@@ -47,7 +47,6 @@ void ANS_AIController::OnPossess(APawn* PossessedPawn)
 
 void ANS_AIController::OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Red, Stimulus.Type.Name.ToString());
 	FString SenseType = Stimulus.Type.Name.ToString();
 	if (SenseType == "Default__AISense_Sight")
 	{
@@ -151,10 +150,10 @@ void ANS_AIController::InitializingSightConfig()
 {
 	if (SightConfig)
 	{
-		SightConfig->SightRadius = 100.f;
+		SightConfig->SightRadius = 600.f;
 		SightConfig->LoseSightRadius = 150.f;
 		SightConfig->PeripheralVisionAngleDegrees = 90.f;
-		SightConfig->SetMaxAge(5.f);
+		SightConfig->SetMaxAge(12.f);
 		SightConfig->DetectionByAffiliation.bDetectEnemies = true;
 		SightConfig->DetectionByAffiliation.bDetectNeutrals = true;
 		SightConfig->DetectionByAffiliation.bDetectFriendlies = false;

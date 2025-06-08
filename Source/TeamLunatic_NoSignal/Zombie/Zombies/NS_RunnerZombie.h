@@ -16,5 +16,5 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_RunnerZombie : public ANS_ZombieBase
 
 public:
 	ANS_RunnerZombie();
-	virtual void OnStateChanged(EZombieState NewState) override;
+	virtual void OnChaseState() override;
 };
