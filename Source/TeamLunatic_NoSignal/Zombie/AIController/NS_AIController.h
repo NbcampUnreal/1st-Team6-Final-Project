@@ -7,6 +7,9 @@
 #include "Perception/AIPerceptionTypes.h"
 #include "NS_AIController.generated.h"
 
+enum EAIPerceptionSense : int8;
+struct FAIStimulus;
+struct FActorPerceptionBlueprintInfo;
 class UBehaviorTreeComponent;
 class UAIPerceptionComponent;
 class UAISenseConfig_Hearing;
@@ -35,19 +38,28 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI")
 	bool bIsDetect;
-
+	
+	
 public:
 	virtual void BeginPlay() override;
+	virtual void OnPossess(APawn* PossessedPawn) override;
 	UFUNCTION(BlueprintCallable, Category = "AI")
 	void OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
-
+	
 	void HandleSightStimulus();
-	void HandleHearingStimulus(const FAIStimulus& Stimulus);
+	void HandleHearingStimulus(FVector Location);
 	void HandleDamageStimulus(AActor* Attacker);
-	
 	AActor* GetClosestSightTarget();
-	
+	UFUNCTION()
+	void SetDisableAttackTimer();
+	UFUNCTION()
+	void SetEnableAttackTimer();
+
+	void InitializeAttackRange(APawn* PossessedPawn);
 	//Perception Configs
 	void InitializingSightConfig();
 	void InitializingHearingConfig();
 };
+
+
+

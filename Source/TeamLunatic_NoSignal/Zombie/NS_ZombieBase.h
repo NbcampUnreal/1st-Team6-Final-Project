@@ -40,21 +40,19 @@ protected:
 	float TargetSpeed;
 	
 	
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, ReplicatedUsing=OnRep_State, Category = "Stat")
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Replicated, Category = "Stat")
 	EZombieState CurrentState;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "Stat")
 	EZombieType ZombieType;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, ReplicatedUsing=OnRep_AttackType, Category = "Stat")
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Replicated, Category = "Stat")
 	EZombieAttackType CurrentAttackType;
 	
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
-	UFUNCTION()
-	virtual void Die();
-	
+	UFUNCTION(NetMulticast, reliable)
+	void Die_Multicast();
 public:	
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	
 	UFUNCTION()
 	void SetState(EZombieState NewState);
 	UFUNCTION()
@@ -65,15 +63,12 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_SetState(EZombieState NewState);
 	UFUNCTION(Server, Reliable)
-	void Sever_SetAttackType(EZombieAttackType NewAttackType);
+	void Server_SetAttackType(EZombieAttackType NewAttackType);
 	
 	UFUNCTION(BlueprintCallable, Category = "Attack")
 	virtual void OnOverlapSphere(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 								UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
 								bool bFromSweep, const FHitResult& SweepResult);
-	
-	UFUNCTION(NetMulticast, reliable)
-	void Die_Multicast();
 	
 	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Attack")
 	USphereComponent* SphereComp;
@@ -83,11 +78,7 @@ public:
 	UAnimMontage* ChargeAttack;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Attack")
 	UAnimMontage* JumpAttack;
-
-	UFUNCTION()
-	void OnRep_State();
-	UFUNCTION()
-	void OnRep_AttackType();
+	
 
 	FORCEINLINE const EZombieAttackType GetZombieAttackType() {return CurrentAttackType;}
 	FORCEINLINE const EZombieState GetState() const {return CurrentState;};

@@ -35,30 +35,17 @@ void UNS_HostLoadGameServerR::OnCreateServerButtonClicked()
         return;
     }
 
-    // 1. LAN 체크박스 상태 확인
-    // 2. 세션 이름 정의 (슬롯 이름 사용)
     FName SessionName = FName(*LoadSlotName);
-
-    // 3. 최대 접속 인원
     int32 MaxPlayers = FCString::Atoi(*EditableTextBox_MaxPlayers->GetText().ToString());
 
-    // 4. 세션 생성
     if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
-        // 세션 생성 성공 시 맵 이동 및 UI 정리
-        GI->OnCreateSessionSuccess.AddLambda([this, LoadMapName, GI]()
-            {
-               // UGameplayStatics::OpenLevel(this, FName(*LoadMapName), true);
-                GI->SetGameModeType(EGameModeType::MultiPlayMode);
-                MainMenu->GetWidget(EWidgetToggleType::HostServer)->HideSubMenuWidget();
-                MainMenu->GetWidget(EWidgetToggleType::MultiPlayer)->HideSubMenuWidget();
-            });
-
+        GI->SetGameModeType(EGameModeType::MultiPlayMode);
         GI->CreateDedicatedSessionViaHTTP(SessionName, MaxPlayers);
+
     }
     else
     {
-
         UE_LOG(LogTemp, Warning, TEXT("게임 인스턴스 없음"));
     }
 }

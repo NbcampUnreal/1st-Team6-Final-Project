@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "World/Pickup.h"
 #include "Engine/DataTable.h"
 #include "Item/NS_ItemDataStruct.h"
@@ -10,13 +7,12 @@
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Item/NS_BaseMagazine.h"
 
-
 APickup::APickup()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
 	bReplicates = true;
-	SetReplicatingMovement(true); // 움직이는 아이템이면
+	SetReplicatingMovement(true);
 
 	PickupMesh = CreateDefaultSubobject<UStaticMeshComponent>("PickupMesh");
 	PickupMesh->SetSimulatePhysics(true);
@@ -58,8 +54,6 @@ void APickup::InitializePickup(const TSubclassOf<UNS_InventoryBaseItem> BaseClas
 
 		InQuantity <= 0 ? ItemReference->SetQuantity(1) : ItemReference->SetQuantity(InQuantity);
 
-		ItemReference->SetOwningActor(this);
-
 		PickupMesh->SetStaticMesh(ItemData->ItemAssetData.StaticMesh);
 
 		UpdateInteractableData();
@@ -81,8 +75,6 @@ void APickup::InitializeDrop(UNS_InventoryBaseItem* ItemToDrop, const int32 InQu
 	ReplicatedItemData.WeaponType = ItemToDrop->WeaponType;
 	ReplicatedItemData.ItemType = ItemToDrop->ItemType;
 
-	ItemReference->SetOwningActor(this);
-
 	UpdateInteractableData();
 }
 
@@ -91,7 +83,6 @@ void APickup::OnRep_ReplicatedItemData()
 	if (!ItemReference)
 	{
 		ItemReference = NewObject<UNS_InventoryBaseItem>(this, UNS_InventoryBaseItem::StaticClass());
-		ItemReference->SetOwningActor(this);
 	}
 
 	ItemReference->ItemDataRowName = ReplicatedItemData.ItemDataRowName;
@@ -102,8 +93,8 @@ void APickup::OnRep_ReplicatedItemData()
 	ItemReference->WeaponData = ReplicatedItemData.WeaponData;
 	ItemReference->WeaponType = ReplicatedItemData.WeaponType;
 	ItemReference->ItemType = ReplicatedItemData.ItemType;
-	PickupMesh->SetStaticMesh(ReplicatedItemData.ItemAssetData.StaticMesh);
 
+	PickupMesh->SetStaticMesh(ReplicatedItemData.ItemAssetData.StaticMesh);
 	ItemReference->SetQuantity(ReplicatedItemData.Quantity);
 
 	UpdateInteractableData();
@@ -138,13 +129,13 @@ void APickup::Interact_Implementation(AActor* InteractingActor)
 {
 	if (!HasAuthority())
 	{
-		Server_TakePickup(InteractingActor); // 클라에서 서버로 요청
+		Server_TakePickup(InteractingActor);
 		return;
 	}
 
 	if (ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(InteractingActor))
 	{
-		TakePickup(PlayerCharacter); // 서버에서 처리
+		TakePickup(PlayerCharacter);
 	}
 }
 
@@ -200,6 +191,7 @@ void APickup::Server_TakePickup_Implementation(AActor* InteractingActor)
 	}
 }
 
+#if WITH_EDITOR
 void APickup::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
@@ -217,10 +209,10 @@ void APickup::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent
 		}
 	}
 }
+#endif
 
 void APickup::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(APickup, ReplicatedItemData);
 }
-

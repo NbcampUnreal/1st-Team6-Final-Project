@@ -18,6 +18,7 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_InventoryBaseItem : public UObject
 public:
 	UNS_InventoryBaseItem();
 
+	UPROPERTY(Replicated)
 	UInventoryComponent* OwingInventory;
 
 	AActor* OwningActor = nullptr;
@@ -27,6 +28,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	AActor* GetOwningActor() const;
+
+	UFUNCTION(BlueprintCallable, Category = "ItemData")
+	int32 GetQuantity() const;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Confige")
 	UDataTable* ItemsDataTable;
@@ -59,6 +63,9 @@ public:
 	UTexture2D* Icon;
 
 	UPROPERTY(EditAnywhere, Category = "ItemData", Replicated)
+	FItemStates ItemStates;
+
+	UPROPERTY(EditAnywhere, Category = "ItemData", Replicated)
 	FItemNumericData NumericData;
 
 	UPROPERTY(EditAnywhere, Category = "ItemData", Replicated)
@@ -66,6 +73,9 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "ItemData", Replicated)
 	FItemAssetData AssetData;
+
+	UPROPERTY(EditAnywhere, Category = "ItemData", Replicated)
+	FConsumAbleItemAssetData ConsumableItemAssetData;
 
 	UPROPERTY(VisibleAnywhere, Category = "ItemData", meta = (UIMin = 1, UIMax = 100), Replicated)
 	int32 Quantity;
@@ -97,10 +107,9 @@ public:
 	float GetWeight() const { return Weight; }
 	const FNS_ItemDataStruct* GetItemData() const;
 
-	virtual void OnUseItem();
+	virtual void OnUseItem(class ANS_PlayerCharacterBase* Character);
 	void EquipWeapon(const FNS_ItemDataStruct* ItemData);
-	void EquipMagazine(const FNS_ItemDataStruct* ItemData);
-	void UseAmmo(const FNS_ItemDataStruct* ItemData);
+	void UseConsumableItem(ANS_PlayerCharacterBase* Character, const FNS_ItemDataStruct& ItemData);
 	bool IsSupportedForNetworking() const;
 protected:
 	bool operator == (const FName& OtherID) const

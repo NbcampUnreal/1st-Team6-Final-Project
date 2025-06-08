@@ -40,23 +40,31 @@ void UNS_InteractionWidget::UpdateWidget(const FInteractableData* InteractableDa
 			QuantityText->SetVisibility(ESlateVisibility::Visible);
 		}
 		break;
-	
-	case EInteractableType::NonPlayerCharacter:
-		break;
-	
+
 	case EInteractableType::Device:
+		KeyPressText->SetText(FText::FromString("Press"));
+		InteractionProgressBar->SetVisibility(ESlateVisibility::Collapsed);
+		QuantityText->SetVisibility(ESlateVisibility::Collapsed);
 		break;
-	
-	case EInteractableType::Toggle:
+
+	case EInteractableType::None:
+		KeyPressText->SetText(FText::FromString("Press"));
+		InteractionProgressBar->SetVisibility(ESlateVisibility::Collapsed);
+		QuantityText->SetVisibility(ESlateVisibility::Collapsed);
+		NameText->SetText(FText::FromString("Door"));
+		ActionText->SetText(FText::FromString("OPEN"));
 		break;
-	
-	case EInteractableType::Container:
+
+		// 추후 다른 타입도 확장 가능
+	default:
 		break;
-	
-	default:;
 	}
-	ActionText->SetText(InteractableData->Action);
-	NameText->SetText(InteractableData->Name);
+
+	// 공통 텍스트 처리 (유효할 때만)
+	if (!InteractableData->Name.IsEmpty())
+		NameText->SetText(InteractableData->Name);
+	if (!InteractableData->Action.IsEmpty())
+		ActionText->SetText(InteractableData->Action);
 }
 
 float UNS_InteractionWidget::UpdateInteractionProgress()

@@ -14,6 +14,10 @@ public:
     virtual void NativeConstruct() override;
     void ShowWidget();
     void HideWidget();
+
+    UPROPERTY(meta = (BindWidget))
+    class UNS_QuickSlotPanel* NS_QuickSlotPanel;
+
 protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
     TArray<UTexture2D*> TextureArray;

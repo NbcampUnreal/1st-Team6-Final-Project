@@ -5,6 +5,7 @@
 #include "Zombie/AIController/NS_AIController.h"
 #include "Zombie/NS_ZombieBase.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "TimerManager.h"
 
 
 void UNS_AnimNotify_EndAttack::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
@@ -16,5 +17,8 @@ void UNS_AnimNotify_EndAttack::Notify(USkeletalMeshComponent* MeshComp, UAnimSeq
 	UBlackboardComponent* BlackboardComponent = Controller->GetBlackboardComponent();
 	if (!BlackboardComponent) return;
 
+	Controller->GetWorldTimerManager().SetTimer(Timer,Controller,&ANS_AIController::SetEnableAttackTimer,1.5f,false); 
 	BlackboardComponent->SetValueAsBool("bIsAttacking", false);
 }
+
+

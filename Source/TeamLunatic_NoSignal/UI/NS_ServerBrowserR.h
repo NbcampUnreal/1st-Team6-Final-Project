@@ -30,6 +30,8 @@ public:
 
     void RefreshServerList();
 
+    void AddServerEntryAddress(const FString& Name, const FString& Address, const FString& PlayerCount);
+
 protected:
 
     void HandleFindSessionsComplete(bool bWasSuccessful);

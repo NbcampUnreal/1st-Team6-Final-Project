@@ -6,6 +6,7 @@
 #include "UI/NS_Msg_GameOver.h"
 #include "UI/NS_InGameMsg.h"
 #include "UI/NS_PlayerHUD.h"
+#include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
 
 UNS_UIManager::UNS_UIManager()
 {
@@ -49,6 +50,12 @@ void UNS_UIManager::InitUi(UWorld* World)
 {
     //if (InGameMenuWidgetClass)
     //    InGameMenuWidget = CreateWidget<UNS_BaseMainMenu>(World, InGameMenuWidgetClass);
+}
+UNS_QuickSlotPanel* UNS_UIManager::GetQuickSlotPanel()
+{
+    if (NS_PlayerHUDWidget)
+        return NS_PlayerHUDWidget->NS_QuickSlotPanel;
+    return nullptr;
 }
 bool UNS_UIManager::ShowPlayerHUDWidget( UWorld* World)
 {

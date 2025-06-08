@@ -13,6 +13,11 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_LobbyController : public APlayerController
 	GENERATED_BODY()
 
 protected:
+
+	virtual void BeginPlay() override;
+
+	virtual void OnPossess(APawn* InPawn) override;
+
 	// 입력 바인딩 초기화
 	virtual void SetupInputComponent() override;
 

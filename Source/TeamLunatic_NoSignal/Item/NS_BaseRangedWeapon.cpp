@@ -26,37 +26,20 @@ void ANS_BaseRangedWeapon::BeginPlay()
 	Super::BeginPlay();
 
 	const FNS_ItemDataStruct* ItemData = GetItemData();
-	
-	InstanceInteractableData.Quantity = 1;
 
-	InteractableData = InstanceInteractableData;
-}
-
-bool ANS_BaseRangedWeapon::CanFire() const
-{
-	return CurrentAmmo > 0;
-}
-
-void ANS_BaseRangedWeapon::Fire()
-{
-	UE_LOG(LogTemp, Warning, TEXT("Fire() 호출됨"));
-
-	if (!CanFire())
+	if (ItemData)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("탄약 없음."));
-		UGameplayStatics::PlaySoundAtLocation(this, UnFireSound, GetActorLocation());
-		return;
+		MaxAmmo = ItemData->WeaponData.MaxAmmo;
+		CurrentAmmo = MaxAmmo; // 여기서 CurrentAmmo도 설정
+	}
+	else
+	{
+		MaxAmmo = 18;
+		CurrentAmmo = MaxAmmo;
 	}
 
-	--CurrentAmmo;
-
-	UE_LOG(LogTemp, Log, TEXT("발사! 남은 탄약: %d / %d"), CurrentAmmo, MaxAmmo);
-	UGameplayStatics::PlaySoundAtLocation(this, AttackSound, GetActorLocation());
-
-	// 탄환 생성 생략
-
-	// 충돌 판정 및 데미지 적용
-	PerformHitScan(WeaponData.Damage);
+	InstanceInteractableData.Quantity = 1;
+	InteractableData = InstanceInteractableData;
 }
 
 void ANS_BaseRangedWeapon::Reload(int32 AmmoToAdd)
@@ -65,9 +48,4 @@ void ANS_BaseRangedWeapon::Reload(int32 AmmoToAdd)
 	CurrentAmmo = FMath::Clamp(CurrentAmmo + AmmoToAdd, 0, MaxAmmo);
 
 	UE_LOG(LogTemp, Log, TEXT("[Reload] 장전됨: %d → %d"), AmmoBefore, CurrentAmmo);
-}
-
-void ANS_BaseRangedWeapon::PerformHitScan(int32 InDamage)
-{
-	// 히트스캔 로직 구현 예정
 }
