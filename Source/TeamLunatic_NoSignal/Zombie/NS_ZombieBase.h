@@ -53,6 +53,7 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
 	UFUNCTION()
 	void SetState(EZombieState NewState);
 	UFUNCTION()
