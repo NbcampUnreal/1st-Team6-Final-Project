@@ -77,7 +77,14 @@ void ANS_AIController::HandleSightStimulus()
 
 void ANS_AIController::HandleHearingStimulus(FVector Location)
 {
-	BlackboardComp->SetValueAsVector("HeardLocation", Location);	
+	const FVector NewHeardLocation = Location;
+
+	FVector CurrentLocation = Blackboard->GetValueAsVector("HeardLocation");
+
+	if (FVector::Dist(NewHeardLocation, CurrentLocation) > 1000.f)
+	{
+		Blackboard->SetValueAsVector("HeardLocation", NewHeardLocation);
+	}
 }
 
 void ANS_AIController::HandleDamageStimulus(AActor* Attacker)
