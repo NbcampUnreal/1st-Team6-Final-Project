@@ -19,24 +19,8 @@ ANS_FatZombie::ANS_FatZombie()
 	ZombieType = EZombieType::FAT;
 }
 
-void ANS_FatZombie::OnStateChanged(EZombieState NewState)
+void ANS_FatZombie::OnChaseState()
 {
-	switch (NewState)
-	{
-	case EZombieState::DEAD:
-	case EZombieState::IDLE:
-	case EZombieState::DETECTING:
-	case EZombieState::PUSHED:
-		TargetSpeed = 0.f;
-		break;
-	case EZombieState::PATROLL:
-		TargetSpeed = 20.f;
-		break;
-	case EZombieState::CHACING:
-	case EZombieState::ATTACK:
-		TargetSpeed = 70.f;
-		break;
-	default:
-		break;
-	}
+	TargetSpeed = 70.f;
 }
+
