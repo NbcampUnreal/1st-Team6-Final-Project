@@ -99,7 +99,7 @@ void UNS_GameInstance::OnCreateSessionResponse(FHttpRequestPtr Request, FHttpRes
 void UNS_GameInstance::RequestSessionListFromServer()
 {
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("http://121.163.249.108:5000/session_list"));
+	Request->SetURL(TEXT("http://13.124.57.143:5000/session_list"));
 	Request->SetVerb(TEXT("GET"));
 	Request->OnProcessRequestComplete().BindUObject(this, &UNS_GameInstance::OnReceiveSessionList);
 	Request->ProcessRequest();
