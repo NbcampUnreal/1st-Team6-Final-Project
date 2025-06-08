@@ -45,8 +45,8 @@ void ANS_Trap::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Other
                 GetActorLocation(),
                 1.0f,
                 InstigatorPawn,
-                0.0f,
-                FName("TrapNoise")
+                2000.0f,
+                FName("TrapNoise") // 나중에 수정할것
             );
         }
 
