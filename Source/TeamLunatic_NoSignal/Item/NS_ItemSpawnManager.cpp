@@ -108,12 +108,8 @@ void ANS_ItemSpawnManager::SpawnRandomItemAt(const FTransform& SpawnTransform)
         SpawnedPickup->ItemDataTable = this->ItemDataTable;
         SpawnedPickup->DesiredItemID = SelectedItemID;
         SpawnedPickup->ItemQuantity = 1;
-        const FNS_ItemDataStruct* ItemData = ItemDataTable->FindRow<FNS_ItemDataStruct>(SelectedItemID, SelectedItemID.ToString());
 
-        if (ItemData && SpawnedPickup->PickupMesh)
-        {
-            SpawnedPickup->PickupMesh->SetStaticMesh(ItemData->ItemAssetData.StaticMesh);
-        }
+        SpawnedPickup->BeginPlay();
     }
 }
 
