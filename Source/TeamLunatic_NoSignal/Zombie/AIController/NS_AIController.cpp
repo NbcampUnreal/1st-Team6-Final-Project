@@ -5,6 +5,7 @@
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Hearing.h"
 #include "Perception/AISenseConfig_Sight.h"
+#include "Perception/AIPerceptionTypes.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
@@ -31,7 +32,6 @@ ANS_AIController::ANS_AIController()
 void ANS_AIController::BeginPlay()
 {
 	Super::BeginPlay();
-
 }
 
 void ANS_AIController::OnPossess(APawn* PossessedPawn)
@@ -47,28 +47,19 @@ void ANS_AIController::OnPossess(APawn* PossessedPawn)
 
 void ANS_AIController::OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
 {
-	FString SenseName = Stimulus.Type.Name.ToString();
-	if (SenseName == "Default__AISense_Sight")
+	GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Red, Stimulus.Type.Name.ToString());
+	FString SenseType = Stimulus.Type.Name.ToString();
+	if (SenseType == "Default__AISense_Sight")
 	{
-		if (Stimulus.WasSuccessfullySensed())
-		{
-			HandleSightStimulus();
-		}
-		else
-		{
-			BlackboardComp->SetValueAsFloat("Distance", 5000.f);
-		}
+		HandleSightStimulus();
 	}
-	else if (SenseName == "Default__AISense_Hearing")
+	else if (SenseType == "Default__AISense_Hearing")
 	{
-		HandleHearingStimulus(Stimulus);
+		HandleHearingStimulus(Stimulus.StimulusLocation);
 	}
-	else if (SenseName == "Default__AISense_Damage"){
+	else if (SenseType == "Default__AISense_Damage")
+	{
 		HandleDamageStimulus(Actor);
-	}
-	else
-	{
-		BlackboardComp->SetValueAsFloat("Distance", 5000.f);
 	}
 }
 
@@ -85,9 +76,9 @@ void ANS_AIController::HandleSightStimulus()
 	}
 }
 
-void ANS_AIController::HandleHearingStimulus(const FAIStimulus& Stimulus)
-{	
-	BlackboardComp->SetValueAsVector("HeardLocation", Stimulus.StimulusLocation);	
+void ANS_AIController::HandleHearingStimulus(FVector Location)
+{
+	BlackboardComp->SetValueAsVector("HeardLocation", Location);	
 }
 
 void ANS_AIController::HandleDamageStimulus(AActor* Attacker)
@@ -118,6 +109,7 @@ AActor* ANS_AIController::GetClosestSightTarget()
 	if (ClosestSightTarget) return ClosestSightTarget;
 	return nullptr;
 }
+
 
 void ANS_AIController::SetDisableAttackTimer()
 {
@@ -159,10 +151,10 @@ void ANS_AIController::InitializingSightConfig()
 {
 	if (SightConfig)
 	{
-		SightConfig->SightRadius = 1500.f;
-		SightConfig->LoseSightRadius = 1800.f;
+		SightConfig->SightRadius = 100.f;
+		SightConfig->LoseSightRadius = 150.f;
 		SightConfig->PeripheralVisionAngleDegrees = 90.f;
-		SightConfig->SetMaxAge(1.f);
+		SightConfig->SetMaxAge(5.f);
 		SightConfig->DetectionByAffiliation.bDetectEnemies = true;
 		SightConfig->DetectionByAffiliation.bDetectNeutrals = true;
 		SightConfig->DetectionByAffiliation.bDetectFriendlies = false;
@@ -175,7 +167,7 @@ void ANS_AIController::InitializingHearingConfig()
 	if (HearingConfig)
 	{
 		HearingConfig->HearingRange = 1200.f;
-		HearingConfig->SetMaxAge(1.f);
+		HearingConfig->SetMaxAge(0.f);
 		HearingConfig->DetectionByAffiliation.bDetectEnemies = true;
 		HearingConfig->DetectionByAffiliation.bDetectNeutrals = true;
 		HearingConfig->DetectionByAffiliation.bDetectFriendlies = false;
