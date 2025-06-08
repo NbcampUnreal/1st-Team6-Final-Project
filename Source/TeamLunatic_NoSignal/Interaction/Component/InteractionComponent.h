@@ -69,6 +69,8 @@ private:
 	void NoInteractableFound();
 	void Interact();
 	UFUNCTION(Server, Reliable)
+	void Server_OpenDoorInteract(AActor* Target);
+	UFUNCTION(Server, Reliable)
 	void Interact_Server(AActor* Target);
 
 	FVector GetViewLocation() const;
