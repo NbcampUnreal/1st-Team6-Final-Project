@@ -44,7 +44,7 @@ public:
 	void OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
 	
 	void HandleSightStimulus();
-	void HandleHearingStimulus(const FAIStimulus& Stimulus);
+	void HandleHearingStimulus(FVector Location);
 	void HandleDamageStimulus(AActor* Attacker);
 	
 	AActor* GetClosestSightTarget();
