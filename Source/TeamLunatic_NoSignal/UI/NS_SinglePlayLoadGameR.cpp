@@ -62,12 +62,21 @@ void UNS_SinglePlayLoadGameR::StartGame()
 
     FString LevelName = LoadedGame->LevelSaves[0].LevelName;
 
-    // GameInstance에 슬롯 이름 등록 (선택사항)
+    //// GameInstance에 슬롯 이름 등록 (선택사항)
+    //if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+    //{
+    //    GI->SetGameModeType(EGameModeType::SinglePlayMode);
+    //   
+    //    UGameplayStatics::OpenLevel(this, FName(*LevelName));
+    //}
+
     if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
-        GI->SetGameModeType(EGameModeType::SinglePlayMode);
-       
-        UGameplayStatics::OpenLevel(this, FName(*LevelName));
+        // 싱글 모드 전용 GameMode 지정
+        FString SelectedLevelName = TEXT("/Game/Maps/MainWorld");
+        FString GameModePath = TEXT("Game=/Game/GameFlowBP/BP_NS_SinglePlayMode.BP_NS_SinglePlayMode_C");
+        UE_LOG(LogTemp, Warning, TEXT("[StartGame] Opening level with options: %s"), *GameModePath);
+        UGameplayStatics::OpenLevel(this, FName(*SelectedLevelName), true, GameModePath);
     }
 }
 void UNS_SinglePlayLoadGameR::OnClickedDeleteSlot(UNS_LoadGameMenuPanel* ChidPanel)

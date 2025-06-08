@@ -48,11 +48,17 @@ public:
 
 	void DropItem(UNS_InventoryBaseItem* ItemToDrop, const int32 QuantityToDrop);
 
+	void UseQuickSlot1();
+	void UseQuickSlot2();
+	void UseQuickSlot3();
+
+	void UseQuickSlotByIndex(int32 Index);
+
 	UFUNCTION(Client, Reliable)
 	void Client_NotifyInventoryUpdated();
 
 	UFUNCTION(Server, Reliable)
-	void Server_UseInventoryItem(UNS_InventoryBaseItem* Item);
+	void Server_UseInventoryItem(FName ItemRowName);
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
@@ -63,8 +69,8 @@ protected:
 
 public:
 	// 카메라를 붙일 소켓 이름 [에디터에서 변경 가능함] 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera")
-	FName CameraAttachSocketName = TEXT("head");
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AttachSocket")
+	FName CameraAttachSocketName;
 	
 	////////////////////////////////////캐릭터 부착 컴포넌트들///////////////////////////////////////
 	// 1인칭 카메라 컴포넌트 
@@ -73,7 +79,7 @@ public:
 	// 1인칭 팔 스켈레탈 메시 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "FirstPerson")
 	USkeletalMeshComponent* FirstPersonArms;
-
+	
 	// 스탯 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
 	UNS_StatusComponent* StatusComp;
@@ -88,6 +94,7 @@ public:
 	UPROPERTY()
 	UNS_QuickSlotPanel* QuickSlotPanel;
 
+	// 장착 무기 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UNS_EquipedWeaponComponent* EquipedWeaponComp;
 	////////////////////////////////////캐릭터 부착 컴포넌트들 끝!///////////////////////////////////////
@@ -171,6 +178,15 @@ public:
 	UInputAction* InteractAction;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* ToggleMenuAction;
+	//퀵슬롯 바인딩
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* InputQuickSlot1;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* InputQuickSlot2;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* InputQuickSlot3;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* ToggleHeadLampAction;
 	
