@@ -63,6 +63,9 @@ public:
 
 	bool bIsSinglePlayer = true;
 
+	void SendHeartbeat();
 private:
 	EGameModeType GameModeType = EGameModeType::SinglePlayMode;
+	int32 MyServerPort = -1;
+	FTimerHandle HeartbeatTimerHandle;
 };
