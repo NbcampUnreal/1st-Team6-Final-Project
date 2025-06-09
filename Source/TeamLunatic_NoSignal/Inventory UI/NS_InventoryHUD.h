@@ -22,6 +22,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Widgets")
 	TSubclassOf<UNS_InteractionWidget> InteractionWidgetClass;
 
+	UNS_InteractionWidget* GetInteractionWidget() const { return InteractionWidget; }
 	bool bIsMenuVisible;
 
 	ANS_InventoryHUD();
