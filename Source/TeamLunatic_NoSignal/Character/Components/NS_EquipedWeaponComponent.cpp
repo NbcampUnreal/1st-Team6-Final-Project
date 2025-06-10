@@ -8,6 +8,7 @@
 #include "Engine/World.h"
 #include "TimerManager.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Character/AnimInstance/NS_RangedWeaponAnimInstance.h"
 #include "Components/StaticMeshComponent.h"  
 #include "GameFlow/NS_GameInstance.h"
 
@@ -109,6 +110,12 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
         {
             Ranged->RangedWeaponMeshComp->AttachToComponent(
                 OwnerCharacter->GetMesh(), Rules, SocketName);
+
+            if (UNS_RangedWeaponAnimInstance* WeaponAnim = Cast<UNS_RangedWeaponAnimInstance>(
+           Ranged->RangedWeaponMeshComp->GetAnimInstance()))
+            {
+                WeaponAnim->OwnerCharacter = OwnerCharacter;
+            }
         }
         
         // 다른 플레이어에게 보이게 메쉬를 몸에 부착

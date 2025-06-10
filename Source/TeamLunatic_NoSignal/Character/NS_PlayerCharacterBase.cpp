@@ -468,7 +468,6 @@ void ANS_PlayerCharacterBase::PlayDeath_Multicast_Implementation()
     SetLifeSpan(5.f); 
 }
 
-
 void ANS_PlayerCharacterBase::DropItem_Server_Implementation(UNS_InventoryBaseItem* ItemToDrop, int32 QuantityToDrop)
 {
     if (PlayerInventory->FindMatchingItem(ItemToDrop))
