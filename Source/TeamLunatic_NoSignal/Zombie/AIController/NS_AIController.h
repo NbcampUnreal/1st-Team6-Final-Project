@@ -7,9 +7,6 @@
 #include "Perception/AIPerceptionTypes.h"
 #include "NS_AIController.generated.h"
 
-enum EAIPerceptionSense : int8;
-struct FAIStimulus;
-struct FActorPerceptionBlueprintInfo;
 class UBehaviorTreeComponent;
 class UAIPerceptionComponent;
 class UAISenseConfig_Hearing;
@@ -49,17 +46,15 @@ public:
 	void HandleSightStimulus();
 	void HandleHearingStimulus(FVector Location);
 	void HandleDamageStimulus(AActor* Attacker);
+	
 	AActor* GetClosestSightTarget();
 	UFUNCTION()
 	void SetDisableAttackTimer();
 	UFUNCTION()
 	void SetEnableAttackTimer();
-
+	
 	void InitializeAttackRange(APawn* PossessedPawn);
 	//Perception Configs
 	void InitializingSightConfig();
 	void InitializingHearingConfig();
 };
-
-
-
