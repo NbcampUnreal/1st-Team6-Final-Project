@@ -1,6 +1,7 @@
 #include "Item/NS_ItemSpawnManager.h"
 #include "World/Pickup.h"
 #include "Kismet/GameplayStatics.h"
+#include "Item/NS_InventoryBaseItem.h"
 
 
 ANS_ItemSpawnManager::ANS_ItemSpawnManager()
@@ -109,7 +110,7 @@ void ANS_ItemSpawnManager::SpawnRandomItemAt(const FTransform& SpawnTransform)
         SpawnedPickup->DesiredItemID = SelectedItemID;
         SpawnedPickup->ItemQuantity = 1;
 
-        SpawnedPickup->BeginPlay();
+        SpawnedPickup->InitializePickup(UNS_InventoryBaseItem::StaticClass(), 1);
     }
 }
 
