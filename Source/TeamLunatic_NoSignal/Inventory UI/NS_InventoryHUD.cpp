@@ -117,10 +117,14 @@ void ANS_InventoryHUD::ShowInteractionWidget()
 
 void ANS_InventoryHUD::HideInteractionWidget()
 {
-	if (InteractionWidget)
+	if (!IsValid(InteractionWidget))
 	{
-		InteractionWidget->SetVisibility(ESlateVisibility::Collapsed);
+		UE_LOG(LogTemp, Error, TEXT("[HUD] InteractionWidget이 유효하지 않습니다."));
+		return;
 	}
+
+	InteractionWidget->SetVisibility(ESlateVisibility::Collapsed);
+	UE_LOG(LogTemp, Warning, TEXT("[HUD] Interaction 위젯 숨김 처리 완료"));
 }
 
 void ANS_InventoryHUD::UpdateInteractionWidget(const FInteractableData* InteractableData) const

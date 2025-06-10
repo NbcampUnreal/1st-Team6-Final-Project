@@ -67,6 +67,7 @@ private:
 
 	void FoundInteractable(AActor* NewInteractable);
 	void NoInteractableFound();
+	void HideInteractionWidgetSafely();
 	void Interact();
 	UFUNCTION(Server, Reliable)
 	void Interact_Server(AActor* Target);
