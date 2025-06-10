@@ -26,5 +26,3 @@ void UNS_RangedWeaponAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		bIsReloading = OwnerCharacter->IsReload;
 	}
 }
-
-
