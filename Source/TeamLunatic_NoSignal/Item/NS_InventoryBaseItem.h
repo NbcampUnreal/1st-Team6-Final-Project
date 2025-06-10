@@ -33,7 +33,7 @@ public:
 	int32 GetQuantity() const;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Confige")
-	UDataTable* ItemsDataTable;
+	mutable UDataTable* ItemsDataTable;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Confige", Replicated)
 	FName ItemDataRowName;
@@ -108,7 +108,6 @@ public:
 	const FNS_ItemDataStruct* GetItemData() const;
 
 	virtual void OnUseItem(class ANS_PlayerCharacterBase* Character);
-	void EquipWeapon(const FNS_ItemDataStruct* ItemData);
 	void UseConsumableItem(ANS_PlayerCharacterBase* Character, const FNS_ItemDataStruct& ItemData);
 	bool IsSupportedForNetworking() const;
 protected:

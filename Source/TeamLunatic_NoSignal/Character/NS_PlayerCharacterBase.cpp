@@ -524,6 +524,28 @@ void ANS_PlayerCharacterBase::UseQuickSlotByIndex(int32 Index)
     }
 }
 
+void ANS_PlayerCharacterBase::Server_UseQuickSlotItem_Implementation(FName ItemRowName)
+{
+    if (!PlayerInventory) return;
+
+    for (UNS_InventoryBaseItem* Item : PlayerInventory->GetInventoryContents())
+    {
+        if (Item && Item->ItemDataRowName == ItemRowName)
+        {
+            const FNS_ItemDataStruct* ItemData = Item->GetItemData();
+            if (!ItemData || ItemData->ItemType != EItemType::Equipment) return;
+
+            if (UNS_EquipedWeaponComponent* WeaponComp = FindComponentByClass<UNS_EquipedWeaponComponent>())
+            {
+                WeaponComp->SwapWeapon(ItemData->WeaponActorClass);
+                UE_LOG(LogTemp, Warning, TEXT("[Server] %s 장착됨 (RowName = %s)"),
+                    *ItemData->ItemTextData.ItemName.ToString(), *ItemRowName.ToString());
+            }
+            break;
+        }
+    }
+}
+
 void ANS_PlayerCharacterBase::Server_UseInventoryItem_Implementation(FName ItemRowName)
 {
     for (UNS_InventoryBaseItem* Item : PlayerInventory->GetInventoryContents())
@@ -531,15 +553,6 @@ void ANS_PlayerCharacterBase::Server_UseInventoryItem_Implementation(FName ItemR
         if (Item && Item->ItemDataRowName == ItemRowName)
         {
             Item->OnUseItem(this);
-
-            if (Item->ItemType == EItemType::Equipment &&
-                Item->WeaponType != EWeaponType::Ammo &&
-                QuickSlotPanel)
-            {
-                QuickSlotPanel->AssignToFirstEmptySlot(Item);
-                UE_LOG(LogTemp, Warning, TEXT("[Server] 아이템 재검색 후 퀵슬롯 자동 등록: %s"), *Item->GetName());
-            }
-
             return;
         }
     }
@@ -556,6 +569,51 @@ void ANS_PlayerCharacterBase::Client_NotifyInventoryUpdated_Implementation()
             {
                 PlayerInventory->OnInventoryUpdated.Broadcast();
                 UE_LOG(LogTemp, Warning, TEXT("Client_NotifyInventoryUpdated - Inventory 갱신 (지연 호출)"));
+
+                // 퀵슬롯 패널 바인딩이 완료되었는지 체크 후 재시도
+                if (!QuickSlotPanel)
+                {
+                    UE_LOG(LogTemp, Warning, TEXT("[QuickSlot][Client_Notify] QuickSlotPanel이 아직 바인딩되지 않음 - 0.1초 후 재시도"));
+
+                    // 한 번 더 타이머로 0.1초 후 재시도
+                    FTimerHandle RetryHandle;
+                    GetWorldTimerManager().SetTimer(RetryHandle, FTimerDelegate::CreateLambda([this]()
+                        {
+                            if (QuickSlotPanel && PlayerInventory)
+                            {
+                                for (UNS_InventoryBaseItem* Item : PlayerInventory->GetInventoryContents())
+                                {
+                                    if (Item && Item->ItemType == EItemType::Equipment && Item->WeaponType != EWeaponType::Ammo)
+                                    {
+                                        if (QuickSlotPanel->AssignToFirstEmptySlot(Item))
+                                        {
+                                            UE_LOG(LogTemp, Warning, TEXT("[QuickSlot][Client_Notify - Retry] 아이템 자동 배정 완료: %s"), *Item->GetName());
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                UE_LOG(LogTemp, Error, TEXT("[QuickSlot][Client_Notify - Retry] 여전히 QuickSlotPanel 또는 Inventory null"));
+                            }
+
+                        }), 0.1f, false);
+                }
+                else
+                {
+                    // 퀵슬롯 패널이 이미 존재하면 즉시 수행
+                    for (UNS_InventoryBaseItem* Item : PlayerInventory->GetInventoryContents())
+                    {
+                        if (Item && Item->ItemType == EItemType::Equipment && Item->WeaponType != EWeaponType::Ammo)
+                        {
+                            if (QuickSlotPanel->AssignToFirstEmptySlot(Item))
+                            {
+                                UE_LOG(LogTemp, Warning, TEXT("[QuickSlot][Client_Notify] 아이템 자동 배정 완료: %s"), *Item->GetName());
+                            }
+                        }
+                    }
+                }
+
             }), 0.05f, false);
     }
 }

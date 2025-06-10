@@ -53,6 +53,9 @@ public:
 	void UseQuickSlot3();
 
 	void UseQuickSlotByIndex(int32 Index);
+	
+	UFUNCTION(Server, Reliable)
+	void Server_UseQuickSlotItem(FName ItemRowName);
 
 	UFUNCTION(Client, Reliable)
 	void Client_NotifyInventoryUpdated();

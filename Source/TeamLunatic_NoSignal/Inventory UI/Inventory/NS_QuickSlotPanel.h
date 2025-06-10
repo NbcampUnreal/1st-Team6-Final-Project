@@ -25,6 +25,7 @@ public:
     void UseSlot(int32 SlotIndex);
     UFUNCTION()
     void TryBindQuickSlot();
+    UNS_InventoryBaseItem* GetItemInSlot(int32 SlotIndex) const;
 protected:
     UPROPERTY(meta = (BindWidget))
     UHorizontalBox* SlotBox;
