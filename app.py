@@ -7,7 +7,7 @@ import threading
 app = Flask(__name__)
 
 # EC2 퍼블릭 IP 주소 (탄력적 IP 사용 권장)
-EC2_PUBLIC_IP = "211.195.242.70"
+EC2_PUBLIC_IP = "13.124.57.143"
 
 # 사용 가능한 포트 범위
 START_PORT = 7777
