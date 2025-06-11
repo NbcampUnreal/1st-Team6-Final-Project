@@ -7,9 +7,6 @@
 #include "Perception/AIPerceptionTypes.h"
 #include "NS_AIController.generated.h"
 
-enum EAIPerceptionSense : int8;
-struct FAIStimulus;
-struct FActorPerceptionBlueprintInfo;
 class UBehaviorTreeComponent;
 class UAIPerceptionComponent;
 class UAISenseConfig_Hearing;
@@ -70,8 +67,6 @@ public:
 	void InitializingSightConfig();
 	void InitializingHearingConfig();
 };
-
-
 
 
 

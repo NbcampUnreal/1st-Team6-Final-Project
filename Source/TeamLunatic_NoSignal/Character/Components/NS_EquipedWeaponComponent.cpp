@@ -8,6 +8,7 @@
 #include "Engine/World.h"
 #include "TimerManager.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Character/AnimInstance/NS_RangedWeaponAnimInstance.h"
 #include "Components/StaticMeshComponent.h"  
 #include "GameFlow/NS_GameInstance.h"
 
@@ -109,6 +110,12 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
         {
             Ranged->RangedWeaponMeshComp->AttachToComponent(
                 OwnerCharacter->GetMesh(), Rules, SocketName);
+
+            if (UNS_RangedWeaponAnimInstance* WeaponAnim = Cast<UNS_RangedWeaponAnimInstance>(
+           Ranged->RangedWeaponMeshComp->GetAnimInstance()))
+            {
+                WeaponAnim->OwnerCharacter = OwnerCharacter;
+            }
         }
         
         // 다른 플레이어에게 보이게 메쉬를 몸에 부착
@@ -124,6 +131,41 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
     CurrentWeapon = NewWpn;
     // 무기타입 갱신
     WeaponType = NewWpn->GetWeaponType();
+}
+
+void UNS_EquipedWeaponComponent::Server_UnequipWeapon_Implementation()
+{
+    Multicast_UnequipWeapon();
+}
+
+void UNS_EquipedWeaponComponent::Multicast_UnequipWeapon_Implementation()
+{
+    if (!OwnerCharacter || !CurrentWeapon)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[Unequip] 캐릭터 또는 무기 없음"));
+        return;
+    }
+
+    // 장착 중인 무기 파괴
+    TArray<AActor*> AttachedWeapons;
+    OwnerCharacter->GetAttachedActors(AttachedWeapons);
+
+    for (AActor* Attached : AttachedWeapons)
+    {
+        if (Attached == CurrentWeapon)
+        {
+            Attached->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+            Attached->Destroy();
+        }
+    }
+
+    UE_LOG(LogTemp, Warning, TEXT("[Unequip] 무기 해제됨: %s"), *CurrentWeapon->GetName());
+
+    // 상태 초기화
+    CurrentWeapon = nullptr;
+    WeaponType = EWeaponType::Unarmed;
+    IsAttack = false;
+    IsEmpty = false;
 }
 
 void UNS_EquipedWeaponComponent::Server_Reload_Implementation()
