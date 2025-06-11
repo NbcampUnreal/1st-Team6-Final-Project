@@ -60,6 +60,9 @@ public:
 	void Client_NotifyInventoryUpdated();
 
 	UFUNCTION(Server, Reliable)
+	void Server_UseQuickSlotItem(FName ItemRowname);
+	
+	UFUNCTION(Server, Reliable)
 	void Server_UseInventoryItem(FName ItemRowName);
 protected:
 	virtual void BeginPlay() override;
@@ -150,7 +153,7 @@ public:
 	bool IsChangingWeapon = false;
 	// 퀵슬롯을 누르면 퀵슬롯에 있는 무기를 장착하는 애니메이션 재생용 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
-	bool IsChangeAnim;
+	bool IsChangeAnim = false;
 	//////////////////////////////////////////////////////////////////////////////////////
 	
 	
