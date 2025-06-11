@@ -12,6 +12,7 @@ class UCameraComponent;
 class UNS_StatusComponent;
 class UNS_InventoryBaseItem;
 class UInventoryComponent;
+class ANS_BaseWeapon;
 class UNS_EquipedWeaponComponent;
 class UNS_QuickSlotPanel;
 
@@ -48,15 +49,25 @@ public:
 
 	void DropItem(UNS_InventoryBaseItem* ItemToDrop, const int32 QuantityToDrop);
 
-	void UseQuickSlot1();
-	void UseQuickSlot2();
-	void UseQuickSlot3();
+	UFUNCTION(Server, Reliable)
+	void UseQuickSlot1_Server();
+	UFUNCTION(Server, Reliable)
+	void UseQuickSlot2_Server();
+	UFUNCTION(Server, Reliable)
+	void UseQuickSlot3_Server();
 
-	void UseQuickSlotByIndex(int32 Index);
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void UseQuickSlotByIndex_Server(int32 Index);
 
 	UFUNCTION(Client, Reliable)
 	void Client_NotifyInventoryUpdated();
 
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void Server_UseQuickSlotItem(FName ItemRowName);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Musticast_UseQuickSlotItem(FName ItemRowName);
+	
 	UFUNCTION(Server, Reliable)
 	void Server_UseInventoryItem(FName ItemRowName);
 protected:
@@ -146,6 +157,9 @@ public:
 	// 무기 교체중인지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsChangingWeapon = false;
+	// 퀵슬롯을 누르면 퀵슬롯에 있는 무기를 장착하는 애니메이션 재생용 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool IsChangeAnim = false;
 	//////////////////////////////////////////////////////////////////////////////////////
 	
 	
@@ -246,6 +260,7 @@ public:
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void UpdateAim_Server(float NewCamYaw, float NewCamPitch);
 
-	UFUNCTION()
-	void SwapWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass);
+	// 캐릭터가 Turn In Place를 하면 Yaw값을 0으로 보간해주는 함수로 유일하게 Tick에서 실행해주는 중
+	UFUNCTION(Server, Reliable)
+	void TurnInPlace_Server(float DeltaTime);
 };
