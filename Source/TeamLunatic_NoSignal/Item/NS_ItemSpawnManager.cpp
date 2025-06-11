@@ -1,4 +1,5 @@
 #include "Item/NS_ItemSpawnManager.h"
+#include "NavigationSystem.h"
 #include "World/Pickup.h"
 #include "Kismet/GameplayStatics.h"
 #include "Item/NS_InventoryBaseItem.h"
@@ -17,7 +18,33 @@ void ANS_ItemSpawnManager::BeginPlay()
 
     if (HasAuthority())
     {
-        FindAndSpawnItems();
+        //FindAndSpawnItems();
+        K2_ExecuteSpawning();
+    }
+}
+
+void ANS_ItemSpawnManager::SpawnItemsInRandomLocations(float Radius)
+{
+    UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetNavigationSystem(GetWorld());
+    if (!NavSystem)
+    {
+        UE_LOG(LogTemp, Error, TEXT("[%s] 네비게이션 시스템을 찾을 수 없습니다."), *GetName());
+        return;
+    }
+
+    UE_LOG(LogTemp, Log, TEXT("[%s] 스폰 시작. NumberOfItems: %d, Radius: %f"), *GetName(), SpawnItemNum, Radius);
+
+    FNavLocation ProjectedLocation;
+
+    for (int32 i = 0; i < SpawnItemNum; ++i)
+    {
+        FNavLocation RandomLocation;
+
+        if (NavSystem->GetRandomReachablePointInRadius(ProjectedLocation.Location, Radius, RandomLocation))
+        {
+            // 성공
+            SpawnRandomItemAt(FTransform(RandomLocation.Location));
+        }
     }
 }
 
