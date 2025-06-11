@@ -19,7 +19,7 @@ ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), C
 	PrimaryActorTick.bCanEverTick = true;
 	bUseControllerRotationYaw = false;
 	
-	GetCharacterMovement()->MaxWalkSpeed = 200.f;
+	GetCharacterMovement()->MaxWalkSpeed = 300.f;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->bUseRVOAvoidance = true;
 	GetCharacterMovement()->AvoidanceConsiderationRadius = 100.f;
@@ -89,22 +89,22 @@ void ANS_ZombieBase::OnIdleState()
 
 void ANS_ZombieBase::OnPatrolState()
 {
-	TargetSpeed = 30.f;
+	TargetSpeed = 70.f;
 }
 
 void ANS_ZombieBase::OnDetectState()
 {
-	UGameplayStatics::PlaySoundAtLocation(this, DetectSound, GetMesh()->GetSocketLocation("headsocket"));
+
 }
 
 void ANS_ZombieBase::OnChaseState()
 {
-	TargetSpeed = 250.f;
+	TargetSpeed = 300.f;
 }
 
 void ANS_ZombieBase::OnAttackState()
 {
-	TargetSpeed = 200.f;
+	TargetSpeed = 300.f;
 }
 
 void ANS_ZombieBase::OnDeadState()
@@ -208,6 +208,27 @@ void ANS_ZombieBase::PlaySoundLoop()
 		Multicast_PlaySound(CurrentSound);
 	}
 }
+
+// void ANS_ZombieBase::MontagePlay(ANS_AIController* NSController, UAnimMontage* MontageToPlay)
+// {
+// 	if (!NSController || !MontageToPlay) return;
+// 	NSController->PauseBT();
+// 	
+// 	float Duration = MontageToPlay->GetPlayLength();
+// 	GetMesh()->GetAnimInstance()->Montage_Play(MontageToPlay);
+// 	
+// 	FTimerDelegate MontageDelegate;
+// 	MontageDelegate.BindUFunction(this, FName("OnEndMontagePlay"), NSController);
+// 	GetWorldTimerManager().SetTimer(MontageTimerHandle,MontageDelegate, Duration,false);
+// }
+//
+// void ANS_ZombieBase::OnEndMontagePlay(ANS_AIController* NSController)
+// {
+// 	if (NSController)
+// 	{
+// 		NSController->ResumeBT();
+// 	}
+// }
 
 void ANS_ZombieBase::Multicast_PlaySound_Implementation(USoundCue* Sound)
 {
