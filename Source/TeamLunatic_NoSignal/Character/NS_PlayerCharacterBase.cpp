@@ -85,6 +85,9 @@ void ANS_PlayerCharacterBase::BeginPlay()
 void ANS_PlayerCharacterBase::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
+
+    // 캐릭터가 회전중이라면 Yaw값을 FInterp 해서 0으로 만들어줌
+    TurnInPlace_Server(DeltaTime);
 }
 
 void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -565,6 +568,22 @@ void ANS_PlayerCharacterBase::UpdateAim_Server_Implementation(float NewCamYaw, f
 {
     CamYaw   = NewCamYaw; 
     CamPitch = NewCamPitch; 
+}
+
+void ANS_PlayerCharacterBase::TurnInPlace_Server_Implementation(float DeltaTime)
+{
+    auto* CharMove = GetCharacterMovement();
+    if (!CharMove || !Controller)
+        return;
+
+    // Controller Desired 가 켜져 있으면 CamYaw를 0으로 FInterTo로 4에 스피드로 이동시킴
+    if (CharMove->bUseControllerDesiredRotation)
+    {
+        CamYaw = FMath::FInterpTo(CamYaw, 0.0f, DeltaTime, 4.0f);
+
+        // 서버에도 전송 Yaw랑 Pitch값 전송
+        UpdateAim_Server(CamYaw, CamPitch);
+    }
 }
 
 void ANS_PlayerCharacterBase::SwapWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass)
