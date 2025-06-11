@@ -22,9 +22,14 @@ public:
     bool IsItemAlreadyAssigned(UNS_InventoryBaseItem* Item) const;
     void AssignItemToSlot(int32 SlotIndex, UNS_InventoryBaseItem* Item);
     bool AssignToFirstEmptySlot(UNS_InventoryBaseItem* Item);
-    void UseSlot(int32 SlotIndex);
+    
+    UFUNCTION(Server, Reliable)
+    void UseSlot_Server(int32 SlotIndex);
+    
     UFUNCTION()
     void TryBindQuickSlot();
+    UNS_InventoryBaseItem* GetItemInSlot(int32 SlotIndex) const;
+    void RemoveItemFromSlot(UNS_InventoryBaseItem* Item);
 protected:
     UPROPERTY(meta = (BindWidget))
     UHorizontalBox* SlotBox;
