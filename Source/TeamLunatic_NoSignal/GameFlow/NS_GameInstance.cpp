@@ -42,7 +42,7 @@ void UNS_GameInstance::CreateDedicatedSessionViaHTTP(FName SessionName, int32 Ma
 		*SessionName.ToString(), MaxPlayers);
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("http://121.163.249.108:5000/create_session"));
+	Request->SetURL(TEXT("http://13.124.57.143:5000/create_session"));
 	Request->SetVerb(TEXT("POST"));
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 
@@ -81,7 +81,12 @@ void UNS_GameInstance::OnCreateSessionResponse(FHttpRequestPtr Request, FHttpRes
 	FString Ip = JsonObject->GetStringField("ip");
 	int32 Port = JsonObject->GetIntegerField("port");
 	FString Address = FString::Printf(TEXT("%s:%d"), *Ip, Port);
+	MyServerPort = Port;
+
 	UE_LOG(LogTemp, Log, TEXT("[OnCreateSessionResponse] 접속 주소: %s"), *Address);
+
+	// 10초마다 heartbeat 보낸다.
+	GetWorld()->GetTimerManager().SetTimer(HeartbeatTimerHandle, this, &UNS_GameInstance::SendHeartbeat, 10.0f, true);
 
 	if (UWorld* World = GetWorld())
 	{
@@ -96,10 +101,44 @@ void UNS_GameInstance::OnCreateSessionResponse(FHttpRequestPtr Request, FHttpRes
 	}
 }
 
+void UNS_GameInstance::SendHeartbeat()
+{
+	if (MyServerPort <= 0)
+		return;
+
+	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+	Request->SetURL(TEXT("http://13.124.57.143:5000/heartbeat"));
+	Request->SetVerb(TEXT("POST"));
+	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+
+	TSharedPtr<FJsonObject> Json = MakeShareable(new FJsonObject);
+	Json->SetNumberField("port", MyServerPort);
+
+	FString Body;
+	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&Body);
+	FJsonSerializer::Serialize(Json.ToSharedRef(), Writer);
+	Request->SetContentAsString(Body);
+
+	Request->OnProcessRequestComplete().BindLambda([](FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess)
+	{
+		if (!bSuccess || !Res.IsValid())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[Heartbeat] Failed to reach server."));
+		}
+		else
+		{
+			UE_LOG(LogTemp, Log, TEXT("[Heartbeat] Response: %s"), *Res->GetContentAsString());
+		}
+	});
+
+	Request->ProcessRequest();
+}
+
+
 void UNS_GameInstance::RequestSessionListFromServer()
 {
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("http://121.163.249.108:5000/session_list"));
+	Request->SetURL(TEXT("http://13.124.57.143:5000/session_list"));
 	Request->SetVerb(TEXT("GET"));
 	Request->OnProcessRequestComplete().BindUObject(this, &UNS_GameInstance::OnReceiveSessionList);
 	Request->ProcessRequest();

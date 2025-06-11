@@ -12,6 +12,7 @@ class UCameraComponent;
 class UNS_StatusComponent;
 class UNS_InventoryBaseItem;
 class UInventoryComponent;
+class ANS_BaseWeapon;
 class UNS_EquipedWeaponComponent;
 class UNS_QuickSlotPanel;
 
@@ -249,6 +250,9 @@ public:
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void UpdateAim_Server(float NewCamYaw, float NewCamPitch);
 
-	UFUNCTION()
+	// 캐릭터가 Turn In Place를 하면 Yaw값을 0으로 보간해주는 함수로 유일하게 Tick에서 실행해주는 중
+	UFUNCTION(Server, Reliable)
+	void TurnInPlace_Server(float DeltaTime);
+	
 	void SwapWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass);
 };
