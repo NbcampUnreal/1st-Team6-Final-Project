@@ -44,4 +44,7 @@ public:
 	void FindAndSpawnItems();
 
 	void SpawnRandomItemAt(const FTransform& SpawnTransform);
+
+	UFUNCTION(BlueprintCallable)
+	void SpawnRandomTaggedLocations();
 };

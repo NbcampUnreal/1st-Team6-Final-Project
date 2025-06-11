@@ -141,3 +141,24 @@ void ANS_ItemSpawnManager::SpawnRandomItemAt(const FTransform& SpawnTransform)
     }
 }
 
+void ANS_ItemSpawnManager::SpawnRandomTaggedLocations()
+{
+    //태그가 없거나, 스폰할 개수가 0 이하라면 중단
+    if (SpawnPointTagToFind.IsNone() || SpawnItemNum <= 0)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[%s] SpawnTag가 없거나 NumberToSpawn이 0 이하입니다."), *GetName());
+        return;
+    }
+
+    //월드에 있는 지정된 태그를 가진 모든 액터 찾기
+    TArray<AActor*> FoundSpawnPoints;
+    UGameplayStatics::GetAllActorsWithTag(GetWorld(), SpawnPointTagToFind, FoundSpawnPoints);
+
+    //찾은 위치가 없으면 로그 남기고 함수 종료
+    if (FoundSpawnPoints.Num() == 0)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[%s] 태그 '%s'를 가진 스폰 포인트를 찾을 수 없습니다."), *GetName(), *SpawnPointTagToFind.ToString());
+        return;
+    }
+}
+
