@@ -6,7 +6,12 @@
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
 #include "Character/NS_PlayerCharacterBase.h"
+#include "Character/Components/NS_EquipedWeaponComponent.h"
 #include "Inventory UI/Inventory/NS_QuickSlotKey.h"
+#include "Inventory UI/Inventory/DragItemVisual.h"
+#include "Inventory UI/Inventory/ItemDragDropOperation.h"
+#include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
+
 
 void UNS_QuickSlotSlotWidget::SetAssignedItem(UNS_InventoryBaseItem* Item)
 {
@@ -24,7 +29,7 @@ void UNS_QuickSlotSlotWidget::UseAssignedItem()
     {
         if (auto* Player = Cast<ANS_PlayerCharacterBase>(GetOwningPlayerPawn()))
         {
-            Player->Server_UseInventoryItem(AssignedItem->ItemDataRowName);
+            Player->Server_UseQuickSlotItem(AssignedItem->ItemDataRowName);
         }
     }
 }
@@ -107,4 +112,63 @@ void UNS_QuickSlotSlotWidget::UpdateSlotDisplay()
 bool UNS_QuickSlotSlotWidget::IsEmpty() const
 {
     return AssignedItem == nullptr;
+}
+
+FReply UNS_QuickSlotSlotWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+    FReply Reply = Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
+
+    if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton && AssignedItem)
+    {
+        return Reply.Handled().DetectDrag(TakeWidget(), EKeys::LeftMouseButton);
+    }
+
+    return Reply;
+}
+
+void UNS_QuickSlotSlotWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation)
+{
+    Super::NativeOnDragDetected(InGeometry, InMouseEvent, OutOperation);
+
+    if (DragItemVisualClass) return;
+
+    const TObjectPtr<UDragItemVisual> DragVisual = CreateWidget<UDragItemVisual>(this, DragItemVisualClass);
+    DragVisual->ItemIcon->SetBrushFromTexture(ItemReference->AssetData.Icon);
+    DragVisual->ItemQuantity->SetVisibility(ESlateVisibility::Collapsed);
+
+    UItemDragDropOperation* DragOp = NewObject<UItemDragDropOperation>();
+    DragOp->SourceItem = ItemReference;
+    DragOp->SourceInventory = ItemReference->OwingInventory;
+    DragOp->DefaultDragVisual = DragVisual;
+    DragOp->Pivot = EDragPivot::TopLeft;
+
+    OutOperation = DragOp;
+}
+
+bool UNS_QuickSlotSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
+{
+    if (UItemDragDropOperation* DropOp = Cast<UItemDragDropOperation>(InOperation))
+    {
+        // 자기 자신한테 드롭한 거면 무시
+        if (DropOp->SourceItem == AssignedItem)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("같은 슬롯에 드롭됨 -> 버리기 아님"));
+            return false;
+        }
+
+        // 자기 자신이 아닌데 드롭됐다면 → 버리는 로직 실행
+        if (ANS_PlayerCharacterBase* Player = Cast<ANS_PlayerCharacterBase>(GetOwningPlayerPawn()))
+        {
+            if (UNS_EquipedWeaponComponent* WeaponComp = Player->FindComponentByClass<UNS_EquipedWeaponComponent>())
+            {
+                WeaponComp->Server_UnequipWeapon();
+            }
+
+            Player->QuickSlotPanel->RemoveItemFromSlot(DropOp->SourceItem);
+            Player->DropItem_Server(DropOp->SourceItem, DropOp->SourceItem->GetQuantity());
+
+            return true;
+        }
+    }
+    return false;
 }

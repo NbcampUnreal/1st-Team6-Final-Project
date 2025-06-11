@@ -13,21 +13,33 @@ void UNS_QuickSlotPanel::NativeConstruct()
     Super::NativeConstruct();
 
     TryBindQuickSlot();
-    RefreshQuickSlot();
+    if (SlotWidgets.Num() == 0)
+    {
+        RefreshQuickSlot();
+    }
 }
 
 void UNS_QuickSlotPanel::TryBindQuickSlot()
 {
     ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(GetOwningPlayerPawn());
+
     if (!PlayerCharacter)
     {
-        UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 바인딩 실패: PlayerCharacter nullptr"));
+        UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 바인딩 실패: PlayerCharacter nullptr - 0.05초 후 재시도"));
+
+        // 바인딩 실패 시, 0.05초 후 재시도
+        FTimerHandle RetryHandle;
+        GetWorld()->GetTimerManager().SetTimer(RetryHandle, FTimerDelegate::CreateLambda([this]()
+            {
+                TryBindQuickSlot(); 
+            }), 0.05f, false);
+
         return;
     }
 
-    PlayerCharacter->QuickSlotPanel = this;  // 플레이어가 이 패널을 참조하도록 연결
+    PlayerCharacter->QuickSlotPanel = this;
 
-    // 필요 시: RefreshQuickSlot 호출
+    // 슬롯 UI 생성
     RefreshQuickSlot();
 
     UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 바인딩 성공 - 위젯 이름: %s, 플레이어: %s"),
@@ -109,26 +121,34 @@ void UNS_QuickSlotPanel::AssignItemToSlot(int32 SlotIndex, UNS_InventoryBaseItem
 
 bool UNS_QuickSlotPanel::AssignToFirstEmptySlot(UNS_InventoryBaseItem* Item)
 {
-    if (!Item) return false;
+    if (!Item)
+    {
+        return false;
+    }
 
     if (IsItemAlreadyAssigned(Item))
     {
-        UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 중복 등록 방지: 아이템 %s 이미 등록됨"), *Item->ItemDataRowName.ToString());
         return false;
     }
 
     for (int32 i = 0; i < SlotWidgets.Num(); ++i)
     {
         auto* SlotWidget = SlotWidgets[i];
-        if (SlotWidget && SlotWidget->IsEmpty())
+        if (!SlotWidget)
+        {
+            continue;
+        }
+
+        if (SlotWidget->IsEmpty())
         {
             SlotWidget->SetAssignedItem(Item);
-            UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 슬롯 %d에 아이템 %s 자동 배정"), i, *Item->ItemDataRowName.ToString());
             return true;
         }
+        else
+        {
+            const auto* ExistingItem = SlotWidget->GetAssignedItem();
+        }
     }
-
-    UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 빈 슬롯 없음 - 아이템 %s 배정 실패"), *Item->ItemDataRowName.ToString());
     return false;
 }
 
@@ -137,6 +157,28 @@ void UNS_QuickSlotPanel::UseSlot(int32 SlotIndex)
     if (SlotWidgets.IsValidIndex(SlotIndex))
     {
         SlotWidgets[SlotIndex]->UseAssignedItem();
+    }
+}
+
+UNS_InventoryBaseItem* UNS_QuickSlotPanel::GetItemInSlot(int32 SlotIndex) const
+{
+    if (SlotWidgets.IsValidIndex(SlotIndex))
+    {
+        return SlotWidgets[SlotIndex]->GetAssignedItem(); // 슬롯이 보유한 아이템 반환
+    }
+    return nullptr;
+}
+
+void UNS_QuickSlotPanel::RemoveItemFromSlot(UNS_InventoryBaseItem* Item)
+{
+    for (UNS_QuickSlotSlotWidget* QSlot : SlotWidgets)
+    {
+        if (QSlot && QSlot->GetAssignedItem() == Item)
+        {
+            QSlot->ClearAssignedItem();
+            UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] %s 퀵슬롯에서 제거됨"), *Item->GetName());
+            break;
+        }
     }
 }
 

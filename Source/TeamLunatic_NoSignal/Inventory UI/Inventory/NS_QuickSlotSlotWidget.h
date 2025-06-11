@@ -10,6 +10,7 @@ class UNS_InventoryBaseItem;
 class UImage;
 class UTextBlock;
 class UNS_QuickSlotKey;
+class UDragItemVisual;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UNS_QuickSlotSlotWidget : public UUserWidget
@@ -33,7 +34,15 @@ public:
     UFUNCTION(BlueprintCallable)
     bool IsEmpty() const;
 
+    FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent);
+
+    void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation);
+
+    bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation);
+
     UNS_InventoryBaseItem* GetAssignedItem() const { return AssignedItem; }
+
+    TSubclassOf<UDragItemVisual> DragItemVisualClass;
 protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
     class UImage* ItemIcon;
