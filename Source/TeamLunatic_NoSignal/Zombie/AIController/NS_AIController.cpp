@@ -10,9 +10,10 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "Zombie/NS_ZombieBase.h"
+#include "BrainComponent.h"
 #include "Zombie/Enum/EZombieType.h"
 
-ANS_AIController::ANS_AIController()
+ANS_AIController::ANS_AIController() : MaxSeenDistance(1000.f)
 {
 	Perception = CreateDefaultSubobject<UAIPerceptionComponent>("Perception");
 	SetPerceptionComponent(*Perception);
@@ -62,12 +63,46 @@ void ANS_AIController::OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
 	}
 }
 
+void ANS_AIController::PauseBT()
+{
+	if (BrainComponent)
+	{
+		BrainComponent->StopLogic("PauseBT");
+	}
+}
+
+void ANS_AIController::ResumeBT()
+{
+	if (BrainComponent)
+	{
+		BrainComponent->StartLogic();
+	}
+}
+
 void ANS_AIController::HandleSightStimulus()
 {
 	AActor* Actor = GetClosestSightTarget();
+
 	if (Actor)
 	{
+		LastSeenTarget = Actor;
 		BlackboardComp->SetValueAsObject("TargetActor", Actor);
+	}
+	else if (LastSeenTarget)
+	{
+		// 거리 검사
+		FVector AILocation = GetPawn()->GetActorLocation();
+		float Distance = FVector::DistSquared(LastSeenTarget->GetActorLocation(), AILocation);
+
+		if (Distance < FMath::Square(MaxSeenDistance))
+		{
+			BlackboardComp->SetValueAsObject("TargetActor", LastSeenTarget);
+		}
+		else
+		{
+			LastSeenTarget = nullptr;
+			BlackboardComp->ClearValue("TargetActor");
+		}
 	}
 	else
 	{
@@ -75,21 +110,45 @@ void ANS_AIController::HandleSightStimulus()
 	}
 }
 
+
 void ANS_AIController::HandleHearingStimulus(FVector Location)
 {
 	const FVector NewHeardLocation = Location;
-
 	FVector CurrentLocation = Blackboard->GetValueAsVector("HeardLocation");
 
-	if (FVector::Dist(NewHeardLocation, CurrentLocation) > 1000.f)
+	if (FVector::Dist(NewHeardLocation, CurrentLocation) > 500.f)
 	{
 		Blackboard->SetValueAsVector("HeardLocation", NewHeardLocation);
+		GetWorldTimerManager().SetTimer(HearingTimerHandle,this, &ANS_AIController::InitializeHeardBool, 5.f, false);
+		Blackboard->SetValueAsBool("bWasAlreadyHeard", true);
+		CalculateHeardRotation(NewHeardLocation);
 	}
+}
+
+void ANS_AIController::InitializeHeardBool()
+{
+	BlackboardComp->SetValueAsBool("bWasAlreadyHeard", false);
+	GetWorldTimerManager().ClearTimer(HearingTimerHandle);
 }
 
 void ANS_AIController::HandleDamageStimulus(AActor* Attacker)
 {
 	BlackboardComp->SetValueAsObject("TargetActor", Attacker);
+}
+
+void ANS_AIController::CalculateHeardRotation(FVector HeardLocation)
+{
+	APawn* Zombie= GetPawn();
+	if (!Zombie) return;
+	FVector ZombieLocation = Zombie->GetActorLocation();
+	FVector Direction = (HeardLocation - ZombieLocation).GetSafeNormal();
+
+	FRotator TargetRotator = Direction.Rotation();
+
+	FRotator ZombieRotator = Zombie->GetActorRotation();
+
+	float Yaw = FMath::FindDeltaAngleDegrees(ZombieRotator.Yaw,TargetRotator.Yaw);
+	BlackboardComp->SetValueAsFloat("DeltaYaw", Yaw);
 }
 
 AActor* ANS_AIController::GetClosestSightTarget()
