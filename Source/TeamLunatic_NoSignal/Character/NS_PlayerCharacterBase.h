@@ -195,10 +195,8 @@ public:
 	//퀵슬롯 바인딩
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputQuickSlot1;
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputQuickSlot2;
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputQuickSlot3;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
