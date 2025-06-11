@@ -175,3 +175,18 @@ void ANS_SinglePlayMode::HandleGameOver(bool bPlayerSurvived, EEscapeRoute Escap
 
 	// TODO: UI 호출, 레벨 리셋 등 후처리
 }
+
+FVector ANS_SinglePlayMode::GetPlayerLocation() const
+{
+	TArray<AActor*> PlayerPawns;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APawn::StaticClass(), PlayerPawns);
+
+	if (PlayerPawns.Num() == 0)
+	{
+		// 플레이어가 없을 때 안전하게 반환
+		return FVector::ZeroVector;
+	}
+
+	// 첫 번째(혹은 유일한) 플레이어 위치 반환
+	return PlayerPawns[0]->GetActorLocation();
+}

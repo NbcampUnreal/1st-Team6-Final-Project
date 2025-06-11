@@ -41,6 +41,9 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_SinglePlayMode : public AGameModeBase
 public:
 	ANS_SinglePlayMode();
 
+	UFUNCTION(BlueprintCallable, Category = "Location")
+	FVector GetPlayerLocation() const;
+
 protected:
 	virtual void BeginPlay() override;
 
