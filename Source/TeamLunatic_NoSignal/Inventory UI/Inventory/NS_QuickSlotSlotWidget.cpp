@@ -23,13 +23,14 @@ void UNS_QuickSlotSlotWidget::SetAssignedItem(UNS_InventoryBaseItem* Item)
     UpdateSlotDisplay();
 }
 
-void UNS_QuickSlotSlotWidget::UseAssignedItem()
+void UNS_QuickSlotSlotWidget::UseAssignedItem_Server_Implementation()
 {
     if (AssignedItem)
     {
         if (auto* Player = Cast<ANS_PlayerCharacterBase>(GetOwningPlayerPawn()))
         {
-            Player->Server_UseQuickSlotItem(AssignedItem->ItemDataRowName);
+            // 무기교체용 애니메이션 전환 변수를 true로 설정 --> false는 노티파이로 설정 중
+            Player->IsChangeAnim = true;
         }
     }
 }
@@ -129,20 +130,20 @@ FReply UNS_QuickSlotSlotWidget::NativeOnMouseButtonDown(const FGeometry& InGeome
 void UNS_QuickSlotSlotWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation)
 {
     Super::NativeOnDragDetected(InGeometry, InMouseEvent, OutOperation);
-
-    if (DragItemVisualClass) return;
-
-    const TObjectPtr<UDragItemVisual> DragVisual = CreateWidget<UDragItemVisual>(this, DragItemVisualClass);
-    DragVisual->ItemIcon->SetBrushFromTexture(ItemReference->AssetData.Icon);
-    DragVisual->ItemQuantity->SetVisibility(ESlateVisibility::Collapsed);
-
-    UItemDragDropOperation* DragOp = NewObject<UItemDragDropOperation>();
-    DragOp->SourceItem = ItemReference;
-    DragOp->SourceInventory = ItemReference->OwingInventory;
-    DragOp->DefaultDragVisual = DragVisual;
-    DragOp->Pivot = EDragPivot::TopLeft;
-
-    OutOperation = DragOp;
+    //
+    // if (DragItemVisualClass) return;
+    //
+    // const TObjectPtr<UDragItemVisual> DragVisual = CreateWidget<UDragItemVisual>(this, DragItemVisualClass);
+    // DragVisual->ItemIcon->SetBrushFromTexture(ItemReference->AssetData.Icon);
+    // DragVisual->ItemQuantity->SetVisibility(ESlateVisibility::Collapsed);
+    //
+    // UItemDragDropOperation* DragOp = NewObject<UItemDragDropOperation>();
+    // DragOp->SourceItem = ItemReference;
+    // DragOp->SourceInventory = ItemReference->OwingInventory;
+    // DragOp->DefaultDragVisual = DragVisual;
+    // DragOp->Pivot = EDragPivot::TopLeft;
+    //
+    // OutOperation = DragOp;
 }
 
 bool UNS_QuickSlotSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)

@@ -49,9 +49,12 @@ public:
 
 	void DropItem(UNS_InventoryBaseItem* ItemToDrop, const int32 QuantityToDrop);
 
-	void UseQuickSlot1();
-	void UseQuickSlot2();
-	void UseQuickSlot3();
+	UFUNCTION(Server, Reliable)
+	void UseQuickSlot1_Server();
+	UFUNCTION(Server, Reliable)
+	void UseQuickSlot2_Server();
+	UFUNCTION(Server, Reliable)
+	void UseQuickSlot3_Server();
 
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void UseQuickSlotByIndex_Server(int32 Index);
@@ -59,8 +62,11 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_NotifyInventoryUpdated();
 
-	UFUNCTION(Server, Reliable)
-	void Server_UseQuickSlotItem(FName ItemRowname);
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void Server_UseQuickSlotItem(FName ItemRowName);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Musticast_UseQuickSlotItem(FName ItemRowName);
 	
 	UFUNCTION(Server, Reliable)
 	void Server_UseInventoryItem(FName ItemRowName);
@@ -257,6 +263,4 @@ public:
 	// 캐릭터가 Turn In Place를 하면 Yaw값을 0으로 보간해주는 함수로 유일하게 Tick에서 실행해주는 중
 	UFUNCTION(Server, Reliable)
 	void TurnInPlace_Server(float DeltaTime);
-	
-	void SwapWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass);
 };

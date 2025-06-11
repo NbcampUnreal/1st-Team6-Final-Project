@@ -152,11 +152,11 @@ bool UNS_QuickSlotPanel::AssignToFirstEmptySlot(UNS_InventoryBaseItem* Item)
     return false;
 }
 
-void UNS_QuickSlotPanel::UseSlot(int32 SlotIndex)
+void UNS_QuickSlotPanel::UseSlot_Server_Implementation(int32 SlotIndex)
 {
     if (SlotWidgets.IsValidIndex(SlotIndex))
     {
-        SlotWidgets[SlotIndex]->UseAssignedItem();
+        SlotWidgets[SlotIndex]->UseAssignedItem_Server();
     }
 }
 

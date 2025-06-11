@@ -218,7 +218,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                 InputQuickSlot1, 
                 ETriggerEvent::Started, 
                 this, 
-                &ANS_PlayerCharacterBase::UseQuickSlot1);
+                &ANS_PlayerCharacterBase::UseQuickSlot1_Server);
         }
         if (InputQuickSlot2)
         {
@@ -226,7 +226,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                 InputQuickSlot2,
                 ETriggerEvent::Started,
                 this,
-                &ANS_PlayerCharacterBase::UseQuickSlot2);
+                &ANS_PlayerCharacterBase::UseQuickSlot2_Server);
         }       
         if (InputQuickSlot3)
         {
@@ -234,7 +234,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                 InputQuickSlot3,
                 ETriggerEvent::Started,
                 this,
-                &ANS_PlayerCharacterBase::UseQuickSlot3);
+                &ANS_PlayerCharacterBase::UseQuickSlot3_Server);
         }
     }
 }
@@ -255,7 +255,6 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
     DOREPLIFETIME(ANS_PlayerCharacterBase, NowFire);   // 사격시 몸전체Mesh 사격 애니메이션 재생 용 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, PlayerInventory);
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsChangeAnim); // 퀵슬롯 눌렀을때 무기 장착하는 애니메이션 재생 용 변수
-
 }
 
 void ANS_PlayerCharacterBase::SetMovementLockState_Server_Implementation(bool bLock)
@@ -506,21 +505,25 @@ void ANS_PlayerCharacterBase::DropItem(UNS_InventoryBaseItem* ItemToDrop, const 
     }
 }
 
-void ANS_PlayerCharacterBase::UseQuickSlot1() { UseQuickSlotByIndex_Server(0); }
-void ANS_PlayerCharacterBase::UseQuickSlot2() { UseQuickSlotByIndex_Server(1); }
-void ANS_PlayerCharacterBase::UseQuickSlot3() { UseQuickSlotByIndex_Server(2); }
+void ANS_PlayerCharacterBase::UseQuickSlot1_Server_Implementation() { UseQuickSlotByIndex_Server(0); }
+void ANS_PlayerCharacterBase::UseQuickSlot2_Server_Implementation() { UseQuickSlotByIndex_Server(1); }
+void ANS_PlayerCharacterBase::UseQuickSlot3_Server_Implementation() { UseQuickSlotByIndex_Server(2); }
 
 void ANS_PlayerCharacterBase::UseQuickSlotByIndex_Server_Implementation(int32 Index)
 {
     if (QuickSlotPanel)
     {
-        QuickSlotPanel->UseSlot(Index);
-
-        IsChangeAnim = true;
+        QuickSlotPanel->UseSlot_Server(Index);
     }
 }
 
 void ANS_PlayerCharacterBase::Server_UseQuickSlotItem_Implementation(FName ItemRowName)
+{
+    Musticast_UseQuickSlotItem(ItemRowName);
+}
+
+// 애니메이션 시퀀스에서 노티파이로 사용 할 현재 무기에 맞는 무기교체를 위한 함수
+void ANS_PlayerCharacterBase::Musticast_UseQuickSlotItem_Implementation(FName ItemRowName)
 {
     if (!PlayerInventory) return;
 
@@ -534,10 +537,7 @@ void ANS_PlayerCharacterBase::Server_UseQuickSlotItem_Implementation(FName ItemR
             if (UNS_EquipedWeaponComponent* WeaponComp = FindComponentByClass<UNS_EquipedWeaponComponent>())
             {
                 WeaponComp->SwapWeapon(ItemData->WeaponActorClass);
-                UE_LOG(LogTemp, Warning, TEXT("[Server] %s 장착됨 (RowName = %s)"),
-                    *ItemData->ItemTextData.ItemName.ToString(), *ItemRowName.ToString());
             }
-            break;
         }
     }
 }
@@ -636,9 +636,4 @@ void ANS_PlayerCharacterBase::TurnInPlace_Server_Implementation(float DeltaTime)
         // 서버에도 전송 Yaw랑 Pitch값 전송
         UpdateAim_Server(CamYaw, CamPitch);
     }
-}
-
-void ANS_PlayerCharacterBase::SwapWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass)
-{
-    EquipedWeaponComp->SwapWeapon(WeaponClass); 
 }
