@@ -53,7 +53,8 @@ public:
 	void UseQuickSlot2();
 	void UseQuickSlot3();
 
-	void UseQuickSlotByIndex(int32 Index);
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void UseQuickSlotByIndex_Server(int32 Index);
 
 	UFUNCTION(Client, Reliable)
 	void Client_NotifyInventoryUpdated();
@@ -147,6 +148,9 @@ public:
 	// 무기 교체중인지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsChangingWeapon = false;
+	// 퀵슬롯을 누르면 퀵슬롯에 있는 무기를 장착하는 애니메이션 재생용 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool IsChangeAnim;
 	//////////////////////////////////////////////////////////////////////////////////////
 	
 	

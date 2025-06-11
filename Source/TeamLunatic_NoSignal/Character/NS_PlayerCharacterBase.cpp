@@ -254,6 +254,8 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
     DOREPLIFETIME(ANS_PlayerCharacterBase, TurnRight); // 몸을 오른쪽으로 회전시키는 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, NowFire);   // 사격시 몸전체Mesh 사격 애니메이션 재생 용 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, PlayerInventory);
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsChangeAnim); // 퀵슬롯 눌렀을때 무기 장착하는 애니메이션 재생 용 변수
+
 }
 
 void ANS_PlayerCharacterBase::SetMovementLockState_Server_Implementation(bool bLock)
@@ -405,15 +407,6 @@ void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputAct
     if (GetCharacterMovement()->IsFalling()) {return;} 
 
     IsPickUp = true; 
-
-    // 1.0초간 실행 후 IsPickUp변수는 false로 변경
-    FTimerHandle ResetPickUpTime; 
-    GetWorldTimerManager().SetTimer( 
-    ResetPickUpTime, 
-    FTimerDelegate::CreateLambda([this]() { IsPickUp = false; }), 
-    1.0f, 
-    false 
-    );
 }
 
 void ANS_PlayerCharacterBase::StartAimingAction_Server_Implementation(const FInputActionValue& Value)
@@ -513,16 +506,17 @@ void ANS_PlayerCharacterBase::DropItem(UNS_InventoryBaseItem* ItemToDrop, const 
     }
 }
 
-void ANS_PlayerCharacterBase::UseQuickSlot1() { UseQuickSlotByIndex(0); }
-void ANS_PlayerCharacterBase::UseQuickSlot2() { UseQuickSlotByIndex(1); }
-void ANS_PlayerCharacterBase::UseQuickSlot3() { UseQuickSlotByIndex(2); }
+void ANS_PlayerCharacterBase::UseQuickSlot1() { UseQuickSlotByIndex_Server(0); }
+void ANS_PlayerCharacterBase::UseQuickSlot2() { UseQuickSlotByIndex_Server(1); }
+void ANS_PlayerCharacterBase::UseQuickSlot3() { UseQuickSlotByIndex_Server(2); }
 
-void ANS_PlayerCharacterBase::UseQuickSlotByIndex(int32 Index)
+void ANS_PlayerCharacterBase::UseQuickSlotByIndex_Server_Implementation(int32 Index)
 {
     if (QuickSlotPanel)
     {
         QuickSlotPanel->UseSlot(Index);
-        UE_LOG(LogTemp, Log, TEXT("[QuickSlot] %d번 슬롯 사용"), Index + 1);
+
+        IsChangeAnim = true;
     }
 }
 
