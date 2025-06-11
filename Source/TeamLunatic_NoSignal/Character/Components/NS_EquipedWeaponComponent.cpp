@@ -126,6 +126,41 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
     WeaponType = NewWpn->GetWeaponType();
 }
 
+void UNS_EquipedWeaponComponent::Server_UnequipWeapon_Implementation()
+{
+    Multicast_UnequipWeapon();
+}
+
+void UNS_EquipedWeaponComponent::Multicast_UnequipWeapon_Implementation()
+{
+    if (!OwnerCharacter || !CurrentWeapon)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[Unequip] 캐릭터 또는 무기 없음"));
+        return;
+    }
+
+    // 장착 중인 무기 파괴
+    TArray<AActor*> AttachedWeapons;
+    OwnerCharacter->GetAttachedActors(AttachedWeapons);
+
+    for (AActor* Attached : AttachedWeapons)
+    {
+        if (Attached == CurrentWeapon)
+        {
+            Attached->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+            Attached->Destroy();
+        }
+    }
+
+    UE_LOG(LogTemp, Warning, TEXT("[Unequip] 무기 해제됨: %s"), *CurrentWeapon->GetName());
+
+    // 상태 초기화
+    CurrentWeapon = nullptr;
+    WeaponType = EWeaponType::Unarmed;
+    IsAttack = false;
+    IsEmpty = false;
+}
+
 void UNS_EquipedWeaponComponent::Server_Reload_Implementation()
 {
     Multicast_Reload();

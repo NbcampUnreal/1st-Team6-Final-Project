@@ -169,3 +169,16 @@ UNS_InventoryBaseItem* UNS_QuickSlotPanel::GetItemInSlot(int32 SlotIndex) const
     return nullptr;
 }
 
+void UNS_QuickSlotPanel::RemoveItemFromSlot(UNS_InventoryBaseItem* Item)
+{
+    for (UNS_QuickSlotSlotWidget* QSlot : SlotWidgets)
+    {
+        if (QSlot && QSlot->GetAssignedItem() == Item)
+        {
+            QSlot->ClearAssignedItem();
+            UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] %s 퀵슬롯에서 제거됨"), *Item->GetName());
+            break;
+        }
+    }
+}
+
