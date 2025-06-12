@@ -225,7 +225,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                 InputQuickSlot1, 
                 ETriggerEvent::Started, 
                 this, 
-                &ANS_PlayerCharacterBase::UseQuickSlot1_Server);
+                &ANS_PlayerCharacterBase::UseQuickSlot1);
         }
         if (InputQuickSlot2)
         {
@@ -233,7 +233,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                 InputQuickSlot2,
                 ETriggerEvent::Started,
                 this,
-                &ANS_PlayerCharacterBase::UseQuickSlot2_Server);
+                &ANS_PlayerCharacterBase::UseQuickSlot2);
         }       
         if (InputQuickSlot3)
         {
@@ -241,7 +241,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                 InputQuickSlot3,
                 ETriggerEvent::Started,
                 this,
-                &ANS_PlayerCharacterBase::UseQuickSlot3_Server);
+                &ANS_PlayerCharacterBase::UseQuickSlot3);
         }
     }
 }
@@ -474,6 +474,11 @@ void ANS_PlayerCharacterBase::DropItem_Server_Implementation(UNS_InventoryBaseIt
 {
     if (PlayerInventory->FindMatchingItem(ItemToDrop))
     {
+        if (EquipedWeaponComp && EquipedWeaponComp->GetCurrentWeaponItem() == ItemToDrop)
+        {
+            EquipedWeaponComp->UnequipWeapon();
+        }
+        Client_RemoveFromQuickSlot(ItemToDrop);
         FActorSpawnParameters SpawnParams;
         SpawnParams.Owner = this;
         SpawnParams.bNoFail = true;
@@ -500,6 +505,17 @@ void ANS_PlayerCharacterBase::DropItem_Server_Implementation(UNS_InventoryBaseIt
     }
 }
 
+void ANS_PlayerCharacterBase::Client_RemoveFromQuickSlot_Implementation(UNS_InventoryBaseItem* ItemToRemove)
+{
+    if (QuickSlotPanel)
+    {
+        QuickSlotPanel->RemoveItemFromSlot(ItemToRemove); // 여기서 UI 제거 처리
+        UE_LOG(LogTemp, Warning, TEXT("[Drop] 현재 무기의 아이템: %s, 제거 대상 아이템: %s"),
+            *GetNameSafe(EquipedWeaponComp->GetCurrentWeaponItem()),
+            *GetNameSafe(ItemToRemove));
+    }
+}
+
 void ANS_PlayerCharacterBase::DropItem(UNS_InventoryBaseItem* ItemToDrop, const int32 QuantityToDrop)
 {
     if (HasAuthority())
@@ -512,40 +528,59 @@ void ANS_PlayerCharacterBase::DropItem(UNS_InventoryBaseItem* ItemToDrop, const 
     }
 }
 
-void ANS_PlayerCharacterBase::UseQuickSlot1_Server_Implementation() { UseQuickSlotByIndex_Server(0); }
-void ANS_PlayerCharacterBase::UseQuickSlot2_Server_Implementation() { UseQuickSlotByIndex_Server(1); }
-void ANS_PlayerCharacterBase::UseQuickSlot3_Server_Implementation() { UseQuickSlotByIndex_Server(2); }
+void ANS_PlayerCharacterBase::UseQuickSlot1() { UseQuickSlotByIndex(0); }
+void ANS_PlayerCharacterBase::UseQuickSlot2() { UseQuickSlotByIndex(1); }
+void ANS_PlayerCharacterBase::UseQuickSlot3() { UseQuickSlotByIndex(2); }
 
-void ANS_PlayerCharacterBase::UseQuickSlotByIndex_Server_Implementation(int32 Index)
+void ANS_PlayerCharacterBase::UseQuickSlotByIndex(int32 Index)
 {
-    if (QuickSlotPanel)
+    if (HasAuthority())
     {
-        QuickSlotPanel->UseSlot_Server(Index);
+        Multicast_UseQuickSlotByIndex(Index);
+    }
+    else
+    {
+        Server_UseQuickSlotByIndex(Index);  // 클라 → 서버 요청
     }
 }
 
-void ANS_PlayerCharacterBase::Server_UseQuickSlotItem_Implementation(FName ItemRowName)
+void ANS_PlayerCharacterBase::Server_UseQuickSlotByIndex_Implementation(int32 Index)
 {
-    Musticast_UseQuickSlotItem(ItemRowName);
+    Multicast_UseQuickSlotByIndex(Index);
+    if (!IsChangeAnim) // 필요 시 중복 방지
+    {
+        IsChangeAnim = true;
+    }
 }
 
-// 애니메이션 시퀀스에서 노티파이로 사용 할 현재 무기에 맞는 무기교체를 위한 함수
-void ANS_PlayerCharacterBase::Musticast_UseQuickSlotItem_Implementation(FName ItemRowName)
+void ANS_PlayerCharacterBase::Multicast_UseQuickSlotByIndex_Implementation(int32 Index)
 {
-    if (!PlayerInventory) return;
+    UseQuickSlotByIndex_Internal(Index);
+}
 
-    for (UNS_InventoryBaseItem* Item : PlayerInventory->GetInventoryContents())
+void ANS_PlayerCharacterBase::UseQuickSlotByIndex_Internal(int32 Index)
+{
+    if (!QuickSlotPanel) return;
+
+    UNS_InventoryBaseItem* Item = QuickSlotPanel->GetItemInSlot(Index);
+    if (!Item || Item->ItemDataRowName.IsNone()) return;
+
+    const FNS_ItemDataStruct* ItemData = Item->GetItemData();
+    if (!ItemData || ItemData->ItemType != EItemType::Equipment) return;
+
+    if (UNS_EquipedWeaponComponent* WeaponComp = FindComponentByClass<UNS_EquipedWeaponComponent>())
     {
-        if (Item && Item->ItemDataRowName == ItemRowName)
-        {
-            const FNS_ItemDataStruct* ItemData = Item->GetItemData();
-            if (!ItemData || ItemData->ItemType != EItemType::Equipment) return;
+        WeaponComp->SwapWeapon(ItemData->WeaponActorClass, Item);
+    }
 
-            if (UNS_EquipedWeaponComponent* WeaponComp = FindComponentByClass<UNS_EquipedWeaponComponent>())
-            {
-                WeaponComp->SwapWeapon(ItemData->WeaponActorClass);
-            }
-        }
+    QuickSlotIndex = Index;
+}
+
+void ANS_PlayerCharacterBase::OnRep_IsChangeAnim()
+{
+    if (IsChangeAnim)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("클라이언트에서 IsChangeAnim TRUE 감지됨"));
     }
 }
 
