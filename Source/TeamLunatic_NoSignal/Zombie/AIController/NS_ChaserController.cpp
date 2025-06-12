@@ -3,6 +3,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFlow/NS_SinglePlayMode.h"
 #include "Character/NS_PlayerController.h"
+#include "Character/NS_PlayerCharacterBase.h"
 
 ANS_ChaserController::ANS_ChaserController()
 {
@@ -52,7 +53,7 @@ void ANS_ChaserController::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 
-    if (!BlackboardComp) return;
+    if (!HasAuthority() || !BlackboardComp) return;
 
     const bool bIsChasing = BlackboardComp->GetValueAsBool(TEXT("IsChasingEvent"));
     AActor* Target = Cast<AActor>(BlackboardComp->GetValueAsObject(TEXT("TargetActor")));
@@ -60,6 +61,18 @@ void ANS_ChaserController::Tick(float DeltaTime)
     if (bIsChasing && Target)
     {
         MoveToActor(Target, 50.f, true);
+
+        const float Distance = FVector::Dist(Target->GetActorLocation(), GetPawn()->GetActorLocation());
+        if (Distance < 300.f)
+        {
+            if (!bIsDealingDamage)
+                StartDamageLoop(Target);
+        }
+        else
+        {
+            if (bIsDealingDamage)
+                StopDamageLoop();
+        }
     }
     else if (BlackboardComp->IsVectorValueSet(TEXT("TargetLocation")))
     {
@@ -77,12 +90,11 @@ void ANS_ChaserController::RequestPlayerLocation()
 
     if (bIsChasing || bIsCooldown) return;
 
-    ANS_SinglePlayMode* GameMode = Cast<ANS_SinglePlayMode>(UGameplayStatics::GetGameMode(GetWorld()));
+    ANS_GameModeBase* GameMode = Cast<ANS_GameModeBase>(UGameplayStatics::GetGameMode(GetWorld()));
     if (GameMode)
     {
         FVector Location = GameMode->GetPlayerLocation();
         BlackboardComp->SetValueAsVector(TEXT("TargetLocation"), Location);
-        UE_LOG(LogTemp, Log, TEXT("TargetLocation 갱신: %s"), *Location.ToString());
     }
 }
 
@@ -155,5 +167,37 @@ void ANS_ChaserController::ResetChase()
         false
     );
 
+    StopDamageLoop();
+
     UE_LOG(LogTemp, Warning, TEXT("추적 종료, 쿨다운 시작"));
+}
+
+void ANS_ChaserController::StartDamageLoop(AActor* Target)
+{
+    if (!Target || bIsDealingDamage) return;
+
+    DamageTarget = Target;
+    bIsDealingDamage = true;
+
+    GetWorld()->GetTimerManager().SetTimer(
+        DamageTimerHandle,
+        this,
+        &ANS_ChaserController::ApplyDamageToTarget,
+        0.5f,
+        true
+    );
+}
+
+void ANS_ChaserController::StopDamageLoop()
+{
+    GetWorld()->GetTimerManager().ClearTimer(DamageTimerHandle);
+    bIsDealingDamage = false;
+    DamageTarget = nullptr;
+}
+
+void ANS_ChaserController::ApplyDamageToTarget()
+{
+    if (!DamageTarget) return;
+
+    UGameplayStatics::ApplyDamage(DamageTarget, 10.0f, this, GetPawn(), nullptr);
 }

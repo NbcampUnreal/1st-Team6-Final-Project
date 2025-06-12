@@ -85,6 +85,5 @@ void ANS_PlayerController::PlayTracked_Implementation()
 {
     UGameplayStatics::PlaySound2D(this, ChaseStartSoundCue);
 
-    UE_LOG(LogTemp, Log, TEXT("추적 시작 알림 받음"));
 }
 
