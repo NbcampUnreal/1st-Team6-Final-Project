@@ -140,7 +140,8 @@ void ANS_ChaserController::SetChaseTarget(AActor* Target, float Duration)
     BlackboardComp->SetValueAsBool(TEXT("IsChasingEvent"), true);
     BlackboardComp->SetValueAsObject(TEXT("TargetActor"), Target);
     BlackboardComp->ClearValue(TEXT("TargetLocation")); // 좌표 기반 추적 중단
-
+    // 디버깅용
+    GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString("SetChaseTarget"), true);
     // 클라이언트에 소리키기 
     if (APawn* PawnTarget = Cast<APawn>(Target))
     {
