@@ -8,13 +8,27 @@ ANS_ThrowActor::ANS_ThrowActor()
 
 	BottleMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BottleMesh"));
 	RootComponent = BottleMesh;
-	
 	BottleMesh->SetCollisionProfileName("PhysicsActor");
-	BottleMesh->SetSimulatePhysics(true);
-	BottleMesh->SetEnableGravity(true);
 	BottleMesh->SetIsReplicated(true);
+
+	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
+	ProjectileMovement->UpdatedComponent = BottleMesh;
+	ProjectileMovement->InitialSpeed = 1200.f;
+	ProjectileMovement->MaxSpeed = 1200.f;
+	ProjectileMovement->bRotationFollowsVelocity = true;
+	ProjectileMovement->bShouldBounce = true;
+	ProjectileMovement->ProjectileGravityScale = 1.0f;
+	ProjectileMovement->bAutoActivate = false;
 
 	bReplicates = true;
 	SetReplicateMovement(false);
 }
 
+void ANS_ThrowActor::LaunchInDirection(const FVector& Direction)
+{
+	if (ProjectileMovement)
+	{
+		ProjectileMovement->Velocity = Direction * ProjectileMovement->InitialSpeed;
+		ProjectileMovement->Activate();
+	}
+}
