@@ -1,6 +1,7 @@
 #include "NS_ChaserController.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
+#include "Character/NS_PlayerController.h"
 #include "GameFlow/NS_SinglePlayMode.h"
 
 ANS_ChaserController::ANS_ChaserController()
@@ -11,6 +12,7 @@ ANS_ChaserController::ANS_ChaserController()
     SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("SightConfig"));
     HearingConfig = CreateDefaultSubobject<UAISenseConfig_Hearing>(TEXT("HearingConfig"));
 
+    // 시야 설정
     SightConfig->SightRadius = 600.f;
     SightConfig->LoseSightRadius = 650.f;
     SightConfig->PeripheralVisionAngleDegrees = 60.f;
@@ -19,6 +21,7 @@ ANS_ChaserController::ANS_ChaserController()
     SightConfig->DetectionByAffiliation.bDetectNeutrals = true;
     PerceptionComp->ConfigureSense(*SightConfig);
 
+    // 청각 설정
     HearingConfig->HearingRange = 900.f;
     HearingConfig->DetectionByAffiliation.bDetectEnemies = true;
     HearingConfig->DetectionByAffiliation.bDetectFriendlies = true;
@@ -47,9 +50,18 @@ void ANS_ChaserController::RequestPlayerLocation()
 {
     if (!BlackboardComp) return;
 
-    if (BlackboardComp->GetValueAsBool(TEXT("IsChasingEvent")))
+    const bool bIsChasing = BlackboardComp->GetValueAsBool(TEXT("IsChasingEvent"));
+    const bool bIsCooldown = BlackboardComp->GetValueAsBool(TEXT("IsCooldownWait"));
+
+    if (bIsChasing)
     {
         UE_LOG(LogTemp, Log, TEXT("추적 중이라 좌표 갱신 생략"));
+        return;
+    }
+
+    if (bIsCooldown)
+    {
+        UE_LOG(LogTemp, Log, TEXT("쿨다운 상태라 좌표 갱신 생략"));
         return;
     }
 
@@ -65,46 +77,74 @@ void ANS_ChaserController::RequestPlayerLocation()
 void ANS_ChaserController::OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
 {
     if (!Actor || !BlackboardComp || !Actor->IsA(APawn::StaticClass())) return;
+    if (!Stimulus.WasSuccessfullySensed()) return;
 
-    const bool bSensed = Stimulus.WasSuccessfullySensed();
-    APawn* PlayerPawn = Cast<APawn>(Actor);
-    if (!PlayerPawn || !bSensed) return;
+    AActor* PendingTarget = Cast<AActor>(BlackboardComp->GetValueAsObject(TEXT("PendingTarget")));
+    const float PendingDuration = BlackboardComp->GetValueAsFloat(TEXT("PendingChaseDuration"));
 
-    // 감지되었으면 → 30초 추적 시작
-    SetChaseTarget(PlayerPawn, 30.0f);
+    const bool bIsChasing = BlackboardComp->GetValueAsBool(TEXT("IsChasingEvent"));
+    const bool bIsCooldown = BlackboardComp->GetValueAsBool(TEXT("IsCooldownWait"));
 
-    UE_LOG(LogTemp, Log, TEXT(" 감지로 인한 30초 추적 시작: %s"), *PlayerPawn->GetName());
+    if (PendingTarget && Actor == PendingTarget)
+    {
+        BlackboardComp->SetValueAsBool(TEXT("IsChasingEvent"), true);
+        BlackboardComp->SetValueAsObject(TEXT("TargetActor"), PendingTarget);
+        BlackboardComp->ClearValue(TEXT("TargetLocation"));
+        BlackboardComp->ClearValue(TEXT("PendingTarget"));
+        BlackboardComp->ClearValue(TEXT("PendingChaseDuration"));
+
+        MoveToActor(PendingTarget, 100.f, true);
+
+        // 추적당하는 플레이어에게 클라이언트 알림 전송
+        if (APawn* PawnTarget = Cast<APawn>(PendingTarget))
+        {
+            if (APlayerController* PC = Cast<APlayerController>(PawnTarget->GetController()))
+            {
+                if (ANS_PlayerController* APC = Cast<ANS_PlayerController>(PC))
+                {
+                    APC->PlayTracked_Implementation();
+                }
+            }
+        }
+
+        GetWorld()->GetTimerManager().ClearTimer(ChaseResetTimerHandle);
+        GetWorld()->GetTimerManager().SetTimer(
+            ChaseResetTimerHandle,
+            this,
+            &ANS_ChaserController::ResetChase,
+            PendingDuration,
+            false
+        );
+
+        UE_LOG(LogTemp, Warning, TEXT("시야 감지 → 추적 시작: %s (%.1f초)"), *PendingTarget->GetName(), PendingDuration);
+        return;
+    }
+
+
+    // 평상시 감지 반응 (이미 IsChasingEvent false 상태에서 감지된 경우만)
+    if (!bIsChasing && !bIsCooldown)
+    {
+        SetChaseTarget(Actor, 10.0f); // 기본 감지용 추적
+        UE_LOG(LogTemp, Log, TEXT(" 감지로 인한 기본 추적 시작: %s"), *Actor->GetName());
+    }
 }
+
 
 void ANS_ChaserController::SetChaseTarget(AActor* Target, float Duration)
 {
     if (!BlackboardComp || !Target) return;
 
-    // 쿨다운 중이면 무시
     if (BlackboardComp->GetValueAsBool(TEXT("IsCooldownWait")))
     {
         UE_LOG(LogTemp, Log, TEXT("쿨다운 중 - 추적 무시"));
         return;
     }
 
-    BlackboardComp->SetValueAsBool(TEXT("IsChasingEvent"), true);
-    BlackboardComp->SetValueAsObject(TEXT("TargetActor"), Target);
-    BlackboardComp->ClearValue(TEXT("TargetLocation"));
+    BlackboardComp->SetValueAsObject(TEXT("PendingTarget"), Target); // 일단 보류 타겟 저장
+    BlackboardComp->SetValueAsFloat(TEXT("PendingChaseDuration"), Duration);
 
-    MoveToActor(Target, 100.f, true);
-
-    GetWorld()->GetTimerManager().ClearTimer(ChaseResetTimerHandle);
-    GetWorld()->GetTimerManager().SetTimer(
-        ChaseResetTimerHandle,
-        this,
-        &ANS_ChaserController::ResetChase,
-        Duration,
-        false
-    );
-
-    UE_LOG(LogTemp, Warning, TEXT("강제 추적 시작: %s (%.1f초)"), *Target->GetName(), Duration);
+    UE_LOG(LogTemp, Warning, TEXT(" 추적 대기: 타겟 %s, 시야 감지될 때까지 대기"), *Target->GetName());
 }
-
 
 
 void ANS_ChaserController::ResetChase()
@@ -114,18 +154,19 @@ void ANS_ChaserController::ResetChase()
     BlackboardComp->SetValueAsBool(TEXT("IsChasingEvent"), false);
     BlackboardComp->ClearValue(TEXT("TargetActor"));
 
-    // 쿨다운 시작
     BlackboardComp->SetValueAsBool(TEXT("IsCooldownWait"), true);
     GetWorld()->GetTimerManager().SetTimer(
         CooldownTimerHandle,
         [this]()
     {
         BlackboardComp->SetValueAsBool(TEXT("IsCooldownWait"), false);
-        UE_LOG(LogTemp, Warning, TEXT(" 추적 쿨다운 종료"));
+        UE_LOG(LogTemp, Log, TEXT(" 쿨다운 종료"));
     },
-        10.0f, // 쿨다운 지속 시간
+        30.0f,
         false
     );
 
-    UE_LOG(LogTemp, Warning, TEXT("추적 종료 → 쿨다운 시작"));
+    UE_LOG(LogTemp, Warning, TEXT(" 추적 종료, 쿨다운 시작"));
 }
+
+

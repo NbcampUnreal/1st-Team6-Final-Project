@@ -17,23 +17,26 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_ChaserController : public AAIController
 public:
     ANS_ChaserController();
 
+    /** 강제로 플레이어 위치 요청 (좌표 이동용) */
     UFUNCTION(BlueprintCallable)
     void RequestPlayerLocation();
 
+    /** 강제 추적 (시야/청각 외부에서 직접 호출) */
     UFUNCTION(BlueprintCallable)
     void SetChaseTarget(AActor* Target, float Duration = 60.0f);
 
 protected:
     virtual void BeginPlay() override;
+    virtual void Tick(float DeltaTime) override;
 
-    /** 감지 처리 */
+    /** 감지 처리 (시야/청각) */
     UFUNCTION()
     void OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
 
-    /** 추적 종료 처리 */
+    /** 추적 종료 및 쿨다운 시작 */
     void ResetChase();
 
-    /** Blackboard + Perception */
+    /** AI 요소 */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
     UBlackboardComponent* BlackboardComp;
 
@@ -50,7 +53,7 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "AI")
     UBehaviorTree* BehaviorTreeAsset;
 
-    /** 추적 제한 / 쿨다운 타이머 */
+    /** 추적 타이머 및 쿨다운 타이머 */
     FTimerHandle ChaseResetTimerHandle;
     FTimerHandle CooldownTimerHandle;
 };

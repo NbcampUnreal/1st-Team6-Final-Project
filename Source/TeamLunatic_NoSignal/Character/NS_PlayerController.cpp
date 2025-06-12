@@ -1,5 +1,6 @@
 #include "Character/NS_PlayerController.h"
 #include "GameFlow/NS_GameInstance.h"
+#include "Kismet/GameplayStatics.h"
 #include "UI/NS_UIManager.h"
 
 ANS_PlayerController::ANS_PlayerController()
@@ -79,3 +80,11 @@ void ANS_PlayerController::TestGameMsg()
         }
     }
 }
+
+void ANS_PlayerController::PlayTracked_Implementation()
+{
+    UGameplayStatics::PlaySound2D(this, ChaseStartSoundCue);
+
+    UE_LOG(LogTemp, Log, TEXT("추적 시작 알림 받음"));
+}
+
