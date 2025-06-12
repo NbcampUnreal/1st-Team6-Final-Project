@@ -46,10 +46,11 @@ void ANS_SinglePlayMode::PostLogin(APlayerController* NewPlayer)
 	if (NewPawn)
 	{
 		NewPlayer->Possess(NewPawn);
+		UE_LOG(LogTemp, Log, TEXT("🎲 랜덤 인덱스 %d 캐릭터 %s 스폰됨"), RandIndex, *NewPawn->GetName());
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("Pawn 스폰 실패"));
+		UE_LOG(LogTemp, Error, TEXT("❌ Pawn 스폰 실패"));
 	}
 }
 

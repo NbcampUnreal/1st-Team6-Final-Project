@@ -93,40 +93,19 @@ void ANS_ChaserController::Tick(float DeltaTime)
 
 void ANS_ChaserController::RequestPlayerLocation()
 {
-    if (!BlackboardComp)
-    {
-        UE_LOG(LogTemp, Error, TEXT("❌ RequestPlayerLocation: BlackboardComp 없음"));
-        return;
-    }
+    if (!BlackboardComp) return;
 
     const bool bIsChasing = BlackboardComp->GetValueAsBool(TEXT("IsChasingEvent"));
     const bool bIsCooldown = BlackboardComp->GetValueAsBool(TEXT("IsCooldownWait"));
 
-    if (bIsChasing || bIsCooldown)
-    {
-        UE_LOG(LogTemp, Log, TEXT("⛔ 추적 중 또는 쿨다운 중이라 위치 갱신 생략"));
-        return;
-    }
+    if (bIsChasing || bIsCooldown) return;
 
     ANS_GameModeBase* GameMode = Cast<ANS_GameModeBase>(UGameplayStatics::GetGameMode(GetWorld()));
-    if (!GameMode)
+    if (GameMode)
     {
-        UE_LOG(LogTemp, Error, TEXT("❌ GameMode 캐스팅 실패"));
-        return;
+        FVector Location = GameMode->GetPlayerLocation();
+        BlackboardComp->SetValueAsVector(TEXT("TargetLocation"), Location);
     }
-
-    FVector Location = GameMode->GetPlayerLocation();
-
-    if (Location.IsNearlyZero())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("⚠️ 플레이어 위치가 ZeroVector로 반환됨"));
-    }
-    else
-    {
-        UE_LOG(LogTemp, Log, TEXT("📍 플레이어 위치 갱신됨: %s"), *Location.ToString());
-    }
-
-    BlackboardComp->SetValueAsVector(TEXT("TargetLocation"), Location);
 }
 
 void ANS_ChaserController::OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)

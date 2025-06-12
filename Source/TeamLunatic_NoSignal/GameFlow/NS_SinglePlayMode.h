@@ -10,7 +10,7 @@ class AActor;
 class APawn;
 class ANS_PlayerCharacterBase;
 
-// 탈출 루트 구분 
+// 탈출 루트 구분
 UENUM(BlueprintType)
 enum class EEscapeRoute : uint8
 {
@@ -19,7 +19,7 @@ enum class EEscapeRoute : uint8
 	Radio
 };
 
-// 탈출 시도 정보 
+// 탈출 시도 정보
 USTRUCT(BlueprintType)
 struct FEscapeAttemptInfo
 {
@@ -40,11 +40,14 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_SinglePlayMode : public ANS_GameModeBase
 public:
 	ANS_SinglePlayMode();
 
+	// 플레이어 위치 반환 (예: AI 추격자 사용 목적)
 	UFUNCTION(BlueprintCallable, Category = "Location")
 	virtual FVector GetPlayerLocation_Implementation() const override;
 
+	// 플레이어 진입 시 처리
+	virtual void PostLogin(APlayerController* NewPlayer) override;
+
 protected:
-	virtual void BeginPlay() override;
 	void HandleGameOver(bool bPlayerSurvived, EEscapeRoute EscapeRoute);
 
 private:
