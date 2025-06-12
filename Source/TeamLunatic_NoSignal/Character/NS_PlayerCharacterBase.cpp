@@ -12,7 +12,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "World/Pickup.h"
 #include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
-#include "GameFramework/ProjectileMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include <Net/UnrealNetwork.h>
 
 ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
@@ -681,32 +681,36 @@ void ANS_PlayerCharacterBase::TurnInPlace_Server_Implementation(float DeltaTime)
     }
 }
 
-void ANS_PlayerCharacterBase::ThrowBottle_Server_Implementation()
+void ANS_PlayerCharacterBase::ThrowBottle()
 {
-    if (!HasAuthority() || !BottleClass) return;
+    if (!HasAuthority() || bHasThrown || !BottleClass) return;
 
-    // 병 스폰 위치는 헤더파일에 있는 ThrowSocketName변수에 들어가있는 캐릭터 BP에서 지정한 hand_rThrowBottle소켓
+    bHasThrown = true;
+
+    // 소켓 위치 가져오기
     FVector SpawnLocation = GetMesh()->DoesSocketExist(ThrowSocketName)
         ? GetMesh()->GetSocketLocation(ThrowSocketName)
         : GetActorLocation();
 
-    FRotator ControlRot = GetControlRotation();
-    FVector ForwardDir = ControlRot.Vector();
+    FRotator ControlRot = GetControlRotation(); // 카메라 바라보는곳으로
+    FVector LaunchDir = ControlRot.Vector(); // Pitch값도 적용해서 상/하 적용
 
+    // 병 액터 생성
     FActorSpawnParameters Params;
     Params.Owner = this;
     Params.Instigator = this;
 
-    // 캐릭터 헤더파일에있는 BottleClass변수에 들어가있는 BP병을 생성해주고
     ANS_ThrowActor* Bottle = GetWorld()->SpawnActor<ANS_ThrowActor>(
         BottleClass, SpawnLocation, ControlRot, Params);
 
-    if (Bottle && Bottle->BottleMesh)
+    if (Bottle)
     {
-        float ThrowForce = 1000.f; // 던지는 세기
-        Bottle->BottleMesh->AddImpulse(ForwardDir * ThrowForce, NAME_None, true);
+        Bottle->LaunchInDirection(LaunchDir);
     }
+
+    // 중복 방지 해제
+    GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
+    {
+        bHasThrown = false;
+    });
 }
-
-
-
