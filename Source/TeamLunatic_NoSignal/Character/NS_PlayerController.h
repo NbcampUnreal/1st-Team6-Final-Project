@@ -22,4 +22,11 @@ protected:
 	void TestGameOver();
 	UFUNCTION()
 	void TestGameMsg();
+
+	UFUNCTION(Client, Reliable)
+	void PlayTracked();
+
+	UPROPERTY(EditDefaultsOnly, Category = "Chase")
+	USoundBase* ChaseStartSoundCue;
+
 };

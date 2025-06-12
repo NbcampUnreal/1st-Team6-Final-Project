@@ -93,7 +93,8 @@ public:
 
 	UFUNCTION(Category = "Inventory")
 	void RemoveSingleInstanceOfItem(UNS_InventoryBaseItem* ItemToRemove);
-	UFUNCTION(Category = "Inventory")
+	// 인벤토리에 아이템 삭제시키고 무게 감소시키는 함수 = throw액터에 블루프린트 로직으로 던질때 병 없애고 무게도 없애게 해주고 있음
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	int32 RemoveAmountOfItem(UNS_InventoryBaseItem* ItemIn, int32 DesiredAmountToRemove);
 	UFUNCTION(Category = "Inventory")
 	void SplitExistingStack(UNS_InventoryBaseItem* ItemIn, const int32 AmountToSplit);

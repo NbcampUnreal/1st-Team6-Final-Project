@@ -20,9 +20,6 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_QuickSlotSlotWidget : public UUserWidget
 public:
     void SetAssignedItem(UNS_InventoryBaseItem* Item);
 
-    UFUNCTION(BlueprintCallable, Server, Reliable)
-    void UseAssignedItem_Server();
-
     FORCEINLINE int32 GetSlotIndex() const { return SlotIndex; }
 
     void SetSlotIndex(int32 InIndex);
