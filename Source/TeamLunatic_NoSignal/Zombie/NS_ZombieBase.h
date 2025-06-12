@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "NS_ZombieBase.generated.h"
 
+class ANS_AIController;
 enum class EZombieAttackType : uint8;
 enum class EZombieType : uint8;
 enum class EZombieState : uint8;
@@ -69,29 +70,19 @@ public:
 	//상태 별 전환 함수.
 	void OnIdleState();
 	void OnPatrolState();
-	virtual void OnDetectState();
+	void OnDetectState();
 	virtual void OnChaseState();
 	virtual void OnAttackState();
 	void OnDeadState();
 	
-	//사운드 관련 함수
+	//사운드 관련
 	void StartSoundTimer(float Interval, USoundCue* Sound);
 	void StopSoundTimer();
 	UFUNCTION()
 	void PlaySoundLoop();
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multicast_PlaySound(USoundCue* Sound);
-	
-	UFUNCTION(Server, Reliable)
-	void Server_SetState(EZombieState NewState);
-	UFUNCTION(Server, Reliable)
-	void Server_SetAttackType(EZombieAttackType NewAttackType);
-	
-	UFUNCTION(BlueprintCallable, Category = "Attack")
-	virtual void OnOverlapSphere(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-								UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
-								bool bFromSweep, const FHitResult& SweepResult);
-	
+
 	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Sound")
 	USphereComponent* SphereComp;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Sound")
@@ -108,12 +99,25 @@ public:
 	USoundCue* HitSound;
 	UPROPERTY(EditDefaultsOnly,Replicated, Category = "Sound")
 	USoundCue* CurrentSound;
+	
+	
+	//공격 관련
+	UFUNCTION(Server, Reliable)
+	void Server_SetState(EZombieState NewState);
+	UFUNCTION(Server, Reliable)
+	void Server_SetAttackType(EZombieAttackType NewAttackType);
+	
+	UFUNCTION(BlueprintCallable, Category = "Attack")
+	virtual void OnOverlapSphere(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+								UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
+								bool bFromSweep, const FHitResult& SweepResult);
+	
 
-	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Montage")
-	UAnimMontage* DetectionMontage;
-	
+
 	FTimerHandle SoundTimerHandle;
-	
+	FTimerHandle MontageTimerHandle;
+
+	//Get함수
 	FORCEINLINE const EZombieAttackType GetZombieAttackType() {return CurrentAttackType;}
 	FORCEINLINE const EZombieState GetState() const {return CurrentState;};
 	FORCEINLINE const EZombieType GetType() const {return ZombieType;}

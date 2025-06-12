@@ -8,6 +8,7 @@ enum class EZombieState : uint8
 	IDLE UMETA(DisplayName = "IDLE"),
 	PATROLL UMETA(DisplayName = "PATROLL"),
 	DETECTING UMETA(DisplayName = "DETECTING"),
+	HEARTING UMETA(DisplayName = "HEARTING"),
 	CHACING UMETA(DisplayName = "CHACING"),
 	ATTACK UMETA(DisplayName = "ATTACK"),
 	PUSHED UMETA(DisplayName = "PUSHED"),

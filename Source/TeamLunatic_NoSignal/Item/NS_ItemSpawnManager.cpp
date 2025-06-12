@@ -1,6 +1,8 @@
 #include "Item/NS_ItemSpawnManager.h"
+#include "NavigationSystem.h"
 #include "World/Pickup.h"
 #include "Kismet/GameplayStatics.h"
+#include "Item/NS_InventoryBaseItem.h"
 
 
 ANS_ItemSpawnManager::ANS_ItemSpawnManager()
@@ -16,7 +18,33 @@ void ANS_ItemSpawnManager::BeginPlay()
 
     if (HasAuthority())
     {
-        FindAndSpawnItems();
+        //FindAndSpawnItems();
+        K2_ExecuteSpawning();
+    }
+}
+
+void ANS_ItemSpawnManager::SpawnItemsInRandomLocations(float Radius)
+{
+    UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetNavigationSystem(GetWorld());
+    if (!NavSystem)
+    {
+        UE_LOG(LogTemp, Error, TEXT("[%s] 네비게이션 시스템을 찾을 수 없습니다."), *GetName());
+        return;
+    }
+
+    UE_LOG(LogTemp, Log, TEXT("[%s] 스폰 시작. NumberOfItems: %d, Radius: %f"), *GetName(), SpawnItemNum, Radius);
+
+    FNavLocation ProjectedLocation;
+
+    for (int32 i = 0; i < SpawnItemNum; ++i)
+    {
+        FNavLocation RandomLocation;
+
+        if (NavSystem->GetRandomReachablePointInRadius(ProjectedLocation.Location, Radius, RandomLocation))
+        {
+            // 성공
+            SpawnRandomItemAt(FTransform(RandomLocation.Location));
+        }
     }
 }
 
@@ -109,7 +137,46 @@ void ANS_ItemSpawnManager::SpawnRandomItemAt(const FTransform& SpawnTransform)
         SpawnedPickup->DesiredItemID = SelectedItemID;
         SpawnedPickup->ItemQuantity = 1;
 
-        SpawnedPickup->BeginPlay();
+        SpawnedPickup->InitializePickup(UNS_InventoryBaseItem::StaticClass(), 1);
     }
+}
+
+void ANS_ItemSpawnManager::SpawnRandomTaggedLocations()
+{
+    //태그가 없거나, 스폰할 개수가 0 이하라면 중단
+    if (SpawnPointTagToFind.IsNone() || SpawnItemNum <= 0)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[%s] SpawnTag가 없거나 NumberToSpawn이 0 이하입니다."), *GetName());
+        return;
+    }
+
+    //월드에 있는 지정된 태그를 가진 모든 액터 찾기
+    TArray<AActor*> FoundSpawnPoints;
+    UGameplayStatics::GetAllActorsWithTag(GetWorld(), SpawnPointTagToFind, FoundSpawnPoints);
+
+    //찾은 위치가 없으면 로그 남기고 함수 종료
+    if (FoundSpawnPoints.Num() == 0)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[%s] 태그 '%s'를 가진 스폰 포인트를 찾을 수 없습니다."), *GetName(), *SpawnPointTagToFind.ToString());
+        return;
+    }
+
+    const int32 TotalFound = FoundSpawnPoints.Num();
+    const int32 ActualNumToSpawn = FMath::Min(SpawnItemNum, TotalFound);
+
+    for (int32 i = 0; i < ActualNumToSpawn; ++i)
+    {
+        const int32 RandomIndex = FMath::RandRange(0, FoundSpawnPoints.Num() - 1);
+        AActor* ChosenSpawnPoint = FoundSpawnPoints[RandomIndex];
+
+        if (ChosenSpawnPoint)
+        {
+            SpawnRandomItemAt(ChosenSpawnPoint->GetActorTransform());
+        }
+
+        FoundSpawnPoints.RemoveAt(RandomIndex);
+    }
+
+    UE_LOG(LogTemp, Log, TEXT("[%s] 태그 '%s'를 가진 %d개의 스폰 지점 중 %d개를 선택하여 스폰했습니다."), *GetName(), *SpawnPointTagToFind.ToString(), TotalFound, ActualNumToSpawn);
 }
 

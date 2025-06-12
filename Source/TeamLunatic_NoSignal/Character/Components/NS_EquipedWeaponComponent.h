@@ -53,6 +53,12 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastEquipWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass);
 
+	UFUNCTION(Server, Reliable)
+	void Server_UnequipWeapon();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_UnequipWeapon();
+
 	// 현재 장착 무기가 원기리일때는 재장전 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_Reload();

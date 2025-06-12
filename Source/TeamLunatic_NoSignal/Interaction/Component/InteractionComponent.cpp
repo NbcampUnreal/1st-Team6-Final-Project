@@ -7,6 +7,7 @@
 #include "GameFramework/Actor.h"
 #include "GameFramework/PlayerController.h"
 #include "Character/NS_PlayerCharacterBase.h"
+#include "Inventory UI/Interaction/NS_InteractionWidget.h"
 #include "Camera/CameraComponent.h"
 
 
@@ -32,7 +33,11 @@ void UInteractionComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	HUD = Cast<ANS_InventoryHUD>(GetWorld()->GetFirstPlayerController()->GetHUD());
+	APlayerController* PC = Cast<APlayerController>(GetOwner()->GetInstigatorController());
+	if (PC && PC->IsLocalController())
+	{
+		HUD = Cast<ANS_InventoryHUD>(PC->GetHUD());
+	}
 }
 
 void UInteractionComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -65,6 +70,11 @@ FRotator UInteractionComponent::GetViewRotation() const
 // 상호작용 대상 감지 (라인 트레이스 사용)
 void UInteractionComponent::PerformInteractionCheck()
 {
+	APlayerController* PC = Cast<APlayerController>(GetOwner()->GetInstigatorController());
+	if (!PC || !PC->IsLocalController())
+	{
+		return;
+	}
 	InteractionData.LastInteractionCheckTime = GetWorld()->GetTimeSeconds();
 	
 	// CameraComponent 기준으로 라인트레이스
@@ -169,16 +179,34 @@ void UInteractionComponent::NoInteractableFound()
 			TargetInteractable->EndFocus();
 		}
 		// 위젯 숨기기
-		HUD->HideInteractionWidget();
+		HideInteractionWidgetSafely();
+
 		// 현재 대상 초기화
 		InteractionData.CurrentInteractable = nullptr;
 		TargetInteractable = nullptr;
 	}
 }
+
+void UInteractionComponent::HideInteractionWidgetSafely()
+{
+	if (GetNetMode() == NM_DedicatedServer) return;
+
+	APlayerController* PC = Cast<APlayerController>(GetOwner()->GetInstigatorController());
+	if (!PC || !PC->IsLocalController()) return;
+
+	ANS_InventoryHUD* MyHUD = Cast<ANS_InventoryHUD>(PC->GetHUD());
+	if (!IsValid(MyHUD)) return;
+
+	if (IsValid(MyHUD->GetInteractionWidget()))
+	{
+		MyHUD->HideInteractionWidget();
+		UE_LOG(LogTemp, Warning, TEXT("[InteractionComponent] 상호작용 종료 후 위젯 숨김 처리 완료"));
+	}
+}
+
 // 상호작용 시작
 void UInteractionComponent::BeginInteract()
 {
-	// 현재 캐릭터가 이미 상호작용 중이라면 무시
 	if (const ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(GetOwner()))
 	{
 		if (PlayerCharacter->IsPickUp)
@@ -217,6 +245,8 @@ void UInteractionComponent::EndInteract()
 	{
 		TargetInteractable->EndInteract();
 	}
+
+	HideInteractionWidgetSafely();
 }
 // 실제 상호작용 실행
 void UInteractionComponent::Interact()

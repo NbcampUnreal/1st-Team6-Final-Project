@@ -90,6 +90,17 @@ void UNS_InventoryBaseItem::SetQuantity(const int32 NewQuantity)
 // 데이터 테이블로부터 해당 아이템의 데이터를 조회
 const FNS_ItemDataStruct* UNS_InventoryBaseItem::GetItemData() const
 {
+	if (!ItemsDataTable)
+	{
+		if (const UWorld* World = GetWorld())
+		{
+			if (const UNS_GameInstance* GI = Cast<UNS_GameInstance>(World->GetGameInstance()))
+			{
+				ItemsDataTable = GI->GlobalItemDataTable;
+			}
+		}
+	}
+
 	if (!ItemsDataTable || ItemDataRowName.IsNone())
 	{
 		UE_LOG(LogTemp, Error, TEXT("데이터 테이블 또는 RowName 없음"));
@@ -124,39 +135,9 @@ void UNS_InventoryBaseItem::OnUseItem(ANS_PlayerCharacterBase* Character)
 		UseConsumableItem(Character, *ItemData); // 소모품 처리
 		break;
 
-	case EItemType::Equipment:
-		switch (ItemData->WeaponType)
-		{
-		case EWeaponType::Melee:
-		case EWeaponType::Ranged:
-		case EWeaponType::Pistol:
-			EquipWeapon(ItemData); // 장비 처리
-			break;
-
-		default:
-			UE_LOG(LogTemp, Warning, TEXT("[OnUseItem] 지원하지 않는 무기 타입입니다."));
-			break;
-		}
-		break;
-
 	default:
 		UE_LOG(LogTemp, Warning, TEXT("[OnUseItem] 사용 처리되지 않은 아이템 타입입니다: %d"), (uint8)ItemData->ItemType);
 		break;
-	}
-}
-
-// 무기 장착 처리
-void UNS_InventoryBaseItem::EquipWeapon(const FNS_ItemDataStruct* ItemData)
-{
-	if (!ItemData || !ItemData->WeaponActorClass) return;
-
-	if (auto* Player = Cast<ANS_PlayerCharacterBase>(OwingInventory->GetOwner()))
-	{
-		if (auto* WeaponComp = Player->FindComponentByClass<UNS_EquipedWeaponComponent>())
-		{
-			UE_LOG(LogTemp, Log, TEXT("[EquipWeapon] 무기 장착: %s"), *ItemData->WeaponActorClass->GetName());
-			WeaponComp->SwapWeapon(ItemData->WeaponActorClass);
-		}
 	}
 }
 

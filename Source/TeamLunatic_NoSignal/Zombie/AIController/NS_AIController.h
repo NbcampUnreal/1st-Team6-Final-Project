@@ -7,19 +7,16 @@
 #include "Perception/AIPerceptionTypes.h"
 #include "NS_AIController.generated.h"
 
-enum EAIPerceptionSense : int8;
-struct FAIStimulus;
-struct FActorPerceptionBlueprintInfo;
 class UBehaviorTreeComponent;
 class UAIPerceptionComponent;
 class UAISenseConfig_Hearing;
 class UAISenseConfig_Sight;
+class UBrainComponent;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_AIController : public AAIController
 {
 	GENERATED_BODY()
-	ANS_AIController();
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
@@ -35,26 +32,36 @@ protected:
 	UBehaviorTree* BehaviorTreeAsset;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
 	UBlackboardComponent* BlackboardComp;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI")
-	bool bIsDetect;
-	
-	
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+	UAnimMontage* DetectMontage;
+	UPROPERTY()
+	AActor* LastSeenTarget;
+	FTimerHandle HearingTimerHandle;
+
+	float MaxSeenDistance;
 public:
+	ANS_AIController();
 	virtual void BeginPlay() override;
 	virtual void OnPossess(APawn* PossessedPawn) override;
 	UFUNCTION(BlueprintCallable, Category = "AI")
 	void OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
+
+	void PauseBT();
+	void ResumeBT();
 	
 	void HandleSightStimulus();
 	void HandleHearingStimulus(FVector Location);
 	void HandleDamageStimulus(AActor* Attacker);
+	void CalculateHeardRotation(FVector HeardLocation);
+	void InitializeHeardBool();
+	
 	AActor* GetClosestSightTarget();
 	UFUNCTION()
 	void SetDisableAttackTimer();
 	UFUNCTION()
 	void SetEnableAttackTimer();
-
+	
 	void InitializeAttackRange(APawn* PossessedPawn);
 	//Perception Configs
 	void InitializingSightConfig();
