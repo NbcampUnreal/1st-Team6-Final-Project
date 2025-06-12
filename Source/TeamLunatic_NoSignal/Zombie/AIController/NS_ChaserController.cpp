@@ -56,7 +56,16 @@ void ANS_ChaserController::Tick(float DeltaTime)
     if (!HasAuthority() || !BlackboardComp) return;
 
     const bool bIsChasing = BlackboardComp->GetValueAsBool(TEXT("IsChasingEvent"));
+    const bool bIsCooldown = BlackboardComp->GetValueAsBool(TEXT("IsCooldownWait"));
     AActor* Target = Cast<AActor>(BlackboardComp->GetValueAsObject(TEXT("TargetActor")));
+
+    if (bIsCooldown)
+    {
+        // 쿨다운 중이면 강제로 멈춤
+        StopMovement();
+        StopDamageLoop();
+        return;
+    }
 
     if (bIsChasing && Target)
     {
@@ -81,21 +90,22 @@ void ANS_ChaserController::Tick(float DeltaTime)
     }
 }
 
+
 void ANS_ChaserController::RequestPlayerLocation()
 {
-    if (!BlackboardComp) return;
+    //if (!BlackboardComp) return;
 
-    const bool bIsChasing = BlackboardComp->GetValueAsBool(TEXT("IsChasingEvent"));
-    const bool bIsCooldown = BlackboardComp->GetValueAsBool(TEXT("IsCooldownWait"));
+    //const bool bIsChasing = BlackboardComp->GetValueAsBool(TEXT("IsChasingEvent"));
+    //const bool bIsCooldown = BlackboardComp->GetValueAsBool(TEXT("IsCooldownWait"));
 
-    if (bIsChasing || bIsCooldown) return;
+    //if (bIsChasing || bIsCooldown) return;
 
-    ANS_GameModeBase* GameMode = Cast<ANS_GameModeBase>(UGameplayStatics::GetGameMode(GetWorld()));
-    if (GameMode)
-    {
-        FVector Location = GameMode->GetPlayerLocation();
-        BlackboardComp->SetValueAsVector(TEXT("TargetLocation"), Location);
-    }
+    //ANS_GameModeBase* GameMode = Cast<ANS_GameModeBase>(UGameplayStatics::GetGameMode(GetWorld()));
+    //if (GameMode)
+    //{
+    //    FVector Location = GameMode->GetPlayerLocation();
+    //    BlackboardComp->SetValueAsVector(TEXT("TargetLocation"), Location);
+    //}
 }
 
 void ANS_ChaserController::OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
@@ -103,16 +113,23 @@ void ANS_ChaserController::OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimul
     if (!Actor || !BlackboardComp || !Actor->IsA(APawn::StaticClass())) return;
     if (!Stimulus.WasSuccessfullySensed()) return;
 
-    const bool bIsChasing = BlackboardComp->GetValueAsBool(TEXT("IsChasingEvent"));
-    const bool bIsCooldown = BlackboardComp->GetValueAsBool(TEXT("IsCooldownWait"));
-    if (bIsChasing || bIsCooldown) return;
+    // 쿨다운 중이면 무시
+    if (BlackboardComp->GetValueAsBool(TEXT("IsCooldownWait")))
+    {
+        UE_LOG(LogTemp, Log, TEXT("감지되었지만 쿨다운 상태라 무시: %s"), *Actor->GetName());
+        return;
+    }
+
+    // 이미 추격 중이면 무시 
+    if (BlackboardComp->GetValueAsBool(TEXT("IsChasingEvent"))) return;
 
     APawn* PlayerPawn = Cast<APawn>(Actor);
     if (!PlayerPawn) return;
 
-    SetChaseTarget(PlayerPawn, 30.0f);
+    SetChaseTarget(PlayerPawn, 10.0f);
     UE_LOG(LogTemp, Log, TEXT("감지로 인한 30초 추적 시작: %s"), *PlayerPawn->GetName());
 }
+
 
 void ANS_ChaserController::SetChaseTarget(AActor* Target, float Duration)
 {
@@ -124,7 +141,7 @@ void ANS_ChaserController::SetChaseTarget(AActor* Target, float Duration)
     BlackboardComp->SetValueAsObject(TEXT("TargetActor"), Target);
     BlackboardComp->ClearValue(TEXT("TargetLocation")); // 좌표 기반 추적 중단
 
-    // 클라이언트 연출
+    // 클라이언트에 소리키기 
     if (APawn* PawnTarget = Cast<APawn>(Target))
     {
         if (APlayerController* PC = Cast<APlayerController>(PawnTarget->GetController()))
@@ -162,8 +179,9 @@ void ANS_ChaserController::ResetChase()
     {
         BlackboardComp->SetValueAsBool(TEXT("IsCooldownWait"), false);
         UE_LOG(LogTemp, Log, TEXT("쿨다운 종료"));
+
     },
-        30.0f,
+        15.0f,
         false
     );
 
@@ -171,6 +189,7 @@ void ANS_ChaserController::ResetChase()
 
     UE_LOG(LogTemp, Warning, TEXT("추적 종료, 쿨다운 시작"));
 }
+
 
 void ANS_ChaserController::StartDamageLoop(AActor* Target)
 {
