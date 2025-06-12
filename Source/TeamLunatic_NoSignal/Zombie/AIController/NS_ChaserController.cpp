@@ -239,7 +239,6 @@ void ANS_ChaserController::StopDamageLoop()
 void ANS_ChaserController::ApplyDamageToTarget()
 {
     if (!DamageTarget) return;
-
     UGameplayStatics::ApplyDamage(DamageTarget, 10.0f, this, GetPawn(), nullptr);
 }
 
