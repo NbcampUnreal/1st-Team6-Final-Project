@@ -231,7 +231,7 @@ void ANS_AIController::InitializingHearingConfig()
 {
 	if (HearingConfig)
 	{
-		HearingConfig->HearingRange = 1200.f;
+		HearingConfig->HearingRange = 3000.f;
 		HearingConfig->SetMaxAge(0.f);
 		HearingConfig->DetectionByAffiliation.bDetectEnemies = true;
 		HearingConfig->DetectionByAffiliation.bDetectNeutrals = true;
