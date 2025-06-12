@@ -3,7 +3,7 @@
 
 ANS_BaseMeleeWeapon::ANS_BaseMeleeWeapon()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 	ItemStaticMesh = CreateDefaultSubobject<UStaticMeshComponent>("I Can'tSee Mesh");
 	ItemStaticMesh->SetOwnerNoSee(true);

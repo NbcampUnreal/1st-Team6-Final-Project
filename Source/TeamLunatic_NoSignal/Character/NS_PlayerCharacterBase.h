@@ -5,6 +5,7 @@
 #include "InputActionValue.h"
 #include "Interaction/Component/InteractionComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Character/ThrowActor/NS_ThrowActor.h"
 #include "NS_PlayerCharacterBase.generated.h"
 
 class UInputMappingContext;
@@ -50,25 +51,32 @@ public:
 
 	void DropItem(UNS_InventoryBaseItem* ItemToDrop, const int32 QuantityToDrop);
 
-	UFUNCTION(Server, Reliable)
-	void UseQuickSlot1_Server();
-	UFUNCTION(Server, Reliable)
-	void UseQuickSlot2_Server();
-	UFUNCTION(Server, Reliable)
-	void UseQuickSlot3_Server();
+	UFUNCTION(Client, Reliable)
+	void Client_RemoveFromQuickSlot(UNS_InventoryBaseItem* ItemToRemove);
+
+	void UseQuickSlot1();
+
+	void UseQuickSlot2();
+
+	void UseQuickSlot3();
+
+	UFUNCTION(BlueprintCallable)
+	void UseQuickSlotByIndex(int32 Index);
+
+	void UseQuickSlotByIndex_Internal(int32 Index);
 
 	UFUNCTION(BlueprintCallable, Server, Reliable)
-	void UseQuickSlotByIndex_Server(int32 Index);
+	void Server_UseQuickSlotByIndex(int32 Index);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_UseQuickSlotByIndex(int32 Index);
+
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "QuickSlot")
+	int32 QuickSlotIndex = -1;
 
 	UFUNCTION(Client, Reliable)
 	void Client_NotifyInventoryUpdated();
 
-	UFUNCTION(BlueprintCallable, Server, Reliable)
-	void Server_UseQuickSlotItem(FName ItemRowName);
-
-	UFUNCTION(NetMulticast, Reliable)
-	void Musticast_UseQuickSlotItem(FName ItemRowName);
-	
 	UFUNCTION(Server, Reliable)
 	void Server_UseInventoryItem(FName ItemRowName);
 protected:
@@ -80,10 +88,6 @@ protected:
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 public:
-	// 카메라를 붙일 소켓 이름 [에디터에서 변경 가능함] 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AttachSocket")
-	FName CameraAttachSocketName;
-	
 	////////////////////////////////////캐릭터 부착 컴포넌트들///////////////////////////////////////
 	// 스프링 암 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
@@ -115,12 +119,23 @@ public:
 	////////////////////////////////////캐릭터 부착 컴포넌트들 끝!///////////////////////////////////////
 
 
+	
+	/////////////////////////////////병투척 변수 + 병이 날아갈 소켓 위치 변수 //////////////////////////////
+	// 캐릭터가 던지는 병 액터 클래스변수 설정
+	UPROPERTY(EditDefaultsOnly, Category = "Throw")
+	TSubclassOf<class ANS_ThrowActor> BottleClass;
+
+	// 던질 때 기준이 되는 소켓 이름 == 캐릭터 블루프린트에서 설정해주면 됨
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Throw")
+	FName ThrowSocketName;
+	////////////////////////////////////////병투척 변수 끝!///////////////////////////////////////////////
+
+
+	
 	// LookAction에 카메라 회전값 보간 속도 ---> 8은 너무 느려서 10이상은 되어야할 듯
 	UPROPERTY(EditDefaultsOnly, Category = "Aim")
 	float AimSendInterpSpeed = 10.f;
-
 	
-
 	// 점프가 가능하게 하는 변수 
 	bool IsCanJump = true;
 	// ====================================
@@ -162,8 +177,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsChangingWeapon = false;
 	// 퀵슬롯을 누르면 퀵슬롯에 있는 무기를 장착하는 애니메이션 재생용 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_IsChangeAnim, Category = "Replicated Variables")
 	bool IsChangeAnim = false;
+
+	UFUNCTION()
+	void OnRep_IsChangeAnim();
 	//////////////////////////////////////////////////////////////////////////////////////
 	
 	
@@ -205,7 +223,6 @@ public:
 	UInputAction* InputQuickSlot3;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* ToggleHeadLampAction;
-	
 	
 	
 	// 캐릭터 EnhancedInput을 없앴다가 다시 부착하는는 함수 IMC를 지워웠다가 다시 장착하게해서 AnimNotify로 발차기 공격동안 IMC없앰
@@ -265,4 +282,8 @@ public:
 	// 캐릭터가 Turn In Place를 하면 Yaw값을 0으로 보간해주는 함수로 유일하게 Tick에서 실행해주는 중
 	UFUNCTION(Server, Reliable)
 	void TurnInPlace_Server(float DeltaTime);
+
+	// 캐릭터가 병투척해서 날아가는 속도/방향/궤도 함수
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void ThrowBottle_Server();
 };
