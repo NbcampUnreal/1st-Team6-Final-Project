@@ -683,7 +683,9 @@ void ANS_PlayerCharacterBase::TurnInPlace_Server_Implementation(float DeltaTime)
 
 void ANS_PlayerCharacterBase::ThrowBottle()
 {
-    if (!HasAuthority() || !BottleClass) return;
+    if (!HasAuthority() || bHasThrown || !BottleClass) return;
+
+    bHasThrown = true;
 
     // 소켓 위치 가져오기
     FVector SpawnLocation = GetMesh()->DoesSocketExist(ThrowSocketName)
@@ -705,4 +707,10 @@ void ANS_PlayerCharacterBase::ThrowBottle()
     {
         Bottle->LaunchInDirection(LaunchDir);
     }
+
+    // 중복 방지 해제
+    GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
+    {
+        bHasThrown = false;
+    });
 }

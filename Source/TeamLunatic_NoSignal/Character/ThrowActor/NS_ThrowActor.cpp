@@ -1,6 +1,10 @@
 #include "NS_ThrowActor.h"
+
+#include "Components/BoxComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "GeometryCollection/GeometryCollectionActor.h"
+#include "Kismet/GameplayStatics.h"
 
 ANS_ThrowActor::ANS_ThrowActor()
 {
@@ -8,8 +12,11 @@ ANS_ThrowActor::ANS_ThrowActor()
 
 	BottleMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BottleMesh"));
 	RootComponent = BottleMesh;
-	BottleMesh->SetCollisionProfileName("PhysicsActor");
-	BottleMesh->SetIsReplicated(true);
+	BottleMesh->SetSimulatePhysics(true);
+	BottleMesh->SetNotifyRigidBodyCollision(true);
+	BottleMesh->SetCollisionProfileName("BlockAll");
+
+	BottleMesh->OnComponentHit.AddDynamic(this, &ANS_ThrowActor::OnHit);
 
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
 	ProjectileMovement->UpdatedComponent = BottleMesh;
@@ -18,10 +25,14 @@ ANS_ThrowActor::ANS_ThrowActor()
 	ProjectileMovement->bRotationFollowsVelocity = true;
 	ProjectileMovement->bShouldBounce = true;
 	ProjectileMovement->ProjectileGravityScale = 1.0f;
-	ProjectileMovement->bAutoActivate = false;
-
+	
 	bReplicates = true;
-	SetReplicateMovement(false);
+	SetReplicateMovement(true);
+}
+
+void ANS_ThrowActor::BeginPlay()
+{
+	Super::BeginPlay();
 }
 
 void ANS_ThrowActor::LaunchInDirection(const FVector& Direction)
@@ -31,4 +42,26 @@ void ANS_ThrowActor::LaunchInDirection(const FVector& Direction)
 		ProjectileMovement->Velocity = Direction * ProjectileMovement->InitialSpeed;
 		ProjectileMovement->Activate();
 	}
+}
+
+void ANS_ThrowActor::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
+						   UPrimitiveComponent* OtherComp, FVector NormalImpulse,
+						   const FHitResult& Hit)
+{
+	if (!FractureActorClass) return;
+
+	// GC 액터 스폰
+	FActorSpawnParameters Params;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	AGeometryCollectionActor* FractureActor = GetWorld()->SpawnActor<AGeometryCollectionActor>(
+		FractureActorClass,
+		GetActorLocation(),
+		GetActorRotation(),
+		Params
+	);
+	
+
+	// 병 액터 제거
+	Destroy();
 }

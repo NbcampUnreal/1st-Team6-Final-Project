@@ -128,6 +128,9 @@ public:
 	// 던질 때 기준이 되는 소켓 이름 == 캐릭터 블루프린트에서 설정해주면 됨
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Throw")
 	FName ThrowSocketName;
+
+	// 한번만 던져지도록 실행하는 변수
+	bool bHasThrown = false;
 	////////////////////////////////////////병투척 변수 끝!///////////////////////////////////////////////
 
 

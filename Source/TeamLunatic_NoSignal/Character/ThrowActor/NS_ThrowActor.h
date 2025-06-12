@@ -2,7 +2,13 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "GeometryCollection/GeometryCollectionActor.h"
 #include "NS_ThrowActor.generated.h"
+
+class UStaticMeshComponent;
+class UProjectileMovementComponent;
+class UGeometryCollectionComponent;
+class UBoxComponent;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_ThrowActor : public AActor
@@ -12,12 +18,28 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_ThrowActor : public AActor
 public:
 	ANS_ThrowActor();
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	// 날아갈 병 메쉬
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components")
 	UStaticMeshComponent* BottleMesh;
 
+	// 날아갈 궤적 컴포넌트 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	class UProjectileMovementComponent* ProjectileMovement;
+	UProjectileMovementComponent* ProjectileMovement;
 
+	// 땅이나 어디든 부딪쳤을때 부서질 지오메트리
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Throw")
+	TSubclassOf<AGeometryCollectionActor> FractureActorClass;
+	
 	// 병이 날아가는 방향 지정
 	void LaunchInDirection(const FVector& Direction);
+
+protected:
+	
+	virtual void BeginPlay() override;
+public:
+	UFUNCTION()
+	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
+			   UPrimitiveComponent* OtherComp, FVector NormalImpulse,
+			   const FHitResult& Hit);
+	
 };
