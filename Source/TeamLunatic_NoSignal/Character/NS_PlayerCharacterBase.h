@@ -5,6 +5,7 @@
 #include "InputActionValue.h"
 #include "Interaction/Component/InteractionComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Character/ThrowActor/NS_ThrowActor.h"
 #include "NS_PlayerCharacterBase.generated.h"
 
 class UInputMappingContext;
@@ -80,10 +81,6 @@ protected:
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 public:
-	// 카메라를 붙일 소켓 이름 [에디터에서 변경 가능함] 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AttachSocket")
-	FName CameraAttachSocketName;
-	
 	////////////////////////////////////캐릭터 부착 컴포넌트들///////////////////////////////////////
 	// 스프링 암 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
@@ -114,13 +111,23 @@ public:
 	UNS_EquipedWeaponComponent* EquipedWeaponComp;
 	////////////////////////////////////캐릭터 부착 컴포넌트들 끝!///////////////////////////////////////
 
+	
+	/////////////////////////////////병투척 변수 + 병이 날아갈 소켓 위치 변수 //////////////////////////////
+	// 캐릭터가 던지는 병 액터 클래스변수 설정
+	UPROPERTY(EditDefaultsOnly, Category = "Throw")
+	TSubclassOf<class ANS_ThrowActor> BottleClass;
 
+	// 던질 때 기준이 되는 소켓 이름 == 캐릭터 블루프린트에서 설정해주면 됨
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Throw")
+	FName ThrowSocketName;
+	////////////////////////////////////////병투척 변수 끝!///////////////////////////////////////////////
+
+
+	
 	// LookAction에 카메라 회전값 보간 속도 ---> 8은 너무 느려서 10이상은 되어야할 듯
 	UPROPERTY(EditDefaultsOnly, Category = "Aim")
 	float AimSendInterpSpeed = 10.f;
-
 	
-
 	// 점프가 가능하게 하는 변수 
 	bool IsCanJump = true;
 	// ====================================
@@ -265,4 +272,8 @@ public:
 	// 캐릭터가 Turn In Place를 하면 Yaw값을 0으로 보간해주는 함수로 유일하게 Tick에서 실행해주는 중
 	UFUNCTION(Server, Reliable)
 	void TurnInPlace_Server(float DeltaTime);
+
+	// 캐릭터가 병투척해서 날아가는 속도/방향/궤도 함수
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void ThrowBottle_Server();
 };

@@ -12,6 +12,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "World/Pickup.h"
 #include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
+#include "GameFramework/ProjectileMovementComponent.h"
 #include <Net/UnrealNetwork.h>
 
 ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
@@ -628,6 +629,7 @@ void ANS_PlayerCharacterBase::UpdateAim_Server_Implementation(float NewCamYaw, f
     CamPitch = NewCamPitch; 
 }
 
+// 나중에 실제로 적용되는지 디버깅해야함
 void ANS_PlayerCharacterBase::TurnInPlace_Server_Implementation(float DeltaTime)
 {
     auto* CharMove = GetCharacterMovement();
@@ -643,3 +645,30 @@ void ANS_PlayerCharacterBase::TurnInPlace_Server_Implementation(float DeltaTime)
         UpdateAim_Server(CamYaw, CamPitch);
     }
 }
+
+void ANS_PlayerCharacterBase::ThrowBottle_Server_Implementation()
+{
+    if (!HasAuthority() || !BottleClass) return;
+
+    // ThrowSocketName변수에 들어가있는 소켓이름에서 스폰되서 던져짐
+    FVector SpawnLocation = GetMesh()->DoesSocketExist(ThrowSocketName)
+        ? GetMesh()->GetSocketLocation(ThrowSocketName)
+        : GetActorLocation(); 
+
+    FRotator SpawnRotation = CameraComp->GetComponentRotation();
+
+    FActorSpawnParameters Params;
+    Params.Owner = this;
+    Params.Instigator = this;
+
+    ANS_ThrowActor* Bottle = GetWorld()->SpawnActor<ANS_ThrowActor>(
+        BottleClass, SpawnLocation, SpawnRotation, Params);
+
+    if (Bottle && Bottle->ProjectileMovement)
+    {
+        FVector Direction = SpawnRotation.Vector();
+        Bottle->ProjectileMovement->SetVelocityInLocalSpace(Direction * Bottle->ProjectileMovement->InitialSpeed);
+        Bottle->ProjectileMovement->Activate();
+    }
+}
+
