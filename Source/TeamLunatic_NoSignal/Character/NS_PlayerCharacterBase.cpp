@@ -681,7 +681,7 @@ void ANS_PlayerCharacterBase::TurnInPlace_Server_Implementation(float DeltaTime)
     }
 }
 
-void ANS_PlayerCharacterBase::ThrowBottle_Server_Implementation()
+void ANS_PlayerCharacterBase::ThrowBottle()
 {
     if (!HasAuthority() || !BottleClass) return;
 
@@ -690,8 +690,8 @@ void ANS_PlayerCharacterBase::ThrowBottle_Server_Implementation()
         ? GetMesh()->GetSocketLocation(ThrowSocketName)
         : GetActorLocation();
 
-    FRotator ControlRot = GetControlRotation();       // 카메라 회전
-    FVector LaunchDir = ControlRot.Vector();          // 방향 (Pitch 포함됨)
+    FRotator ControlRot = GetControlRotation(); // 카메라 바라보는곳으로
+    FVector LaunchDir = ControlRot.Vector(); // Pitch값도 적용해서 상/하 적용
 
     // 병 액터 생성
     FActorSpawnParameters Params;

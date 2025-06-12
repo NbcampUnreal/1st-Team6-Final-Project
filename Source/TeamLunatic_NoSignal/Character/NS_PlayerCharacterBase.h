@@ -284,6 +284,6 @@ public:
 	void TurnInPlace_Server(float DeltaTime);
 
 	// 캐릭터가 병투척해서 날아가는 속도/방향/궤도 함수
-	UFUNCTION(BlueprintCallable, Server, Reliable)
-	void ThrowBottle_Server();
+	UFUNCTION(BlueprintCallable)
+	void ThrowBottle();
 };
