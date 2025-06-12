@@ -650,25 +650,28 @@ void ANS_PlayerCharacterBase::ThrowBottle_Server_Implementation()
 {
     if (!HasAuthority() || !BottleClass) return;
 
-    // ThrowSocketName변수에 들어가있는 소켓이름에서 스폰되서 던져짐
+    // 병 스폰 위치는 헤더파일에 있는 ThrowSocketName변수에 들어가있는 캐릭터 BP에서 지정한 hand_rThrowBottle소켓
     FVector SpawnLocation = GetMesh()->DoesSocketExist(ThrowSocketName)
         ? GetMesh()->GetSocketLocation(ThrowSocketName)
-        : GetActorLocation(); 
+        : GetActorLocation();
 
-    FRotator SpawnRotation = CameraComp->GetComponentRotation();
+    FRotator ControlRot = GetControlRotation();
+    FVector ForwardDir = ControlRot.Vector();
 
     FActorSpawnParameters Params;
     Params.Owner = this;
     Params.Instigator = this;
 
+    // 캐릭터 헤더파일에있는 BottleClass변수에 들어가있는 BP병을 생성해주고
     ANS_ThrowActor* Bottle = GetWorld()->SpawnActor<ANS_ThrowActor>(
-        BottleClass, SpawnLocation, SpawnRotation, Params);
+        BottleClass, SpawnLocation, ControlRot, Params);
 
-    if (Bottle && Bottle->ProjectileMovement)
+    if (Bottle && Bottle->BottleMesh)
     {
-        FVector Direction = SpawnRotation.Vector();
-        Bottle->ProjectileMovement->SetVelocityInLocalSpace(Direction * Bottle->ProjectileMovement->InitialSpeed);
-        Bottle->ProjectileMovement->Activate();
+        float ThrowForce = 1000.f; // 던지는 세기
+        Bottle->BottleMesh->AddImpulse(ForwardDir * ThrowForce, NAME_None, true);
     }
 }
+
+
 

@@ -4,6 +4,7 @@
 #include "Item/NS_InventoryBaseItem.h"
 #include "Item/NS_BaseMeleeWeapon.h"
 #include "Item/NS_BaseRangedWeapon.h"
+#include "Item/NS_BaseThrowWeapon.h"
 #include "GameFramework/Character.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
@@ -82,7 +83,7 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
     const FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
     const FName SocketName = NewWpn->AttachSocketName;
 
-    // MeleeWeapon (근접 무기)
+    // MeleeWeapon 근거리 무기
     if (auto Melee = Cast<ANS_BaseMeleeWeapon>(NewWpn))
     {
         // 플레이어한테만 보이는 메쉬를 팔에 부착
@@ -101,7 +102,7 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
                 OwnerCharacter->GetMesh(), Rules, SocketName);
         }
     }
-    // RangeWeapon (원거리 무기)
+    // RangeWeapon 원거리 무기
     else if (auto Ranged = Cast<ANS_BaseRangedWeapon>(NewWpn))
     {
         // 플레이어한테만 보이는 메쉬를 팔에 부착
@@ -123,6 +124,21 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
         if (Ranged->ArmsMeshComp)
         {
             Ranged->ArmsMeshComp->AttachToComponent(
+                OwnerCharacter->FirstPersonArms, Rules, SocketName);
+        }
+    }
+    // ThrowWeapon 투척 병
+    else if (auto Throw = Cast<ANS_BaseThrowWeapon>(NewWpn))
+    {
+        if (Throw->ItemStaticMesh)
+        {
+            Throw->ItemStaticMesh->AttachToComponent(
+                OwnerCharacter->GetMesh(), Rules, SocketName);
+        }
+
+        if (Throw->ArmsMeshComp)
+        {
+            Throw->ArmsMeshComp->AttachToComponent(
                 OwnerCharacter->FirstPersonArms, Rules, SocketName);
         }
     }

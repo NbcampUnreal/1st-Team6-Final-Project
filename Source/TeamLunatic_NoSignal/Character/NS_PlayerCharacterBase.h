@@ -111,6 +111,7 @@ public:
 	UNS_EquipedWeaponComponent* EquipedWeaponComp;
 	////////////////////////////////////캐릭터 부착 컴포넌트들 끝!///////////////////////////////////////
 
+
 	
 	/////////////////////////////////병투척 변수 + 병이 날아갈 소켓 위치 변수 //////////////////////////////
 	// 캐릭터가 던지는 병 액터 클래스변수 설정
@@ -212,7 +213,6 @@ public:
 	UInputAction* InputQuickSlot3;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* ToggleHeadLampAction;
-	
 	
 	
 	// 캐릭터 EnhancedInput을 없앴다가 다시 부착하는는 함수 IMC를 지워웠다가 다시 장착하게해서 AnimNotify로 발차기 공격동안 IMC없앰

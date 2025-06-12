@@ -4,9 +4,6 @@
 #include "GameFramework/Actor.h"
 #include "NS_ThrowActor.generated.h"
 
-class UProjectileMovementComponent;
-class UStaticMeshComponent;
-
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_ThrowActor : public AActor
 {
@@ -15,15 +12,7 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_ThrowActor : public AActor
 public:
 	ANS_ThrowActor();
 
-protected:
-	virtual void BeginPlay() override;
-
-public:
-	// 병 메시
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	// 병 메쉬
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Throw")
 	UStaticMeshComponent* BottleMesh;
-
-	// 투사체 이동 컴포넌트
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
-	UProjectileMovementComponent* ProjectileMovement;
 };
