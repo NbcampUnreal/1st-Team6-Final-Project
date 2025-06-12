@@ -160,5 +160,23 @@ void ANS_ItemSpawnManager::SpawnRandomTaggedLocations()
         UE_LOG(LogTemp, Warning, TEXT("[%s] 태그 '%s'를 가진 스폰 포인트를 찾을 수 없습니다."), *GetName(), *SpawnPointTagToFind.ToString());
         return;
     }
+
+    const int32 TotalFound = FoundSpawnPoints.Num();
+    const int32 ActualNumToSpawn = FMath::Min(SpawnItemNum, TotalFound);
+
+    for (int32 i = 0; i < ActualNumToSpawn; ++i)
+    {
+        const int32 RandomIndex = FMath::RandRange(0, FoundSpawnPoints.Num() - 1);
+        AActor* ChosenSpawnPoint = FoundSpawnPoints[RandomIndex];
+
+        if (ChosenSpawnPoint)
+        {
+            SpawnRandomItemAt(ChosenSpawnPoint->GetActorTransform());
+        }
+
+        FoundSpawnPoints.RemoveAt(RandomIndex);
+    }
+
+    UE_LOG(LogTemp, Log, TEXT("[%s] 태그 '%s'를 가진 %d개의 스폰 지점 중 %d개를 선택하여 스폰했습니다."), *GetName(), *SpawnPointTagToFind.ToString(), TotalFound, ActualNumToSpawn);
 }
 
