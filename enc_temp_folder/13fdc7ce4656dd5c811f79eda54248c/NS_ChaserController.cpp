@@ -44,7 +44,7 @@ void ANS_ChaserController::BeginPlay()
         BlackboardComp->SetValueAsBool(TEXT("IsChasingEvent"), false);
         BlackboardComp->ClearValue(TEXT("TargetActor"));
     }
-    //RequestPlayerLocation();
+    RequestPlayerLocation();
     PerceptionComp->OnTargetPerceptionUpdated.RemoveDynamic(this, &ANS_ChaserController::OnPerceptionUpdated);
     PerceptionComp->OnTargetPerceptionUpdated.AddDynamic(this, &ANS_ChaserController::OnPerceptionUpdated);
 }
@@ -95,7 +95,7 @@ void ANS_ChaserController::RequestPlayerLocation()
 {
     if (!BlackboardComp)
     {
-        UE_LOG(LogTemp, Error, TEXT("RequestPlayerLocation: BlackboardComp 없음"));
+        UE_LOG(LogTemp, Error, TEXT("❌ RequestPlayerLocation: BlackboardComp 없음"));
         return;
     }
 
@@ -104,14 +104,14 @@ void ANS_ChaserController::RequestPlayerLocation()
 
     if (bIsChasing || bIsCooldown)
     {
-        UE_LOG(LogTemp, Log, TEXT("추적 중 또는 쿨다운 중이라 위치 갱신 생략"));
+        UE_LOG(LogTemp, Log, TEXT("⛔ 추적 중 또는 쿨다운 중이라 위치 갱신 생략"));
         return;
     }
 
     ANS_GameModeBase* GameMode = Cast<ANS_GameModeBase>(UGameplayStatics::GetGameMode(GetWorld()));
     if (!GameMode)
     {
-        UE_LOG(LogTemp, Error, TEXT("GameMode 캐스팅 실패"));
+        UE_LOG(LogTemp, Error, TEXT("❌ GameMode 캐스팅 실패"));
         return;
     }
 
@@ -119,11 +119,11 @@ void ANS_ChaserController::RequestPlayerLocation()
 
     if (Location.IsNearlyZero())
     {
-        UE_LOG(LogTemp, Warning, TEXT("플레이어 위치가 ZeroVector로 반환됨"));
+        UE_LOG(LogTemp, Warning, TEXT("⚠️ 플레이어 위치가 ZeroVector로 반환됨"));
     }
     else
     {
-        UE_LOG(LogTemp, Log, TEXT("플레이어 위치 갱신됨: %s"), *Location.ToString());
+        UE_LOG(LogTemp, Log, TEXT("📍 플레이어 위치 갱신됨: %s"), *Location.ToString());
     }
 
     BlackboardComp->SetValueAsVector(TEXT("TargetLocation"), Location);

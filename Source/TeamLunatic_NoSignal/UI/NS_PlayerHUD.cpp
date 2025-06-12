@@ -113,28 +113,47 @@ void UNS_PlayerHUD::NativeConstruct()
 void UNS_PlayerHUD::ShowWidget()
 {
     SetVisibility(ESlateVisibility::Visible);
-    if (APlayerController* PC = GetOwningPlayer())
+
+    APlayerController* PC = GetOwningPlayer();
+    if (!PC) return;
+
+    APawn* MyPawn = PC->GetPawn();
+    if (!MyPawn)
     {
-        if (APawn* MyPawn = PC->GetPawn())
-        {
-            CachedMyCharacter = Cast<ANS_PlayerCharacterBase>(MyPawn);
-        }
+        // Pawn이 아직 없으면 다음 틱에 다시 시도
+        FTimerHandle RetryHandle;
+        GetWorld()->GetTimerManager().SetTimer(
+            RetryHandle,
+            FTimerDelegate::CreateLambda([this]() {
+            this->ShowWidget();
+        }),
+            0.1f,
+            false
+        );
+        return;
     }
+
+    CachedMyCharacter = Cast<ANS_PlayerCharacterBase>(MyPawn);
+    if (!CachedMyCharacter) return;
+
     GetWorld()->GetTimerManager().ClearTimer(UpdatePlayerStausHandle);
     TWeakObjectPtr<UNS_PlayerHUD> SafeThis = this;
     float ElapsedTime = 0.f;
     float PrevTime = GetWorld()->GetTimeSeconds();
+
     GetWorld()->GetTimerManager().SetTimer
     (
         UpdatePlayerStausHandle,
-        FTimerDelegate::CreateLambda([SafeThis, ElapsedTime, PrevTime]() mutable
+        FTimerDelegate::CreateLambda([SafeThis]() mutable
     {
-        if (!SafeThis.IsValid())return;
-        UWorld* World = SafeThis->GetWorld();
-        if (!World) return;
+        if (!SafeThis.IsValid()) return;
+        if (!SafeThis->CachedMyCharacter || !SafeThis->CachedMyCharacter->StatusComp) return;
+
         SafeThis->WBP_StatusProgressbar_Health->UpdatePercent(SafeThis->CachedMyCharacter->StatusComp->Health * 0.01f);
         SafeThis->WBP_StatusProgressbar_Stamina->UpdatePercent(SafeThis->CachedMyCharacter->StatusComp->Stamina * 0.01f);
-    }), 0.05f, true
+    }),
+        0.05f,
+        true
     );
 }
 
