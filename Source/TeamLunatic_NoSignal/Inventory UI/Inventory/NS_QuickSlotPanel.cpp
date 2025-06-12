@@ -152,14 +152,6 @@ bool UNS_QuickSlotPanel::AssignToFirstEmptySlot(UNS_InventoryBaseItem* Item)
     return false;
 }
 
-void UNS_QuickSlotPanel::UseSlot_Server_Implementation(int32 SlotIndex)
-{
-    if (SlotWidgets.IsValidIndex(SlotIndex))
-    {
-        SlotWidgets[SlotIndex]->UseAssignedItem_Server();
-    }
-}
-
 UNS_InventoryBaseItem* UNS_QuickSlotPanel::GetItemInSlot(int32 SlotIndex) const
 {
     if (SlotWidgets.IsValidIndex(SlotIndex))
@@ -171,9 +163,20 @@ UNS_InventoryBaseItem* UNS_QuickSlotPanel::GetItemInSlot(int32 SlotIndex) const
 
 void UNS_QuickSlotPanel::RemoveItemFromSlot(UNS_InventoryBaseItem* Item)
 {
+    if (!Item)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 제거할 아이템이 nullptr입니다."));
+        return;
+    }
+
     for (UNS_QuickSlotSlotWidget* QSlot : SlotWidgets)
     {
-        if (QSlot && QSlot->GetAssignedItem() == Item)
+        if (!QSlot || !QSlot->GetAssignedItem()) continue;
+
+        const UNS_InventoryBaseItem* AssignedItem = QSlot->GetAssignedItem();
+
+        // ItemDataRowName 기준 비교 (포인터 주소 비교 대신)
+        if (AssignedItem->ItemDataRowName == Item->ItemDataRowName)
         {
             QSlot->ClearAssignedItem();
             UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] %s 퀵슬롯에서 제거됨"), *Item->GetName());

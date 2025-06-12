@@ -7,6 +7,7 @@
 
 class ANS_PlayerCharacterBase;
 class ANS_BaseWeapon; 
+class UNS_InventoryBaseItem;
   
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class TEAMLUNATIC_NOSIGNAL_API UNS_EquipedWeaponComponent : public UActorComponent
@@ -44,21 +45,24 @@ public:
 
 	/** 슬롯 인덱스에 해당하는 무기를 장착 */
 	UFUNCTION(BlueprintCallable)
-	void SwapWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass);
+	void SwapWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass, UNS_InventoryBaseItem* SourceItem);
 	
 	// 서버에서 무기 스폰 및 부착 함수
 	UFUNCTION(Server, Reliable)
-	void ServerEquipWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass);
+	void ServerEquipWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass, UNS_InventoryBaseItem* SourceItem);
 	// 클라이언트에 무기 스폰 및 부착 함수 
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastEquipWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass);
-
+	void MulticastEquipWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass, UNS_InventoryBaseItem* SourceItem);
+	UFUNCTION(BlueprintCallable)
+	void UnequipWeapon();
+	
 	UFUNCTION(Server, Reliable)
 	void Server_UnequipWeapon();
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_UnequipWeapon();
 
+	UNS_InventoryBaseItem* GetCurrentWeaponItem() const;
 	// 현재 장착 무기가 원기리일때는 재장전 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_Reload();

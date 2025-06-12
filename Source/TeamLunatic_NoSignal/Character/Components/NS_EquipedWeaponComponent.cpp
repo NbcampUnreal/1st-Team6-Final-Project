@@ -4,6 +4,7 @@
 #include "Item/NS_InventoryBaseItem.h"
 #include "Item/NS_BaseMeleeWeapon.h"
 #include "Item/NS_BaseRangedWeapon.h"
+#include "Item/NS_BaseThrowWeapon.h"
 #include "GameFramework/Character.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
@@ -34,18 +35,18 @@ void UNS_EquipedWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProp
 
 }
 
-void UNS_EquipedWeaponComponent::SwapWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass)
+void UNS_EquipedWeaponComponent::SwapWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass, UNS_InventoryBaseItem* SourceItem)
 {
     // 슬롯 → 무기 클래스 결정
-    ServerEquipWeapon(WeaponClass);
+    ServerEquipWeapon(WeaponClass, SourceItem);
 }
 
-void UNS_EquipedWeaponComponent::ServerEquipWeapon_Implementation(TSubclassOf<ANS_BaseWeapon> WeaponClass)
+void UNS_EquipedWeaponComponent::ServerEquipWeapon_Implementation(TSubclassOf<ANS_BaseWeapon> WeaponClass, UNS_InventoryBaseItem* SourceItem)
 {
-    MulticastEquipWeapon(WeaponClass);
+    MulticastEquipWeapon(WeaponClass, SourceItem);
 }
 
-void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf<ANS_BaseWeapon> WeaponClass)
+void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf<ANS_BaseWeapon> WeaponClass, UNS_InventoryBaseItem* SourceItem)
 {
     // 기존 무기 제거
     if (OwnerCharacter)
@@ -78,11 +79,12 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
     if (!NewWpn) return;
 
     NewWpn->SetOwner(OwnerCharacter);
-    
+    NewWpn->OwningInventoryItem = SourceItem;
+
     const FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
     const FName SocketName = NewWpn->AttachSocketName;
 
-    // MeleeWeapon (근접 무기)
+    // MeleeWeapon 근거리 무기
     if (auto Melee = Cast<ANS_BaseMeleeWeapon>(NewWpn))
     {
         // 플레이어한테만 보이는 메쉬를 팔에 부착
@@ -101,7 +103,7 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
                 OwnerCharacter->GetMesh(), Rules, SocketName);
         }
     }
-    // RangeWeapon (원거리 무기)
+    // RangeWeapon 원거리 무기
     else if (auto Ranged = Cast<ANS_BaseRangedWeapon>(NewWpn))
     {
         // 플레이어한테만 보이는 메쉬를 팔에 부착
@@ -126,13 +128,31 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
                 OwnerCharacter->FirstPersonArms, Rules, SocketName);
         }
     }
+    // ThrowWeapon 투척 병
+    else if (auto Throw = Cast<ANS_BaseThrowWeapon>(NewWpn))
+    {
+        if (Throw->ItemStaticMesh)
+        {
+            Throw->ItemStaticMesh->AttachToComponent(
+                OwnerCharacter->GetMesh(), Rules, SocketName);
+        }
+
+        if (Throw->ArmsMeshComp)
+        {
+            Throw->ArmsMeshComp->AttachToComponent(
+                OwnerCharacter->FirstPersonArms, Rules, SocketName);
+        }
+    }
 
     // 현재 무기 설정
     CurrentWeapon = NewWpn;
     // 무기타입 갱신
     WeaponType = NewWpn->GetWeaponType();
 }
-
+void UNS_EquipedWeaponComponent::UnequipWeapon()
+{
+    Server_UnequipWeapon();
+}
 void UNS_EquipedWeaponComponent::Server_UnequipWeapon_Implementation()
 {
     Multicast_UnequipWeapon();
@@ -245,5 +265,10 @@ void UNS_EquipedWeaponComponent::Multicast_Reload_Implementation()
             UE_LOG(LogTemp, Warning, TEXT("[Reload] 사용할 수 있는 탄약 없음 또는 탄약 수량 부족"));
         }
     }
+}
+
+UNS_InventoryBaseItem* UNS_EquipedWeaponComponent::GetCurrentWeaponItem() const
+{
+    return CurrentWeapon ? CurrentWeapon->OwningInventoryItem : nullptr;
 }
 
