@@ -76,29 +76,13 @@ public:
 	void OnDeadState();
 	
 	//사운드 관련
-	void StartSoundTimer(float Interval, USoundCue* Sound);
-	void StopSoundTimer();
-	UFUNCTION()
-	void PlaySoundLoop();
+	UFUNCTION(Server, Reliable)
+	void Server_PlaySound(USoundCue* Sound);
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multicast_PlaySound(USoundCue* Sound);
 
 	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Sound")
 	USphereComponent* SphereComp;
-	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Sound")
-	USoundCue* IdleSound;
-	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Sound")
-	USoundCue* AttackSound;
-	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Sound")
-	USoundCue* DetectSound;
-	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Sound")
-	USoundCue* ChaseSound;
-	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Sound")
-	USoundCue* DeadSound;
-	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Sound")
-	USoundCue* HitSound;
-	UPROPERTY(EditDefaultsOnly,Replicated, Category = "Sound")
-	USoundCue* CurrentSound;
 	
 	
 	//공격 관련
@@ -112,9 +96,6 @@ public:
 								UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
 								bool bFromSweep, const FHitResult& SweepResult);
 	
-
-
-	FTimerHandle SoundTimerHandle;
 	FTimerHandle MontageTimerHandle;
 
 	//Get함수
