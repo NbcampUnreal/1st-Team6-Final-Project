@@ -10,7 +10,7 @@ class AActor;
 class APawn;
 class ANS_PlayerCharacterBase;
 
-/** 탈출 루트 구분 */
+// 탈출 루트 구분 
 UENUM(BlueprintType)
 enum class EEscapeRoute : uint8
 {
@@ -19,7 +19,7 @@ enum class EEscapeRoute : uint8
 	Radio
 };
 
-/** 탈출 시도 정보 */
+// 탈출 시도 정보 
 USTRUCT(BlueprintType)
 struct FEscapeAttemptInfo
 {
@@ -29,7 +29,7 @@ struct FEscapeAttemptInfo
 	ANS_PlayerCharacterBase* Player = nullptr;
 
 	UPROPERTY(BlueprintReadWrite)
-	FName EscapeTargetTag = NAME_None; // "Car" or "Radio"
+	FName EscapeTargetTag = NAME_None;
 };
 
 UCLASS()
@@ -42,22 +42,15 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Location")
 	virtual FVector GetPlayerLocation_Implementation() const override;
+
 protected:
 	virtual void BeginPlay() override;
-
-	// 게임 종료 처리 
 	void HandleGameOver(bool bPlayerSurvived, EEscapeRoute EscapeRoute);
 
 private:
-	// 게임 상태 
+	UPROPERTY(EditAnywhere, Category = "Character")
+	TArray<TSubclassOf<APawn>> AvailablePawnClasses;
+
 	bool bIsGameOver = false;
 	EEscapeRoute CurrentEscapeRoute = EEscapeRoute::None;
-
-	// 참조 캐시 
-	UPROPERTY()
-	AActor* TrackerZombieInstance;
-
-	UPROPERTY()
-	AActor* CachedPlayerStart;
-
 };
