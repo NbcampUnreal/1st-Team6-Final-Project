@@ -102,9 +102,8 @@ void UNS_PlayerHUD::NativeConstruct()
         }
     }
    // if (ScrollBox_Compass && ItemArray.IsValidIndex(49)) // 0부터 시작하니 49 = 50번째
-    {
   //      ScrollBox_Compass->ScrollWidgetIntoView(CompassTextArray[ChildCount/3], true, EDescendantScrollDestination::Center, 0.f);
-    }
+
     ScrollBox_Compass->SetAnimateWheelScrolling(false); // 휠 애니 끄기
     ScrollBox_Compass->SetScrollBarVisibility(ESlateVisibility::Collapsed); 
 
@@ -166,7 +165,7 @@ void UNS_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
     float CurTempIdx = Yaw / AngleGap;
     int32 CurIdx = FMath::FloorToInt(CurTempIdx);
     int32 CurFinalIdx = CurIdx + FixIndx;
-    UE_LOG(LogTemp, Warning, TEXT("CurFinalIdx = %d / Yaw = %f"), CurFinalIdx,Yaw);
+    //UE_LOG(LogTemp, Warning, TEXT("CurFinalIdx = %d / Yaw = %f"), CurFinalIdx,Yaw);
 
     //ScrollBox_Compass->ScrollWidgetIntoView(CompassTextArray[CurFinalIdx], true, EDescendantScrollDestination::Center, 0.f);
 
@@ -200,6 +199,6 @@ void UNS_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
     float FinalOffset = Offset + InterpolatedOffset - (ViewWidth / 2.f)+ FixDist;
 
     ScrollBox_Compass->SetScrollOffset(FinalOffset);
-    UE_LOG(LogTemp, Warning, TEXT("Offset = %f / FinalOffset = %f / CurFinalIdx = %d"), Offset , FinalOffset, CurFinalIdx);
+    //UE_LOG(LogTemp, Warning, TEXT("Offset = %f / FinalOffset = %f / CurFinalIdx = %d"), Offset , FinalOffset, CurFinalIdx);
 
 }
