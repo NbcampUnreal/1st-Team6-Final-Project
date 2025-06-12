@@ -4,6 +4,7 @@
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "Interaction/Component/InteractionComponent.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "NS_PlayerCharacterBase.generated.h"
 
 class UInputMappingContext;
@@ -84,6 +85,9 @@ public:
 	FName CameraAttachSocketName;
 	
 	////////////////////////////////////캐릭터 부착 컴포넌트들///////////////////////////////////////
+	// 스프링 암 컴포넌트
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
+	USpringArmComponent* SpringArmComp;
 	// 1인칭 카메라 컴포넌트 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	UCameraComponent* CameraComp;
