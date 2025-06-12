@@ -9,8 +9,6 @@
 class AActor;
 class APawn;
 class ANS_PlayerCharacterBase;
-//class AZombieSpawnManager;  //좀비스폰매니저
-//class AItemSpawnManager;    // 아이템스폰 매니저 
 
 /** 탈출 루트 구분 */
 UENUM(BlueprintType)

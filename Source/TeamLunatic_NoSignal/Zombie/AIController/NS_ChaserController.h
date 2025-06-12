@@ -35,11 +35,13 @@ protected:
 
     // 추적 종료 및 쿨다운 시작 
     void ResetChase();
-
+   
     // 지속 데미지 루프 시작 / 정지 / 실행 
     void StartDamageLoop(AActor* Target);
     void StopDamageLoop();
     void ApplyDamageToTarget();
+
+
 
     // AI 요소 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -61,7 +63,7 @@ protected:
     // 추적 타이머 및 쿨다운 타이머 
     FTimerHandle ChaseResetTimerHandle;
     FTimerHandle CooldownTimerHandle;
-
+    FTimerHandle PatrolWaitTimerHandle;
     // 지속 데미지용
     FTimerHandle DamageTimerHandle;
     AActor* DamageTarget = nullptr;
