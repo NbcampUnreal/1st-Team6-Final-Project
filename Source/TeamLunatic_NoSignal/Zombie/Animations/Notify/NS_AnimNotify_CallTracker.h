@@ -6,9 +6,6 @@
 #include "Animation/AnimNotifies/AnimNotify.h"
 #include "NS_AnimNotify_CallTracker.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UNS_AnimNotify_CallTracker : public UAnimNotify
 {
@@ -17,4 +14,6 @@ public:
 	virtual void Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference) override;
 	UPROPERTY()
 	TArray<AActor*> TrackerActors;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Sound")
+	USoundCue* ScreamSound;
 };

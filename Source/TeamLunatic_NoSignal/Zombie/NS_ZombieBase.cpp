@@ -110,11 +110,23 @@ void ANS_ZombieBase::OnAttackState()
 void ANS_ZombieBase::OnDeadState()
 {
 	if (bIsDead) return;
-	StopSoundTimer();
 	if (HasAuthority())
 	{
 		bIsDead = true;
 		Die_Multicast();
+	}
+}
+
+void ANS_ZombieBase::Server_PlaySound_Implementation(USoundCue* Sound)
+{
+	Multicast_PlaySound(Sound);
+}
+
+void ANS_ZombieBase::Multicast_PlaySound_Implementation(USoundCue* Sound)
+{
+	if (Sound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, Sound, GetMesh()->GetSocketLocation("headsocket"));
 	}
 }
 
@@ -190,24 +202,6 @@ void ANS_ZombieBase::SetAttackType(EZombieAttackType NewAttackType)
 	}
 }
 
-void ANS_ZombieBase::StartSoundTimer(float Interval, USoundCue* Sound)
-{
-	CurrentSound = Sound;
-	GetWorldTimerManager().SetTimer(SoundTimerHandle,this ,&ANS_ZombieBase::PlaySoundLoop, Interval,true);
-}
-
-void ANS_ZombieBase::StopSoundTimer()
-{
-	GetWorldTimerManager().ClearTimer(SoundTimerHandle);
-}
-
-void ANS_ZombieBase::PlaySoundLoop()
-{
-	if (CurrentSound)
-	{
-		Multicast_PlaySound(CurrentSound);
-	}
-}
 
 // void ANS_ZombieBase::MontagePlay(ANS_AIController* NSController, UAnimMontage* MontageToPlay)
 // {
@@ -229,14 +223,6 @@ void ANS_ZombieBase::PlaySoundLoop()
 // 		NSController->ResumeBT();
 // 	}
 // }
-
-void ANS_ZombieBase::Multicast_PlaySound_Implementation(USoundCue* Sound)
-{
-	if (Sound)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, Sound, GetMesh()->GetSocketLocation("headsocket"));
-	}
-}
 
 void ANS_ZombieBase::Server_SetState_Implementation(EZombieState NewState)
 {

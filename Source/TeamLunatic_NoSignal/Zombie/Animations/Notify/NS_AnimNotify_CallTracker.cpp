@@ -17,5 +17,13 @@ void UNS_AnimNotify_CallTracker::Notify(USkeletalMeshComponent* MeshComp, UAnimS
 	if (!Controller) return;
 	UBlackboardComponent* BlackboardComponent = Controller->GetBlackboardComponent();
 	if (!BlackboardComponent) return;
-	
+
+	if (ScreamSound)
+	{
+		if (Zombie->HasAuthority())
+		{
+			Zombie->Multicast_PlaySound(ScreamSound);
+		}
+		Zombie->Server_PlaySound(ScreamSound);
+	}
 }
