@@ -467,6 +467,11 @@ void ANS_PlayerCharacterBase::DropItem_Server_Implementation(UNS_InventoryBaseIt
 {
     if (PlayerInventory->FindMatchingItem(ItemToDrop))
     {
+        if (EquipedWeaponComp && EquipedWeaponComp->GetCurrentWeaponItem() == ItemToDrop)
+        {
+            EquipedWeaponComp->UnequipWeapon();
+        }
+        Client_RemoveFromQuickSlot(ItemToDrop);
         FActorSpawnParameters SpawnParams;
         SpawnParams.Owner = this;
         SpawnParams.bNoFail = true;
@@ -490,6 +495,17 @@ void ANS_PlayerCharacterBase::DropItem_Server_Implementation(UNS_InventoryBaseIt
     else
     {
         UE_LOG(LogTemp, Warning, TEXT("Item to drop was somehow null"));
+    }
+}
+
+void ANS_PlayerCharacterBase::Client_RemoveFromQuickSlot_Implementation(UNS_InventoryBaseItem* ItemToRemove)
+{
+    if (QuickSlotPanel)
+    {
+        QuickSlotPanel->RemoveItemFromSlot(ItemToRemove); // 여기서 UI 제거 처리
+        UE_LOG(LogTemp, Warning, TEXT("[Drop] 현재 무기의 아이템: %s, 제거 대상 아이템: %s"),
+            *GetNameSafe(EquipedWeaponComp->GetCurrentWeaponItem()),
+            *GetNameSafe(ItemToRemove));
     }
 }
 
@@ -547,7 +563,7 @@ void ANS_PlayerCharacterBase::UseQuickSlotByIndex_Internal(int32 Index)
 
     if (UNS_EquipedWeaponComponent* WeaponComp = FindComponentByClass<UNS_EquipedWeaponComponent>())
     {
-        WeaponComp->SwapWeapon(ItemData->WeaponActorClass);
+        WeaponComp->SwapWeapon(ItemData->WeaponActorClass, Item);
     }
 
     QuickSlotIndex = Index;

@@ -37,7 +37,7 @@ void UNS_QuickSlotSlotWidget::ClearAssignedItem()
     AssignedItem = nullptr;
     if (ItemIcon)
     {
-        ItemIcon->SetBrushFromTexture(nullptr);
+        ItemIcon->SetVisibility(ESlateVisibility::Collapsed);
     }
     if (AmountText)
     {

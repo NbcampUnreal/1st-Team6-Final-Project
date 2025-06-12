@@ -49,6 +49,8 @@ public:
 
 	void DropItem(UNS_InventoryBaseItem* ItemToDrop, const int32 QuantityToDrop);
 
+	UFUNCTION(Client, Reliable)
+	void Client_RemoveFromQuickSlot(UNS_InventoryBaseItem* ItemToRemove);
 
 	void UseQuickSlot1();
 
