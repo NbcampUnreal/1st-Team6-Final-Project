@@ -18,6 +18,9 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "Spawning", meta = (DisplayName = "Execute Spawning Logic"))
+	void K2_ExecuteSpawning();
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spawning")
 	UDataTable* ItemDataTable;
 
@@ -31,7 +34,17 @@ protected:
 	FName SpawnPointTagToFind;
 
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spawning")
+	int32 SpawnItemNum;
+
+	//필드에서 아이템이 랜덤 위치로 생성되게 설정.
+	UFUNCTION(BlueprintCallable)
+	void SpawnItemsInRandomLocations(float Radius);
+
 	void FindAndSpawnItems();
 
 	void SpawnRandomItemAt(const FTransform& SpawnTransform);
+
+	UFUNCTION(BlueprintCallable)
+	void SpawnRandomTaggedLocations();
 };
