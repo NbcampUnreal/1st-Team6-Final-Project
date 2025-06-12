@@ -24,9 +24,15 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
 
     SprintSpeedMultiplier = 1.5f;
 
+    // 스프링 암 설정
+    SpringArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
+    SpringArmComp->SetupAttachment(RootComponent);
+    SpringArmComp->TargetArmLength = 0.f;
+    SpringArmComp->bUsePawnControlRotation = true;
+    
     // 카메라 설정
     CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
-    CameraComp->SetupAttachment(GetMesh(), CameraAttachSocketName);
+    CameraComp->SetupAttachment(SpringArmComp, USpringArmComponent::SocketName);
     CameraComp->bUsePawnControlRotation = true;
 
     // 1인칭용 팔 설정
