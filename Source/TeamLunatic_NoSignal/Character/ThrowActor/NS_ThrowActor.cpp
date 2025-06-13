@@ -1,10 +1,9 @@
 #include "NS_ThrowActor.h"
-
-#include "Components/BoxComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "GeometryCollection/GeometryCollectionActor.h"
 #include "Kismet/GameplayStatics.h"
+#include "Perception/AISense_Hearing.h"
+#include "GeometryCollection/GeometryCollectionActor.h"
 
 ANS_ThrowActor::ANS_ThrowActor()
 {
@@ -48,20 +47,41 @@ void ANS_ThrowActor::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
 						   UPrimitiveComponent* OtherComp, FVector NormalImpulse,
 						   const FHitResult& Hit)
 {
+	if (!bHasPlayedImpactSound)
+	{
+		if (ImpactSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
+		}
+		UAISense_Hearing::ReportNoiseEvent(
+			GetWorld(),
+			GetActorLocation(),
+			1.0f,           
+			this,           
+			2000.f, 
+			NAME_None         
+		);
+		bHasPlayedImpactSound = true;
+	}
+	
 	if (!FractureActorClass) return;
 
-	// GC 액터 스폰
-	FActorSpawnParameters Params;
-	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	// 지오메트리컬렉션 메쉬 스폰 === 실제 부서지는건 지오메트리 컬렉션에 설정값으로 부서짐
+	if (FractureActorClass)
+	{
+		FActorSpawnParameters Params;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		if (auto* Fracture = GetWorld()->SpawnActor<AGeometryCollectionActor>(
+				FractureActorClass,
+				GetActorLocation(),
+				GetActorRotation(),
+				Params))
+		{
+			// 5초 뒤에 사라짐
+			Fracture->SetLifeSpan(5.0f);
+		}
+	}
 
-	AGeometryCollectionActor* FractureActor = GetWorld()->SpawnActor<AGeometryCollectionActor>(
-		FractureActorClass,
-		GetActorLocation(),
-		GetActorRotation(),
-		Params
-	);
-	
-
-	// 병 액터 제거
+	// 병 액터는 땅에 닿는순간 바로 제거
 	Destroy();
 }
