@@ -712,6 +712,7 @@ void ANS_PlayerCharacterBase::ThrowBottle()
     ANS_ThrowActor* Bottle = GetWorld()->SpawnActor<ANS_ThrowActor>(
         BottleClass, SpawnLocation, ControlRot, Params);
 
+    // 병 액터에 있는 병이 깨지는 함수 실행
     if (Bottle)
     {
         Bottle->LaunchInDirection(LaunchDir);
