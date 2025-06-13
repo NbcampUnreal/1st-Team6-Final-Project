@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Sound/SoundCue.h"
 #include "Animation/AnimNotifies/AnimNotify.h"
 #include "NS_AnimNotify_CallTracker.generated.h"
 
