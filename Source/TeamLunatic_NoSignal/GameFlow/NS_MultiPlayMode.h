@@ -1,28 +1,26 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/GameModeBase.h"
+#include "NS_GameModeBase.h"
 #include "NS_MultiPlayMode.generated.h"
 
-class AActor;
 class APawn;
 
 UCLASS()
-class TEAMLUNATIC_NOSIGNAL_API ANS_MultiPlayMode : public AGameModeBase
+class TEAMLUNATIC_NOSIGNAL_API ANS_MultiPlayMode : public ANS_GameModeBase
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
-	ANS_MultiPlayMode();
+    ANS_MultiPlayMode();
 
 protected:
-	virtual void BeginPlay() override;
+    virtual void BeginPlay() override;
 
-	/** 모든 플레이어를 스폰 */
-	void SpawnAllPlayers();
+    // 모든 플레이어를 PlayerStart 기준으로 스폰 
+    void SpawnAllPlayers();
 
-private:
-	/** 설정 */
-	UPROPERTY(EditAnywhere, Category = "Spawn")
-	TSubclassOf<APawn> PlayerPawnClass;
+public:
+    // GameState에 등록된 추적 대상 위치 반환 
+    virtual FVector GetPlayerLocation_Implementation() const override;
 };
