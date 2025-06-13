@@ -47,6 +47,9 @@ public:
 	// 플레이어 진입 시 처리
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 
+	// 사망 이벤트 핸들링
+	virtual void OnPlayerCharacterDied_Implementation(ANS_PlayerCharacterBase* DeadCharacter) override;
+
 protected:
 	void HandleGameOver(bool bPlayerSurvived, EEscapeRoute EscapeRoute);
 

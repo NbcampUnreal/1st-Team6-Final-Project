@@ -453,6 +453,15 @@ void ANS_PlayerCharacterBase::ReloadAction_Server_Implementation(const FInputAct
 
 void ANS_PlayerCharacterBase::PlayDeath_Server_Implementation()
 {
+    if (UWorld* World = GetWorld())
+    {
+        ANS_GameModeBase* BaseGameMode = Cast<ANS_GameModeBase>(UGameplayStatics::GetGameMode(World));
+        if (BaseGameMode)
+        {
+            BaseGameMode->OnPlayerCharacterDied(this); 
+        }
+    }
+
     PlayDeath_Multicast(); 
 }
 
@@ -703,6 +712,7 @@ void ANS_PlayerCharacterBase::ThrowBottle()
     ANS_ThrowActor* Bottle = GetWorld()->SpawnActor<ANS_ThrowActor>(
         BottleClass, SpawnLocation, ControlRot, Params);
 
+    // 병 액터에 있는 병이 깨지는 함수 실행
     if (Bottle)
     {
         Bottle->LaunchInDirection(LaunchDir);
