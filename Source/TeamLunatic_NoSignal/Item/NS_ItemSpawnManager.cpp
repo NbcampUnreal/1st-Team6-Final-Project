@@ -3,12 +3,25 @@
 #include "World/Pickup.h"
 #include "Kismet/GameplayStatics.h"
 #include "Item/NS_InventoryBaseItem.h"
+#include "Components/SphereComponent.h"
 
 
 ANS_ItemSpawnManager::ANS_ItemSpawnManager()
 {
-    // Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
     PrimaryActorTick.bCanEverTick = false;
+
+    bReplicates = true;
+
+    SpawnRadiusSphere = CreateDefaultSubobject<USphereComponent>(TEXT("SpawnRadiusSphere"));
+    SetRootComponent(SpawnRadiusSphere);
+
+    // 시각화 구체의 기본 설정
+    SpawnRadiusSphere->SetCollisionProfileName(TEXT("NoCollision")); // 콜리전 없음
+    SpawnRadiusSphere->SetSphereRadius(3000.f); // 기본 반경 값
+
+    // 에디터에서는 보이지만, 실제 게임에서는 보이지 않도록 설정합니다.
+    SpawnRadiusSphere->bDrawOnlyIfSelected = true;
+    SpawnRadiusSphere->SetHiddenInGame(true, true);
 }
 
 // Called when the game starts or when spawned
@@ -25,6 +38,8 @@ void ANS_ItemSpawnManager::BeginPlay()
 
 void ANS_ItemSpawnManager::SpawnItemsInRandomLocations(float Radius)
 {
+    if (!HasAuthority()) return;
+
     UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetNavigationSystem(GetWorld());
     if (!NavSystem)
     {
@@ -32,17 +47,19 @@ void ANS_ItemSpawnManager::SpawnItemsInRandomLocations(float Radius)
         return;
     }
 
-    UE_LOG(LogTemp, Log, TEXT("[%s] 스폰 시작. NumberOfItems: %d, Radius: %f"), *GetName(), SpawnItemNum, Radius);
-
     FNavLocation ProjectedLocation;
+    if (!NavSystem->ProjectPointToNavigation(GetActorLocation(), ProjectedLocation, FVector(100.f, 100.f, 2000.f)))
+    {
+        UE_LOG(LogTemp, Error, TEXT("[%s] 스포너가 네브 메시를 인식할 수 없습니다! (프로젝션 실패)"), *GetName());
+        return;
+    }
 
     for (int32 i = 0; i < SpawnItemNum; ++i)
     {
         FNavLocation RandomLocation;
-
+        // 수정된 ProjectedLocation.Location을 탐색의 중심으로 사용합니다.
         if (NavSystem->GetRandomReachablePointInRadius(ProjectedLocation.Location, Radius, RandomLocation))
         {
-            // 성공
             SpawnRandomItemAt(FTransform(RandomLocation.Location));
         }
     }
@@ -80,7 +97,12 @@ void ANS_ItemSpawnManager::FindAndSpawnItems()
 
 void ANS_ItemSpawnManager::SpawnRandomItemAt(const FTransform& SpawnTransform)
 {
-    if (!PickupClass || !ItemDataTable || SpawnableTypes.Num() == 0) return;
+    if (!PickupClass)
+    {
+        UE_LOG(LogTemp, Error, TEXT("[%s] 스폰 실패: PickupClass가 지정되지 않았습니다! 블루프린트에서 설정해주세요."), *GetName());
+        return;
+    }
+    if (!ItemDataTable || SpawnableTypes.Num() == 0) return;
 
     //스폰할 아이템 결정 (가중치 랜덤)
     TArray<FName> AllRowNames = ItemDataTable->GetRowNames();
@@ -143,6 +165,8 @@ void ANS_ItemSpawnManager::SpawnRandomItemAt(const FTransform& SpawnTransform)
 
 void ANS_ItemSpawnManager::SpawnRandomTaggedLocations()
 {
+    if (!HasAuthority()) return;
+
     //태그가 없거나, 스폰할 개수가 0 이하라면 중단
     if (SpawnPointTagToFind.IsNone() || SpawnItemNum <= 0)
     {

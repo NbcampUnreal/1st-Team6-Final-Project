@@ -6,6 +6,7 @@
 #include "NS_ItemSpawnManager.generated.h"
 
 class APickup;
+class USphereComponent;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_ItemSpawnManager : public AActor
@@ -17,6 +18,9 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	USphereComponent* SpawnRadiusSphere;
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Spawning", meta = (DisplayName = "Execute Spawning Logic"))
 	void K2_ExecuteSpawning();
