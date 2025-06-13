@@ -44,7 +44,7 @@ void ANS_ChaserController::BeginPlay()
         BlackboardComp->SetValueAsBool(TEXT("IsChasingEvent"), false);
         BlackboardComp->ClearValue(TEXT("TargetActor"));
     }
-
+    //RequestPlayerLocation();
     PerceptionComp->OnTargetPerceptionUpdated.RemoveDynamic(this, &ANS_ChaserController::OnPerceptionUpdated);
     PerceptionComp->OnTargetPerceptionUpdated.AddDynamic(this, &ANS_ChaserController::OnPerceptionUpdated);
 }
@@ -93,19 +93,40 @@ void ANS_ChaserController::Tick(float DeltaTime)
 
 void ANS_ChaserController::RequestPlayerLocation()
 {
-    //if (!BlackboardComp) return;
+    if (!BlackboardComp)
+    {
+        UE_LOG(LogTemp, Error, TEXT("RequestPlayerLocation: BlackboardComp 없음"));
+        return;
+    }
 
-    //const bool bIsChasing = BlackboardComp->GetValueAsBool(TEXT("IsChasingEvent"));
-    //const bool bIsCooldown = BlackboardComp->GetValueAsBool(TEXT("IsCooldownWait"));
+    const bool bIsChasing = BlackboardComp->GetValueAsBool(TEXT("IsChasingEvent"));
+    const bool bIsCooldown = BlackboardComp->GetValueAsBool(TEXT("IsCooldownWait"));
 
-    //if (bIsChasing || bIsCooldown) return;
+    if (bIsChasing || bIsCooldown)
+    {
+        UE_LOG(LogTemp, Log, TEXT("추적 중 또는 쿨다운 중이라 위치 갱신 생략"));
+        return;
+    }
 
-    //ANS_GameModeBase* GameMode = Cast<ANS_GameModeBase>(UGameplayStatics::GetGameMode(GetWorld()));
-    //if (GameMode)
-    //{
-    //    FVector Location = GameMode->GetPlayerLocation();
-    //    BlackboardComp->SetValueAsVector(TEXT("TargetLocation"), Location);
-    //}
+    ANS_GameModeBase* GameMode = Cast<ANS_GameModeBase>(UGameplayStatics::GetGameMode(GetWorld()));
+    if (!GameMode)
+    {
+        UE_LOG(LogTemp, Error, TEXT("GameMode 캐스팅 실패"));
+        return;
+    }
+
+    FVector Location = GameMode->GetPlayerLocation();
+
+    if (Location.IsNearlyZero())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("플레이어 위치가 ZeroVector로 반환됨"));
+    }
+    else
+    {
+        UE_LOG(LogTemp, Log, TEXT("플레이어 위치 갱신됨: %s"), *Location.ToString());
+    }
+
+    BlackboardComp->SetValueAsVector(TEXT("TargetLocation"), Location);
 }
 
 void ANS_ChaserController::OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
@@ -126,7 +147,7 @@ void ANS_ChaserController::OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimul
     APawn* PlayerPawn = Cast<APawn>(Actor);
     if (!PlayerPawn) return;
 
-    SetChaseTarget(PlayerPawn, 10.0f);
+    SetChaseTarget(PlayerPawn, 30.0f);
     UE_LOG(LogTemp, Log, TEXT("감지로 인한 30초 추적 시작: %s"), *PlayerPawn->GetName());
 }
 
@@ -182,7 +203,7 @@ void ANS_ChaserController::ResetChase()
         UE_LOG(LogTemp, Log, TEXT("쿨다운 종료"));
 
     },
-        15.0f,
+        30.0f,
         false
     );
 
@@ -218,6 +239,6 @@ void ANS_ChaserController::StopDamageLoop()
 void ANS_ChaserController::ApplyDamageToTarget()
 {
     if (!DamageTarget) return;
-
     UGameplayStatics::ApplyDamage(DamageTarget, 10.0f, this, GetPawn(), nullptr);
 }
+
