@@ -39,6 +39,11 @@ protected:
     class UNS_CircleProgressBar* WBP_StatusProgressbar_Fatigue;
 
     UPROPERTY(meta = (BindWidget))
+    class UProgressBar* ProgressBar_Health;
+    UPROPERTY(meta = (BindWidget))
+    class UProgressBar* ProgressBar_Stamina;
+
+    UPROPERTY(meta = (BindWidget))
     class UScrollBox* ScrollBox_Compass;
     TArray<class UTextBlock*> CompassTextArray;
 private:
