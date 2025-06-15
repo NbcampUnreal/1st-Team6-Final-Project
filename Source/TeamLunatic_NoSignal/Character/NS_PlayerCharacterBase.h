@@ -56,10 +56,10 @@ public:
 	void Client_NotifyQuickSlotUpdated();
 	
 	UFUNCTION(BlueprintCallable)
-	void UseThrowableItem_Internal(UNS_InventoryBaseItem* ThrowItem);
+	void UseThrowableItem_Internal(int32 Index);
 
 	UFUNCTION(BlueprintCallable, Server, Reliable)
-	void Server_UseThrowableItem(UNS_InventoryBaseItem* ThrowItem);
+	void Server_UseThrowableItem(int32 Index);
 
 	UFUNCTION(Server, Reliable)
 	void Server_AssignQuickSlot(int32 SlotIndex, UNS_InventoryBaseItem* Item);

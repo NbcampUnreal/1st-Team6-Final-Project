@@ -532,37 +532,52 @@ void ANS_PlayerCharacterBase::Client_NotifyQuickSlotUpdated_Implementation()
     }
 }
 
-void ANS_PlayerCharacterBase::UseThrowableItem_Internal(UNS_InventoryBaseItem* ThrowItem)
+void ANS_PlayerCharacterBase::UseThrowableItem_Internal(int32 Index)
 {
     if (HasAuthority())
     {
-        Server_UseThrowableItem_Implementation(ThrowItem);
+        Server_UseThrowableItem_Implementation(Index);
     }
     else
     {
-        Server_UseThrowableItem(ThrowItem);
+        Server_UseThrowableItem(Index);
     }
 }
 
-void ANS_PlayerCharacterBase::Server_UseThrowableItem_Implementation(UNS_InventoryBaseItem* ThrowItem)
+void ANS_PlayerCharacterBase::Server_UseThrowableItem_Implementation(int32 Index)
 {
-    if (!ThrowItem || !PlayerInventory) return;
-
-    for (UNS_InventoryBaseItem* Item : PlayerInventory->GetInventoryContents())
+    if (!QuickSlotComponent || !PlayerInventory) return;
+    QuickSlotComponent->SetCurrentSlotIndex(Index);
+    // 퀵슬롯에서 해당 인덱스에 있는 아이템 가져오기
+    UNS_InventoryBaseItem* Item = QuickSlotComponent->GetItemInSlot(Index);
+   
+    // 아이템이 없으면 → 무기 해제 + 퀵슬롯 정리
+    if (!Item || Item->ItemDataRowName.IsNone())
     {
-        if (Item && (Item == ThrowItem || Item->ItemDataRowName == ThrowItem->ItemDataRowName))
+        if (UNS_EquipedWeaponComponent* WeaponComp = FindComponentByClass<UNS_EquipedWeaponComponent>())
         {
-            PlayerInventory->RemoveAmountOfItem(Item, 1);
-
-            if (Item->Quantity <= 0)
+            if (WeaponComp->GetCurrentWeaponItem())
             {
-                QuickSlotComponent->RemoveItem(Item);
+                WeaponComp->UnequipWeapon();
+                UE_LOG(LogTemp, Warning, TEXT("슬롯 비어 있음 - 무기 해제 (슬롯: %d)"), Index);
             }
-
-            Client_NotifyInventoryUpdated();
-            break;
         }
+
+        QuickSlotComponent->RemoveItem(Item);
+        Client_NotifyInventoryUpdated();
+        return;
     }
+
+    // 아이템이 존재하면 → 인벤토리에서 해당 인스턴스 직접 수량 감소
+    PlayerInventory->RemoveAmountOfItem(Item, 1);
+
+    // 수량 0일 경우 퀵슬롯 정리 
+    if (Item->Quantity <= 0)
+    {
+        QuickSlotComponent->RemoveItem(Item);
+    }
+
+    Client_NotifyInventoryUpdated();
 }
 
 // 서버에서 슬롯 할당 처리
@@ -597,8 +612,21 @@ void ANS_PlayerCharacterBase::Server_UseQuickSlotByIndex_Implementation(int32 In
     UNS_InventoryBaseItem* Item = QuickSlotComponent->GetItemInSlot(Index);
     if (!Item || Item->ItemDataRowName.IsNone())
     {
-        UE_LOG(LogTemp, Warning, TEXT("[Server_UseQuickSlot] 슬롯 %d 아이템 없음 또는 복제 미완료"), Index);
-        return;
+        // 무기 장착 중이면 장착 해제 처리
+        if (EquipedWeaponComp && EquipedWeaponComp->GetCurrentWeaponItem())
+        {
+            if (!IsChangeAnim)
+            {
+                IsChangeAnim = true;  // 애니메이션 실행 상태 플래그
+                UE_LOG(LogTemp, Warning, TEXT("[Server_UseQuickSlot] 슬롯 %d 애니메이션 시작 준비"), Index);
+            }
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("[Server_UseQuickSlot] 슬롯 %d 비어 있음 - 장착 무기 없음"), Index);
+        }
+
+        return;  // 무기 없으므로 더 이상 진행하지 않음
     }
 
     if (!IsChangeAnim)
@@ -618,8 +646,25 @@ void ANS_PlayerCharacterBase::UseQuickSlotByIndex_Internal(int32 Index)
     if (!QuickSlotComponent) return;
 
     UNS_InventoryBaseItem* Item = QuickSlotComponent->GetItemInSlot(Index);
+
+    // 비어 있는 슬롯일 경우 → 현재 무기 해제
+    if (!Item || Item->ItemDataRowName.IsNone())
+    {
+        if (UNS_EquipedWeaponComponent* WeaponComp = FindComponentByClass<UNS_EquipedWeaponComponent>())
+        {
+            if (WeaponComp->GetCurrentWeaponItem())
+            {
+                WeaponComp->UnequipWeapon();
+                UE_LOG(LogTemp, Warning, TEXT("[UseQuickSlot_Internal] 빈 슬롯 선택 - 무기 해제 완료 (슬롯: %d)"), Index);
+            }
+        }
+
+        QuickSlotComponent->SetCurrentSlotIndex(Index);
+        return;
+    }
     if (!Item || Item->ItemDataRowName.IsNone()) return;
 
+    // 정상 아이템일 경우
     const FNS_ItemDataStruct* ItemData = Item->GetItemData();
     if (!ItemData || ItemData->ItemType != EItemType::Equipment) return;
 
@@ -672,6 +717,11 @@ void ANS_PlayerCharacterBase::Client_NotifyInventoryUpdated_Implementation()
             {
                 PlayerInventory->OnInventoryUpdated.Broadcast();
                 UE_LOG(LogTemp, Warning, TEXT("Client_NotifyInventoryUpdated - Inventory 갱신 (지연 호출)"));
+
+                if (QuickSlotComponent)
+                {
+                    QuickSlotComponent->BroadcastSlotUpdate();
+                }
             }), 0.05f, false);
     }
 }
