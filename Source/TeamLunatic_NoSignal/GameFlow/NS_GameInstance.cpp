@@ -17,6 +17,11 @@ UNS_GameInstance::UNS_GameInstance()
 	{
 		UIManagerClass = BP_UIManager.Class;
 	}
+
+	CharacterList.Add(TEXT("/Game/Character/Blueprints/Character/BP_NS_Male1"));
+	CharacterList.Add(TEXT("/Game/Character/Blueprints/Character/BP_NS_Male2"));
+	CharacterList.Add(TEXT("/Game/Character/Blueprints/Character/BP_NS_Male3"));
+	CharacterList.Add(TEXT("/Game/Character/Blueprints/Character/BP_NS_Female1"));
 }
 
 void UNS_GameInstance::Init()

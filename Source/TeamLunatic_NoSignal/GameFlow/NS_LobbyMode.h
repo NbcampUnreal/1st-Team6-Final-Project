@@ -12,11 +12,14 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_LobbyMode : public AGameMode
 public:
     ANS_LobbyMode(); // 생성자 선언
     virtual void PostLogin(APlayerController* NewPlayer) override;
+	virtual void Logout(AController* Exiting) override;
     virtual void BeginPlay() override;
 
-    UPROPERTY(EditDefaultsOnly, Category = "Lobby")
-    TSubclassOf<APawn> WaitingRoomPawnClass;
+    UPROPERTY(EditDefaultsOnly, Category = "Character")
+    TArray<TSubclassOf<APawn>> PlayableCharacter;
 
 protected:
     AActor* FindSpawnPointByIndex(int32 Index);
+
+
 };

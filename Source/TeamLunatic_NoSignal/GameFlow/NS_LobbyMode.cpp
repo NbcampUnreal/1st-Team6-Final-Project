@@ -7,24 +7,13 @@
 #include "GameFramework/PlayerStart.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
+#include "NS_GameInstance.h"
 #include "Interfaces/OnlineSessionInterface.h"
 
 ANS_LobbyMode::ANS_LobbyMode()
 {
     DefaultPawnClass = nullptr; // 자동 생성 방지
 
-    static ConstructorHelpers::FClassFinder<APawn> PawnBPClass(
-        TEXT("/Game/Character/WaitingRoomPawn/WaitingRoomPawn1")
-    );
-
-    if (PawnBPClass.Succeeded())
-    {
-        WaitingRoomPawnClass = PawnBPClass.Class;
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("Failed to load WaitingRoomPawn1 blueprint class."));
-    }
 }
 
 
@@ -33,6 +22,27 @@ ANS_LobbyMode::ANS_LobbyMode()
 void ANS_LobbyMode::BeginPlay()
 {
     Super::BeginPlay();
+
+
+    if (UNS_GameInstance* GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
+    {
+        for (auto Item : GameInstance->CharacterList)
+        {
+            ConstructorHelpers::FClassFinder<APawn> PawnBPClass(*Item);
+            if (PawnBPClass.Succeeded())
+            {
+                PlayableCharacter.Add(PawnBPClass.Class);
+            }
+            else
+            {
+                UE_LOG(LogTemp, Error, TEXT("Failed to load character blueprint class: %s"), *Item);
+            }
+        }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to cast GameInstance to UNS_GameInstance"));
+    }
 
     IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
     if (!Subsystem) return;
@@ -68,11 +78,22 @@ void ANS_LobbyMode::PostLogin(APlayerController* NewPlayer)
 
     FTransform SpawnTransform = StartSpot->GetActorTransform();
 
-    // FIX: DefaultPawnClass → WaitingRoomPawnClass
-    APawn* SpawnedPawn = GetWorld()->SpawnActor<APawn>(WaitingRoomPawnClass, SpawnTransform);
+    APawn* SpawnedPawn = GetWorld()->SpawnActor<APawn>(PlayableCharacter[PlayerIndex], SpawnTransform);
+
     if (SpawnedPawn)
     {
         NewPlayer->Possess(SpawnedPawn);
+
+		if (UNS_GameInstance* GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
+		{
+			FString ModelPath = GameInstance->CharacterList.IsValidIndex(PlayerIndex) ? GameInstance->CharacterList[PlayerIndex] : TEXT("");
+
+            if (ANS_PlayerState* PlayerState = Cast<ANS_PlayerState>(NewPlayer->PlayerState))
+            {
+                PlayerState->SetPlayerModelPath(ModelPath);
+            }
+		}
+
         UE_LOG(LogTemp, Log, TEXT("Spawned & Possessed Pawn: %s"), *SpawnedPawn->GetName());
     }
     else
@@ -88,6 +109,24 @@ void ANS_LobbyMode::PostLogin(APlayerController* NewPlayer)
     {
         UE_LOG(LogTemp, Error, TEXT("PlayerState cast to ANS_PlayerState failed."));
     }
+}
+
+void ANS_LobbyMode::Logout(AController* Exiting)
+{
+	Super::Logout(Exiting);
+
+	APlayerController* PlayerController = Cast<APlayerController>(Exiting);
+	if (!PlayerController) return;
+
+	if (ANS_PlayerState* PS = Cast<ANS_PlayerState>(PlayerController->PlayerState))
+	{
+		UE_LOG(LogTemp, Log, TEXT("Player %s with index %d has left the lobby."), *PS->GetPlayerName(), PS->PlayerIndex);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to cast PlayerState to ANS_PlayerState during logout."));
+	}
+	// Optionally, you can handle cleanup or other logic here.
 }
 
 

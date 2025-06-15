@@ -6,6 +6,7 @@
 
 class AActor;
 class APawn;
+class ANS_PlayerState;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_MultiPlayMode : public AGameModeBase

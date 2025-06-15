@@ -26,7 +26,16 @@ public:
 	int32 PlayerIndex;
 
 	void SetPlayerIndex(int32 Index); 
+
+	void SetPlayerModelPath(const FString& ModelPath);
+	void SavePlayerData(); // 플레이어의 데이터를 저장하는 함수
+	void LoadPlayerData(); // 플레이어의 데이터를 불러오는 함수
+
+	FORCEINLINE FString GetPlayerModelPath() const { return PlayerModelPath; }
 protected:
+	// 플레이어 모델 경로
+	FString PlayerModelPath;
+
 	UFUNCTION()
 	void OnRep_IsReady();
 
