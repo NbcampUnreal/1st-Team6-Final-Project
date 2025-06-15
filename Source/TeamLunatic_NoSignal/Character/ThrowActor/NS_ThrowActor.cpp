@@ -84,15 +84,15 @@ void ANS_ThrowActor::OnOverlapBegin(
 	// Z축 밑으로 떨어지는 속도는 0으로 설정해서 액터를 뚫고 아래로 안내려가도록해야함
 	CurrentVelocity.Z = FMath::Max(0.f, CurrentVelocity.Z);
 
-	// 속도를 절반으로 줄이기
-	const float SpeedScale = 0.03f;
+	// 기존 스테틱 메쉬가 날아가는 속도에 곱해줄 값
+	const float SpeedScale = 0.025f;
 	FVector ReducedVelocity = CurrentVelocity * SpeedScale;
 
 	// 지오메트레컬렉션 액터 스폰
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	// 스폰액터에 속도는 기존에 던져지던 스테틱메쉬에 속도에 0.03배로 줄여서 실제로 병이 깨지는것처럼 구현
+	// 스폰액터에 속도는 기존에 던져지던 스테틱메쉬에 속도에 0.025배로 줄여서 실제로 병이 깨지는것처럼 구현
 	AGeometryCollectionActor* FractureActor = GetWorld()->SpawnActor<AGeometryCollectionActor>(
 		FractureActorClass,
 		SpawnLocation,

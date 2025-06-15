@@ -5,6 +5,8 @@
 #include "InputActionValue.h"
 #include "Interaction/Component/InteractionComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Components/SplineComponent.h"
+#include "Components/SplineMeshComponent.h"
 #include "Character/ThrowActor/NS_ThrowActor.h"
 #include "NS_PlayerCharacterBase.generated.h"
 
@@ -132,7 +134,7 @@ public:
 	// 한번만 던져지도록 실행하는 변수
 	bool bHasThrown = false;
 	////////////////////////////////////////병투척 변수 끝!///////////////////////////////////////////////
-
+	
 
 	
 	// LookAction에 카메라 회전값 보간 속도 ---> 8은 너무 느려서 10이상은 되어야할 듯
@@ -281,10 +283,6 @@ public:
 	// 카메라 Yaw값, Pitch값 서버로 전송
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void UpdateAim_Server(float NewCamYaw, float NewCamPitch);
-
-	// 캐릭터가 Turn In Place를 하면 Yaw값을 0으로 보간해주는 함수로 유일하게 Tick에서 실행해주는 중
-	UFUNCTION(Server, Reliable)
-	void TurnInPlace_Server(float DeltaTime);
 
 	// 캐릭터가 병투척해서 날아가는 속도/방향/궤도 함수
 	UFUNCTION(BlueprintCallable)

@@ -8,10 +8,15 @@
 #include "Components/NS_EquipedWeaponComponent.h"
 #include "Character/Components/NS_StatusComponent.h"
 #include "Item/NS_BaseRangedWeapon.h"
+#include "Character/ThrowActor/NS_ThrowActor.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Interaction/Component/InteractionComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "World/Pickup.h"
+#include "TimerManager.h"
 #include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
+#include "GameFramework/ProjectileMovementComponent.h"
+#include "Components/SplineMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include <Net/UnrealNetwork.h>
 
@@ -92,9 +97,6 @@ void ANS_PlayerCharacterBase::BeginPlay()
 void ANS_PlayerCharacterBase::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-
-    // 캐릭터가 회전중이라면 Yaw값을 FInterp 해서 0으로 만들어줌
-    TurnInPlace_Server(DeltaTime);
 }
 
 void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -662,23 +664,6 @@ void ANS_PlayerCharacterBase::UpdateAim_Server_Implementation(float NewCamYaw, f
 {
     CamYaw   = NewCamYaw; 
     CamPitch = NewCamPitch; 
-}
-
-// 나중에 실제로 적용되는지 디버깅해야함
-void ANS_PlayerCharacterBase::TurnInPlace_Server_Implementation(float DeltaTime)
-{
-    auto* CharMove = GetCharacterMovement();
-    if (!CharMove || !Controller)
-        return;
-
-    // Controller Desired 가 켜져 있으면 CamYaw를 0으로 FInterTo로 4에 스피드로 이동시킴
-    if (CharMove->bUseControllerDesiredRotation)
-    {
-        CamYaw = FMath::FInterpTo(CamYaw, 0.0f, DeltaTime, 4.0f);
-
-        // 서버에도 전송 Yaw랑 Pitch값 전송
-        UpdateAim_Server(CamYaw, CamPitch);
-    }
 }
 
 void ANS_PlayerCharacterBase::ThrowBottle()
