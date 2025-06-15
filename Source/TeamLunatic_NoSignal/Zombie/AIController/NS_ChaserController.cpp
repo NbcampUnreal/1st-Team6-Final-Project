@@ -44,7 +44,7 @@ void ANS_ChaserController::BeginPlay()
         BlackboardComp->SetValueAsBool(TEXT("IsChasingEvent"), false);
         BlackboardComp->ClearValue(TEXT("TargetActor"));
     }
-    //RequestPlayerLocation();
+    RequestPlayerLocation();
     PerceptionComp->OnTargetPerceptionUpdated.RemoveDynamic(this, &ANS_ChaserController::OnPerceptionUpdated);
     PerceptionComp->OnTargetPerceptionUpdated.AddDynamic(this, &ANS_ChaserController::OnPerceptionUpdated);
 }
@@ -134,16 +134,25 @@ void ANS_ChaserController::OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimul
     if (!Actor || !BlackboardComp || !Actor->IsA(APawn::StaticClass())) return;
     if (!Stimulus.WasSuccessfullySensed()) return;
 
-    // 쿨다운 중이면 무시
-    if (BlackboardComp->GetValueAsBool(TEXT("IsCooldownWait")))
+    // 감지된 Actor가 NS_PlayerCharacterBase가 아니면 무시
+    if (!Actor->IsA(ANS_PlayerCharacterBase::StaticClass()))
     {
-        UE_LOG(LogTemp, Log, TEXT("감지되었지만 쿨다운 상태라 무시: %s"), *Actor->GetName());
         return;
     }
 
-    // 이미 추격 중이면 무시 
-    if (BlackboardComp->GetValueAsBool(TEXT("IsChasingEvent"))) return;
+    // 쿨다운 중이면 무시
+    if (BlackboardComp->GetValueAsBool(TEXT("IsCooldownWait")))
+    {
+        return;
+    }
 
+    // 이미 추격 중이면 무시
+    if (BlackboardComp->GetValueAsBool(TEXT("IsChasingEvent")))
+    {
+        return;
+    }
+
+    // 추격 시작
     APawn* PlayerPawn = Cast<APawn>(Actor);
     if (!PlayerPawn) return;
 
@@ -239,6 +248,10 @@ void ANS_ChaserController::StopDamageLoop()
 void ANS_ChaserController::ApplyDamageToTarget()
 {
     if (!DamageTarget) return;
+
+    // 플레이어인지 체크
+    if (!DamageTarget->IsA(ANS_PlayerCharacterBase::StaticClass())) return;
+
     UGameplayStatics::ApplyDamage(DamageTarget, 10.0f, this, GetPawn(), nullptr);
 }
 

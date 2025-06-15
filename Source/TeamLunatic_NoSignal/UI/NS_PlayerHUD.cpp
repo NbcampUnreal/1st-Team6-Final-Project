@@ -6,6 +6,7 @@
 #include "Components/Image.h"
 #include "Components/ScrollBox.h"
 #include "Components/TextBlock.h"
+#include "Components/ProgressBar.h"
 //#include "SlateBrush.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Character/Components/NS_StatusComponent.h"
@@ -21,25 +22,25 @@ void UNS_PlayerHUD::NativeConstruct()
 
     ScrollBox_Compass->ClearChildren();
 
-    TArray<UNS_CircleProgressBar*> ChildWidgets = { WBP_StatusProgressbar_Health, WBP_StatusProgressbar_Stamina, WBP_StatusProgressbar_Hunger, WBP_StatusProgressbar_Thirst, WBP_StatusProgressbar_Fatigue };
+    //TArray<UNS_CircleProgressBar*> ChildWidgets = { WBP_StatusProgressbar_Health, WBP_StatusProgressbar_Stamina, WBP_StatusProgressbar_Hunger, WBP_StatusProgressbar_Thirst, WBP_StatusProgressbar_Fatigue };
 
-    for (int32 i = 0; i < ChildWidgets.Num() && i < TextureArray.Num(); ++i)
-    {
-        if (ChildWidgets[i] && TextureArray[i])
-        {
-            UImage* TargetImage = ChildWidgets[i]->ImageSymbol;
-            if (TargetImage)
-            {
-                FSlateBrush Brush;
-                Brush.SetResourceObject(TextureArray[i]);
+    //for (int32 i = 0; i < ChildWidgets.Num() && i < TextureArray.Num(); ++i)
+    //{
+    //    if (ChildWidgets[i] && TextureArray[i])
+    //    {
+    //        UImage* TargetImage = ChildWidgets[i]->ImageSymbol;
+    //        if (TargetImage)
+    //        {
+    //            FSlateBrush Brush;
+    //            Brush.SetResourceObject(TextureArray[i]);
 
-                Brush.ImageSize = FVector2D(512, 512);
+    //            Brush.ImageSize = FVector2D(512, 512);
 
-                TargetImage->SetBrush(Brush);
-                TargetImage->SetBrush(Brush);
-            }
-        }
-    }
+    //            TargetImage->SetBrush(Brush);
+    //            TargetImage->SetBrush(Brush);
+    //        }
+    //    }
+    //}
 
     TArray<FString> DirectionLabels = {
         TEXT(" N "),   TEXT(" 15 "),  TEXT(" 30 "),  TEXT(" NE "),
@@ -147,10 +148,13 @@ void UNS_PlayerHUD::ShowWidget()
         FTimerDelegate::CreateLambda([SafeThis]() mutable
     {
         if (!SafeThis.IsValid()) return;
+        if (!SafeThis->GetWorld()) return;
         if (!SafeThis->CachedMyCharacter || !SafeThis->CachedMyCharacter->StatusComp) return;
 
-        SafeThis->WBP_StatusProgressbar_Health->UpdatePercent(SafeThis->CachedMyCharacter->StatusComp->Health * 0.01f);
-        SafeThis->WBP_StatusProgressbar_Stamina->UpdatePercent(SafeThis->CachedMyCharacter->StatusComp->Stamina * 0.01f);
+       // SafeThis->WBP_StatusProgressbar_Health->UpdatePercent(SafeThis->CachedMyCharacter->StatusComp->Health * 0.01f);
+       // SafeThis->WBP_StatusProgressbar_Stamina->UpdatePercent(SafeThis->CachedMyCharacter->StatusComp->Stamina * 0.01f);
+        SafeThis->ProgressBar_Stamina->SetPercent(SafeThis->CachedMyCharacter->StatusComp->Stamina * 0.01f);
+        SafeThis->ProgressBar_Health->SetPercent(SafeThis->CachedMyCharacter->StatusComp->Health * 0.01f);
     }),
         0.05f,
         true
