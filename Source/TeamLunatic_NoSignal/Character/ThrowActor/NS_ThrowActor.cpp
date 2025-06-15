@@ -9,29 +9,29 @@
 
 ANS_ThrowActor::ANS_ThrowActor()
 {
-	PrimaryActorTick.bCanEverTick = false; // 충돌 방식 변경으로 Tick 필요 없어짐.
+	PrimaryActorTick.bCanEverTick = false; 
 
-	// BottleMesh 설정
+	// 병 스테틱메쉬
 	BottleMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BottleMesh"));
 	RootComponent = BottleMesh;
-	BottleMesh->SetSimulatePhysics(false); // Static Mesh 자체는 물리 시뮬레이션 하지 않음
-	BottleMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision); // Static Mesh는 충돌 없음
+	BottleMesh->SetSimulatePhysics(false); // 스테틱메쉬는 물리시뮬레이션 적용 안해주고
+	BottleMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision); // 스테틱메쉬는 충돌필요없고 오버렙이벤트로만 충돌하게 설정하고있음
 
-	// 오버랩 감지를 위한 BoxCollisionComponent 추가 및 설정
+	// 박스콜리전 오버렙이벤트
 	OverlapCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("OverlapCollision"));
 	OverlapCollision->SetupAttachment(RootComponent);
-	OverlapCollision->SetBoxExtent(FVector(50.f, 50.f, 50.f)); // 적절한 크기로 조절
-	OverlapCollision->SetCollisionProfileName(TEXT("OverlapAll")); // 모든 것에 오버랩
-	OverlapCollision->SetGenerateOverlapEvents(true); // 오버랩 이벤트 생성 활성화
+	OverlapCollision->SetBoxExtent(FVector(50.f, 50.f, 50.f)); // 크기는 추가로 에디터에서 조정해줘야할듯
+	OverlapCollision->SetCollisionProfileName(TEXT("OverlapAll")); // 모든 것에 오버랩하고
+	OverlapCollision->SetGenerateOverlapEvents(true); // 오버랩 이벤트 생성 활성화해주고
 	OverlapCollision->OnComponentBeginOverlap.AddDynamic(this, &ANS_ThrowActor::OnOverlapBegin);
 
-	// ProjectileMovement 설정
+	//날아가는 프로젝트일컴포넌트 설정
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
-	ProjectileMovement->UpdatedComponent = BottleMesh; // BottleMesh의 위치를 업데이트
+	ProjectileMovement->UpdatedComponent = BottleMesh; // 스테틱메쉬에 위치를 업데이틓고
 	ProjectileMovement->InitialSpeed = 1200.f;
 	ProjectileMovement->MaxSpeed = 1200.f;
 	ProjectileMovement->bRotationFollowsVelocity = true;
-	ProjectileMovement->bShouldBounce = false; // 오버랩 방식으로 변경했으므로 더 이상 바운스 필요 없음
+	ProjectileMovement->bShouldBounce = false; // 오버렙방식이라 바운드는 적용안하고
 	ProjectileMovement->ProjectileGravityScale = 1.0f;
 
 	bReplicates = true;
@@ -41,10 +41,6 @@ ANS_ThrowActor::ANS_ThrowActor()
 void ANS_ThrowActor::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// 필요한 경우 BeginPlay에서 OverlapCollision의 크기를 BottleMesh에 맞게 조절할 수 있습니다.
-	// FVector BoundsExtent = BottleMesh->GetStaticMesh()->GetBounds().BoxExtent;
-	// OverlapCollision->SetBoxExtent(BoundsExtent * 1.2f); // 메쉬보다 약간 크게 설정
 }
 
 void ANS_ThrowActor::LaunchInDirection(const FVector& Direction)
@@ -56,63 +52,68 @@ void ANS_ThrowActor::LaunchInDirection(const FVector& Direction)
 	}
 }
 
-// 기존 OnHit 함수 대신 사용될 OnOverlapBegin 함수
-void ANS_ThrowActor::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void ANS_ThrowActor::OnOverlapBegin(
+	UPrimitiveComponent* OverlappedComp,
+	AActor* OtherActor,
+	UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex,
+	bool bFromSweep,
+	const FHitResult& SweepResult
+)
 {
-	// 자기 자신과의 오버랩 방지
+	// 자신 또는 소유자는 무시하고
 	if (OtherActor == this || OtherActor == GetOwner())
-	{
 		return;
-	}
 
-	// 파편화할 액터 클래스가 설정되어 있지 않다면 리턴
-	if (!FractureActorClass) return;
+	if (!FractureActorClass)
+		return;
 
-	// 사운드 재생
+	// 병깨지는 사운드는 1번만 재생되도록 하고
 	if (!bHasPlayedImpactSound)
 	{
 		if (ImpactSound)
-		{
 			UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
-		}
-		UAISense_Hearing::ReportNoiseEvent(
-			GetWorld(),
-			GetActorLocation(),
-			1.0f,
-			this,
-			2000.f,
-			NAME_None
-		);
+		UAISense_Hearing::ReportNoiseEvent(GetWorld(), GetActorLocation(), 1.f, this, 2000.f, NAME_None);
 		bHasPlayedImpactSound = true;
 	}
 
-	// 현재 투사체의 마지막 위치와 속도를 사용하여 지오메트리 컬렉션 스폰
-	FVector CurrentLocation = GetActorLocation();
+	// 현재 오버렙된 위치랑 기존 속도를 가져오고
+	FVector SpawnLocation = GetActorLocation();
 	FVector CurrentVelocity = ProjectileMovement->Velocity;
 
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn; // 항상 스폰
+	// Z축 밑으로 떨어지는 속도는 0으로 설정해서 액터를 뚫고 아래로 안내려가도록해야함
+	CurrentVelocity.Z = FMath::Max(0.f, CurrentVelocity.Z);
 
-	AGeometryCollectionActor* SpawnedFractureActor = GetWorld()->SpawnActor<AGeometryCollectionActor>(
+	// 속도를 절반으로 줄이기
+	const float SpeedScale = 0.03f;
+	FVector ReducedVelocity = CurrentVelocity * SpeedScale;
+
+	// 지오메트레컬렉션 액터 스폰
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	// 스폰액터에 속도는 기존에 던져지던 스테틱메쉬에 속도에 0.03배로 줄여서 실제로 병이 깨지는것처럼 구현
+	AGeometryCollectionActor* FractureActor = GetWorld()->SpawnActor<AGeometryCollectionActor>(
 		FractureActorClass,
-		CurrentLocation, // 현재 투사체의 위치에 스폰
-		CurrentVelocity.Rotation(), // 현재 속도 방향으로 회전 (선택 사항)
+		SpawnLocation,
+		ReducedVelocity.Rotation(),
 		SpawnParams
 	);
 
-	if (SpawnedFractureActor)
+	if (FractureActor)
 	{
-		UGeometryCollectionComponent* GeoComp = SpawnedFractureActor->GetGeometryCollectionComponent();
+		UGeometryCollectionComponent* GeoComp = FractureActor->GetGeometryCollectionComponent();
 		if (GeoComp)
 		{
-			GeoComp->SetSimulatePhysics(true); // 스폰된 GeometryCollection은 물리 시뮬레이션 시작
-			GeoComp->AddImpulse(CurrentVelocity * GeoComp->GetMass() * 0.1f); // 중요: 스폰된 Geometry Collection에 투사체의 속도 기반 충격량 부여
-
-			// 또는 ApplyBreakingDamage를 사용하여 더 직접적인 파괴를 유도할 수 있습니다.
-			// GeoComp->ApplyBreakingDamage(CurrentVelocity.Size() * 0.1f, CurrentLocation, CurrentVelocity.GetSafeNormal(), 0.f);
+			GeoComp->SetSimulatePhysics(true);
+			float Mass = GeoComp->GetMass();
+			GeoComp->AddImpulse(ReducedVelocity * Mass);
 		}
+
+		// 스폰타임은 5초로 설정
+		FractureActor->SetLifeSpan(5.f);
 	}
 
-	// 원본 액터 (Static Mesh를 포함한 ANS_ThrowActor)를 파괴
+	// 원본 투사체 제거
 	Destroy();
 }
