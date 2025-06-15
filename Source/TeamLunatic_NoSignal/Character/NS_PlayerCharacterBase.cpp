@@ -14,6 +14,7 @@
 #include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
 #include "Kismet/GameplayStatics.h"
 #include <Net/UnrealNetwork.h>
+#include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
 
 ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
 {
@@ -61,6 +62,10 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     SetReplicates(true);
     PlayerInventory->SetSlotsCapacity(20);
     PlayerInventory->SetWeightCapacity(50.0f);
+
+    // 퀵슬롯 
+    QuickSlotComponent = CreateDefaultSubobject<UNS_QuickSlotComponent>(TEXT("QuickSlotComponent"));
+    QuickSlotComponent->SetIsReplicated(true);
 }
 
 void ANS_PlayerCharacterBase::BeginPlay()
@@ -261,6 +266,7 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
     DOREPLIFETIME(ANS_PlayerCharacterBase, TurnRight); // 몸을 오른쪽으로 회전시키는 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, NowFire);   // 사격시 몸전체Mesh 사격 애니메이션 재생 용 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, PlayerInventory);
+    DOREPLIFETIME(ANS_PlayerCharacterBase, QuickSlotComponent);
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsChangeAnim); // 퀵슬롯 눌렀을때 무기 장착하는 애니메이션 재생 용 변수
 }
 
@@ -478,7 +484,8 @@ void ANS_PlayerCharacterBase::DropItem_Server_Implementation(UNS_InventoryBaseIt
         {
             EquipedWeaponComp->UnequipWeapon();
         }
-        Client_RemoveFromQuickSlot(ItemToDrop);
+        QuickSlotComponent->RemoveItem(ItemToDrop);
+        Client_NotifyQuickSlotUpdated();
         FActorSpawnParameters SpawnParams;
         SpawnParams.Owner = this;
         SpawnParams.bNoFail = true;
@@ -505,17 +512,6 @@ void ANS_PlayerCharacterBase::DropItem_Server_Implementation(UNS_InventoryBaseIt
     }
 }
 
-void ANS_PlayerCharacterBase::Client_RemoveFromQuickSlot_Implementation(UNS_InventoryBaseItem* ItemToRemove)
-{
-    if (QuickSlotPanel)
-    {
-        QuickSlotPanel->RemoveItemFromSlot(ItemToRemove); // 여기서 UI 제거 처리
-        UE_LOG(LogTemp, Warning, TEXT("[Drop] 현재 무기의 아이템: %s, 제거 대상 아이템: %s"),
-            *GetNameSafe(EquipedWeaponComp->GetCurrentWeaponItem()),
-            *GetNameSafe(ItemToRemove));
-    }
-}
-
 void ANS_PlayerCharacterBase::DropItem(UNS_InventoryBaseItem* ItemToDrop, const int32 QuantityToDrop)
 {
     if (HasAuthority())
@@ -525,6 +521,56 @@ void ANS_PlayerCharacterBase::DropItem(UNS_InventoryBaseItem* ItemToDrop, const 
     else
     {
         DropItem_Server(ItemToDrop, QuantityToDrop); // 클라에서 서버로 요청
+    }
+}
+
+void ANS_PlayerCharacterBase::Client_NotifyQuickSlotUpdated_Implementation()
+{
+    if (QuickSlotComponent)
+    {
+        QuickSlotComponent->BroadcastSlotUpdate(); // UI 갱신
+    }
+}
+
+void ANS_PlayerCharacterBase::UseThrowableItem_Internal(UNS_InventoryBaseItem* ThrowItem)
+{
+    if (HasAuthority())
+    {
+        Server_UseThrowableItem_Implementation(ThrowItem);
+    }
+    else
+    {
+        Server_UseThrowableItem(ThrowItem);
+    }
+}
+
+void ANS_PlayerCharacterBase::Server_UseThrowableItem_Implementation(UNS_InventoryBaseItem* ThrowItem)
+{
+    if (!ThrowItem || !PlayerInventory) return;
+
+    for (UNS_InventoryBaseItem* Item : PlayerInventory->GetInventoryContents())
+    {
+        if (Item && (Item == ThrowItem || Item->ItemDataRowName == ThrowItem->ItemDataRowName))
+        {
+            PlayerInventory->RemoveAmountOfItem(Item, 1);
+
+            if (Item->Quantity <= 0)
+            {
+                QuickSlotComponent->RemoveItem(Item);
+            }
+
+            Client_NotifyInventoryUpdated();
+            break;
+        }
+    }
+}
+
+// 서버에서 슬롯 할당 처리
+void ANS_PlayerCharacterBase::Server_AssignQuickSlot_Implementation(int32 SlotIndex, UNS_InventoryBaseItem* Item)
+{
+    if (QuickSlotComponent)
+    {
+        QuickSlotComponent->AssignToSlot(SlotIndex, Item);
     }
 }
 
@@ -546,10 +592,19 @@ void ANS_PlayerCharacterBase::UseQuickSlotByIndex(int32 Index)
 
 void ANS_PlayerCharacterBase::Server_UseQuickSlotByIndex_Implementation(int32 Index)
 {
-    Multicast_UseQuickSlotByIndex(Index);
-    if (!IsChangeAnim) // 필요 시 중복 방지
+    if (!QuickSlotComponent) return;
+    QuickSlotComponent->SetCurrentSlotIndex(Index);
+    UNS_InventoryBaseItem* Item = QuickSlotComponent->GetItemInSlot(Index);
+    if (!Item || Item->ItemDataRowName.IsNone())
     {
-        IsChangeAnim = true;
+        UE_LOG(LogTemp, Warning, TEXT("[Server_UseQuickSlot] 슬롯 %d 아이템 없음 또는 복제 미완료"), Index);
+        return;
+    }
+
+    if (!IsChangeAnim)
+    {
+        IsChangeAnim = true;  // 애니메이션 실행 상태 플래그
+        UE_LOG(LogTemp, Warning, TEXT("[Server_UseQuickSlot] 슬롯 %d 애니메이션 시작 준비"), Index);
     }
 }
 
@@ -560,9 +615,9 @@ void ANS_PlayerCharacterBase::Multicast_UseQuickSlotByIndex_Implementation(int32
 
 void ANS_PlayerCharacterBase::UseQuickSlotByIndex_Internal(int32 Index)
 {
-    if (!QuickSlotPanel) return;
+    if (!QuickSlotComponent) return;
 
-    UNS_InventoryBaseItem* Item = QuickSlotPanel->GetItemInSlot(Index);
+    UNS_InventoryBaseItem* Item = QuickSlotComponent->GetItemInSlot(Index);
     if (!Item || Item->ItemDataRowName.IsNone()) return;
 
     const FNS_ItemDataStruct* ItemData = Item->GetItemData();
@@ -573,7 +628,8 @@ void ANS_PlayerCharacterBase::UseQuickSlotByIndex_Internal(int32 Index)
         WeaponComp->SwapWeapon(ItemData->WeaponActorClass, Item);
     }
 
-    QuickSlotIndex = Index;
+    QuickSlotComponent->SetCurrentSlotIndex(Index);
+    UE_LOG(LogTemp, Warning, TEXT("[UseQuickSlot_Internal] 장비 장착 - 인덱스: %d, 아이템: %s"), Index, *Item->GetName());
 }
 
 void ANS_PlayerCharacterBase::OnRep_IsChangeAnim()
@@ -591,6 +647,15 @@ void ANS_PlayerCharacterBase::Server_UseInventoryItem_Implementation(FName ItemR
         if (Item && Item->ItemDataRowName == ItemRowName)
         {
             Item->OnUseItem(this);
+
+            // 장비 아이템일 경우 퀵슬롯 자동 등록
+            if (Item->ItemType == EItemType::Equipment &&
+                Item->WeaponType != EWeaponType::Ammo &&
+                QuickSlotComponent)
+            {
+                QuickSlotComponent->AssignToFirstEmptySlot(Item);
+                UE_LOG(LogTemp, Warning, TEXT("[Server] 퀵슬롯 자동 등록 완료: %s"), *Item->GetName());
+            }
             return;
         }
     }
@@ -607,51 +672,6 @@ void ANS_PlayerCharacterBase::Client_NotifyInventoryUpdated_Implementation()
             {
                 PlayerInventory->OnInventoryUpdated.Broadcast();
                 UE_LOG(LogTemp, Warning, TEXT("Client_NotifyInventoryUpdated - Inventory 갱신 (지연 호출)"));
-
-                // 퀵슬롯 패널 바인딩이 완료되었는지 체크 후 재시도
-                if (!QuickSlotPanel)
-                {
-                    UE_LOG(LogTemp, Warning, TEXT("[QuickSlot][Client_Notify] QuickSlotPanel이 아직 바인딩되지 않음 - 0.1초 후 재시도"));
-
-                    // 한 번 더 타이머로 0.1초 후 재시도
-                    FTimerHandle RetryHandle;
-                    GetWorldTimerManager().SetTimer(RetryHandle, FTimerDelegate::CreateLambda([this]()
-                        {
-                            if (QuickSlotPanel && PlayerInventory)
-                            {
-                                for (UNS_InventoryBaseItem* Item : PlayerInventory->GetInventoryContents())
-                                {
-                                    if (Item && Item->ItemType == EItemType::Equipment && Item->WeaponType != EWeaponType::Ammo)
-                                    {
-                                        if (QuickSlotPanel->AssignToFirstEmptySlot(Item))
-                                        {
-                                            UE_LOG(LogTemp, Warning, TEXT("[QuickSlot][Client_Notify - Retry] 아이템 자동 배정 완료: %s"), *Item->GetName());
-                                        }
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                UE_LOG(LogTemp, Error, TEXT("[QuickSlot][Client_Notify - Retry] 여전히 QuickSlotPanel 또는 Inventory null"));
-                            }
-
-                        }), 0.1f, false);
-                }
-                else
-                {
-                    // 퀵슬롯 패널이 이미 존재하면 즉시 수행
-                    for (UNS_InventoryBaseItem* Item : PlayerInventory->GetInventoryContents())
-                    {
-                        if (Item && Item->ItemType == EItemType::Equipment && Item->WeaponType != EWeaponType::Ammo)
-                        {
-                            if (QuickSlotPanel->AssignToFirstEmptySlot(Item))
-                            {
-                                UE_LOG(LogTemp, Warning, TEXT("[QuickSlot][Client_Notify] 아이템 자동 배정 완료: %s"), *Item->GetName());
-                            }
-                        }
-                    }
-                }
-
             }), 0.05f, false);
     }
 }
