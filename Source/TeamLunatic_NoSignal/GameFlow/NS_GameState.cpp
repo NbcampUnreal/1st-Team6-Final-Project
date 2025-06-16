@@ -9,13 +9,13 @@ ANS_GameState::ANS_GameState()
 
 void ANS_GameState::SavePlayerData()
 {
-	for (APlayerState* PlayerState : PlayerArray)
-	{
-		if (ANS_PlayerState* PlayerState = Cast<ANS_PlayerState>(PlayerState))
-		{
-			PlayerState->SavePlayerData(); // 플레이어 상태에서 데이터 로드
-		}
-	}
+    for (APlayerState* PS : PlayerArray)
+    {
+        if (ANS_PlayerState* NSPlayerState = Cast<ANS_PlayerState>(PS))
+        {
+            NSPlayerState->SavePlayerData(); 
+        }
+    }
 }
 
 void ANS_GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

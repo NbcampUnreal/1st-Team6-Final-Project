@@ -37,9 +37,9 @@ void ANS_MultiPlayMode::SpawnAllPlayers()
 
     int32 PlayerIndex = 0;
 
-    if (ANS_GameState* GameState = Cast<ANS_GameState>(GetWorld()->GetGameState()))
+    if (ANS_GameState* NSGameState = Cast<ANS_GameState>(GetWorld()->GetGameState()))
     {
-        for (APlayerState* PS : GameState->PlayerArray)
+        for (APlayerState* PS : NSGameState->PlayerArray)
         {
             if (ANS_MainGamePlayerState* PlayerState = Cast<ANS_MainGamePlayerState>(PS))
             {
