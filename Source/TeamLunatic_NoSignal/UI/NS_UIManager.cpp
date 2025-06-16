@@ -6,7 +6,10 @@
 #include "UI/NS_Msg_GameOver.h"
 #include "UI/NS_InGameMsg.h"
 #include "UI/NS_PlayerHUD.h"
+#include "UI/NS_LoadingScreen.h"
 #include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
+#include "Containers/Ticker.h" 
+#include "Kismet/GameplayStatics.h"
 
 UNS_UIManager::UNS_UIManager()
 {
@@ -43,6 +46,14 @@ UNS_UIManager::UNS_UIManager()
             NS_PlayerHUDWidgetClass = WBP_PlayerHUD.Class;
         else
             UE_LOG(LogTemp, Warning, TEXT("NS_PlayerHUDWidgetClass: %s"), *GetNameSafe(NS_PlayerHUDWidgetClass));
+    }
+    if (!NS_LoadingScreenClass)
+    {
+        static ConstructorHelpers::FClassFinder<UNS_LoadingScreen> WBP_LoadingScreen(TEXT("/Game/UI/Blueprints/WBP_LoadingScreen.WBP_LoadingScreen_C"));
+        if (WBP_LoadingScreen.Succeeded())
+            NS_LoadingScreenClass = WBP_LoadingScreen.Class;
+        else
+            UE_LOG(LogTemp, Warning, TEXT("NS_LoadingScreenClass: %s"), *GetNameSafe(NS_LoadingScreenClass));
     }
 }
 
@@ -160,6 +171,31 @@ void UNS_UIManager::SetFInputModeGameOnly(APlayerController* PC)
     FInputModeGameOnly InputMode;
     PC->SetInputMode(InputMode);
 }
+
+void UNS_UIManager::CloseLoadingUI()
+{
+    if (NS_LoadingScreen)
+    {
+        UE_LOG(LogTemp, Log, TEXT("Remove Loading Screen!!!!"));
+		NS_LoadingScreen = nullptr;
+        //NS_LoadingScreen->RemoveFromParent();
+        //if (NS_LoadingScreen->IsInViewport()) NS_LoadingScreen->RemoveFromParent();
+    }
+}
+
+void UNS_UIManager::LoadingScreen(UWorld* World)
+{
+    NS_LoadingScreen = nullptr;
+
+    APlayerController* PC = World->GetFirstPlayerController();
+   // if (!NS_LoadingScreen || NS_LoadingScreen && !NS_LoadingScreen->IsInViewport())
+    NS_LoadingScreen = CreateWidget<UNS_LoadingScreen>(PC, NS_LoadingScreenClass);
+
+    OnLoadingFinished.Unbind();
+    NS_LoadingScreen->AddToViewport();
+    NS_LoadingScreen->UpdateProgress();
+}
+
 bool UNS_UIManager::IsInViewportInGameMenuWidget()
 {
     if (InGameMenuWidget && InGameMenuWidget->GetVisibility() == ESlateVisibility::Visible )//InGameMenuWidget->IsInViewport()

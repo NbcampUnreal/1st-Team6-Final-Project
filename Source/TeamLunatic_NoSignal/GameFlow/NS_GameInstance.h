@@ -27,11 +27,13 @@ public:
 	UNS_GameInstance();
 	virtual void Init() override;
 
-	UPROPERTY(BlueprintReadOnly, Category = "SaveGame")
-	FString CurrentSaveSlotName;
+	UFUNCTION()
+	void OnLevelLoaded(UWorld* LoadedWorld);
 
 	void SetCurrentSaveSlot(FString SlotNameInfo);
 
+	UPROPERTY(BlueprintReadOnly, Category = "SaveGame")
+	FString CurrentSaveSlotName;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Inventory|Config")
 	UDataTable* GlobalItemDataTable;

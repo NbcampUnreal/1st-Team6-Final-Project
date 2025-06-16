@@ -27,4 +27,6 @@ protected:
 	// 서버가 실제 레벨 오픈을 처리
 	UFUNCTION(Server, Reliable)
 	void Server_RequestStartGame();
+
+	FTimerHandle CheckLoadingHandle;
 };
