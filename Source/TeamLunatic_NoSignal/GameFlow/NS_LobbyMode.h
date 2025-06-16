@@ -17,7 +17,7 @@ public:
 
     UPROPERTY(EditDefaultsOnly, Category = "Character")
     TArray<TSubclassOf<APawn>> PlayableCharacter;
-
+    void CheckAllPlayersReady();
 protected:
     AActor* FindSpawnPointByIndex(int32 Index);
 

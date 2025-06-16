@@ -1,9 +1,12 @@
 #include "GameFlow/NS_LobbyMode.h"
 #include "NS_PlayerState.h"
 #include "EngineUtils.h"
+#include "Character/NS_PlayerCharacterBase.h"
 #include "GameFramework/GameState.h"
+#include "NS_LobbyController.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerStart.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
@@ -26,18 +29,20 @@ void ANS_LobbyMode::BeginPlay()
 
     if (UNS_GameInstance* GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
     {
-        for (auto Item : GameInstance->CharacterList)
+        for (const FString& Item : GameInstance->CharacterList)
         {
-            ConstructorHelpers::FClassFinder<APawn> PawnBPClass(*Item);
-            if (PawnBPClass.Succeeded())
+            UClass* LoadedClass = StaticLoadClass(APawn::StaticClass(), nullptr, *Item);
+            if (LoadedClass)
             {
-                PlayableCharacter.Add(PawnBPClass.Class);
+                PlayableCharacter.Add(LoadedClass);
+                UE_LOG(LogTemp, Log, TEXT("Loaded character class: %s"), *Item);
             }
             else
             {
                 UE_LOG(LogTemp, Error, TEXT("Failed to load character blueprint class: %s"), *Item);
             }
         }
+
     }
     else
     {
@@ -84,15 +89,44 @@ void ANS_LobbyMode::PostLogin(APlayerController* NewPlayer)
     {
         NewPlayer->Possess(SpawnedPawn);
 
-		if (UNS_GameInstance* GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
-		{
-			FString ModelPath = GameInstance->CharacterList.IsValidIndex(PlayerIndex) ? GameInstance->CharacterList[PlayerIndex] : TEXT("");
+        // 입력 차단 - 컨트롤러 레벨
+        NewPlayer->SetIgnoreMoveInput(true);
+        NewPlayer->SetIgnoreLookInput(true);
+
+        // 캐릭터 입력 차단
+        SpawnedPawn->DisableInput(nullptr);
+
+        // 회전 및 움직임 완전 차단
+        if (ANS_PlayerCharacterBase* Character = Cast<ANS_PlayerCharacterBase>(SpawnedPawn))
+        {
+            Character->bUseControllerRotationYaw = false;
+
+            if (UCharacterMovementComponent* MoveComp = Character->GetCharacterMovement())
+            {
+                MoveComp->DisableMovement();
+                MoveComp->bOrientRotationToMovement = false;
+            }
+        }
+
+
+        // 키 바인딩 제거 (C, F 등 작동 방지)
+        if (NewPlayer->InputComponent)
+        {
+            NewPlayer->InputComponent->ClearActionBindings();
+        }
+
+        // 캐릭터 모델 경로 저장
+        if (UNS_GameInstance* GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
+        {
+            FString ModelPath = GameInstance->CharacterList.IsValidIndex(PlayerIndex)
+                ? GameInstance->CharacterList[PlayerIndex]
+                : TEXT("");
 
             if (ANS_PlayerState* PlayerState = Cast<ANS_PlayerState>(NewPlayer->PlayerState))
             {
                 PlayerState->SetPlayerModelPath(ModelPath);
             }
-		}
+        }
 
         UE_LOG(LogTemp, Log, TEXT("Spawned & Possessed Pawn: %s"), *SpawnedPawn->GetName());
     }
@@ -101,15 +135,32 @@ void ANS_LobbyMode::PostLogin(APlayerController* NewPlayer)
         UE_LOG(LogTemp, Error, TEXT("Pawn spawn failed."));
     }
 
+    // PlayerState 저장
     if (ANS_PlayerState* PS = Cast<ANS_PlayerState>(NewPlayer->PlayerState))
     {
         PS->SetPlayerIndex(PlayerIndex);
+        PS->SavePlayerData();
     }
     else
     {
         UE_LOG(LogTemp, Error, TEXT("PlayerState cast to ANS_PlayerState failed."));
     }
+
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+    {
+        if (ANS_LobbyController* LC = Cast<ANS_LobbyController>(*It))
+        {
+            if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+            {
+                if (GI->ReadyUIInstance)
+                {
+                    GI->ReadyUIInstance->UpdatePlayerStatusList();
+                }
+            }
+        }
+    }
 }
+
 
 void ANS_LobbyMode::Logout(AController* Exiting)
 {
@@ -126,7 +177,15 @@ void ANS_LobbyMode::Logout(AController* Exiting)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Failed to cast PlayerState to ANS_PlayerState during logout."));
 	}
-	// Optionally, you can handle cleanup or other logic here.
+    
+    if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+    {
+        if (GI->ReadyUIInstance)
+        {
+            GI->ReadyUIInstance->UpdatePlayerStatusList();
+        }
+    }
+
 }
 
 
@@ -144,4 +203,29 @@ AActor* ANS_LobbyMode::FindSpawnPointByIndex(int32 Index)
     }
 
     return nullptr;
+}
+
+void ANS_LobbyMode::CheckAllPlayersReady()
+{
+    const AGameStateBase* GS = GetGameState<AGameStateBase>();
+    if (!GS) return;
+
+    for (APlayerState* PS : GS->PlayerArray)
+    {
+        if (ANS_PlayerState* MyPS = Cast<ANS_PlayerState>(PS))
+        {
+            if (!MyPS->GetIsReady())
+            {
+                UE_LOG(LogTemp, Log, TEXT("[LobbyMode] Player %s is NOT ready."), *MyPS->GetPlayerName());
+                return; // 하나라도 not ready면 중단
+            }
+        }
+    }
+
+    UE_LOG(LogTemp, Log, TEXT(" All players ready. Starting game."));
+
+    // 서버 이동
+    const FString LevelPath = TEXT("/Game/Maps/MainWorld");
+    const FString Options = TEXT("Game=/Game/GameFlowBP/BP_NS_MultiPlayMode.BP_NS_MultiPlayMode_C");
+    GetWorld()->ServerTravel(LevelPath + TEXT("?") + Options);
 }
