@@ -9,6 +9,7 @@
 class UHorizontalBox;
 class UNS_QuickSlotSlotWidget;
 class UNS_InventoryBaseItem;
+class UNS_QuickSlotComponent;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UNS_QuickSlotPanel : public UUserWidget
@@ -17,23 +18,23 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_QuickSlotPanel : public UUserWidget
 
 public:
     virtual void NativeConstruct() override;
+    void InitializeSlots();
+    void TryBindQuickSlotPanel();
 
-    void RefreshQuickSlot();
-    bool IsItemAlreadyAssigned(UNS_InventoryBaseItem* Item) const;
-    void AssignItemToSlot(int32 SlotIndex, UNS_InventoryBaseItem* Item);
-    bool AssignToFirstEmptySlot(UNS_InventoryBaseItem* Item);
-    
-    UFUNCTION()
-    void TryBindQuickSlot();
-    UNS_InventoryBaseItem* GetItemInSlot(int32 SlotIndex) const;
-    void RemoveItemFromSlot(UNS_InventoryBaseItem* Item);
-protected:
+    // 퀵슬롯 컴포넌트에서 호출하여 UI 갱신
+    void RefreshQuickSlots(const TArray<TObjectPtr<UNS_InventoryBaseItem>>& QuickSlots);
+
+    void OnQuickSlotDataUpdated();
+
     UPROPERTY(meta = (BindWidget))
     UHorizontalBox* SlotBox;
 
     UPROPERTY(EditDefaultsOnly, Category = "QuickSlot")
     TSubclassOf<UNS_QuickSlotSlotWidget> SlotWidgetClass;
-
     UPROPERTY()
-    TArray<UNS_QuickSlotSlotWidget*> SlotWidgets;
+    UNS_QuickSlotComponent* QuickSlotComponent;
+
+private:
+    // 재시도 횟수 (UI 바인딩 실패 시 최대 재시도 횟수)
+    int32 RetryCount = 0;
 };
