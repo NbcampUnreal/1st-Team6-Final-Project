@@ -65,6 +65,8 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_AssignQuickSlot(int32 SlotIndex, UNS_InventoryBaseItem* Item);
 
+	void HandleUseThrowableItem(int32 Index);
+
 	void UseQuickSlot1();
 
 	void UseQuickSlot2();
