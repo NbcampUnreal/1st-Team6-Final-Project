@@ -15,8 +15,8 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_ThrowActor : public AActor
 {
 	GENERATED_BODY()
 
-public:
 	ANS_ThrowActor();
+public:
 
 	// 날아갈 병 메쉬
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")

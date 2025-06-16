@@ -5,8 +5,8 @@
 #include "NS_PlayerState.h"
 #include "EngineUtils.h"
 #include "Camera/CameraActor.h"
-
-
+#include "GameFlow/NS_GameInstance.h"
+#include "UI/NS_UIManager.h"
 
 void ANS_LobbyController::BeginPlay()
 {
@@ -43,7 +43,15 @@ void ANS_LobbyController::HandleStartGame()
 
 	if (!HasAuthority())
 	{
-		Server_RequestStartGame();
+		if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+		{
+			GI->GetUIManager()->LoadingScreen(GetWorld());
+			GI->GetUIManager()->OnLoadingFinished.BindLambda([this]()
+			{
+				this->Server_RequestStartGame(); // 서버에 요청
+			});
+		}
+		//Server_RequestStartGame();
 	}
 	else
 	{
