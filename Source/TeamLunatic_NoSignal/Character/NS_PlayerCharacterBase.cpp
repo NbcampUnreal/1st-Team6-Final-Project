@@ -548,7 +548,6 @@ void ANS_PlayerCharacterBase::UseThrowableItem_Internal(int32 Index)
     if (!HasAuthority())
     {
         Server_UseThrowableItem(Index); 
-        return;
     }
 }
 
