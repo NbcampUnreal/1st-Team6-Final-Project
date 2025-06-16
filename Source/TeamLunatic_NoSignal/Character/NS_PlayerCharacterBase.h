@@ -295,10 +295,7 @@ public:
 	// 카메라 Yaw값, Pitch값 서버로 전송
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void UpdateAim_Server(float NewCamYaw, float NewCamPitch);
-
-	// 캐릭터가 Turn In Place를 하면 Yaw값을 0으로 보간해주는 함수로 유일하게 Tick에서 실행해주는 중
-	UFUNCTION(Server, Reliable)
-	void TurnInPlace_Server(float DeltaTime);
+	
 
 	// 캐릭터가 병투척해서 날아가는 속도/방향/궤도 함수
 	UFUNCTION(BlueprintCallable)
