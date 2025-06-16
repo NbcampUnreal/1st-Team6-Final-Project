@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "NS_ZombieBase.generated.h"
 
+class UPhysicalAnimationComponent;
 class ANS_AIController;
 enum class EZombieAttackType : uint8;
 enum class EZombieType : uint8;
@@ -41,7 +42,9 @@ protected:
 	float AccelerationSpeed;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "Speed")
 	float TargetSpeed;
-	
+
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "Hit Reaction")
+	UPhysicalAnimationComponent* PhysicsComponent;
 	
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Replicated, Category = "State")
 	EZombieState CurrentState;
@@ -59,6 +62,13 @@ public:
 	
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
+	// Physics관련
+	void InitializePhysics();
+	void ApplyPhysics(FName Bone, FVector Impulse);
+	void ResetPhysics(FName Bone);
+	FTimerHandle HitTimerHandle;
+	
 	//상태 패턴
 	UFUNCTION()
 	void SetState(EZombieState NewState);
@@ -74,6 +84,7 @@ public:
 	virtual void OnChaseState();
 	virtual void OnAttackState();
 	void OnDeadState();
+	virtual void OnFrozenState();
 	
 	//사운드 관련
 	UFUNCTION(Server, Reliable)
@@ -95,9 +106,10 @@ public:
 	virtual void OnOverlapSphere(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 								UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
 								bool bFromSweep, const FHitResult& SweepResult);
-	
-	FTimerHandle MontageTimerHandle;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GotHit")
+	TArray<UAnimMontage*> HitMontages;
+	
 	//Get함수
 	FORCEINLINE const EZombieAttackType GetZombieAttackType() {return CurrentAttackType;}
 	FORCEINLINE const EZombieState GetState() const {return CurrentState;};
