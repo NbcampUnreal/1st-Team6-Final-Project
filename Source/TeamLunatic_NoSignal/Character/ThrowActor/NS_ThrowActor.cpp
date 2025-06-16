@@ -73,10 +73,14 @@ void ANS_ThrowActor::OnOverlapBegin(
 	{
 		if (ImpactSound)
 			UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
+		// 노이즈 이벤트도 같이 실행해주고
 		UAISense_Hearing::ReportNoiseEvent(GetWorld(), GetActorLocation(), 1.f, this, 2000.f, NAME_None);
 		bHasPlayedImpactSound = true;
 	}
 
+	// 원본 투사체 제거
+	Destroy();
+	
 	// 현재 오버렙된 위치랑 기존 속도를 가져오고
 	FVector SpawnLocation = GetActorLocation();
 	FVector CurrentVelocity = ProjectileMovement->Velocity;
@@ -92,7 +96,7 @@ void ANS_ThrowActor::OnOverlapBegin(
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	// 스폰액터에 속도는 기존에 던져지던 스테틱메쉬에 속도에 0.025배로 줄여서 실제로 병이 깨지는것처럼 구현
+	// 지오메트리 생성은 오버렙이벤트가 된 위치에서 생성해주고
 	AGeometryCollectionActor* FractureActor = GetWorld()->SpawnActor<AGeometryCollectionActor>(
 		FractureActorClass,
 		SpawnLocation,
@@ -102,6 +106,7 @@ void ANS_ThrowActor::OnOverlapBegin(
 
 	if (FractureActor)
 	{
+		// 스폰액터에 속도는 기존에 던져지던 스테틱메쉬에 속도에 0.025배로 줄여서 실제로 병이 깨지는것처럼 구현
 		UGeometryCollectionComponent* GeoComp = FractureActor->GetGeometryCollectionComponent();
 		if (GeoComp)
 		{
@@ -113,7 +118,4 @@ void ANS_ThrowActor::OnOverlapBegin(
 		// 스폰타임은 5초로 설정
 		FractureActor->SetLifeSpan(5.f);
 	}
-
-	// 원본 투사체 제거
-	Destroy();
 }
