@@ -1,11 +1,11 @@
 #include "NS_ThrowActor.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "Components/BoxComponent.h" // 추가: BoxComponent 포함
+#include "Components/BoxComponent.h" 
 #include "Kismet/GameplayStatics.h"
 #include "Perception/AISense_Hearing.h"
 #include "GeometryCollection/GeometryCollectionActor.h"
-#include "GeometryCollection/GeometryCollectionComponent.h" // 추가: GeometryCollectionComponent 사용 위함
+#include "GeometryCollection/GeometryCollectionComponent.h"
 
 ANS_ThrowActor::ANS_ThrowActor()
 {
@@ -35,7 +35,6 @@ ANS_ThrowActor::ANS_ThrowActor()
 	ProjectileMovement->ProjectileGravityScale = 1.0f;
 
 	bReplicates = true;
-	SetReplicateMovement(true);
 }
 
 void ANS_ThrowActor::BeginPlay()
@@ -106,7 +105,7 @@ void ANS_ThrowActor::OnOverlapBegin(
 
 	if (FractureActor)
 	{
-		// 스폰액터에 속도는 기존에 던져지던 스테틱메쉬에 속도에 0.025배로 줄여서 실제로 병이 깨지는것처럼 구현
+		// 스폰액터에 속도는 기존에 던져지던 스테틱메쉬에 속도에 0.025배로 줄여서 병이 벽에닿아도 실제로 병이 깨지는것처럼 구현 중
 		UGeometryCollectionComponent* GeoComp = FractureActor->GetGeometryCollectionComponent();
 		if (GeoComp)
 		{
