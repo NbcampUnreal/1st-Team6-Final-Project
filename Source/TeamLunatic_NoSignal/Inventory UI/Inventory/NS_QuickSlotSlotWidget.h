@@ -11,6 +11,7 @@ class UImage;
 class UTextBlock;
 class UNS_QuickSlotKey;
 class UDragItemVisual;
+struct FNS_ItemDataStruct;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UNS_QuickSlotSlotWidget : public UUserWidget
@@ -18,29 +19,12 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_QuickSlotSlotWidget : public UUserWidget
 	GENERATED_BODY()
 	
 public:
-    void SetAssignedItem(UNS_InventoryBaseItem* Item);
+    virtual void NativeConstruct() override;
 
-    FORCEINLINE int32 GetSlotIndex() const { return SlotIndex; }
-
-    void SetSlotIndex(int32 InIndex);
-    void UpdateSlotDisplay();
-
-    UFUNCTION(BlueprintCallable)
+    void SetAssignedItem(const FNS_ItemDataStruct* ItemData, int32 Quantity);
+    void SetSlotIndex(int32 Index);
     void ClearAssignedItem();
 
-    UFUNCTION(BlueprintCallable)
-    bool IsEmpty() const;
-
-    FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent);
-
-    void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation);
-
-    bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation);
-
-    UNS_InventoryBaseItem* GetAssignedItem() const { return AssignedItem; }
-
-    TSubclassOf<UDragItemVisual> DragItemVisualClass;
-protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
     class UImage* ItemIcon;
 
