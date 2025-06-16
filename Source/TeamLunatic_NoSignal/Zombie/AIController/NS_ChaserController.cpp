@@ -44,7 +44,7 @@ void ANS_ChaserController::BeginPlay()
         BlackboardComp->SetValueAsBool(TEXT("IsChasingEvent"), false);
         BlackboardComp->ClearValue(TEXT("TargetActor"));
     }
-    RequestPlayerLocation();
+    //RequestPlayerLocation();
     PerceptionComp->OnTargetPerceptionUpdated.RemoveDynamic(this, &ANS_ChaserController::OnPerceptionUpdated);
     PerceptionComp->OnTargetPerceptionUpdated.AddDynamic(this, &ANS_ChaserController::OnPerceptionUpdated);
 }

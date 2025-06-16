@@ -17,8 +17,8 @@ public class TeamLunatic_NoSignal : ModuleRules
     "Networking",
     "Slate",
     "SlateCore",
-    "ChaosSolverEngine", // 지오 메트리 컬렉션 사용하려고 (던지는 액터는 깨지는거 구현 용
-    "GeometryCollectionEngine" // 지오 메트리 컬렉션 사용하려고 (던지는 액터는 깨지는거 구현 용
+    "ChaosSolverEngine", // 지오 메트리 컬렉션 사용하려고 던지는 액터는 깨지는거 구현 용
+    "GeometryCollectionEngine" // 지오 메트리 컬렉션 사용하려고 던지는 액터는 깨지는거 구현 용
             });
 
         //if (Target.Platform == UnrealTargetPlatform.Win64)
