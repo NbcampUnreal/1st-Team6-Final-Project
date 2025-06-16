@@ -5,6 +5,7 @@
 #include "InputActionValue.h"
 #include "Interaction/Component/InteractionComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "GameFlow/NS_GameModeBase.h"
 #include "Character/ThrowActor/NS_ThrowActor.h"
 #include "NS_PlayerCharacterBase.generated.h"
 
@@ -17,6 +18,7 @@ class UInventoryComponent;
 class ANS_BaseWeapon;
 class UNS_EquipedWeaponComponent;
 class UNS_QuickSlotPanel;
+class UNS_QuickSlotComponent;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
@@ -52,7 +54,16 @@ public:
 	void DropItem(UNS_InventoryBaseItem* ItemToDrop, const int32 QuantityToDrop);
 
 	UFUNCTION(Client, Reliable)
-	void Client_RemoveFromQuickSlot(UNS_InventoryBaseItem* ItemToRemove);
+	void Client_NotifyQuickSlotUpdated();
+	
+	UFUNCTION(BlueprintCallable)
+	void UseThrowableItem_Internal(int32 Index);
+
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void Server_UseThrowableItem(int32 Index);
+
+	UFUNCTION(Server, Reliable)
+	void Server_AssignQuickSlot(int32 SlotIndex, UNS_InventoryBaseItem* Item);
 
 	void UseQuickSlot1();
 
@@ -71,8 +82,8 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_UseQuickSlotByIndex(int32 Index);
 
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "QuickSlot")
-	int32 QuickSlotIndex = -1;
+	UPROPERTY(BlueprintReadWrite, Category = "Inventory")
+	UNS_InventoryBaseItem* AssignedItem;
 
 	UFUNCTION(Client, Reliable)
 	void Client_NotifyInventoryUpdated();
@@ -112,6 +123,9 @@ public:
 
 	UPROPERTY()
 	UNS_QuickSlotPanel* QuickSlotPanel;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "QuickSlot", Replicated)
+	UNS_QuickSlotComponent* QuickSlotComponent;
 
 	// 장착 무기 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
@@ -281,10 +295,7 @@ public:
 	// 카메라 Yaw값, Pitch값 서버로 전송
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void UpdateAim_Server(float NewCamYaw, float NewCamPitch);
-
-	// 캐릭터가 Turn In Place를 하면 Yaw값을 0으로 보간해주는 함수로 유일하게 Tick에서 실행해주는 중
-	UFUNCTION(Server, Reliable)
-	void TurnInPlace_Server(float DeltaTime);
+	
 
 	// 캐릭터가 병투척해서 날아가는 속도/방향/궤도 함수
 	UFUNCTION(BlueprintCallable)
