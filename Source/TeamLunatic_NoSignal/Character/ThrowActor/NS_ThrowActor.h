@@ -8,7 +8,7 @@
 class UStaticMeshComponent;
 class UProjectileMovementComponent;
 class UGeometryCollectionComponent;
-class UBoxComponent;
+class UBoxComponent; // 추가: BoxCollisionComponent를 사용하기 위함
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_ThrowActor : public AActor
@@ -19,10 +19,14 @@ public:
 	ANS_ThrowActor();
 
 	// 날아갈 병 메쉬
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	UStaticMeshComponent* BottleMesh;
 
-	// 날아갈 궤적 컴포넌트 
+	// 추가: 오버랩 감지를 위한 박스 콜리전
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	UBoxComponent* OverlapCollision;
+
+	// 날아갈 궤적 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UProjectileMovementComponent* ProjectileMovement;
 
@@ -38,14 +42,13 @@ public:
 	bool bHasPlayedImpactSound = false;
 
 protected:
-	
 	virtual void BeginPlay() override;
-public:
-	UFUNCTION()
-	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
-			   UPrimitiveComponent* OtherComp, FVector NormalImpulse,
-			   const FHitResult& Hit);
 
-	// 병이 날아가는 방향 지정
+public:
+
 	void LaunchInDirection(const FVector& Direction);
+	
+	UFUNCTION()
+	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
 };

@@ -16,6 +16,7 @@ public:
 
 	virtual void NativeConstruct() override;
 	virtual void Init(UNS_BaseMainMenu* NsMainMenu) override;
+	
 	virtual void ShowWidgetD() override;
 
 	UFUNCTION(BlueprintCallable)
@@ -27,9 +28,16 @@ public:
 	UFUNCTION()
 	void OnMainMenuBtnClicked();
 
+	UFUNCTION()
+	void OnQuit();
 protected:
+	//load save 버튼 막아놨음/  기획상 빠짐 
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
 	UButton* LoadSavedGameBtn;
+
+	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
+	UButton* ExitGameBtn;
+	
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
 	UButton* MainMenuBtn;
 

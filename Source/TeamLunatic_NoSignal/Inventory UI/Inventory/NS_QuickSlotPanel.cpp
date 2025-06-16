@@ -5,183 +5,111 @@
 #include "Inventory UI/Inventory/NS_QuickSlotSlotWidget.h"
 #include "Components/HorizontalBox.h"
 #include "Components/HorizontalBoxSlot.h"
-#include "Character/NS_PlayerCharacterBase.h"
 #include "Item/NS_InventoryBaseItem.h"
+#include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
 
 void UNS_QuickSlotPanel::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    TryBindQuickSlot();
-    if (SlotWidgets.Num() == 0)
-    {
-        RefreshQuickSlot();
-    }
+    TryBindQuickSlotPanel();
 }
 
-void UNS_QuickSlotPanel::TryBindQuickSlot()
+void UNS_QuickSlotPanel::InitializeSlots()
 {
-    ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(GetOwningPlayerPawn());
-
-    if (!PlayerCharacter)
+    if (!SlotBox || !QuickSlotComponent || !SlotWidgetClass)
     {
-        UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 바인딩 실패: PlayerCharacter nullptr - 0.05초 후 재시도"));
-
-        // 바인딩 실패 시, 0.05초 후 재시도
-        FTimerHandle RetryHandle;
-        GetWorld()->GetTimerManager().SetTimer(RetryHandle, FTimerDelegate::CreateLambda([this]()
-            {
-                TryBindQuickSlot(); 
-            }), 0.05f, false);
-
+        UE_LOG(LogTemp, Error, TEXT("[QuickSlotPanel] 초기화 실패 - 필수 요소 누락"));
         return;
     }
 
-    PlayerCharacter->QuickSlotPanel = this;
+    SlotBox->ClearChildren();
 
-    // 슬롯 UI 생성
-    RefreshQuickSlot();
+    const TArray<TObjectPtr<UNS_InventoryBaseItem>>& QuickSlots = QuickSlotComponent->GetQuickSlots();
+    const int32 SlotCount = QuickSlots.Num();
 
-    UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 바인딩 성공 - 위젯 이름: %s, 플레이어: %s"),
-        *GetName(),
-        *PlayerCharacter->GetName());
-}
-
-void UNS_QuickSlotPanel::RefreshQuickSlot()
-{
-    if (!SlotBox || !SlotWidgetClass) return;
-
-    if (SlotWidgets.Num() == 0)
+    for (int32 i = 0; i < SlotCount; ++i)
     {
-        // 최초 1회만 생성
-        for (int32 i = 0; i < 5; ++i)
+        UNS_QuickSlotSlotWidget* NewSlot = CreateWidget<UNS_QuickSlotSlotWidget>(this, SlotWidgetClass);
+        if (NewSlot)
         {
-            UNS_QuickSlotSlotWidget* NewSlot = CreateWidget<UNS_QuickSlotSlotWidget>(this, SlotWidgetClass);
-            if (NewSlot)
-            {
-                NewSlot->SetSlotIndex(i);
-                SlotBox->AddChildToHorizontalBox(NewSlot);
-                SlotWidgets.Add(NewSlot);
-            }
+            NewSlot->SetSlotIndex(i); // 인덱스 표시용 (예: 1~5번 등)
+            SlotBox->AddChildToHorizontalBox(NewSlot);
         }
     }
 
-    // 슬롯 갱신 (예: 아이콘, 수량 등)
-    for (UNS_QuickSlotSlotWidget* SlotWidget : SlotWidgets)
-    {
-        if (SlotWidget)
-        {
-            SlotWidget->UpdateSlotDisplay(); // 또는 다른 처리
-        }
-    }
-
-    UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] RefreshQuickSlot 완료 - Slot 수: %d"), SlotWidgets.Num());
+    UE_LOG(LogTemp, Warning, TEXT("[QuickSlotPanel] 슬롯 %d개 생성 완료"), SlotCount);
 }
 
-bool UNS_QuickSlotPanel::IsItemAlreadyAssigned(UNS_InventoryBaseItem* Item) const
+// 퀵슬롯 컴포넌트 바인딩 시도 및 실패 시 재시도
+void UNS_QuickSlotPanel::TryBindQuickSlotPanel()
 {
-    if (!Item) return false;
+    APlayerController* PC = GetOwningPlayer();
+    if (!PC) return;
 
-    for (int32 i = 0; i < SlotWidgets.Num(); ++i)
+    APawn* Pawn = PC->GetPawn();
+    if (!Pawn)
     {
-        const auto* Assigned = SlotWidgets[i] ? SlotWidgets[i]->GetAssignedItem() : nullptr;
-
-        if (Assigned && Assigned->ItemDataRowName == Item->ItemDataRowName)
+        if (++RetryCount <= 10)
         {
-            UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 슬롯 %d에 이미 등록된 아이템: %s"), i, *Item->ItemDataRowName.ToString());
-            return true;
-        }
-    }
-
-    return false;
-}
-
-void UNS_QuickSlotPanel::AssignItemToSlot(int32 SlotIndex, UNS_InventoryBaseItem* Item)
-{
-    if (!SlotWidgets.IsValidIndex(SlotIndex) || !Item) return;
-
-    // 이미 같은 아이템이 해당 슬롯에 있으면 무시
-    const auto* ExistingItem = SlotWidgets[SlotIndex]->GetAssignedItem();
-    if (ExistingItem && ExistingItem->ItemDataRowName == Item->ItemDataRowName)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 슬롯 %d에 이미 동일 아이템 존재: %s"), SlotIndex, *Item->ItemDataRowName.ToString());
-        return;
-    }
-
-    // 전체 슬롯 중복 체크
-    if (IsItemAlreadyAssigned(Item))
-    {
-        UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 중복 등록 방지: 아이템 %s 이미 다른 슬롯에 등록됨"), *Item->GetName());
-        return;
-    }
-
-    SlotWidgets[SlotIndex]->SetAssignedItem(Item);
-    UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 슬롯 %d에 아이템 %s 직접 배정"), SlotIndex, *Item->ItemDataRowName.ToString());
-}
-
-bool UNS_QuickSlotPanel::AssignToFirstEmptySlot(UNS_InventoryBaseItem* Item)
-{
-    if (!Item)
-    {
-        return false;
-    }
-
-    if (IsItemAlreadyAssigned(Item))
-    {
-        return false;
-    }
-
-    for (int32 i = 0; i < SlotWidgets.Num(); ++i)
-    {
-        auto* SlotWidget = SlotWidgets[i];
-        if (!SlotWidget)
-        {
-            continue;
-        }
-
-        if (SlotWidget->IsEmpty())
-        {
-            SlotWidget->SetAssignedItem(Item);
-            return true;
+            GetWorld()->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateLambda([this]() {
+                TryBindQuickSlotPanel();
+                }));
         }
         else
         {
-            const auto* ExistingItem = SlotWidget->GetAssignedItem();
+            UE_LOG(LogTemp, Error, TEXT("[UI-Bind] QuickSlotPanel 바인딩 실패 - 최대 재시도 초과"));
         }
-    }
-    return false;
-}
-
-UNS_InventoryBaseItem* UNS_QuickSlotPanel::GetItemInSlot(int32 SlotIndex) const
-{
-    if (SlotWidgets.IsValidIndex(SlotIndex))
-    {
-        return SlotWidgets[SlotIndex]->GetAssignedItem(); // 슬롯이 보유한 아이템 반환
-    }
-    return nullptr;
-}
-
-void UNS_QuickSlotPanel::RemoveItemFromSlot(UNS_InventoryBaseItem* Item)
-{
-    if (!Item)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 제거할 아이템이 nullptr입니다."));
         return;
     }
 
-    for (UNS_QuickSlotSlotWidget* QSlot : SlotWidgets)
+    QuickSlotComponent = Pawn->FindComponentByClass<UNS_QuickSlotComponent>();
+    if (!QuickSlotComponent)
     {
-        if (!QSlot || !QSlot->GetAssignedItem()) continue;
+        UE_LOG(LogTemp, Error, TEXT("[UI-Bind] QuickSlotComponent를 찾을 수 없음"));
+        return;
+    }
 
-        const UNS_InventoryBaseItem* AssignedItem = QSlot->GetAssignedItem();
+    QuickSlotComponent->QuickSlotUpdated.AddUObject(this, &UNS_QuickSlotPanel::OnQuickSlotDataUpdated);
+    InitializeSlots();
+    RefreshQuickSlots(QuickSlotComponent->GetQuickSlots());
 
-        // ItemDataRowName 기준 비교 (포인터 주소 비교 대신)
-        if (AssignedItem->ItemDataRowName == Item->ItemDataRowName)
+    UE_LOG(LogTemp, Warning, TEXT("[UI-Bind] QuickSlotComponent 바인딩 성공"));
+    RetryCount = 0;
+}
+
+// 전체 슬롯 UI 갱신
+void UNS_QuickSlotPanel::RefreshQuickSlots(const TArray<TObjectPtr<UNS_InventoryBaseItem>>& QuickSlots)
+{
+    const int32 NumSlots = SlotBox->GetChildrenCount();
+
+    for (int32 i = 0; i < NumSlots; ++i)
+    {
+        if (UWidget* Child = SlotBox->GetChildAt(i))
         {
-            QSlot->ClearAssignedItem();
-            UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] %s 퀵슬롯에서 제거됨"), *Item->GetName());
-            break;
+            if (UNS_QuickSlotSlotWidget* QSlot = Cast<UNS_QuickSlotSlotWidget>(Child))
+            {
+                if (QuickSlots.IsValidIndex(i) && QuickSlots[i])
+                {
+                    QSlot->SetAssignedItem(QuickSlots[i]->GetItemData(), QuickSlots[i]->GetQuantity());
+                }
+                else
+                {
+                    QSlot->ClearAssignedItem();
+                }
+            }
         }
     }
 }
+
+// 델리게이트 바인딩 시 호출되는 슬롯 UI 갱신 함수
+void UNS_QuickSlotPanel::OnQuickSlotDataUpdated()
+{
+    if (QuickSlotComponent)
+    {
+        RefreshQuickSlots(QuickSlotComponent->GetQuickSlots());
+        UE_LOG(LogTemp, Warning, TEXT("[QuickSlotPanel] 슬롯 데이터 변경 감지 - UI 갱신"));
+    }
+}
+
 

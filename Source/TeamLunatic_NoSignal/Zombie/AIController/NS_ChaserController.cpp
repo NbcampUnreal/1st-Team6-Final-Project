@@ -44,7 +44,7 @@ void ANS_ChaserController::BeginPlay()
         BlackboardComp->SetValueAsBool(TEXT("IsChasingEvent"), false);
         BlackboardComp->ClearValue(TEXT("TargetActor"));
     }
-   // RequestPlayerLocation();
+    //RequestPlayerLocation();
     PerceptionComp->OnTargetPerceptionUpdated.RemoveDynamic(this, &ANS_ChaserController::OnPerceptionUpdated);
     PerceptionComp->OnTargetPerceptionUpdated.AddDynamic(this, &ANS_ChaserController::OnPerceptionUpdated);
 }
@@ -248,6 +248,10 @@ void ANS_ChaserController::StopDamageLoop()
 void ANS_ChaserController::ApplyDamageToTarget()
 {
     if (!DamageTarget) return;
+
+    // 플레이어인지 체크
+    if (!DamageTarget->IsA(ANS_PlayerCharacterBase::StaticClass())) return;
+
     UGameplayStatics::ApplyDamage(DamageTarget, 10.0f, this, GetPawn(), nullptr);
 }
 

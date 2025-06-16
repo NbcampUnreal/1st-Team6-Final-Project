@@ -5,6 +5,8 @@
 #include "Net/UnrealNetwork.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Item/NS_InventoryBaseItem.h"
+
+#include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
 #include "Engine/ActorChannel.h"
 
 
@@ -158,6 +160,15 @@ UNS_InventoryBaseItem* UInventoryComponent::FindNextPartialStack(UNS_InventoryBa
 void UInventoryComponent::RemoveSingleInstanceOfItem(UNS_InventoryBaseItem* ItemToRemove)
 {
 	InventoryContents.RemoveSingle(ItemToRemove);
+
+	if (AActor* Owner = GetOwner())
+	{
+		if (UNS_QuickSlotComponent* QSlotComp = Owner->FindComponentByClass<UNS_QuickSlotComponent>())
+		{
+			QSlotComp->RemoveItem(ItemToRemove); // 퀵슬롯에서 제거도 처리
+		}
+	}
+
 	BroadcastInventoryUpdate();
 }
 
@@ -312,6 +323,25 @@ int32 UInventoryComponent::CalculateNumberForFullStack(UNS_InventoryBaseItem* St
 //  새 아이템 인벤토리에 추가
 void UInventoryComponent::AddNewItem(UNS_InventoryBaseItem* Item, const int32 AmountToAdd)
 {
+	if (!Item)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[Inventory] AddNewItem 실패 - Item == nullptr"));
+		return;
+	}
+
+	if (InventoryContents.Num() >= 20)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[Inventory] 슬롯 초과 - 현재: %d / 20"), InventoryContents.Num());
+		return;
+	}
+
+	// 임시 무게 확인
+	float IncomingWeight = Item->GetItemStackWeight();
+	if (InventoryTotalWeight + IncomingWeight > GetWeightCapacity())
+	{
+		UE_LOG(LogTemp, Error, TEXT("[Inventory] 무게 초과: %.1f + %.1f > %.1f"), InventoryTotalWeight, IncomingWeight, GetWeightCapacity());
+		return;
+	}
 	UNS_InventoryBaseItem* NewItem;
 
 	if (Item->bisCopy || Item->bisPickup)
@@ -332,6 +362,24 @@ void UInventoryComponent::AddNewItem(UNS_InventoryBaseItem* Item, const int32 Am
 	BroadcastInventoryUpdate();
 	UE_LOG(LogTemp, Warning, TEXT("[Inventory] Added %s"), *NewItem->GetName());
 	UE_LOG(LogTemp, Warning, TEXT("[Inventory] NewItem OwingInventory: %s"), *GetNameSafe(NewItem->OwingInventory));
+
+	AActor* OwnerActor = GetOwner();
+	if (OwnerActor)
+	{
+		ANS_PlayerCharacterBase* Player = Cast<ANS_PlayerCharacterBase>(OwnerActor); 
+		if (Player && Player->QuickSlotComponent)
+		{
+			if (NewItem->ItemType == EItemType::Equipment &&
+				NewItem->WeaponType != EWeaponType::Ammo &&
+				!Player->QuickSlotComponent->IsItemAlreadyAssigned(NewItem))
+			{
+				if (Player->QuickSlotComponent->AssignToFirstEmptySlot(NewItem))
+				{
+					UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 자동 등록 완료: %s"), *NewItem->GetName());
+				}
+			}
+		}
+	}
 }
 
 void UInventoryComponent::CleanUpZeroQuantityItems()
