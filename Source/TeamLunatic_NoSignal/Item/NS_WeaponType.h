@@ -11,7 +11,8 @@ enum class EWeaponType : uint8
 	Ranged UMETA(DisplayName = "M4A4"),
 	ThrowActor UMETA(DisplayName = "Bottle"),
 	Ammo UMETA(DisplayName = "Ammo"),
-	Magazine UMETA(DisplayName = "Magazine")
+	Magazine UMETA(DisplayName = "Magazine"),
+	BaseBallBat UMETA(DisplayName = "BaseBallBat")
 };
 
 UENUM(BlueprintType)
