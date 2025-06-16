@@ -30,6 +30,8 @@ protected:
 	UBehaviorTreeComponent* BehaviorTreeComp;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
 	UBehaviorTree* BehaviorTreeAsset;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
+	UBehaviorTree* RunnerBehaviorTreeAsset;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
 	UBlackboardComponent* BlackboardComp;
 

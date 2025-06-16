@@ -18,6 +18,17 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnSessionListReceived, const TArray<TShared
 
 class UNS_UIManager;
 
+USTRUCT(BlueprintType)
+struct FNS_PlayerData
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(BlueprintReadWrite, Category = "PlayerData")
+	FString CharacterModelPath; // 캐릭터 모델 경로
+};
+
+
+
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UNS_GameInstance : public UGameInstance
 {
@@ -27,11 +38,13 @@ public:
 	UNS_GameInstance();
 	virtual void Init() override;
 
-	UPROPERTY(BlueprintReadOnly, Category = "SaveGame")
-	FString CurrentSaveSlotName;
+	UFUNCTION()
+	void OnLevelLoaded(UWorld* LoadedWorld);
 
 	void SetCurrentSaveSlot(FString SlotNameInfo);
 
+	UPROPERTY(BlueprintReadOnly, Category = "SaveGame")
+	FString CurrentSaveSlotName;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Inventory|Config")
 	UDataTable* GlobalItemDataTable;
@@ -64,6 +77,10 @@ public:
 	bool bIsSinglePlayer = true;
 
 	void SendHeartbeat();
+
+	TArray<FString> CharacterList;
+	TMap<int32, FNS_PlayerData> PlayerDataMap;
+
 private:
 	EGameModeType GameModeType = EGameModeType::SinglePlayMode;
 	int32 MyServerPort = -1;

@@ -5,6 +5,7 @@
 #include "NS_MultiPlayMode.generated.h"
 
 class APawn;
+class ANS_PlayerState;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_MultiPlayMode : public ANS_GameModeBase

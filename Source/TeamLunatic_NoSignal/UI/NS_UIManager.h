@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
+#include "Containers/Ticker.h"  // 
 #include "NS_UIManager.generated.h"
 
 class UNS_BaseMainMenu;
@@ -11,6 +12,9 @@ class UNS_PlayerHUD;
 class UNS_CircleProgressBar;
 class UNS_InGameMenu;
 class UNS_QuickSlotPanel;
+class UNS_LoadingScreen;
+
+DECLARE_DELEGATE(FOnLoadingFinished);
 
 UCLASS(Blueprintable)
 class TEAMLUNATIC_NOSIGNAL_API UNS_UIManager : public UObject
@@ -54,12 +58,18 @@ public:
 	void SetFInputModeGameAndUI(APlayerController* PC, UUserWidget* Widget);
 	void SetFInputModeGameOnly(APlayerController* PC);
 
+	void LoadingScreen(UWorld* World);
+	void CloseLoadingUI();
+
+	FOnLoadingFinished OnLoadingFinished;
+
 protected:
 	UPROPERTY()
 	UNS_InGameMenu* InGameMenuWidget;
 	UNS_Msg_GameOver* NS_Msg_GameOveWidget;
 	UNS_InGameMsg* NS_InGameMsgWidget;
 	UNS_PlayerHUD* NS_PlayerHUDWidget;
+	UNS_LoadingScreen* NS_LoadingScreen;
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UNS_BaseMainMenu> InGameMenuWidgetClass;
@@ -73,6 +83,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UNS_PlayerHUD> NS_PlayerHUDWidgetClass;
 
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UNS_LoadingScreen> NS_LoadingScreenClass;
+	
 private:
 
 };

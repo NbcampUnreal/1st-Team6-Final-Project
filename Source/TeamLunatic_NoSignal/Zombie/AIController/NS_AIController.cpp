@@ -38,9 +38,24 @@ void ANS_AIController::BeginPlay()
 void ANS_AIController::OnPossess(APawn* PossessedPawn)
 {
 	Super::OnPossess(PossessedPawn);
-	if (UseBlackboard(BehaviorTreeAsset->BlackboardAsset, BlackboardComp))
+	ANS_ZombieBase* Zombie = Cast<ANS_ZombieBase>(PossessedPawn);
+	switch (Zombie->GetType())
 	{
-		RunBehaviorTree(BehaviorTreeAsset);
+	case EZombieType::FAT:
+	case EZombieType::BASIC:
+		if (UseBlackboard(BehaviorTreeAsset->BlackboardAsset, BlackboardComp))
+		{
+			RunBehaviorTree(BehaviorTreeAsset);
+		}
+		break;
+	case EZombieType::RUNNER:
+		if (UseBlackboard(RunnerBehaviorTreeAsset->BlackboardAsset, BlackboardComp))
+		{
+			RunBehaviorTree(RunnerBehaviorTreeAsset);
+		}
+		break;
+	default:
+		break;
 	}
 	Perception->OnTargetPerceptionUpdated.AddDynamic(this, &ANS_AIController::OnPerceptionUpdated);
 	InitializeAttackRange(PossessedPawn);

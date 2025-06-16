@@ -13,6 +13,7 @@
 #include "UI/NS_MasterMenuPanel.h"
 #include "Components/ComboBoxString.h"
 #include "UI/NS_SaveLoadHelper.h"
+#include "UI/NS_UIManager.h"
 //#include "GameFlow\NS_GameInstance.h"
 
 void UNS_NewGameR::OnStartGameClicked()
@@ -119,8 +120,12 @@ void UNS_NewGameR::StartGame()
         FString GameModePath = TEXT("Game=/Game/GameFlowBP/BP_NS_SinglePlayMode.BP_NS_SinglePlayMode_C");
 
         UE_LOG(LogTemp, Warning, TEXT("[StartGame] Opening level with options: %s"), *GameModePath);
-
-        UGameplayStatics::OpenLevel(this, FName(*SelectedLevelName), true, GameModePath);
+		
+        GI->GetUIManager()->LoadingScreen(GetWorld());
+        GI->GetUIManager()->OnLoadingFinished.BindLambda([SelectedLevelName, GameModePath, GI]()
+        {
+           UGameplayStatics::OpenLevel(GI->GetWorld(), FName(*SelectedLevelName), true, GameModePath);
+        });
     }
     else
     {

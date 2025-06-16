@@ -17,17 +17,29 @@ UNS_GameInstance::UNS_GameInstance()
 	{
 		UIManagerClass = BP_UIManager.Class;
 	}
+
+	CharacterList.Add(TEXT("/Game/Character/Blueprints/Character/BP_NS_Male1"));
+	CharacterList.Add(TEXT("/Game/Character/Blueprints/Character/BP_NS_Male2"));
+	CharacterList.Add(TEXT("/Game/Character/Blueprints/Character/BP_NS_Male3"));
+	CharacterList.Add(TEXT("/Game/Character/Blueprints/Character/BP_NS_Female1"));
 }
 
 void UNS_GameInstance::Init()
 {
 	Super::Init();
 
+	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &UNS_GameInstance::OnLevelLoaded);
 	if (UIManagerClass)
 	{
 		NS_UIManager = NewObject<UNS_UIManager>(this, UIManagerClass);
 		NS_UIManager->InitUi(GetWorld());
 	}
+}
+
+void UNS_GameInstance::OnLevelLoaded(UWorld* LoadedWorld)
+{
+	if (NS_UIManager)
+		NS_UIManager->CloseLoadingUI();
 }
 
 void UNS_GameInstance::SetGameModeType(EGameModeType Type)
