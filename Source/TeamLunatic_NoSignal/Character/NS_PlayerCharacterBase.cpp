@@ -545,23 +545,24 @@ void ANS_PlayerCharacterBase::Client_NotifyQuickSlotUpdated_Implementation()
 
 void ANS_PlayerCharacterBase::UseThrowableItem_Internal(int32 Index)
 {
-    if (HasAuthority())
+    if (!HasAuthority())
     {
-        Server_UseThrowableItem_Implementation(Index);
-    }
-    else
-    {
-        Server_UseThrowableItem(Index);
+        Server_UseThrowableItem(Index); 
     }
 }
 
 void ANS_PlayerCharacterBase::Server_UseThrowableItem_Implementation(int32 Index)
 {
+    HandleUseThrowableItem(Index);
+}
+
+void ANS_PlayerCharacterBase::HandleUseThrowableItem(int32 Index)
+{
     if (!QuickSlotComponent || !PlayerInventory) return;
     QuickSlotComponent->SetCurrentSlotIndex(Index);
     // 퀵슬롯에서 해당 인덱스에 있는 아이템 가져오기
     UNS_InventoryBaseItem* Item = QuickSlotComponent->GetItemInSlot(Index);
-   
+
     // 아이템이 없으면 → 무기 해제 + 퀵슬롯 정리
     if (!Item || Item->ItemDataRowName.IsNone())
     {
@@ -574,7 +575,6 @@ void ANS_PlayerCharacterBase::Server_UseThrowableItem_Implementation(int32 Index
             }
         }
 
-        QuickSlotComponent->RemoveItem(Item);
         Client_NotifyInventoryUpdated();
         return;
     }
@@ -582,10 +582,17 @@ void ANS_PlayerCharacterBase::Server_UseThrowableItem_Implementation(int32 Index
     // 아이템이 존재하면 → 인벤토리에서 해당 인스턴스 직접 수량 감소
     PlayerInventory->RemoveAmountOfItem(Item, 1);
 
-    // 수량 0일 경우 퀵슬롯 정리 
+    // 감소 후 수량 확인 → 무기 해제
     if (Item->Quantity <= 0)
     {
-        QuickSlotComponent->RemoveItem(Item);
+        if (UNS_EquipedWeaponComponent* WeaponComp = FindComponentByClass<UNS_EquipedWeaponComponent>())
+        {
+            if (WeaponComp->GetCurrentWeaponItem())
+            {
+                WeaponComp->UnequipWeapon();
+                UE_LOG(LogTemp, Warning, TEXT("아이템 소진으로 무기 해제됨 (슬롯: %d)"), Index);
+            }
+        }
     }
 
     Client_NotifyInventoryUpdated();
