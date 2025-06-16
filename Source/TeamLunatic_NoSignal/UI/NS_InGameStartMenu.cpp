@@ -33,20 +33,24 @@ void UNS_InGameStartMenu::NativeConstruct()
     if (BP_Quit)
         BP_Quit->RootButton->OnClicked.AddUniqueDynamic(this, &UNS_InGameStartMenu::OnQuitClicked);
 
-   UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance());
-  if (NS_GameInstance)
-  {
-      if (NS_GameInstance->bIsSinglePlayer)
-      {
-          BP_SaveGame->SetVisibility(ESlateVisibility::Visible);
-          BP_LoadGame->SetVisibility(ESlateVisibility::Visible);
-      }
-      else
-      {
-          BP_SaveGame->SetVisibility(ESlateVisibility::Collapsed);
-          BP_LoadGame->SetVisibility(ESlateVisibility::Collapsed);
-      }
-  }
+    //Load,Save 기획상 없애기로 했으니 감춰놓기.
+    BP_SaveGame->SetVisibility(ESlateVisibility::Collapsed);
+    BP_LoadGame->SetVisibility(ESlateVisibility::Collapsed);
+
+  // UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance());
+  //if (NS_GameInstance)
+  //{
+  //    if (NS_GameInstance->bIsSinglePlayer)
+  //    {
+  //        BP_SaveGame->SetVisibility(ESlateVisibility::Visible);
+  //        BP_LoadGame->SetVisibility(ESlateVisibility::Visible);
+  //    }
+  //    else
+  //    {
+  //        BP_SaveGame->SetVisibility(ESlateVisibility::Collapsed);
+  //        BP_LoadGame->SetVisibility(ESlateVisibility::Collapsed);
+  //    }
+  //}
 }
 void UNS_InGameStartMenu::Init(UNS_BaseMainMenu* NsMainMenu)
 {

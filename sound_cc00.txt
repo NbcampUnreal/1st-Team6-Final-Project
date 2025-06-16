@@ -1,6 +1,0 @@
-CC0
-oozername/sounds/804460  : zombieWhy
-crocytc/sounds/353062 : attack zombie
-missozzy/sounds/169849 : femalezombie
-13fpanska_machacova_petra/sounds/377533/ : waitingZombie
-mrsoundguy84859983975479387597/sounds/678437/ : fatZombie attack

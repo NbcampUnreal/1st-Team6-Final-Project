@@ -6,7 +6,7 @@
 #include "Inventory/InventoryComponent.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Item/NS_BaseMagazine.h"
-#include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
+#include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
 
 APickup::APickup()
 {
@@ -150,15 +150,6 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 		{
 			if (UInventoryComponent* PlayerInventory = Taker->GetInventory())
 			{
-				if (Taker->QuickSlotPanel &&
-					ItemReference->ItemType == EItemType::Equipment &&
-					Taker->QuickSlotPanel->IsItemAlreadyAssigned(ItemReference))
-				{
-					UE_LOG(LogTemp, Warning, TEXT("[TakePickup] 이미 장착된 무기: %s - 획득 불가"), *ItemReference->GetName());
-
-					return; // 획득 시도 자체를 거부
-				}
-
 				const FItemAddResult AddResult = PlayerInventory->HandleAddItem(ItemReference);
 
 				switch (AddResult.OperationResult)

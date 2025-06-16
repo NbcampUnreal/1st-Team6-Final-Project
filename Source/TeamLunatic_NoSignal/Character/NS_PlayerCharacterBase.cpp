@@ -8,11 +8,18 @@
 #include "Components/NS_EquipedWeaponComponent.h"
 #include "Character/Components/NS_StatusComponent.h"
 #include "Item/NS_BaseRangedWeapon.h"
+#include "Character/ThrowActor/NS_ThrowActor.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Interaction/Component/InteractionComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "World/Pickup.h"
+#include "TimerManager.h"
 #include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
+#include "GameFramework/ProjectileMovementComponent.h"
+#include "Components/SplineMeshComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include <Net/UnrealNetwork.h>
+#include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
 
 ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
 {
@@ -60,6 +67,10 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     SetReplicates(true);
     PlayerInventory->SetSlotsCapacity(20);
     PlayerInventory->SetWeightCapacity(50.0f);
+
+    // 퀵슬롯 
+    QuickSlotComponent = CreateDefaultSubobject<UNS_QuickSlotComponent>(TEXT("QuickSlotComponent"));
+    QuickSlotComponent->SetIsReplicated(true);
 }
 
 void ANS_PlayerCharacterBase::BeginPlay()
@@ -91,9 +102,6 @@ void ANS_PlayerCharacterBase::BeginPlay()
 void ANS_PlayerCharacterBase::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-
-    // 캐릭터가 회전중이라면 Yaw값을 FInterp 해서 0으로 만들어줌
-    TurnInPlace_Server(DeltaTime);
 }
 
 void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -224,7 +232,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                 InputQuickSlot1, 
                 ETriggerEvent::Started, 
                 this, 
-                &ANS_PlayerCharacterBase::UseQuickSlot1_Server);
+                &ANS_PlayerCharacterBase::UseQuickSlot1);
         }
         if (InputQuickSlot2)
         {
@@ -232,7 +240,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                 InputQuickSlot2,
                 ETriggerEvent::Started,
                 this,
-                &ANS_PlayerCharacterBase::UseQuickSlot2_Server);
+                &ANS_PlayerCharacterBase::UseQuickSlot2);
         }       
         if (InputQuickSlot3)
         {
@@ -240,7 +248,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                 InputQuickSlot3,
                 ETriggerEvent::Started,
                 this,
-                &ANS_PlayerCharacterBase::UseQuickSlot3_Server);
+                &ANS_PlayerCharacterBase::UseQuickSlot3);
         }
     }
 }
@@ -260,6 +268,7 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
     DOREPLIFETIME(ANS_PlayerCharacterBase, TurnRight); // 몸을 오른쪽으로 회전시키는 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, NowFire);   // 사격시 몸전체Mesh 사격 애니메이션 재생 용 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, PlayerInventory);
+    DOREPLIFETIME(ANS_PlayerCharacterBase, QuickSlotComponent);
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsChangeAnim); // 퀵슬롯 눌렀을때 무기 장착하는 애니메이션 재생 용 변수
 }
 
@@ -452,6 +461,15 @@ void ANS_PlayerCharacterBase::ReloadAction_Server_Implementation(const FInputAct
 
 void ANS_PlayerCharacterBase::PlayDeath_Server_Implementation()
 {
+    if (UWorld* World = GetWorld())
+    {
+        ANS_GameModeBase* BaseGameMode = Cast<ANS_GameModeBase>(UGameplayStatics::GetGameMode(World));
+        if (BaseGameMode)
+        {
+            BaseGameMode->OnPlayerCharacterDied(this); 
+        }
+    }
+
     PlayDeath_Multicast(); 
 }
 
@@ -473,6 +491,12 @@ void ANS_PlayerCharacterBase::DropItem_Server_Implementation(UNS_InventoryBaseIt
 {
     if (PlayerInventory->FindMatchingItem(ItemToDrop))
     {
+        if (EquipedWeaponComp && EquipedWeaponComp->GetCurrentWeaponItem() == ItemToDrop)
+        {
+            EquipedWeaponComp->UnequipWeapon();
+        }
+        QuickSlotComponent->RemoveItem(ItemToDrop);
+        Client_NotifyQuickSlotUpdated();
         FActorSpawnParameters SpawnParams;
         SpawnParams.Owner = this;
         SpawnParams.bNoFail = true;
@@ -511,40 +535,164 @@ void ANS_PlayerCharacterBase::DropItem(UNS_InventoryBaseItem* ItemToDrop, const 
     }
 }
 
-void ANS_PlayerCharacterBase::UseQuickSlot1_Server_Implementation() { UseQuickSlotByIndex_Server(0); }
-void ANS_PlayerCharacterBase::UseQuickSlot2_Server_Implementation() { UseQuickSlotByIndex_Server(1); }
-void ANS_PlayerCharacterBase::UseQuickSlot3_Server_Implementation() { UseQuickSlotByIndex_Server(2); }
-
-void ANS_PlayerCharacterBase::UseQuickSlotByIndex_Server_Implementation(int32 Index)
+void ANS_PlayerCharacterBase::Client_NotifyQuickSlotUpdated_Implementation()
 {
-    if (QuickSlotPanel)
+    if (QuickSlotComponent)
     {
-        QuickSlotPanel->UseSlot_Server(Index);
+        QuickSlotComponent->BroadcastSlotUpdate(); // UI 갱신
     }
 }
 
-void ANS_PlayerCharacterBase::Server_UseQuickSlotItem_Implementation(FName ItemRowName)
+void ANS_PlayerCharacterBase::UseThrowableItem_Internal(int32 Index)
 {
-    Musticast_UseQuickSlotItem(ItemRowName);
+    if (HasAuthority())
+    {
+        Server_UseThrowableItem_Implementation(Index);
+    }
+    else
+    {
+        Server_UseThrowableItem(Index);
+    }
 }
 
-// 애니메이션 시퀀스에서 노티파이로 사용 할 현재 무기에 맞는 무기교체를 위한 함수
-void ANS_PlayerCharacterBase::Musticast_UseQuickSlotItem_Implementation(FName ItemRowName)
+void ANS_PlayerCharacterBase::Server_UseThrowableItem_Implementation(int32 Index)
 {
-    if (!PlayerInventory) return;
-
-    for (UNS_InventoryBaseItem* Item : PlayerInventory->GetInventoryContents())
+    if (!QuickSlotComponent || !PlayerInventory) return;
+    QuickSlotComponent->SetCurrentSlotIndex(Index);
+    // 퀵슬롯에서 해당 인덱스에 있는 아이템 가져오기
+    UNS_InventoryBaseItem* Item = QuickSlotComponent->GetItemInSlot(Index);
+   
+    // 아이템이 없으면 → 무기 해제 + 퀵슬롯 정리
+    if (!Item || Item->ItemDataRowName.IsNone())
     {
-        if (Item && Item->ItemDataRowName == ItemRowName)
+        if (UNS_EquipedWeaponComponent* WeaponComp = FindComponentByClass<UNS_EquipedWeaponComponent>())
         {
-            const FNS_ItemDataStruct* ItemData = Item->GetItemData();
-            if (!ItemData || ItemData->ItemType != EItemType::Equipment) return;
-
-            if (UNS_EquipedWeaponComponent* WeaponComp = FindComponentByClass<UNS_EquipedWeaponComponent>())
+            if (WeaponComp->GetCurrentWeaponItem())
             {
-                WeaponComp->SwapWeapon(ItemData->WeaponActorClass);
+                WeaponComp->UnequipWeapon();
+                UE_LOG(LogTemp, Warning, TEXT("슬롯 비어 있음 - 무기 해제 (슬롯: %d)"), Index);
             }
         }
+
+        QuickSlotComponent->RemoveItem(Item);
+        Client_NotifyInventoryUpdated();
+        return;
+    }
+
+    // 아이템이 존재하면 → 인벤토리에서 해당 인스턴스 직접 수량 감소
+    PlayerInventory->RemoveAmountOfItem(Item, 1);
+
+    // 수량 0일 경우 퀵슬롯 정리 
+    if (Item->Quantity <= 0)
+    {
+        QuickSlotComponent->RemoveItem(Item);
+    }
+
+    Client_NotifyInventoryUpdated();
+}
+
+// 서버에서 슬롯 할당 처리
+void ANS_PlayerCharacterBase::Server_AssignQuickSlot_Implementation(int32 SlotIndex, UNS_InventoryBaseItem* Item)
+{
+    if (QuickSlotComponent)
+    {
+        QuickSlotComponent->AssignToSlot(SlotIndex, Item);
+    }
+}
+
+void ANS_PlayerCharacterBase::UseQuickSlot1() { UseQuickSlotByIndex(0); }
+void ANS_PlayerCharacterBase::UseQuickSlot2() { UseQuickSlotByIndex(1); }
+void ANS_PlayerCharacterBase::UseQuickSlot3() { UseQuickSlotByIndex(2); }
+
+void ANS_PlayerCharacterBase::UseQuickSlotByIndex(int32 Index)
+{
+    if (HasAuthority())
+    {
+        Multicast_UseQuickSlotByIndex(Index);
+    }
+    else
+    {
+        Server_UseQuickSlotByIndex(Index);  // 클라 → 서버 요청
+    }
+}
+
+void ANS_PlayerCharacterBase::Server_UseQuickSlotByIndex_Implementation(int32 Index)
+{
+    if (!QuickSlotComponent) return;
+    QuickSlotComponent->SetCurrentSlotIndex(Index);
+    UNS_InventoryBaseItem* Item = QuickSlotComponent->GetItemInSlot(Index);
+    if (!Item || Item->ItemDataRowName.IsNone())
+    {
+        // 무기 장착 중이면 장착 해제 처리
+        if (EquipedWeaponComp && EquipedWeaponComp->GetCurrentWeaponItem())
+        {
+            if (!IsChangeAnim)
+            {
+                IsChangeAnim = true;  // 애니메이션 실행 상태 플래그
+                UE_LOG(LogTemp, Warning, TEXT("[Server_UseQuickSlot] 슬롯 %d 애니메이션 시작 준비"), Index);
+            }
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("[Server_UseQuickSlot] 슬롯 %d 비어 있음 - 장착 무기 없음"), Index);
+        }
+
+        return;  // 무기 없으므로 더 이상 진행하지 않음
+    }
+
+    if (!IsChangeAnim)
+    {
+        IsChangeAnim = true;  // 애니메이션 실행 상태 플래그
+        UE_LOG(LogTemp, Warning, TEXT("[Server_UseQuickSlot] 슬롯 %d 애니메이션 시작 준비"), Index);
+    }
+}
+
+void ANS_PlayerCharacterBase::Multicast_UseQuickSlotByIndex_Implementation(int32 Index)
+{
+    UseQuickSlotByIndex_Internal(Index);
+}
+
+void ANS_PlayerCharacterBase::UseQuickSlotByIndex_Internal(int32 Index)
+{
+    if (!QuickSlotComponent) return;
+
+    UNS_InventoryBaseItem* Item = QuickSlotComponent->GetItemInSlot(Index);
+
+    // 비어 있는 슬롯일 경우 → 현재 무기 해제
+    if (!Item || Item->ItemDataRowName.IsNone())
+    {
+        if (UNS_EquipedWeaponComponent* WeaponComp = FindComponentByClass<UNS_EquipedWeaponComponent>())
+        {
+            if (WeaponComp->GetCurrentWeaponItem())
+            {
+                WeaponComp->UnequipWeapon();
+                UE_LOG(LogTemp, Warning, TEXT("[UseQuickSlot_Internal] 빈 슬롯 선택 - 무기 해제 완료 (슬롯: %d)"), Index);
+            }
+        }
+
+        QuickSlotComponent->SetCurrentSlotIndex(Index);
+        return;
+    }
+    if (!Item || Item->ItemDataRowName.IsNone()) return;
+
+    // 정상 아이템일 경우
+    const FNS_ItemDataStruct* ItemData = Item->GetItemData();
+    if (!ItemData || ItemData->ItemType != EItemType::Equipment) return;
+
+    if (UNS_EquipedWeaponComponent* WeaponComp = FindComponentByClass<UNS_EquipedWeaponComponent>())
+    {
+        WeaponComp->SwapWeapon(ItemData->WeaponActorClass, Item);
+    }
+
+    QuickSlotComponent->SetCurrentSlotIndex(Index);
+    UE_LOG(LogTemp, Warning, TEXT("[UseQuickSlot_Internal] 장비 장착 - 인덱스: %d, 아이템: %s"), Index, *Item->GetName());
+}
+
+void ANS_PlayerCharacterBase::OnRep_IsChangeAnim()
+{
+    if (IsChangeAnim)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("클라이언트에서 IsChangeAnim TRUE 감지됨"));
     }
 }
 
@@ -555,6 +703,15 @@ void ANS_PlayerCharacterBase::Server_UseInventoryItem_Implementation(FName ItemR
         if (Item && Item->ItemDataRowName == ItemRowName)
         {
             Item->OnUseItem(this);
+
+            // 장비 아이템일 경우 퀵슬롯 자동 등록
+            if (Item->ItemType == EItemType::Equipment &&
+                Item->WeaponType != EWeaponType::Ammo &&
+                QuickSlotComponent)
+            {
+                QuickSlotComponent->AssignToFirstEmptySlot(Item);
+                UE_LOG(LogTemp, Warning, TEXT("[Server] 퀵슬롯 자동 등록 완료: %s"), *Item->GetName());
+            }
             return;
         }
     }
@@ -572,50 +729,10 @@ void ANS_PlayerCharacterBase::Client_NotifyInventoryUpdated_Implementation()
                 PlayerInventory->OnInventoryUpdated.Broadcast();
                 UE_LOG(LogTemp, Warning, TEXT("Client_NotifyInventoryUpdated - Inventory 갱신 (지연 호출)"));
 
-                // 퀵슬롯 패널 바인딩이 완료되었는지 체크 후 재시도
-                if (!QuickSlotPanel)
+                if (QuickSlotComponent)
                 {
-                    UE_LOG(LogTemp, Warning, TEXT("[QuickSlot][Client_Notify] QuickSlotPanel이 아직 바인딩되지 않음 - 0.1초 후 재시도"));
-
-                    // 한 번 더 타이머로 0.1초 후 재시도
-                    FTimerHandle RetryHandle;
-                    GetWorldTimerManager().SetTimer(RetryHandle, FTimerDelegate::CreateLambda([this]()
-                        {
-                            if (QuickSlotPanel && PlayerInventory)
-                            {
-                                for (UNS_InventoryBaseItem* Item : PlayerInventory->GetInventoryContents())
-                                {
-                                    if (Item && Item->ItemType == EItemType::Equipment && Item->WeaponType != EWeaponType::Ammo)
-                                    {
-                                        if (QuickSlotPanel->AssignToFirstEmptySlot(Item))
-                                        {
-                                            UE_LOG(LogTemp, Warning, TEXT("[QuickSlot][Client_Notify - Retry] 아이템 자동 배정 완료: %s"), *Item->GetName());
-                                        }
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                UE_LOG(LogTemp, Error, TEXT("[QuickSlot][Client_Notify - Retry] 여전히 QuickSlotPanel 또는 Inventory null"));
-                            }
-
-                        }), 0.1f, false);
+                    QuickSlotComponent->BroadcastSlotUpdate();
                 }
-                else
-                {
-                    // 퀵슬롯 패널이 이미 존재하면 즉시 수행
-                    for (UNS_InventoryBaseItem* Item : PlayerInventory->GetInventoryContents())
-                    {
-                        if (Item && Item->ItemType == EItemType::Equipment && Item->WeaponType != EWeaponType::Ammo)
-                        {
-                            if (QuickSlotPanel->AssignToFirstEmptySlot(Item))
-                            {
-                                UE_LOG(LogTemp, Warning, TEXT("[QuickSlot][Client_Notify] 아이템 자동 배정 완료: %s"), *Item->GetName());
-                            }
-                        }
-                    }
-                }
-
             }), 0.05f, false);
     }
 }
@@ -628,18 +745,37 @@ void ANS_PlayerCharacterBase::UpdateAim_Server_Implementation(float NewCamYaw, f
     CamPitch = NewCamPitch; 
 }
 
-void ANS_PlayerCharacterBase::TurnInPlace_Server_Implementation(float DeltaTime)
+void ANS_PlayerCharacterBase::ThrowBottle()
 {
-    auto* CharMove = GetCharacterMovement();
-    if (!CharMove || !Controller)
-        return;
+    if (!HasAuthority() || bHasThrown || !BottleClass) return;
 
-    // Controller Desired 가 켜져 있으면 CamYaw를 0으로 FInterTo로 4에 스피드로 이동시킴
-    if (CharMove->bUseControllerDesiredRotation)
+    bHasThrown = true;
+
+    // 소켓 위치 가져오기
+    FVector SpawnLocation = GetMesh()->DoesSocketExist(ThrowSocketName)
+        ? GetMesh()->GetSocketLocation(ThrowSocketName)
+        : GetActorLocation();
+
+    FRotator ControlRot = GetControlRotation(); // 카메라 바라보는곳으로
+    FVector LaunchDir = ControlRot.Vector(); // Pitch값도 적용해서 상/하 적용
+
+    // 병 액터 생성
+    FActorSpawnParameters Params;
+    Params.Owner = this;
+    Params.Instigator = this;
+
+    ANS_ThrowActor* Bottle = GetWorld()->SpawnActor<ANS_ThrowActor>(
+        BottleClass, SpawnLocation, ControlRot, Params);
+
+    // 병 액터에 있는 병이 깨지는 함수 실행
+    if (Bottle)
     {
-        CamYaw = FMath::FInterpTo(CamYaw, 0.0f, DeltaTime, 4.0f);
-
-        // 서버에도 전송 Yaw랑 Pitch값 전송
-        UpdateAim_Server(CamYaw, CamPitch);
+        Bottle->LaunchInDirection(LaunchDir);
     }
+
+    // 중복 방지 해제
+    GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
+    {
+        bHasThrown = false;
+    });
 }

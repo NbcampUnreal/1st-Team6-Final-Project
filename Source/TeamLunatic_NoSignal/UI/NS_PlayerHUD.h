@@ -15,8 +15,13 @@ public:
     void ShowWidget();
     void HideWidget();
 
+    void NativeTick(const FGeometry& MyGeometry, float InDeltaTime);
+
     UPROPERTY(meta = (BindWidget))
     class UNS_QuickSlotPanel* NS_QuickSlotPanel;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "TEST")
+    int32 TEST_CNT;
 
 protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
@@ -33,7 +38,18 @@ protected:
     UPROPERTY(meta = (BindWidget))
     class UNS_CircleProgressBar* WBP_StatusProgressbar_Fatigue;
 
+    UPROPERTY(meta = (BindWidget))
+    class UProgressBar* ProgressBar_Health;
+    UPROPERTY(meta = (BindWidget))
+    class UProgressBar* ProgressBar_Stamina;
+
+    UPROPERTY(meta = (BindWidget))
+    class UScrollBox* ScrollBox_Compass;
+    TArray<class UTextBlock*> CompassTextArray;
 private:
     class ANS_PlayerCharacterBase* CachedMyCharacter;
     FTimerHandle UpdatePlayerStausHandle;
+
+    APlayerController* PlayerController;
+    bool testcheck = false;
 };

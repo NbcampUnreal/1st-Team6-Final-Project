@@ -3,15 +3,14 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include "Engine/DataTable.h"
+#include "NS_GameModeBase.h"
 #include "NS_SinglePlayMode.generated.h"
 
 class AActor;
 class APawn;
 class ANS_PlayerCharacterBase;
-//class AZombieSpawnManager;  //좀비스폰매니저
-//class AItemSpawnManager;    // 아이템스폰 매니저 
 
-/** 탈출 루트 구분 */
+// 탈출 루트 구분
 UENUM(BlueprintType)
 enum class EEscapeRoute : uint8
 {
@@ -20,7 +19,7 @@ enum class EEscapeRoute : uint8
 	Radio
 };
 
-/** 탈출 시도 정보 */
+// 탈출 시도 정보
 USTRUCT(BlueprintType)
 struct FEscapeAttemptInfo
 {
@@ -30,86 +29,34 @@ struct FEscapeAttemptInfo
 	ANS_PlayerCharacterBase* Player = nullptr;
 
 	UPROPERTY(BlueprintReadWrite)
-	FName EscapeTargetTag = NAME_None; // "Car" or "Radio"
+	FName EscapeTargetTag = NAME_None;
 };
 
 UCLASS()
-class TEAMLUNATIC_NOSIGNAL_API ANS_SinglePlayMode : public AGameModeBase
+class TEAMLUNATIC_NOSIGNAL_API ANS_SinglePlayMode : public ANS_GameModeBase
 {
 	GENERATED_BODY()
 
 public:
 	ANS_SinglePlayMode();
 
+	// 플레이어 위치 반환 (예: AI 추격자 사용 목적)
+	UFUNCTION(BlueprintCallable, Category = "Location")
+	virtual FVector GetPlayerLocation_Implementation() const override;
+
+	// 플레이어 진입 시 처리
+	virtual void PostLogin(APlayerController* NewPlayer) override;
+
+	// 사망 이벤트 핸들링
+	virtual void OnPlayerCharacterDied_Implementation(ANS_PlayerCharacterBase* DeadCharacter) override;
+
 protected:
-	virtual void BeginPlay() override;
-
-	/** 플레이어 스폰 */
-	void SpawnPlayer();
-
-	/** 추적자 좀비 스폰 (1마리만) */
-	void SpawnTrackerZombie();
-
-	///** 일반 좀비 스폰 (매니저 요청) */
-	//void SpawnGeneralZombies();
-
-	///** 아이템 랜덤 배치 (매니저 요청) */
-	//void SpawnEscapeItems();
-	//void SpawnHealingItems();
-
-	/** 게임 종료 처리 */
 	void HandleGameOver(bool bPlayerSurvived, EEscapeRoute EscapeRoute);
 
-	/** 엔딩 조건 확인 */
-	bool CheckCarEscapeCondition(const TArray<FName>& PlayerItems) const;
-	bool CheckRadioEscapeCondition(const TArray<FName>& PlayerItems) const;
-
-	/** 좀비에게 소리 위치 브로드캐스트 */
-	void BroadcastNoiseLocation(const FVector& Location);
-
-public:
-	/** 함정 등 외부에서 소리 전달 */
-	UFUNCTION(BlueprintCallable, Category = "Sound")
-	void RegisterLoudNoise(FVector SoundOrigin);
-
-	/** 엔딩 상호작용 시도 */
-	UFUNCTION(BlueprintCallable, Category = "Ending")
-	void TryEscape(const FEscapeAttemptInfo& Info);
-
 private:
-	/** 게임 상태 */
+	UPROPERTY(EditAnywhere, Category = "Character")
+	TArray<TSubclassOf<APawn>> AvailablePawnClasses;
+
 	bool bIsGameOver = false;
 	EEscapeRoute CurrentEscapeRoute = EEscapeRoute::None;
-
-	/** 설정용 클래스들 */
-	UPROPERTY(EditAnywhere, Category = "Spawn")
-	TSubclassOf<APawn> PlayerPawnClass;
-
-	UPROPERTY(EditAnywhere, Category = "Spawn")
-	TSubclassOf<AActor> TrackerZombieClass;
-
-	UPROPERTY(EditAnywhere, Category = "Spawn")
-	TSubclassOf<AActor> HealingItemClass;
-
-	UPROPERTY(EditAnywhere, Category = "Spawn")
-	UDataTable* EscapeItemTable;
-
-	UPROPERTY(EditAnywhere, Category = "Spawn")
-	int32 HealingItemCount = 10;
-
-	UPROPERTY(EditAnywhere, Category = "Sound")
-	float ZombieReactionRange = 1500.0f;
-
-	/** 참조 캐시 */
-	UPROPERTY()
-	AActor* TrackerZombieInstance;
-
-	UPROPERTY()
-	AActor* CachedPlayerStart;
-
-	/*UPROPERTY()
-	AZombieSpawnManager* ZombieSpawnManager;
-
-	UPROPERTY()
-	AItemSpawnManager* ItemSpawnManager;*/
 };

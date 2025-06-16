@@ -7,6 +7,7 @@
 class USphereComponent;
 class UBoxComponent;
 class UCapsuleComponent;
+class UNS_InventoryBaseItem;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_BaseWeapon : public ANS_BaseItem
@@ -48,4 +49,7 @@ public:
 	FName GetAttachSocketName() const { return AttachSocketName; }
 
 	int32 GetDamage() const { return Damage; }
+
+	UPROPERTY()
+	TObjectPtr<UNS_InventoryBaseItem> OwningInventoryItem;
 };
