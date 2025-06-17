@@ -1,7 +1,8 @@
 #include "NS_ThrowActor.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "Components/BoxComponent.h" 
+#include "Components/BoxComponent.h"
+#include "Zombie/NS_ZombieBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Perception/AISense_Hearing.h"
 #include "GeometryCollection/GeometryCollectionActor.h"
@@ -72,9 +73,6 @@ void ANS_ThrowActor::OnOverlapBegin(
 	{
 		if (ImpactSound)
 			UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
-		// 노이즈 이벤트도 같이 실행해주고
-		UAISense_Hearing::ReportNoiseEvent(GetWorld(), GetActorLocation(), 1.f, this, 2000.f, NAME_None);
-		bHasPlayedImpactSound = true;
 	}
 
 	// 원본 투사체 제거
