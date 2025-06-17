@@ -12,6 +12,7 @@
 #include "Item/NS_BaseAmmo.h"
 #include "Character/Components/NS_StatusComponent.h"
 #include "GameFlow/NS_GameInstance.h"
+#include "Kismet/GameplayStatics.h"
 
 UNS_InventoryBaseItem::UNS_InventoryBaseItem() : bisCopy(false), bisPickup(false)
 {
@@ -131,10 +132,9 @@ void UNS_InventoryBaseItem::OnUseItem(ANS_PlayerCharacterBase* Character)
 	{
 	case EItemType::Consumable:
 	case EItemType::Medical:
-	case EItemType::Utility:
-		UseConsumableItem(Character, *ItemData); // 소모품 처리
+	case EItemType::Utility: // 소모품 처리
+		UseConsumableItem(Character, *ItemData);
 		break;
-
 	default:
 		UE_LOG(LogTemp, Warning, TEXT("[OnUseItem] 사용 처리되지 않은 아이템 타입입니다: %d"), (uint8)ItemData->ItemType);
 		break;
@@ -155,6 +155,11 @@ void UNS_InventoryBaseItem::UseConsumableItem(ANS_PlayerCharacterBase* Character
 			ItemData.ItemStates.HealAmount,
 			ItemData.ItemStates.StaminaRecovery
 		);
+	}
+
+	if (ItemData.ConsumableItemAssetData.UseSound)
+	{
+		UGameplayStatics::PlaySound2D(this, ItemData.ConsumableItemAssetData.UseSound);
 	}
 
 	// 무게까지 포함한 수량 감소
