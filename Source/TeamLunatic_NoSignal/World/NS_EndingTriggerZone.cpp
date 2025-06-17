@@ -67,7 +67,7 @@ void ANS_EndingTriggerZone::CheckGroupEndingCondition()
 {
     int32 NumPlayersInZone = 0;
     bool bHasBattery = false;
-    bool bHasAntena = false;
+    bool bHasWalkietalkie = false;
 
     for (ANS_PlayerCharacterBase* Player : OverlappingPlayers)
     {
@@ -90,13 +90,13 @@ void ANS_EndingTriggerZone::CheckGroupEndingCondition()
                 bHasBattery = true;
                 UE_LOG(LogTemp, Warning, TEXT("아이템: %s"), *Item->ItemDataRowName.ToString());
             }
-            else if (!bHasAntena && RowName == "Antena")
+            else if (!bHasWalkietalkie && RowName == "Walkietalkie")
             {
-                bHasAntena = true;
+                bHasWalkietalkie = true;
                 UE_LOG(LogTemp, Warning, TEXT("아이템: %s"), *Item->ItemDataRowName.ToString());
             }
 
-            if (bHasBattery && bHasAntena)
+            if (bHasBattery && bHasWalkietalkie)
             {
                 break; 
             }
@@ -105,11 +105,11 @@ void ANS_EndingTriggerZone::CheckGroupEndingCondition()
 
     int32 NumCollectedItems = 0;
     if (bHasBattery) NumCollectedItems++;
-    if (bHasAntena) NumCollectedItems++;
+    if (bHasWalkietalkie) NumCollectedItems++;
 
     UpdateWidgetStatus(NumPlayersInZone, NumCollectedItems);
 
-    const bool bGroupConditionMet = bHasBattery && bHasAntena;
+    const bool bGroupConditionMet = bHasBattery && bHasWalkietalkie;
 
     if (bGroupConditionMet)
     {
