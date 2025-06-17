@@ -10,6 +10,7 @@
 
 class UBoxComponent;
 class ANS_PlayerCharacterBase;
+class UEndingResultWidget;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_EndingTriggerZone : public AActor
@@ -21,6 +22,9 @@ public:
 
     UPROPERTY(VisibleAnywhere, Category = "UI")
     class UWidgetComponent* EndingStatusWidget;
+
+    UPROPERTY(EditDefaultsOnly, Category = "UI")
+    TSubclassOf<UEndingResultWidget> EndingResultWidget;
 protected:
     virtual void BeginPlay() override;
 
@@ -39,6 +43,9 @@ protected:
     void UpdateEndingCountdownUI();
 
     void EndingConditionSatisfied();
+
+    UFUNCTION(NetMulticast, Reliable)
+    void Multicast_ShowEndingResultList(const TArray<FString>& SuccessList, const TArray<FString>& FailList);
 
     UFUNCTION(NetMulticast, Reliable)
     void Multicast_TriggerEnding(bool bGroupConditionMet);

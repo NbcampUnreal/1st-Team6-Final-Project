@@ -9,6 +9,9 @@
 
 #include "World/EndingUI/NS_EndingStatusUI.h"
 #include "Net/UnrealNetwork.h"
+#include "GameFramework/PlayerState.h"
+#include "World/EndingUI/EndingResultWidget.h"
+#include "Blueprint/WidgetBlueprintLibrary.h"
 
 ANS_EndingTriggerZone::ANS_EndingTriggerZone()
 {
@@ -188,6 +191,8 @@ void ANS_EndingTriggerZone::EndingConditionSatisfied()
 
 void ANS_EndingTriggerZone::Multicast_TriggerEnding_Implementation(bool bGroupConditionMet)
 {
+    TArray<FString> SuccessNames;
+    TArray<FString> FailNames;
     // 전체 플레이어 가져오기 (월드에서)
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
     {
@@ -200,9 +205,54 @@ void ANS_EndingTriggerZone::Multicast_TriggerEnding_Implementation(bool bGroupCo
         const bool bInZone = OverlappingPlayers.Contains(Player);
         const bool bSuccess = bInZone && bGroupConditionMet;
 
-        //Player->Client_ShowEndingResult(bSuccess);
+        const FString PlayerName = Player->GetPlayerState()->GetPlayerName();
+
+        if (bSuccess)
+        {
+            if (!SuccessNames.Contains(PlayerName))
+            {
+                SuccessNames.Add(PlayerName);
+            }
+        }
+        else
+        {
+            if (!FailNames.Contains(PlayerName))
+            {
+                FailNames.Add(PlayerName);
+            }
+        }
+        Multicast_ShowEndingResultList(SuccessNames, FailNames);
 
         UE_LOG(LogTemp, Warning, TEXT("Player %s: %s"),
             *Player->GetName(), bSuccess ? TEXT("탈출 성공") : TEXT("탈출 실패"));
+    }
+}
+
+void ANS_EndingTriggerZone::Multicast_ShowEndingResultList_Implementation(const TArray<FString>& SuccessList, const TArray<FString>& FailList)
+{
+    APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+    if (!IsValid(PlayerController) || !PlayerController->IsLocalController()) return;
+
+    TArray<UUserWidget*> FoundWidgets;
+    UWidgetBlueprintLibrary::GetAllWidgetsOfClass(GetWorld(), FoundWidgets, UEndingResultWidget::StaticClass(), false);
+
+    for (UUserWidget* Widget : FoundWidgets)
+    {
+        if (UEndingResultWidget* Existing = Cast<UEndingResultWidget>(Widget))
+        {
+            if (Existing->IsInViewport())
+            {
+                // 이미 UI가 떠있다면 → 내용만 갱신
+                Existing->SetPlayerResultLists(SuccessList, FailList);
+                return;
+            }
+        }
+    }
+
+    UEndingResultWidget* EndingWidget = CreateWidget<UEndingResultWidget>(PlayerController, EndingResultWidget);
+    if (IsValid(EndingWidget))
+    {
+        EndingWidget->AddToViewport();
+        EndingWidget->SetPlayerResultLists(SuccessList, FailList);
     }
 }
