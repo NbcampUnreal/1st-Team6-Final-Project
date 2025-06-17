@@ -1,12 +1,14 @@
 #include "NS_PlayerState.h"
 #include "Net/UnrealNetwork.h"
+#include "NS_LobbyMode.h"
+#include "Kismet/GameplayStatics.h"
 #include "NS_GameInstance.h"
 
 ANS_PlayerState::ANS_PlayerState()
 {
 	bIsReady = false;
 	bReplicates = true;
-	UE_LOG(LogTemp, Warning, TEXT("📙 [PlayerState] BeginPlay: %s"), *GetName());
+	UE_LOG(LogTemp, Warning, TEXT("[PlayerState] BeginPlay: %s"), *GetName());
 }
 
 void ANS_PlayerState::SetIsReady(bool bReady)
@@ -15,7 +17,29 @@ void ANS_PlayerState::SetIsReady(bool bReady)
 	{
 		bIsReady = bReady;
 		OnRep_IsReady();
+
+		UE_LOG(LogTemp, Warning, TEXT("[SetIsReady] %s is now %s"),
+			*GetPlayerName(), bIsReady ? TEXT("READY") : TEXT("NOT READY"));
+
+		if (UWorld* World = GetWorld())
+		{
+			if (AGameModeBase* GM = World->GetAuthGameMode())
+			{
+				if (ANS_LobbyMode* LobbyMode = Cast<ANS_LobbyMode>(GM))
+				{
+					UE_LOG(LogTemp, Warning, TEXT("🧩 CheckAllPlayersReady 호출!"));
+					LobbyMode->CheckAllPlayersReady();
+				}
+			}
+		}
 	}
+}
+
+
+
+void ANS_PlayerState::ServerSetIsReady_Implementation(bool bReady)
+{
+	SetIsReady(bReady);
 }
 
 void ANS_PlayerState::OnRep_IsReady()
@@ -23,6 +47,18 @@ void ANS_PlayerState::OnRep_IsReady()
 	UE_LOG(LogTemp, Log, TEXT("Player %s is now %s"),
 		*GetPlayerName(),
 		bIsReady ? TEXT("READY") : TEXT("NOT READY"));
+
+	// ReadyUI 갱신
+	if (UWorld* World = GetWorld())
+	{
+		if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(UGameplayStatics::GetGameInstance(World)))
+		{
+			if (GI->ReadyUIInstance)
+			{
+				GI->ReadyUIInstance->UpdatePlayerStatusList();
+			}
+		}
+	}
 }
 
 void ANS_PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -49,7 +85,6 @@ void ANS_PlayerState::SetPlayerModelPath(const FString& ModelPath)
 
 void ANS_PlayerState::SavePlayerData()
 {
-	//게임 인스턴스에 저장
 	if (UNS_GameInstance* GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
 	{
 		int32 SavingPlayerId = GetPlayerId();
@@ -62,9 +97,7 @@ void ANS_PlayerState::SavePlayerData()
 		}
 
 		FNS_PlayerData& PlayerData = GameInstance->PlayerDataMap[SavingPlayerId];
-
 		PlayerData.CharacterModelPath = PlayerModelPath;
-
 	}
 	else
 	{

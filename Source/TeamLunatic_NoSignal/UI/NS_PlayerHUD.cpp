@@ -7,14 +7,20 @@
 #include "Components/ScrollBox.h"
 #include "Components/TextBlock.h"
 #include "Components/ProgressBar.h"
+#include "Components/SizeBox.h"
 //#include "SlateBrush.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Character/Components/NS_StatusComponent.h"
 #include "UI/NS_CircleProgressBar.h"
-
+#include "UI/NS_CompassElement.h"
 #include "Styling/SlateColor.h"
 #include "Fonts/SlateFontInfo.h"
 #include "Misc/Paths.h"
+#include "Item/NS_BaseItem.h"
+#include "Character/NS_PlayerController.h"
+
+const float BaseWidth = 35; // 기존 WidthOverride 값
+const float EnlargedWidth = BaseWidth * 1.2f;
 
 void UNS_PlayerHUD::NativeConstruct()
 {
@@ -57,50 +63,43 @@ void UNS_PlayerHUD::NativeConstruct()
         TEXT(" 240 "), TEXT(" 255 "), TEXT(" W "),   TEXT(" 285 "),
         TEXT(" 300 "), TEXT(" NW "),  TEXT(" 330 "), TEXT(" 345 "),
 
-        TEXT(" N "),   TEXT(" 15 "),  TEXT(" 30 "),  TEXT(" NE "),
-        TEXT(" 60 "),  TEXT(" 75 "),  TEXT(" E "),   TEXT(" 105 "),
-        TEXT(" 120 "), TEXT(" SE "),  TEXT(" 150 "), TEXT(" 165 "),
-        TEXT(" S "),   TEXT(" 195 "), TEXT(" 210 "), TEXT(" SW "),
-        TEXT(" 240 "), TEXT(" 255 "), TEXT(" W "),   TEXT(" 285 "),
-        TEXT(" 300 "), TEXT(" NW "),  TEXT(" 330 "), TEXT(" 345 "),
-
-
+        //TEXT(" N "),   TEXT(" 15 "),  TEXT(" 30 "),  TEXT(" NE "),
+        //TEXT(" 60 "),  TEXT(" 75 "),  TEXT(" E "),   TEXT(" 105 "),
+        //TEXT(" 120 "), TEXT(" SE "),  TEXT(" 150 "), TEXT(" 165 "),
+        //TEXT(" S "),   TEXT(" 195 "), TEXT(" 210 "), TEXT(" SW "),
+        //TEXT(" 240 "), TEXT(" 255 "), TEXT(" W "),   TEXT(" 285 "),
+        //TEXT(" 300 "), TEXT(" NW "),  TEXT(" 330 "), TEXT(" 345 "),
     };
 
     for (const FString& Label : DirectionLabels)
     {
-        // 1. 새 TextBlock 생성
-        UTextBlock* TextBlock = NewObject<UTextBlock>(this);
-        if (!TextBlock) continue;
+        // 1. 새 CompassElement 위젯 생성
+        UNS_CompassElement* CompassElement = CreateWidget<UNS_CompassElement>(this, NS_CompassElementClass);
+        if (!CompassElement || !CompassElement->TextDir) continue;
 
         // 2. 텍스트 설정
-        TextBlock->SetText(FText::FromString(Label));
-
+        CompassElement->SetDirLetter(Label);
         FSlateFontInfo FontInfo = FSlateFontInfo(FPaths::EngineContentDir() / TEXT("Slate/Fonts/Roboto-Bold.ttf"), 18);
         FontInfo.TypefaceFontName = FName("Light");
-        TextBlock->SetFont(FontInfo);
+        CompassElement->TextDir->SetFont(FontInfo);
 
-        // 정렬 설정 (가로/세로 모두 가운데)
-        TextBlock->SetJustification(ETextJustify::Center);
-        TextBlock->SetTextOverflowPolicy(ETextOverflowPolicy::Clip); // 텍스트 잘릴 때 정책
+        // 정렬, 잘림
+        CompassElement->TextDir->SetJustification(ETextJustify::Center);
+        CompassElement->TextDir->SetTextOverflowPolicy(ETextOverflowPolicy::Clip);
 
         // 색상 설정
-        TextBlock->SetColorAndOpacity(FSlateColor(FLinearColor::White));
+        CompassElement->TextDir->SetColorAndOpacity(FSlateColor(FLinearColor::White));
 
-        // 스크롤 박스에 추가
-        ScrollBox_Compass->AddChild(TextBlock);
+        // 3. 스크롤 박스에 추가
+        ScrollBox_Compass->AddChild(CompassElement);
     }
 
-
     int32 ChildCount = ScrollBox_Compass->GetChildrenCount();
-
     for (int32 i = 0; i < ChildCount; ++i)
     {
         UWidget* Child = ScrollBox_Compass->GetChildAt(i);
-        if (UTextBlock* Text = Cast<UTextBlock>(Child))
-        {
+        if (UNS_CompassElement* Text = Cast<UNS_CompassElement>(Child))//UNS_CompassElement UTextBlock
             CompassTextArray.Add(Text);
-        }
     }
    // if (ScrollBox_Compass && ItemArray.IsValidIndex(49)) // 0부터 시작하니 49 = 50번째
   //      ScrollBox_Compass->ScrollWidgetIntoView(CompassTextArray[ChildCount/3], true, EDescendantScrollDestination::Center, 0.f);
@@ -134,8 +133,8 @@ void UNS_PlayerHUD::ShowWidget()
         return;
     }
 
-    CachedMyCharacter = Cast<ANS_PlayerCharacterBase>(MyPawn);
-    if (!CachedMyCharacter) return;
+    CachedPlayerCharacter = Cast<ANS_PlayerCharacterBase>(MyPawn);
+    if (!CachedPlayerCharacter) return;
 
     GetWorld()->GetTimerManager().ClearTimer(UpdatePlayerStausHandle);
     TWeakObjectPtr<UNS_PlayerHUD> SafeThis = this;
@@ -149,22 +148,28 @@ void UNS_PlayerHUD::ShowWidget()
     {
         if (!SafeThis.IsValid()) return;
         if (!SafeThis->GetWorld()) return;
-        if (!SafeThis->CachedMyCharacter || !SafeThis->CachedMyCharacter->StatusComp) return;
+        if (!SafeThis->CachedPlayerCharacter || !SafeThis->CachedPlayerCharacter->StatusComp) return;
 
-       // SafeThis->WBP_StatusProgressbar_Health->UpdatePercent(SafeThis->CachedMyCharacter->StatusComp->Health * 0.01f);
-       // SafeThis->WBP_StatusProgressbar_Stamina->UpdatePercent(SafeThis->CachedMyCharacter->StatusComp->Stamina * 0.01f);
-        SafeThis->ProgressBar_Stamina->SetPercent(SafeThis->CachedMyCharacter->StatusComp->Stamina * 0.01f);
-        SafeThis->ProgressBar_Health->SetPercent(SafeThis->CachedMyCharacter->StatusComp->Health * 0.01f);
+       // SafeThis->WBP_StatusProgressbar_Health->UpdatePercent(SafeThis->CachedPlayerCharacter->StatusComp->Health * 0.01f);
+       // SafeThis->WBP_StatusProgressbar_Stamina->UpdatePercent(SafeThis->CachedPlayerCharacter->StatusComp->Stamina * 0.01f);
+        SafeThis->ProgressBar_Stamina->SetPercent(SafeThis->CachedPlayerCharacter->StatusComp->Stamina * 0.01f);
+        SafeThis->ProgressBar_Health->SetPercent(SafeThis->CachedPlayerCharacter->StatusComp->Health * 0.01f);
     }),
         0.05f,
         true
     );
 }
 
-
 void UNS_PlayerHUD::HideWidget()
 {
     SetVisibility(ESlateVisibility::Hidden);
+}
+
+void UNS_PlayerHUD::SetYeddaItem(ANS_BaseItem* YeddaItem)
+{
+    if (!CachedPlayerCharacter || !YeddaItem || !ScrollBox_Compass) return;
+
+	YeddaItemArray.Add(YeddaItem);
 }
 
 void UNS_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -184,40 +189,102 @@ void UNS_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
     float CurTempIdx = Yaw / AngleGap;
     int32 CurIdx = FMath::FloorToInt(CurTempIdx);
     int32 CurFinalIdx = CurIdx + FixIndx;
-    //UE_LOG(LogTemp, Warning, TEXT("CurFinalIdx = %d / Yaw = %f"), CurFinalIdx,Yaw);
-
-    //ScrollBox_Compass->ScrollWidgetIntoView(CompassTextArray[CurFinalIdx], true, EDescendantScrollDestination::Center, 0.f);
+  
 
     float MovePercent = (Yaw - (CurIdx * AngleGap)) / AngleGap;
-    //float MoveDist = ((CompassTextArray[CurFinalIdx + 1]->GetDesiredSize().X / 2) + (CompassTextArray[CurFinalIdx]->GetDesiredSize().X / 2) ) * MovePercent;
-    //   ScrollBox_Compass->SetScrollOffset(MoveDist);
-
-
 
     float Offset = 0.f;
-  
+   // UE_LOG(LogTemp, Warning, TEXT("CurFinalIdx = %d / Yaw = %f / MovePercent = %f"), CurFinalIdx, Yaw, MovePercent);
     // 현재 인덱스까지의 거리 누적
     for (int32 i = 0; i < CurFinalIdx; ++i)
     {
-        Offset += CompassTextArray[i]->GetDesiredSize().X;
+        Offset += CompassTextArray[i]->GetSizeBoxWideth();
     }
 
     // 현재~다음 인덱스 사이 거리 보간
-    float WidthA = CompassTextArray[CurFinalIdx]->GetDesiredSize().X;
-    float WidthB = CompassTextArray[CurFinalIdx + 1]->GetDesiredSize().X;
+    float WidthA = CompassTextArray[CurFinalIdx]->GetSizeBoxWideth();
+    float WidthB = CompassTextArray[CurFinalIdx + 1]->GetSizeBoxWideth();
 
     float InterpolatedOffset = ((WidthA / 2.f) + (WidthB / 2.f)) * MovePercent;
 
     // View 중앙 보정
     float ViewWidth = ScrollBox_Compass->GetCachedGeometry().GetLocalSize().X;
 
-    float FixDist = 17.f;
-  /*  if (Yaw < 180.f)
-        FixIndx = 0;*/
+    float FixDist = 16.f;//17.f;
 
     float FinalOffset = Offset + InterpolatedOffset - (ViewWidth / 2.f)+ FixDist;
 
     ScrollBox_Compass->SetScrollOffset(FinalOffset);
-    //UE_LOG(LogTemp, Warning, TEXT("Offset = %f / FinalOffset = %f / CurFinalIdx = %d"), Offset , FinalOffset, CurFinalIdx);
 
+    if (0 == YeddaItemArray.Num())
+        return;
+
+    if (!CachedPlayerCharacter || !ScrollBox_Compass) return;
+
+	for (ANS_BaseItem* YeddaItem : YeddaItemArray)
+	{
+		if (!YeddaItem) continue;
+		// 1. 방향 계산
+		FVector PlayerLoc = CachedPlayerCharacter->GetActorLocation();
+        //이건 절대 각도 계산
+		//FVector Dir = (YeddaItem->GetActorLocation() - PlayerLoc).GetSafeNormal2D();
+		//float Angle = FMath::RadiansToDegrees(FMath::Atan2(Dir.Y, Dir.X));
+		//if (Angle < 0.f) Angle += 360.f;
+    
+        //--------------------------------------------------------
+        FVector Forward = CachedPlayerCharacter->GetActorForwardVector().GetSafeNormal2D();
+        FVector ToItem = (YeddaItem->GetActorLocation() - PlayerLoc).GetSafeNormal2D();
+
+        //float AngleRad = FMath::Acos(FVector::DotProduct(Forward, ToItem));
+        //float AngleDeg = FMath::RadiansToDegrees(AngleRad);
+
+        //// 방향 판별 (왼쪽/오른쪽)
+        //FVector Cross = FVector::CrossProduct(Forward, ToItem);
+        //if (Cross.Z < 0)
+        //    AngleDeg = -AngleDeg;
+        //
+        
+        // 최종 상대각: 내 정면이 0°, 왼쪽은 음수, 오른쪽은 양수
+        //float RelativeAngle = FMath::Fmod(AngleDeg + 360.f, 360.f);
+        //----------------------------------------------------------------------
+        float ItemAngle = FMath::RadiansToDegrees(FMath::Atan2(ToItem.Y, ToItem.X));
+        if (ItemAngle < 0.f) ItemAngle += 360.f;
+
+        // 현재 카메라 기준 상대각 (0~360도)
+        float RelativeAngle = FMath::Fmod(ItemAngle - Yaw + 360.f, 360.f);
+
+        float SegmentAngle = 15.f;
+        int32 Index = ( FMath::FloorToInt((RelativeAngle + SegmentAngle * 0.5f) / SegmentAngle) % 24 ) ;
+
+		// 3. 인덱스가 같으면 아무것도 안 함 (성능 최적화)
+	/*	if (Index == LastHighlightedIndex) return;
+		LastHighlightedIndex = Index;*/
+		// 4. UI 갱신
+		int32 Count = ScrollBox_Compass->GetChildrenCount();
+		for (int32 i = 0; i < Count; ++i)
+		{
+			if (UNS_CompassElement* Elem = Cast<UNS_CompassElement>(ScrollBox_Compass->GetChildAt(i)))
+			{
+				bool bHighlight = (i == Index) || (i == Index+24);
+				Elem->TextDir->SetColorAndOpacity(FSlateColor(bHighlight ? FLinearColor::Red : FLinearColor::White));
+
+                if (CurFinalIdx != i && PrvFinalIdx != i)
+                   bHighlight ? Elem->SetTextScale(1.2f) : Elem->ReturnTextScale();
+			}
+		}
+
+        if (0.5f < MovePercent)
+            CompassTextArray[CurFinalIdx + 1]->SetTextScale(1.22f);
+        else if (0.5f > MovePercent)
+            CompassTextArray[CurFinalIdx]->SetTextScale(1.22f);
+        else
+        {
+            CompassTextArray[CurFinalIdx]->ReturnTextScale();
+			CompassTextArray[CurFinalIdx + 1]->ReturnTextScale();
+        }
+      
+        PrvFinalIdx = CurFinalIdx;
+       // UE_LOG(LogTemp, Warning, TEXT("▶️ RelativeAngle: %.2f°, Index: %d"), RelativeAngle, Index);
+	}
 }
+

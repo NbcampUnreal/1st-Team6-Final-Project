@@ -12,10 +12,16 @@ void ANS_LobbyController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	FInputModeGameOnly InputMode;
-	SetInputMode(InputMode);
-	bShowMouseCursor = false;
+	//  마우스 커서 표시
+	bShowMouseCursor = true;
 
+	//  UI 전용 모드로 입력 변경
+	FInputModeUIOnly InputMode;
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	InputMode.SetWidgetToFocus(nullptr); // 필요 시 ReadyUI의 버튼 지정 가능
+	SetInputMode(InputMode);
+
+	//  카메라 고정
 	for (TActorIterator<ACameraActor> It(GetWorld()); It; ++It)
 	{
 		if (It->ActorHasTag(FName("LobbyCamera")))
@@ -24,68 +30,21 @@ void ANS_LobbyController::BeginPlay()
 			break;
 		}
 	}
-}
 
-
-void ANS_LobbyController::SetupInputComponent()
-{
-	Super::SetupInputComponent();
-
-	if (InputComponent)
-	{
-		InputComponent->BindAction("StartGame", IE_Pressed, this, &ANS_LobbyController::HandleStartGame);
-	}
-}
-
-void ANS_LobbyController::HandleStartGame()
-{
-	UE_LOG(LogTemp, Log, TEXT("[LobbyController] Enter key pressed on client."));
-
-	if (!HasAuthority())
+	if (IsLocalController())
 	{
 		if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
 		{
-			GI->GetUIManager()->LoadingScreen(GetWorld());
-			GI->GetUIManager()->OnLoadingFinished.BindLambda([this]()
+			GI->ShowReadyUI();
+
+			if (GI->ReadyUIInstance)
 			{
-				this->Server_RequestStartGame(); // 서버에 요청
-			});
+				GI->ReadyUIInstance->UpdatePlayerStatusList();
+			}
 		}
-		//Server_RequestStartGame();
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[LobbyController] Unexpected: client has authority?"));
 	}
 }
 
-void ANS_LobbyController::Server_RequestStartGame_Implementation()
-{
-	if (ANS_PlayerState* PS = Cast<ANS_PlayerState>(PlayerState))
-	{
-		UE_LOG(LogTemp, Log, TEXT("[LobbyController] Server_RequestStartGame called by PlayerId=%d, Name=%s"),
-			PS->GetPlayerId(), *PS->GetPlayerName());
-
-		if (PS->PlayerIndex == 0)
-		{
-			UE_LOG(LogTemp, Log, TEXT("[LobbyController] Host verified. Starting level with GameMode..."));
-
-			const FString LevelPath = TEXT("/Game/Maps/MainWorld");
-			const FString Options = TEXT("Game=/Game/GameFlowBP/BP_NS_MultiPlayMode.BP_NS_MultiPlayMode_C");
-
-			GetWorld()->ServerTravel(LevelPath + TEXT("?") + Options);
-		}
-
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("[LobbyController] PlayerId=%d is not host. Ignoring start request."), PS->GetPlayerId());
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("[LobbyController] No valid PlayerState on server."));
-	}
-}
 
 void ANS_LobbyController::OnPossess(APawn* InPawn)
 {
