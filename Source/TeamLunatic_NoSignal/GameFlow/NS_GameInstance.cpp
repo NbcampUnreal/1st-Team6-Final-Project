@@ -29,30 +29,10 @@ void UNS_GameInstance::Init()
 {
 	Super::Init();
 
-	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &UNS_GameInstance::OnLevelLoaded);
 	if (UIManagerClass)
 	{
 		NS_UIManager = NewObject<UNS_UIManager>(this, UIManagerClass);
 		NS_UIManager->InitUi(GetWorld());
-	}
-}
-
-void UNS_GameInstance::OnLevelLoaded(UWorld* LoadedWorld)
-{
-	if (NS_UIManager)
-	{
-		NS_UIManager->LoadingScreen(LoadedWorld); // 로딩 UI 띄움
-
-		// 5초 후 자동 제거
-		FTimerHandle TempHandle;
-		LoadedWorld->GetTimerManager().SetTimer(TempHandle, [this]()
-		{
-			if (NS_UIManager)
-			{
-				UE_LOG(LogTemp, Log, TEXT("로딩 UI 자동 종료"));
-				NS_UIManager->CloseLoadingUI();
-			}
-		}, 5.0f, false);
 	}
 }
 

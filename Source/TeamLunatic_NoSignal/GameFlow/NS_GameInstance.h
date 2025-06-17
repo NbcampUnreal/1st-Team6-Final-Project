@@ -39,8 +39,8 @@ public:
 	UNS_GameInstance();
 	virtual void Init() override;
 
-	UFUNCTION()
-	void OnLevelLoaded(UWorld* LoadedWorld);
+	//UFUNCTION()
+	//void OnLevelLoaded(UWorld* LoadedWorld);
 
 	void SetCurrentSaveSlot(FString SlotNameInfo);
 
