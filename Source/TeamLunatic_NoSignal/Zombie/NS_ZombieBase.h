@@ -67,7 +67,10 @@ public:
 	void InitializePhysics();
 	void ApplyPhysics(FName Bone, FVector Impulse);
 	void ResetPhysics(FName Bone);
-	FTimerHandle HitTimerHandle;
+	UPROPERTY()
+	TMap<FName, FTimerHandle> HitTimers;
+	UPROPERTY()
+	TSet<FName> UnSafeBones;
 	
 	//상태 패턴
 	UFUNCTION()
@@ -94,7 +97,6 @@ public:
 
 	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Sound")
 	USphereComponent* SphereComp;
-	
 	
 	//공격 관련
 	UFUNCTION(Server, Reliable)
