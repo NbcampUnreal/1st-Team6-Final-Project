@@ -15,25 +15,33 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerState : public APlayerState
 public:
 	ANS_PlayerState();
 
-	// 레디 여부 (선택적 사용)
+	// 레디 여부 (RepNotify)
 	UPROPERTY(ReplicatedUsing = OnRep_IsReady, BlueprintReadOnly, Category = "Lobby")
 	bool bIsReady;
 
-	// 레디 상태 설정 (서버에서만 호출)
+	// 서버에서만 호출
 	void SetIsReady(bool bReady);
 
+	// 클라 → 서버로 호출하는 RPC
+	UFUNCTION(Server, Reliable)
+	void ServerSetIsReady(bool bReady);
+
+	// 레디 상태 조회 (UI용)
+	UFUNCTION(BlueprintCallable, Category = "Lobby")
+	bool GetIsReady() const { return bIsReady; }
+
+	// Index / 모델 관련
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Lobby")
 	int32 PlayerIndex;
 
 	void SetPlayerIndex(int32 Index); 
-
 	void SetPlayerModelPath(const FString& ModelPath);
-	void SavePlayerData(); // 플레이어의 데이터를 저장하는 함수
+	void SavePlayerData();
 
 protected:
-	// 플레이어 모델 경로
 	FString PlayerModelPath;
 
+	// ✅ 상태 변경시 호출
 	UFUNCTION()
 	void OnRep_IsReady();
 

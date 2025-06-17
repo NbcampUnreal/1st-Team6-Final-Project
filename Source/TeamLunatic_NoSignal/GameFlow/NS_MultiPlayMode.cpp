@@ -43,31 +43,28 @@ void ANS_MultiPlayMode::SpawnAllPlayers()
         {
             if (ANS_MainGamePlayerState* PlayerState = Cast<ANS_MainGamePlayerState>(PS))
             {
-                // PlayerStart 위치
-                if (!StartPoints.IsValidIndex(PlayerIndex))
-                {
-                    UE_LOG(LogTemp, Warning, TEXT("PlayerStart 인덱스 초과, 마지막 지점 재사용"));
-                    PlayerIndex = StartPoints.Num() - 1;
-                }
-
-				// 플레이어 상태에서 데이터 로드
                 APlayerController* PlayerController = PlayerState->GetPlayerController();
-                PlayerState->LoadPlayerData(); // 플레이어 상태에서 데이터 로드
+                PlayerState->LoadPlayerData();
 
                 if (PlayerController && StartPoints.IsValidIndex(PlayerIndex))
                 {
                     FVector SpawnLocation = StartPoints[PlayerIndex]->GetActorLocation();
                     FRotator SpawnRotation = StartPoints[PlayerIndex]->GetActorRotation();
 
-					TSubclassOf<APawn> PlayerPawnClass = nullptr;
+                    TSubclassOf<APawn> PlayerPawnClass = nullptr;
 
-                    //경로로 부터 BP 가져오기
-                    ConstructorHelpers::FClassFinder<APawn> PawnBPClass(*PlayerState->GetPlayerModelPath());
-                    if (PawnBPClass.Succeeded())
+                    if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
                     {
-                        PlayerPawnClass = PawnBPClass.Class;
+                        int32 PlayerId = PlayerState->GetPlayerId();
+                        if (FNS_PlayerData* FoundData = GI->PlayerDataMap.Find(PlayerId))
+                        {
+                            FStringAssetReference AssetRef(FoundData->CharacterModelPath);
+                            PlayerPawnClass = Cast<UClass>(StaticLoadObject(UClass::StaticClass(), nullptr, *AssetRef.ToString()));
+                        }
+                    }
 
-                        // Pawn 생성 및 Possess
+                    if (PlayerPawnClass)
+                    {
                         FActorSpawnParameters Params;
                         Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
@@ -80,13 +77,8 @@ void ANS_MultiPlayMode::SpawnAllPlayers()
                     }
                     else
                     {
-                        UE_LOG(LogTemp, Warning, TEXT("Failed to load player pawn class: %s"), *PlayerState->GetPlayerModelPath());
-                        continue; // 다음 플레이어로 넘어감
+                        UE_LOG(LogTemp, Warning, TEXT("Pawn 클래스를 찾을 수 없습니다 (PlayerId: %d)"), PlayerState->GetPlayerId());
                     }
-                }
-                else
-                {
-                    UE_LOG(LogTemp, Warning, TEXT("Failed to cast PlayerState to ANS_PlayerState!"));
                 }
             }
 
@@ -94,6 +86,7 @@ void ANS_MultiPlayMode::SpawnAllPlayers()
         }
     }
 }
+
 
 
 FVector ANS_MultiPlayMode::GetPlayerLocation_Implementation() const
@@ -109,3 +102,5 @@ FVector ANS_MultiPlayMode::GetPlayerLocation_Implementation() const
     return FVector::ZeroVector;
 	
 }
+
+

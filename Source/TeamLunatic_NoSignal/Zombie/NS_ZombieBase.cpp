@@ -8,9 +8,11 @@
 #include "Kismet/GameplayStatics.h"
 #include "Enum/EZombieAttackType.h"
 #include "AIController/NS_AIController.h"
+#include "Engine/DamageEvents.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Sound/SoundCue.h"
+#include "PhysicsEngine/PhysicalAnimationComponent.h"
 
 ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), CurrentState(EZombieState::IDLE),
                                    BaseDamage(20.f),PatrolSpeed(20.f), ChaseSpeed(100.f),AccelerationSpeed(200.f),
@@ -18,6 +20,8 @@ ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), C
 {
 	PrimaryActorTick.bCanEverTick = true;
 	bUseControllerRotationYaw = false;
+
+	PhysicsComponent = CreateDefaultSubobject<UPhysicalAnimationComponent>(FName("PhysicsComponent"));
 	
 	GetCharacterMovement()->MaxWalkSpeed = 300.f;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
@@ -42,6 +46,7 @@ void ANS_ZombieBase::BeginPlay()
 	Super::BeginPlay();
 	SetState(CurrentState);
 	GetMesh()->GetAnimInstance()->RootMotionMode = ERootMotionMode::RootMotionFromEverything;
+	InitializePhysics();
 }
 
 void ANS_ZombieBase::Tick(float DeltaTime)
@@ -74,11 +79,20 @@ float ANS_ZombieBase::TakeDamage(float DamageAmount, struct FDamageEvent const& 
 	float ActualDamage = DamageAmount;
 	
 	CurrentHealth = FMath::Clamp(CurrentHealth - DamageAmount, 0.f, MaxHealth);
+	if (DamageEvent.GetTypeID() == FPointDamageEvent::ClassID)
+	{
+		const FPointDamageEvent* Point = static_cast<const FPointDamageEvent*>(&DamageEvent);
+		FName Bone = Point->HitInfo.BoneName;
+		FVector HitDirection = Point->ShotDirection;
+
+		ApplyPhysics(Bone, HitDirection * 1000.f);
+	}
 	
 	if (CurrentHealth <= 0)
 	{
 		SetState(EZombieState::DEAD);
 	}
+
 	return ActualDamage;
 }
 
@@ -117,6 +131,10 @@ void ANS_ZombieBase::OnDeadState()
 	}
 }
 
+void ANS_ZombieBase::OnFrozenState()
+{
+}
+
 void ANS_ZombieBase::Server_PlaySound_Implementation(USoundCue* Sound)
 {
 	Multicast_PlaySound(Sound);
@@ -134,10 +152,9 @@ void ANS_ZombieBase::Die_Multicast_Implementation()
 {
 	DetachFromControllerPendingDestroy();
 	GetCharacterMovement()->DisableMovement();
-	GetMesh()->SetCollisionProfileName("Ragdoll");
 	GetMesh()->SetAllBodiesBelowSimulatePhysics(TEXT("pelvis"), true, true);
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	SetLifeSpan(5.f);
+	SetLifeSpan(30.f);
 }
 
 void ANS_ZombieBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -147,6 +164,42 @@ void ANS_ZombieBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(ANS_ZombieBase, CurrentHealth);
 	DOREPLIFETIME(ANS_ZombieBase, CurrentAttackType);
 	DOREPLIFETIME(ANS_ZombieBase, CurrentState);
+}
+
+void ANS_ZombieBase::InitializePhysics()
+{
+	if (PhysicsComponent)
+	{
+		PhysicsComponent->SetSkeletalMeshComponent(GetMesh());
+
+		FPhysicalAnimationData Config;
+		Config.bIsLocalSimulation = true;
+		Config.OrientationStrength = 50.f;
+		Config.PositionStrength = 100.f;
+		Config.VelocityStrength = 75.f;
+
+		PhysicsComponent->ApplyPhysicalAnimationSettingsBelow(FName("pelvis"), Config,true) ;
+	}
+	GetMesh()->SetAllBodiesSimulatePhysics(false);
+	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
+	GetMesh()->SetAllBodiesPhysicsBlendWeight(0.0f);
+}
+
+void ANS_ZombieBase::ApplyPhysics(FName Bone, FVector Impulse)
+{
+	GetMesh()->SetAllBodiesBelowSimulatePhysics(Bone,true,true);
+	GetMesh()->SetAllBodiesBelowPhysicsBlendWeight(Bone, 1.f, false);
+	GetMesh()->AddImpulseToAllBodiesBelow(Impulse, Bone, true);
+	GetWorldTimerManager().SetTimer(HitTimerHandle, [this, Bone]()
+	{
+		ResetPhysics(Bone);
+	}, 0.3f, false);
+}
+
+void ANS_ZombieBase::ResetPhysics(FName Bone)
+{
+	GetMesh()->SetAllBodiesBelowPhysicsBlendWeight(Bone, 0.f, false);
+	GetMesh()->SetAllBodiesBelowSimulatePhysics(Bone, false, true);
 }
 
 void ANS_ZombieBase::SetState(EZombieState NewState)
@@ -184,6 +237,9 @@ void ANS_ZombieBase::OnStateChanged(EZombieState State)
 		break;
 	case EZombieState::ATTACK:
 		OnAttackState();
+		break;
+	case EZombieState::FROZEN:
+		OnFrozenState();
 		break;
 	default:
 		break;
