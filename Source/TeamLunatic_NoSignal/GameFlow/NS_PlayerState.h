@@ -41,7 +41,7 @@ public:
 protected:
 	FString PlayerModelPath;
 
-	// ✅ 상태 변경시 호출
+	// 상태 변경시 호출
 	UFUNCTION()
 	void OnRep_IsReady();
 

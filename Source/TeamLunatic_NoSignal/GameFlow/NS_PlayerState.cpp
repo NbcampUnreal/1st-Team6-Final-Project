@@ -27,7 +27,7 @@ void ANS_PlayerState::SetIsReady(bool bReady)
 			{
 				if (ANS_LobbyMode* LobbyMode = Cast<ANS_LobbyMode>(GM))
 				{
-					UE_LOG(LogTemp, Warning, TEXT("🧩 CheckAllPlayersReady 호출!"));
+					UE_LOG(LogTemp, Warning, TEXT(" CheckAllPlayersReady 호출!"));
 					LobbyMode->CheckAllPlayersReady();
 				}
 			}
@@ -44,10 +44,6 @@ void ANS_PlayerState::ServerSetIsReady_Implementation(bool bReady)
 
 void ANS_PlayerState::OnRep_IsReady()
 {
-	UE_LOG(LogTemp, Log, TEXT("Player %s is now %s"),
-		*GetPlayerName(),
-		bIsReady ? TEXT("READY") : TEXT("NOT READY"));
-
 	// ReadyUI 갱신
 	if (UWorld* World = GetWorld())
 	{

@@ -223,7 +223,7 @@ void ANS_LobbyMode::CheckAllPlayersReady()
 
             if (!MyPS->GetIsReady())
             {
-                UE_LOG(LogTemp, Warning, TEXT("⛔ 아직 준비 안된 플레이어 존재. 종료."));
+                UE_LOG(LogTemp, Warning, TEXT("아직 준비 안된 플레이어 존재. 종료."));
                 return;
             }
         }
