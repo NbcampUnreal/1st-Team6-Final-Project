@@ -33,6 +33,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	UNS_InGameMenu* GetNS_MainMenuWidget()const { return InGameMenuWidget; }
+	UNS_PlayerHUD* GetPlayerHUDWidget() const { return NS_PlayerHUDWidget; }
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	bool ShowInGameMenuWidget(UWorld* World);
