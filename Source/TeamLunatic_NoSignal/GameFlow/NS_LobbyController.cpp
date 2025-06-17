@@ -12,10 +12,16 @@ void ANS_LobbyController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	FInputModeGameOnly InputMode;
-	SetInputMode(InputMode);
-	bShowMouseCursor = false;
+	//  마우스 커서 표시
+	bShowMouseCursor = true;
 
+	//  UI 전용 모드로 입력 변경
+	FInputModeUIOnly InputMode;
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	InputMode.SetWidgetToFocus(nullptr); // 필요 시 ReadyUI의 버튼 지정 가능
+	SetInputMode(InputMode);
+
+	//  카메라 고정
 	for (TActorIterator<ACameraActor> It(GetWorld()); It; ++It)
 	{
 		if (It->ActorHasTag(FName("LobbyCamera")))
@@ -24,7 +30,7 @@ void ANS_LobbyController::BeginPlay()
 			break;
 		}
 	}
-	
+
 	if (IsLocalController())
 	{
 		if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
@@ -38,6 +44,7 @@ void ANS_LobbyController::BeginPlay()
 		}
 	}
 }
+
 
 void ANS_LobbyController::OnPossess(APawn* InPawn)
 {

@@ -18,22 +18,23 @@ void ANS_PlayerState::SetIsReady(bool bReady)
 		bIsReady = bReady;
 		OnRep_IsReady();
 
-		// 방장만 게임 시작 조건 검사
-		if (PlayerIndex == 0 && bIsReady)
+		UE_LOG(LogTemp, Warning, TEXT("[SetIsReady] %s is now %s"),
+			*GetPlayerName(), bIsReady ? TEXT("READY") : TEXT("NOT READY"));
+
+		if (UWorld* World = GetWorld())
 		{
-			if (UWorld* World = GetWorld())
+			if (AGameModeBase* GM = World->GetAuthGameMode())
 			{
-				if (AGameModeBase* GM = World->GetAuthGameMode())
+				if (ANS_LobbyMode* LobbyMode = Cast<ANS_LobbyMode>(GM))
 				{
-					if (ANS_LobbyMode* LobbyMode = Cast<ANS_LobbyMode>(GM))
-					{
-						LobbyMode->CheckAllPlayersReady();
-					}
+					UE_LOG(LogTemp, Warning, TEXT("🧩 CheckAllPlayersReady 호출!"));
+					LobbyMode->CheckAllPlayersReady();
 				}
 			}
 		}
 	}
 }
+
 
 
 void ANS_PlayerState::ServerSetIsReady_Implementation(bool bReady)

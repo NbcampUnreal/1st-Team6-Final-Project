@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/Image.h"
 #include "NS_ReadyUI.generated.h"
 
 UCLASS()
@@ -50,4 +51,9 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* Text_Status3;
+
+	UPROPERTY(meta = (BindWidget)) class UImage* image_0;
+	UPROPERTY(meta = (BindWidget)) class UImage* image_1;
+	UPROPERTY(meta = (BindWidget)) class UImage* image_2;
+	UPROPERTY(meta = (BindWidget)) class UImage* image_3;
 };

@@ -2,15 +2,16 @@
 #include "NS_PlayerState.h"
 #include "EngineUtils.h"
 #include "Character/NS_PlayerCharacterBase.h"
+#include "NS_GameInstance.h"
 #include "GameFramework/GameState.h"
 #include "NS_LobbyController.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
+#include "UI/NS_UIManager.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerStart.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
-#include "NS_GameInstance.h"
 #include "Interfaces/OnlineSessionInterface.h"
 
 ANS_LobbyMode::ANS_LobbyMode()
@@ -210,22 +211,54 @@ void ANS_LobbyMode::CheckAllPlayersReady()
     const AGameStateBase* GS = GetGameState<AGameStateBase>();
     if (!GS) return;
 
+    UE_LOG(LogTemp, Warning, TEXT("현재 플레이어 수: %d"), NumPlayers);
+
     for (APlayerState* PS : GS->PlayerArray)
     {
         if (ANS_PlayerState* MyPS = Cast<ANS_PlayerState>(PS))
         {
+            UE_LOG(LogTemp, Warning, TEXT(" - %s: %s"),
+                *MyPS->GetPlayerName(),
+                MyPS->GetIsReady() ? TEXT("READY") : TEXT("NOT READY"));
+
             if (!MyPS->GetIsReady())
             {
-                UE_LOG(LogTemp, Log, TEXT("[LobbyMode] Player %s is NOT ready."), *MyPS->GetPlayerName());
-                return; // 하나라도 not ready면 중단
+                UE_LOG(LogTemp, Warning, TEXT("⛔ 아직 준비 안된 플레이어 존재. 종료."));
+                return;
             }
         }
     }
 
-    UE_LOG(LogTemp, Log, TEXT(" All players ready. Starting game."));
 
-    // 서버 이동
+    UE_LOG(LogTemp, Log, TEXT(" All players ready. Starting game."));
+    Multicast_ShowLoadingScreen();
+
+    FTimerHandle TravelTimer;
+    GetWorld()->GetTimerManager().SetTimer(TravelTimer, this, &ANS_LobbyMode::GoToGameLevel, 10.0f, false);
+}
+
+
+void ANS_LobbyMode::GoToGameLevel()
+{
     const FString LevelPath = TEXT("/Game/Maps/MainWorld");
     const FString Options = TEXT("Game=/Game/GameFlowBP/BP_NS_MultiPlayMode.BP_NS_MultiPlayMode_C");
     GetWorld()->ServerTravel(LevelPath + TEXT("?") + Options);
 }
+
+
+void ANS_LobbyMode::Multicast_ShowLoadingScreen_Implementation()
+{
+    if (!IsValid(GetWorld()) || !GetWorld()->IsGameWorld()) return;
+
+    if (IsValid(GetWorld()->GetFirstPlayerController()) && GetWorld()->GetFirstPlayerController()->IsLocalController())
+    {
+        if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+        {
+            if (GI->NS_UIManager)
+            {
+                GI->NS_UIManager->LoadingScreen(GetWorld()); 
+            }
+        }
+    }
+}
+

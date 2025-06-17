@@ -51,34 +51,63 @@ void UNS_ReadyUI::UpdatePlayerStatusList()
 	AGameStateBase* GameState = World->GetGameState();
 	if (!GameState) return;
 
-	const TArray<APlayerState*>& Players = GameState->PlayerArray;
+	TArray<APlayerState*> SortedPlayers = GameState->PlayerArray;
+
+	// PlayerIndex 기준 정렬
+	SortedPlayers.Sort([](const APlayerState& A, const APlayerState& B)
+	{
+		const ANS_PlayerState* PSA = Cast<const ANS_PlayerState>(&A);
+		const ANS_PlayerState* PSB = Cast<const ANS_PlayerState>(&B);
+		return (PSA && PSB) ? PSA->PlayerIndex < PSB->PlayerIndex : false;
+	});
 
 	TArray<UTextBlock*> NameBlocks = { Text_Player0, Text_Player1, Text_Player2, Text_Player3 };
 	TArray<UTextBlock*> StatusBlocks = { Text_Status0, Text_Status1, Text_Status2, Text_Status3 };
+	TArray<UImage*> ArrowImages = { image_0, image_1, image_2, image_3 };
+
+	// 내 PlayerIndex 구하기
+	int32 MyIndex = -1;
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		if (ANS_PlayerState* MyPS = Cast<ANS_PlayerState>(PC->PlayerState))
+		{
+			MyIndex = MyPS->PlayerIndex;
+		}
+	}
 
 	for (int32 i = 0; i < NameBlocks.Num(); ++i)
 	{
-		if (!NameBlocks[i] || !StatusBlocks[i]) continue;
+		if (!NameBlocks[i] || !StatusBlocks[i] || !ArrowImages[i]) continue;
 
-		if (i < Players.Num())
+		if (i < SortedPlayers.Num())
 		{
-			if (ANS_PlayerState* PS = Cast<ANS_PlayerState>(Players[i]))
+			if (ANS_PlayerState* PS = Cast<ANS_PlayerState>(SortedPlayers[i]))
 			{
-				NameBlocks[i]->SetText(FText::FromString(PS->GetPlayerName()));
+				NameBlocks[i]->SetText(FText::FromString(FString::Printf(TEXT("Player %d"), PS->PlayerIndex + 1)));
 				StatusBlocks[i]->SetText(FText::FromString(PS->GetIsReady() ? TEXT("Ready") : TEXT("")));
 
 				NameBlocks[i]->SetVisibility(ESlateVisibility::Visible);
 				StatusBlocks[i]->SetVisibility(ESlateVisibility::Visible);
+
+				// 자기 자신의 인덱스라면 화살표 표시
+				if (PS->PlayerIndex == MyIndex)
+				{
+					ArrowImages[i]->SetVisibility(ESlateVisibility::Visible);
+				}
+				else
+				{
+					ArrowImages[i]->SetVisibility(ESlateVisibility::Collapsed);
+				}
 			}
 		}
 		else
 		{
-			// 인원 수 초과 시 숨김
-			NameBlocks[i]->SetText(FText::FromString(TEXT("")));
-			StatusBlocks[i]->SetText(FText::FromString(TEXT("")));
+			NameBlocks[i]->SetText(FText::GetEmpty());
+			StatusBlocks[i]->SetText(FText::GetEmpty());
 
 			NameBlocks[i]->SetVisibility(ESlateVisibility::Collapsed);
 			StatusBlocks[i]->SetVisibility(ESlateVisibility::Collapsed);
+			ArrowImages[i]->SetVisibility(ESlateVisibility::Collapsed);
 		}
 	}
 }
