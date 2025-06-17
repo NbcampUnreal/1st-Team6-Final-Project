@@ -358,11 +358,12 @@ void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
     // Actor Rotation과 Control Rotation을 Delta를 이용해 Yaw값 추출
     const FRotator ActorRot   = GetActorRotation(); 
     const FRotator ControlRot = Controller->GetControlRotation(); 
-    const FRotator DeltaRot   = UKismetMathLibrary::NormalizedDeltaRotator(ControlRot, ActorRot); 
+    const FRotator DeltaRot   = UKismetMathLibrary::NormalizedDeltaRotator(ControlRot, ActorRot);
     
     const float DeltaTime = GetWorld()->GetDeltaSeconds();
     
-    CamYaw   = FMath::FInterpTo(CamYaw,   DeltaRot.Yaw,   DeltaTime, AimSendInterpSpeed); 
+    //CamYaw   = FMath::FInterpTo(CamYaw,   DeltaRot.Yaw,   DeltaTime, AimSendInterpSpeed);
+	CamYaw = DeltaRot.Yaw; // 서버로 전송할 때는 보간하지 않고 바로 전송
     CamPitch = FMath::FInterpTo(CamPitch, DeltaRot.Pitch, DeltaTime, AimSendInterpSpeed); 
 
     // InterpTo를 이요해서 부드러운 Yaw/Pitch값을 서버로 전송
