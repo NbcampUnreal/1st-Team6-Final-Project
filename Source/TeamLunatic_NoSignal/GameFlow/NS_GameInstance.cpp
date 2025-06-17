@@ -40,8 +40,22 @@ void UNS_GameInstance::Init()
 void UNS_GameInstance::OnLevelLoaded(UWorld* LoadedWorld)
 {
 	if (NS_UIManager)
-		NS_UIManager->CloseLoadingUI();
+	{
+		NS_UIManager->LoadingScreen(LoadedWorld); // 로딩 UI 띄움
+
+		// 5초 후 자동 제거
+		FTimerHandle TempHandle;
+		LoadedWorld->GetTimerManager().SetTimer(TempHandle, [this]()
+		{
+			if (NS_UIManager)
+			{
+				UE_LOG(LogTemp, Log, TEXT("로딩 UI 자동 종료"));
+				NS_UIManager->CloseLoadingUI();
+			}
+		}, 5.0f, false);
+	}
 }
+
 
 void UNS_GameInstance::SetGameModeType(EGameModeType Type)
 {
@@ -207,7 +221,7 @@ void UNS_GameInstance::ShowReadyUI()
 	if (!ReadyUIInstance)
 	{
 		ReadyUIInstance = CreateWidget<UNS_ReadyUI>(this, ReadyUIClass);
-		UE_LOG(LogTemp, Warning, TEXT(" ReadyUIInstance 생성 완료: %s"), *GetNameSafe(ReadyUIInstance));
+		UE_LOG(LogTemp, Warning, TEXT("ReadyUIInstance 생성 완료: %s"), *GetNameSafe(ReadyUIInstance));
 	}
 
 	if (ReadyUIInstance && !ReadyUIInstance->IsInViewport())
