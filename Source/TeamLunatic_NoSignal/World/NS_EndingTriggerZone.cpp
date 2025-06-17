@@ -6,6 +6,8 @@
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Inventory/InventoryComponent.h"
 #include "Item/NS_InventoryBaseItem.h"
+
+#include "World/EndingUI/NS_EndingStatusUI.h"
 #include "Net/UnrealNetwork.h"
 
 ANS_EndingTriggerZone::ANS_EndingTriggerZone()
@@ -24,6 +26,11 @@ ANS_EndingTriggerZone::ANS_EndingTriggerZone()
     UE_LOG(LogTemp, Warning, TEXT("TriggerBox OnOverlapBegin event bound"));
     TriggerBox->OnComponentEndOverlap.AddDynamic(this, &ANS_EndingTriggerZone::OnOverlapEnd);
     UE_LOG(LogTemp, Warning, TEXT("TriggerBox OnOverlapEnd event bound"));
+
+    EndingStatusWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("EndingStatusWidget"));
+    EndingStatusWidget->SetupAttachment(RootComponent);
+    EndingStatusWidget->SetWidgetSpace(EWidgetSpace::World);
+    EndingStatusWidget->SetVisibility(false); 
 
     bReplicates = true;
 }
@@ -49,11 +56,13 @@ void ANS_EndingTriggerZone::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AA
     if (ANS_PlayerCharacterBase* Player = Cast<ANS_PlayerCharacterBase>(OtherActor))
     {
         OverlappingPlayers.Remove(Player);
+        CheckGroupEndingCondition();
     }
 }
 
 void ANS_EndingTriggerZone::CheckGroupEndingCondition()
 {
+    int32 NumPlayersInZone = 0;
     bool bHasBattery = false;
     bool bHasAntena = false;
 
@@ -61,6 +70,8 @@ void ANS_EndingTriggerZone::CheckGroupEndingCondition()
     {
         UE_LOG(LogTemp, Warning, TEXT("조건 검사 시작: 중첩된 플레이어 수 = %d"), OverlappingPlayers.Num());
         if (!IsValid(Player)) continue;
+
+        NumPlayersInZone++;
        
         UInventoryComponent* Inventory = Player->FindComponentByClass<UInventoryComponent>();
         if (!Inventory) continue;
@@ -71,33 +82,127 @@ void ANS_EndingTriggerZone::CheckGroupEndingCondition()
             if (!Item) continue;
 
             const FName RowName = Item->ItemDataRowName;
-            if (RowName == "Battery")
+            if (!bHasBattery && RowName == "Battery")
             {
                 bHasBattery = true;
                 UE_LOG(LogTemp, Warning, TEXT("아이템: %s"), *Item->ItemDataRowName.ToString());
             }
-            else if (RowName == "Antena")
+            else if (!bHasAntena && RowName == "Antena")
             {
                 bHasAntena = true;
                 UE_LOG(LogTemp, Warning, TEXT("아이템: %s"), *Item->ItemDataRowName.ToString());
             }
+
+            if (bHasBattery && bHasAntena)
+            {
+                break; 
+            }
         }
     }
 
-    if (bHasBattery && bHasAntena)
+    int32 NumCollectedItems = 0;
+    if (bHasBattery) NumCollectedItems++;
+    if (bHasAntena) NumCollectedItems++;
+
+    UpdateWidgetStatus(NumPlayersInZone, NumCollectedItems);
+
+    const bool bGroupConditionMet = bHasBattery && bHasAntena;
+
+    if (bGroupConditionMet)
     {
-        Multicast_TriggerEnding();
+        // 조건 처음 충족되었을 때 타이머 시작
+        if (!bIsEndingTimerRunning)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("[엔딩] 조건 충족 → 10초 타이머 시작"));
+
+            GetWorld()->GetTimerManager().SetTimer(EndingConditionTimerHandle, this, &ANS_EndingTriggerZone::EndingConditionSatisfied, 10.0f, false);
+            // 타이머 텍스트 업데이트용 반복 타이머 추가
+            GetWorld()->GetTimerManager().SetTimer(CountdownUpdateTimerHandle, this, &ANS_EndingTriggerZone::UpdateEndingCountdownUI, 0.1f, true);
+
+            EndingCountdown = 10.0f;
+            bIsEndingTimerRunning = true;
+
+        }
+    }
+    else
+    {
+        // 조건 도중에 깨졌을 경우 타이머 중단
+        if (bIsEndingTimerRunning)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("[엔딩] 조건 불충족 → 타이머 취소"));
+
+            GetWorld()->GetTimerManager().ClearTimer(EndingConditionTimerHandle);
+            GetWorld()->GetTimerManager().ClearTimer(CountdownUpdateTimerHandle);
+            bIsEndingTimerRunning = false;
+
+            if (UNS_EndingStatusUI* StatusUI = Cast<UNS_EndingStatusUI>(EndingStatusWidget->GetUserWidgetObject()))
+            {
+                StatusUI->UpdateRemainingTime(0.f); // 즉시 텍스트 숨기기
+            }
+        }
     }
 }
 
-void ANS_EndingTriggerZone::Multicast_TriggerEnding_Implementation()
+void ANS_EndingTriggerZone::UpdateWidgetStatus(int32 NumPlayers, int32 NumItems)
 {
-    for (ANS_PlayerCharacterBase* Player : OverlappingPlayers)
+    if (!EndingStatusWidget) return;
+
+    UUserWidget* Widget = EndingStatusWidget->GetUserWidgetObject();
+    if (!Widget) return;
+
+    UNS_EndingStatusUI* StatusUI = Cast<UNS_EndingStatusUI>(Widget);
+    if (StatusUI)
     {
-        if (IsValid(Player))
-        {
-            //Player->Client_ShowEndingUI(); // 엔딩 UI 호출 함수는 클라이언트 전용으로 정의해야 함
-			UE_LOG(LogTemp, Warning, TEXT("Ending Triggered for Player: %s"), *Player->GetName());
-        }
+        StatusUI->EndingUpdateStatus(NumPlayers, NumItems);
+    }
+
+    // 트리거 안에 아무도 없으면 숨김
+    EndingStatusWidget->SetVisibility(NumPlayers > 0);
+}
+
+void ANS_EndingTriggerZone::UpdateEndingCountdownUI()
+{
+    EndingCountdown = FMath::Max(EndingCountdown - 0.1f, 0.f);
+
+    // 위젯이 유효하면 시간 업데이트
+    if (UNS_EndingStatusUI* StatusUI = Cast<UNS_EndingStatusUI>(EndingStatusWidget->GetUserWidgetObject()))
+    {
+        StatusUI->UpdateRemainingTime(EndingCountdown);
+    }
+
+    if (EndingCountdown <= 0.f)
+    {
+        GetWorld()->GetTimerManager().ClearTimer(CountdownUpdateTimerHandle);
+
+        bIsEndingTimerRunning = false;
+    }
+}
+
+void ANS_EndingTriggerZone::EndingConditionSatisfied()
+{
+    UE_LOG(LogTemp, Warning, TEXT("[엔딩] 조건 유지 10초 완료 → 엔딩 처리"));
+
+    Multicast_TriggerEnding(true);
+    bIsEndingTimerRunning = false;
+}
+
+void ANS_EndingTriggerZone::Multicast_TriggerEnding_Implementation(bool bGroupConditionMet)
+{
+    // 전체 플레이어 가져오기 (월드에서)
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+    {
+        APlayerController* PC = It->Get();
+        ANS_PlayerCharacterBase* Player = Cast<ANS_PlayerCharacterBase>(PC ? PC->GetPawn() : nullptr);
+
+        if (!IsValid(Player)) continue;
+
+        // 트리거존 안에 있는지 판단
+        const bool bInZone = OverlappingPlayers.Contains(Player);
+        const bool bSuccess = bInZone && bGroupConditionMet;
+
+        //Player->Client_ShowEndingResult(bSuccess);
+
+        UE_LOG(LogTemp, Warning, TEXT("Player %s: %s"),
+            *Player->GetName(), bSuccess ? TEXT("탈출 성공") : TEXT("탈출 실패"));
     }
 }

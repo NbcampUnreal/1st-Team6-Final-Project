@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+
+#include "Components/WidgetComponent.h"
 #include "NS_EndingTriggerZone.generated.h"
 
 class UBoxComponent;
@@ -17,6 +19,8 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_EndingTriggerZone : public AActor
 public:
     ANS_EndingTriggerZone();
 
+    UPROPERTY(VisibleAnywhere, Category = "UI")
+    class UWidgetComponent* EndingStatusWidget;
 protected:
     virtual void BeginPlay() override;
 
@@ -30,13 +34,24 @@ protected:
 
     void CheckGroupEndingCondition();
 
-    UFUNCTION(NetMulticast, Reliable)
-    void Multicast_TriggerEnding();
+    void UpdateWidgetStatus(int32 NumPlayers, int32 NumItems);
 
+    void UpdateEndingCountdownUI();
+
+    void EndingConditionSatisfied();
+
+    UFUNCTION(NetMulticast, Reliable)
+    void Multicast_TriggerEnding(bool bGroupConditionMet);
+
+    FTimerHandle EndingConditionTimerHandle;
+    FTimerHandle CountdownUpdateTimerHandle;
+    bool bIsEndingTimerRunning = false;
 protected:
     UPROPERTY(VisibleAnywhere)
     UBoxComponent* TriggerBox;
 
     UPROPERTY()
     TArray<ANS_PlayerCharacterBase*> OverlappingPlayers;
+
+    float EndingCountdown = 0.f;
 };
