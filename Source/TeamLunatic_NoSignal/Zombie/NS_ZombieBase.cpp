@@ -8,6 +8,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Enum/EZombieAttackType.h"
 #include "AIController/NS_AIController.h"
+#include "PhysicsEngine/BodyInstance.h"
 #include "Engine/DamageEvents.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -16,7 +17,7 @@
 
 ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), CurrentState(EZombieState::IDLE),
                                    BaseDamage(20.f),PatrolSpeed(20.f), ChaseSpeed(100.f),AccelerationSpeed(200.f),
-                                   ZombieType(EZombieType::BASIC), bIsDead(false), bIsGotHit(false)
+                                   ZombieType(EZombieType::BASIC), bIsDead(false), bIsGotHit(false), UnSafeBones({"pelvis","tight_l","calf_l","foot_l","tight_r","calf_r","foot_r", "root"})
 {
 	PrimaryActorTick.bCanEverTick = true;
 	bUseControllerRotationYaw = false;
@@ -78,15 +79,19 @@ float ANS_ZombieBase::TakeDamage(float DamageAmount, struct FDamageEvent const& 
 	if (CurrentHealth<=0 || !HasAuthority()) return 0.f;
 	float ActualDamage = DamageAmount;
 	
-	CurrentHealth = FMath::Clamp(CurrentHealth - DamageAmount, 0.f, MaxHealth);
 	if (DamageEvent.GetTypeID() == FPointDamageEvent::ClassID)
 	{
 		const FPointDamageEvent* Point = static_cast<const FPointDamageEvent*>(&DamageEvent);
 		FName Bone = Point->HitInfo.BoneName;
 		FVector HitDirection = Point->ShotDirection;
-
-		ApplyPhysics(Bone, HitDirection * 1000.f);
+		if (Bone == "head")
+		{
+			ActualDamage*= 2.f;
+		}
+		ApplyPhysics(Bone, HitDirection * 3000.f);
 	}
+	
+	CurrentHealth = FMath::Clamp(CurrentHealth - DamageAmount, 0.f, MaxHealth);
 	
 	if (CurrentHealth <= 0)
 	{
@@ -94,6 +99,41 @@ float ANS_ZombieBase::TakeDamage(float DamageAmount, struct FDamageEvent const& 
 	}
 
 	return ActualDamage;
+}
+
+void ANS_ZombieBase::ApplyPhysics(FName Bone, FVector Impulse)
+{
+	if (UnSafeBones.Contains(Bone)) return;
+	USkeletalMeshComponent* MeshComp = GetMesh();
+	// FBodyInstance* BodyInstance = MeshComp->GetBodyInstance(Bone);
+	// if (BodyInstance)
+	// {
+	// 	BodyInstance->SetInstanceSimulatePhysics(true);
+	// 	BodyInstance->PhysicsBlendWeight = 1.f;
+	// 	BodyInstance->AddImpulse(Impulse,true);
+	// }
+	GetMesh()->SetAllBodiesBelowSimulatePhysics(Bone,true,true);
+	GetMesh()->SetAllBodiesBelowPhysicsBlendWeight(Bone, 1.f, false);
+	
+	GetMesh()->AddImpulse(Impulse, Bone, false);
+
+	// if (HitTimers.Contains(Bone))
+	// {
+	// 	GetWorldTimerManager().ClearTimer(HitTimers[Bone]);
+	// }
+
+	// FTimerHandle& NewTimer = HitTimers.FindOrAdd(Bone);
+	// GetWorldTimerManager().SetTimer(NewTimer, [this, Bone]()
+	// {
+	// 	ResetPhysics(Bone);
+	// }, 1.f, false);
+}
+
+void ANS_ZombieBase::ResetPhysics(FName Bone)
+{
+	if (CurrentState == EZombieState::DEAD) return;
+	GetMesh()->SetAllBodiesBelowPhysicsBlendWeight(Bone, 0.f, false);
+	GetMesh()->SetAllBodiesBelowSimulatePhysics(Bone, false, true);
 }
 
 void ANS_ZombieBase::OnIdleState()
@@ -152,7 +192,10 @@ void ANS_ZombieBase::Die_Multicast_Implementation()
 {
 	DetachFromControllerPendingDestroy();
 	GetCharacterMovement()->DisableMovement();
-	GetMesh()->SetAllBodiesBelowSimulatePhysics(TEXT("pelvis"), true, true);
+	
+	GetMesh()->SetAllBodiesSimulatePhysics(true);
+	GetMesh()-> SetAllBodiesPhysicsBlendWeight(1.f);
+	
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	SetLifeSpan(30.f);
 }
@@ -181,26 +224,10 @@ void ANS_ZombieBase::InitializePhysics()
 		PhysicsComponent->ApplyPhysicalAnimationSettingsBelow(FName("pelvis"), Config,true) ;
 	}
 	GetMesh()->SetAllBodiesSimulatePhysics(false);
+	GetMesh()->SetAllBodiesPhysicsBlendWeight(0.f);
 	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
-	GetMesh()->SetAllBodiesPhysicsBlendWeight(0.0f);
 }
 
-void ANS_ZombieBase::ApplyPhysics(FName Bone, FVector Impulse)
-{
-	GetMesh()->SetAllBodiesBelowSimulatePhysics(Bone,true,true);
-	GetMesh()->SetAllBodiesBelowPhysicsBlendWeight(Bone, 1.f, false);
-	GetMesh()->AddImpulseToAllBodiesBelow(Impulse, Bone, true);
-	GetWorldTimerManager().SetTimer(HitTimerHandle, [this, Bone]()
-	{
-		ResetPhysics(Bone);
-	}, 0.3f, false);
-}
-
-void ANS_ZombieBase::ResetPhysics(FName Bone)
-{
-	GetMesh()->SetAllBodiesBelowPhysicsBlendWeight(Bone, 0.f, false);
-	GetMesh()->SetAllBodiesBelowSimulatePhysics(Bone, false, true);
-}
 
 void ANS_ZombieBase::SetState(EZombieState NewState)
 {

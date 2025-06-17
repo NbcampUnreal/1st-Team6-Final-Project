@@ -28,7 +28,7 @@ void UNS_LoadingScreen::UpdateProgress()
 			if (!World)return;
 
 			ElapsedTime += World->GetTimeSeconds() - PrevTime;
-			float Alpha = FMath::Clamp(ElapsedTime / 3.f, 0.f, 1.f);
+			float Alpha = FMath::Clamp(ElapsedTime / 10.f, 0.f, 1.f);
 			float CurValue = FMath::Lerp(0.f, 1.f, Alpha);
 			//UE_LOG(LogTemp, Warning, TEXT("ElapsedTime : %f / PrevTime :  %f / TimeSeconds :  %f "), FEmt.ElapsedTime, FEmt.PrevTime, GetWorld()->GetTimeSeconds());
 			SafeThis->ProgressBar_Loading->SetPercent(CurValue);
