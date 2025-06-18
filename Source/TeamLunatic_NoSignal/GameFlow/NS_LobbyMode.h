@@ -14,9 +14,7 @@ public:
     virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
     virtual void BeginPlay() override;
-
-    UFUNCTION(NetMulticast, Reliable)
-    void Multicast_ShowLoadingScreen();
+    
     void GoToGameLevel();
     UPROPERTY(EditDefaultsOnly, Category = "Character")
     TArray<TSubclassOf<APawn>> PlayableCharacter;
