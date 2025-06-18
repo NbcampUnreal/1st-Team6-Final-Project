@@ -418,7 +418,18 @@ void ANS_PlayerCharacterBase::StopSprint_Server_Implementation(const FInputActio
 
 void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputActionValue& Value)
 {
-    if (GetCharacterMovement()->IsFalling()) { return; }
+	if (GetCharacterMovement()->IsFalling()) { return; } // 낙하 중에는 아이템 줍기 불가
+
+    if (UInteractionComponent* InteractComp = FindComponentByClass<UInteractionComponent>())
+    {
+        const TScriptInterface<IInteractionInterface>& CurrentTarget = InteractComp->GetCurrentInteractable();
+
+        if (!CurrentTarget.GetObject())
+        {
+            UE_LOG(LogTemp, Warning, TEXT("상호작용 대상 없음"));
+            return;
+        }
+    }
 
     IsPickUp = true;
 }
