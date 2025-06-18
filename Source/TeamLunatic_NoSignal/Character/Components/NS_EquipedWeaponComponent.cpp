@@ -4,14 +4,12 @@
 #include "Item/NS_InventoryBaseItem.h"
 #include "Item/NS_BaseMeleeWeapon.h"
 #include "Item/NS_BaseRangedWeapon.h"
-#include "Item/NS_BaseThrowWeapon.h"
 #include "GameFramework/Character.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Character/AnimInstance/NS_RangedWeaponAnimInstance.h"
 #include "Components/StaticMeshComponent.h"  
-#include "GameFlow/NS_GameInstance.h"
 
 UNS_EquipedWeaponComponent::UNS_EquipedWeaponComponent()
 {
@@ -125,21 +123,6 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
         if (Ranged->ArmsMeshComp)
         {
             Ranged->ArmsMeshComp->AttachToComponent(
-                OwnerCharacter->FirstPersonArms, Rules, SocketName);
-        }
-    }
-    // ThrowWeapon 투척 병
-    else if (auto Throw = Cast<ANS_BaseThrowWeapon>(NewWpn))
-    {
-        if (Throw->ItemStaticMesh)
-        {
-            Throw->ItemStaticMesh->AttachToComponent(
-                OwnerCharacter->GetMesh(), Rules, SocketName);
-        }
-
-        if (Throw->ArmsMeshComp)
-        {
-            Throw->ArmsMeshComp->AttachToComponent(
                 OwnerCharacter->FirstPersonArms, Rules, SocketName);
         }
     }

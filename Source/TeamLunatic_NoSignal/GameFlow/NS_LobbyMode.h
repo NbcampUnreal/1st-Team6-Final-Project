@@ -14,10 +14,11 @@ public:
     virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
     virtual void BeginPlay() override;
-
+    
+    void GoToGameLevel();
     UPROPERTY(EditDefaultsOnly, Category = "Character")
     TArray<TSubclassOf<APawn>> PlayableCharacter;
-
+    void CheckAllPlayersReady();
 protected:
     AActor* FindSpawnPointByIndex(int32 Index);
 

@@ -12,5 +12,6 @@ enum class EZombieState : uint8
 	CHACING UMETA(DisplayName = "CHACING"),
 	ATTACK UMETA(DisplayName = "ATTACK"),
 	PUSHED UMETA(DisplayName = "PUSHED"),
+	FROZEN UMETA(DisplayName = "FROZEN"),
 	DEAD UMETA(DisplayName = "DEAD"),
 };

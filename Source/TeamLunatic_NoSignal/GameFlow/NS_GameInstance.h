@@ -4,7 +4,8 @@
 #include "Engine/GameInstance.h"
 #include "Engine/DataTable.h"
 #include "UObject/SoftObjectPtr.h" 
-#include "EGameModeType.h"  
+#include "EGameModeType.h"
+#include "NS_ReadyUI.h"
 #include "HttpModule.h"
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
@@ -38,8 +39,8 @@ public:
 	UNS_GameInstance();
 	virtual void Init() override;
 
-	UFUNCTION()
-	void OnLevelLoaded(UWorld* LoadedWorld);
+	//UFUNCTION()
+	//void OnLevelLoaded(UWorld* LoadedWorld);
 
 	void SetCurrentSaveSlot(FString SlotNameInfo);
 
@@ -80,6 +81,15 @@ public:
 
 	TArray<FString> CharacterList;
 	TMap<int32, FNS_PlayerData> PlayerDataMap;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UUserWidget> ReadyUIClass;
+
+	UPROPERTY()
+	class UNS_ReadyUI* ReadyUIInstance;
+
+	void ShowReadyUI();
+	void HideReadyUI();
 
 private:
 	EGameModeType GameModeType = EGameModeType::SinglePlayMode;

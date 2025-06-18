@@ -18,17 +18,17 @@ UNS_GameInstance::UNS_GameInstance()
 		UIManagerClass = BP_UIManager.Class;
 	}
 
-	CharacterList.Add(TEXT("/Game/Character/Blueprints/Character/BP_NS_Male1"));
-	CharacterList.Add(TEXT("/Game/Character/Blueprints/Character/BP_NS_Male2"));
-	CharacterList.Add(TEXT("/Game/Character/Blueprints/Character/BP_NS_Male3"));
-	CharacterList.Add(TEXT("/Game/Character/Blueprints/Character/BP_NS_Female1"));
+	CharacterList.Add(TEXT("/Game/Character/Blueprints/Character/BP_NS_Male1.BP_NS_Male1_C"));
+	CharacterList.Add(TEXT("/Game/Character/Blueprints/Character/BP_NS_Male2.BP_NS_Male2_C"));
+	CharacterList.Add(TEXT("/Game/Character/Blueprints/Character/BP_NS_Male3.BP_NS_Male3_C"));
+	CharacterList.Add(TEXT("/Game/Character/Blueprints/Character/BP_NS_Female1.BP_NS_Female1_C"));
+
 }
 
 void UNS_GameInstance::Init()
 {
 	Super::Init();
 
-	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &UNS_GameInstance::OnLevelLoaded);
 	if (UIManagerClass)
 	{
 		NS_UIManager = NewObject<UNS_UIManager>(this, UIManagerClass);
@@ -36,11 +36,6 @@ void UNS_GameInstance::Init()
 	}
 }
 
-void UNS_GameInstance::OnLevelLoaded(UWorld* LoadedWorld)
-{
-	if (NS_UIManager)
-		NS_UIManager->CloseLoadingUI();
-}
 
 void UNS_GameInstance::SetGameModeType(EGameModeType Type)
 {
@@ -191,4 +186,36 @@ void UNS_GameInstance::OnReceiveSessionList(FHttpRequestPtr Request, FHttpRespon
 void UNS_GameInstance::SetCurrentSaveSlot(FString SlotNameInfo)
 {
 	CurrentSaveSlotName = SlotNameInfo;
+}
+
+void UNS_GameInstance::ShowReadyUI()
+{
+	UE_LOG(LogTemp, Warning, TEXT(" ShowReadyUI() 진입"));
+
+	if (!ReadyUIClass)
+	{
+		UE_LOG(LogTemp, Error, TEXT(" ReadyUIClass is NULL! 위젯 생성 불가"));
+		return;
+	}
+
+	if (!ReadyUIInstance)
+	{
+		ReadyUIInstance = CreateWidget<UNS_ReadyUI>(this, ReadyUIClass);
+		UE_LOG(LogTemp, Warning, TEXT("ReadyUIInstance 생성 완료: %s"), *GetNameSafe(ReadyUIInstance));
+	}
+
+	if (ReadyUIInstance && !ReadyUIInstance->IsInViewport())
+	{
+		ReadyUIInstance->AddToViewport();
+		UE_LOG(LogTemp, Warning, TEXT(" ReadyUIInstance AddToViewport 완료"));
+	}
+}
+
+
+void UNS_GameInstance::HideReadyUI()
+{
+	if (ReadyUIInstance && ReadyUIInstance->IsInViewport())
+	{
+		ReadyUIInstance->RemoveFromParent();
+	}
 }
