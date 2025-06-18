@@ -23,6 +23,10 @@ UNS_GameInstance::UNS_GameInstance()
 	CharacterList.Add(TEXT("/Game/Character/Blueprints/Character/BP_NS_Male3.BP_NS_Male3_C"));
 	CharacterList.Add(TEXT("/Game/Character/Blueprints/Character/BP_NS_Female1.BP_NS_Female1_C"));
 
+	LobbyCharacterList.Add(TEXT("/Game/Character/Blueprints/Lobby/BP_NS_LobbyMale1.BP_NS_LobbyMale1_C"));
+	LobbyCharacterList.Add(TEXT("/Game/Character/Blueprints/Lobby/BP_NS_LobbyMale2.BP_NS_LobbyMale2_C"));
+	LobbyCharacterList.Add(TEXT("/Game/Character/Blueprints/Lobby/BP_NS_LobbyMale3.BP_NS_LobbyMale3_C"));
+	LobbyCharacterList.Add(TEXT("/Game/Character/Blueprints/Lobby/BP_NS_LobbyFemale1.BP_NS_LobbyFemale1_C"));
 }
 
 void UNS_GameInstance::Init()

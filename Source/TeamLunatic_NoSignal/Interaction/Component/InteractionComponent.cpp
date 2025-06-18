@@ -71,7 +71,7 @@ FRotator UInteractionComponent::GetViewRotation() const
 void UInteractionComponent::PerformInteractionCheck()
 {
 	APlayerController* PC = Cast<APlayerController>(GetOwner()->GetInstigatorController());
-	if (!PC || !PC->IsLocalController())
+	if (!PC)
 	{
 		return;
 	}
