@@ -39,6 +39,9 @@ protected:
 	UAnimMontage* DetectMontage;
 	UPROPERTY()
 	AActor* LastSeenTarget;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+	float AttackRange;
+	
 	FTimerHandle HearingTimerHandle;
 
 	float MaxSeenDistance;
