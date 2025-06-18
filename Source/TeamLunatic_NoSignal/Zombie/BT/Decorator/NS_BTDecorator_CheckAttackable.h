@@ -16,5 +16,7 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_BTDecorator_CheckAttackable : public UBTDecor
 	
 public:
 	UNS_BTDecorator_CheckAttackable();
-	virtual bool CalculateRawConditionValue(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) const override;	
+	virtual bool CalculateRawConditionValue(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) const override;
+	virtual void OnCeaseRelevant(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
+	virtual void OnBecomeRelevant(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
 };
