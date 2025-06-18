@@ -28,11 +28,11 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
 private:
 
 	// ========== 이동 관련 =============
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	float DefaultWalkSpeed;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta=(AllowPrivateAccess = "true", UIMin = 0))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true", UIMin = 0))
 	float SprintSpeedMultiplier;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta=(AllowPrivateAccess = "true", UIMin = 0, UIMax = 2))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true", UIMin = 0, UIMax = 2))
 	float SpeedMultiAtStat = 1.0f; //버프|디버프 때 조절될 속도 배율
 
 
@@ -55,7 +55,7 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void Client_NotifyQuickSlotUpdated();
-	
+
 	UFUNCTION(BlueprintCallable)
 	void UseThrowableItem_Internal(int32 Index);
 
@@ -111,9 +111,9 @@ public:
 	// 1인칭 팔 스켈레탈 메시 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "FirstPerson")
 	USkeletalMeshComponent* FirstPersonArms;
-	
+
 	// 스탯 컴포넌트
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UNS_StatusComponent* StatusComp;
 
 	// 인터렉션 컴포넌트
@@ -135,7 +135,7 @@ public:
 	////////////////////////////////////캐릭터 부착 컴포넌트들 끝!///////////////////////////////////////
 
 
-	
+
 	/////////////////////////////////병투척 변수 + 병이 날아갈 소켓 위치 변수 //////////////////////////////
 	// 캐릭터가 던지는 병 액터 클래스변수 설정
 	UPROPERTY(EditDefaultsOnly, Category = "Throw")
@@ -150,15 +150,15 @@ public:
 	////////////////////////////////////////병투척 변수 끝!///////////////////////////////////////////////
 
 
-	
+
 	// LookAction에 카메라 회전값 보간 속도 ---> 8은 너무 느려서 10이상은 되어야할 듯
 	UPROPERTY(EditDefaultsOnly, Category = "Aim")
 	float AimSendInterpSpeed = 10.f;
-	
+
 	// 점프가 가능하게 하는 변수 
 	bool IsCanJump = true;
 	// ====================================
-	
+
 
 	/////////////////////////////// 리플리케이션용 변수들////////////////////////////////
 	// 캐릭터가 바라보고있는 좌/우 값
@@ -167,6 +167,9 @@ public:
 	// 캐릭터가 바라보고있는 상/하 값
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	float CamPitch;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Look|Assist")
+	float LookMagnification = 0.5f;
 
 	// 왼쪽으로 몸을 회전시키는 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
@@ -202,8 +205,8 @@ public:
 	UFUNCTION()
 	void OnRep_IsChangeAnim();
 	//////////////////////////////////////////////////////////////////////////////////////
-	
-	
+
+
 	// IMC(입력 매핑 컨텍스트)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputMappingContext* DefaultMappingContext;
@@ -242,14 +245,14 @@ public:
 	UInputAction* InputQuickSlot3;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* ToggleHeadLampAction;
-	
-	
+
+
 	// 캐릭터 EnhancedInput을 없앴다가 다시 부착하는는 함수 IMC를 지워웠다가 다시 장착하게해서 AnimNotify로 발차기 공격동안 IMC없앰
-	UFUNCTION(BlueprintCallable, Server, Reliable, Category="Input")
+	UFUNCTION(BlueprintCallable, Server, Reliable, Category = "Input")
 	void SetMovementLockState_Server(bool bLock);
 	UFUNCTION(NetMulticast, Reliable)
 	void SetMovementLockState_Multicast(bool bLock);
-	
+
 	//////////////////////////////////액션 처리 함수들///////////////////////////////////
 	//////////////CharacterMovmentComponent를 사용함////////////////
 	// 이동
@@ -262,7 +265,7 @@ public:
 	void StartCrouch(const FInputActionValue& Value);
 	void StopCrouch(const FInputActionValue& Value);
 	//////////////CharacterMovmentComponent를 사용안함////////////////
-	
+
 	// 달리기
 	UFUNCTION(server, Reliable)
 	void StartSprint_Server(const FInputActionValue& Value);
@@ -287,7 +290,7 @@ public:
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void ReloadAction_Server(const FInputActionValue& Value);
 	//////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
-	
+
 	// 캐릭터 죽는 애니메이션 멀티캐스트
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void PlayDeath_Server();
@@ -297,7 +300,7 @@ public:
 	// 카메라 Yaw값, Pitch값 서버로 전송
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void UpdateAim_Server(float NewCamYaw, float NewCamPitch);
-	
+
 
 	// 캐릭터가 병투척해서 날아가는 속도/방향/궤도 함수
 	UFUNCTION(BlueprintCallable)

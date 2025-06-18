@@ -21,7 +21,7 @@ ANS_RunnerZombie::ANS_RunnerZombie()
 
 void ANS_RunnerZombie::OnChaseState()
 {
-	TargetSpeed = 500.f;
+	TargetSpeed = 550.f;
 }
 
 

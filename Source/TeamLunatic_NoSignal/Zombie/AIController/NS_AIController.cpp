@@ -207,11 +207,11 @@ void ANS_AIController::InitializeAttackRange(APawn* PossesedPawn)
 	ANS_ZombieBase* Zombie = Cast<ANS_ZombieBase>(PossesedPawn);
 	if (!Zombie) return;
 	EZombieType Type = Zombie->GetType();
-	float AttackRange = 0.f;
+	AttackRange = 0.f;
 	switch (Type)
 	{
 	case EZombieType::BASIC:
-		AttackRange=100.f;
+		AttackRange=400.f;
 		BlackboardComp->SetValueAsFloat("AttackRange", AttackRange);
 		break;
 	case EZombieType::RUNNER:

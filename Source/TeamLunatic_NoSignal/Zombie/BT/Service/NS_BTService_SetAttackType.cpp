@@ -26,12 +26,14 @@ void UNS_BTService_SetAttackType::TickNode(UBehaviorTreeComponent& OwnerComp, ui
 	if (!BlackboardComponent) return;
 
 	float Distance = BlackboardComponent->GetValueAsFloat("Distance");
-	if (Distance <= 150.f)
+	if (Distance <= 120.f)
 	{
-		BlackboardComponent->SetValueAsEnum("AttackType", static_cast<uint8>(EZombieAttackType::BASIC));
+		NewAttackType = EZombieAttackType::BASIC;
+		BlackboardComponent->SetValueAsEnum("AttackType", static_cast<uint8>(NewAttackType));
 	}
-	else if (Distance < 500.f)
+	else if (Distance > 120 && Distance <= 400.f)
 	{
-		BlackboardComponent->SetValueAsEnum("AttackType", static_cast<uint8>(EZombieAttackType::CHARGE));
+		NewAttackType = EZombieAttackType::CHARGE;
+		BlackboardComponent->SetValueAsEnum("AttackType", static_cast<uint8>(NewAttackType));
 	}
 }
