@@ -227,12 +227,10 @@ void ANS_LobbyMode::CheckAllPlayersReady()
     GoToGameLevel(); 
 }
 
-
-
 void ANS_LobbyMode::GoToGameLevel()
 {
     const FString LevelPath = TEXT("/Game/Maps/MainWorld");
     const FString Options = TEXT("Game=/Game/GameFlowBP/BP_NS_MultiPlayMode.BP_NS_MultiPlayMode_C");
+
     GetWorld()->ServerTravel(LevelPath + TEXT("?") + Options);
 }
-

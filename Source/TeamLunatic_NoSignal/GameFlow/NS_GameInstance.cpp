@@ -49,7 +49,7 @@ void UNS_GameInstance::CreateDedicatedSessionViaHTTP(FName SessionName, int32 Ma
 		*SessionName.ToString(), MaxPlayers);
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("http://121.163.249.108:5000/create_session"));
+	Request->SetURL(TEXT("http://13.209.195.61:5000/create_session"));
 	Request->SetVerb(TEXT("POST"));
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 
@@ -114,7 +114,7 @@ void UNS_GameInstance::SendHeartbeat()
 		return;
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("http://121.163.249.108:5000/heartbeat"));
+	Request->SetURL(TEXT("http://13.209.195.61:5000/heartbeat"));
 	Request->SetVerb(TEXT("POST"));
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 
@@ -145,7 +145,7 @@ void UNS_GameInstance::SendHeartbeat()
 void UNS_GameInstance::RequestSessionListFromServer()
 {
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("http://121.163.249.108:5000/session_list"));
+	Request->SetURL(TEXT("http://13.209.195.61:5000/session_list"));
 	Request->SetVerb(TEXT("GET"));
 	Request->OnProcessRequestComplete().BindUObject(this, &UNS_GameInstance::OnReceiveSessionList);
 	Request->ProcessRequest();

@@ -14,6 +14,8 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_ReadyUI : public UUserWidget
 public:
 	virtual void NativeConstruct() override;
 
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+
 	// 레디 버튼 눌렀을 때 호출될 함수
 	UFUNCTION()
 	void OnReadyButtonClicked();
@@ -52,8 +54,15 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* Text_Status3;
 
-	UPROPERTY(meta = (BindWidget)) class UImage* image_0;
-	UPROPERTY(meta = (BindWidget)) class UImage* image_1;
-	UPROPERTY(meta = (BindWidget)) class UImage* image_2;
-	UPROPERTY(meta = (BindWidget)) class UImage* image_3;
+	UPROPERTY(meta = (BindWidget))
+	class UImage* image_0;
+
+	UPROPERTY(meta = (BindWidget))
+	class UImage* image_1;
+
+	UPROPERTY(meta = (BindWidget))
+	class UImage* image_2;
+
+	UPROPERTY(meta = (BindWidget))
+	class UImage* image_3;
 };
