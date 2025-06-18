@@ -14,13 +14,22 @@
 UNS_QuickSlotComponent::UNS_QuickSlotComponent()
 {
 	SetIsReplicatedByDefault(true);
+	bAutoActivate = true;
 }
 
 void UNS_QuickSlotComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	UE_LOG(LogTemp, Warning, TEXT("[QuickSlotComponent] BeginPlay 실행됨"));
+
+	if (InitialSlotCount <= 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[QuickSlotComponent] InitialSlotCount 값이 0 또는 미설정! 기본값 5로 대체"));
+		InitialSlotCount = 5;
+	}
 
 	QuickSlots.SetNum(InitialSlotCount);
+	UE_LOG(LogTemp, Warning, TEXT("[QuickSlotComponent] 슬롯 초기화: %d개"), InitialSlotCount);
 	CleanInvalidSlots(); // 게임 시작 시 무효 슬롯 제거
 }
 
