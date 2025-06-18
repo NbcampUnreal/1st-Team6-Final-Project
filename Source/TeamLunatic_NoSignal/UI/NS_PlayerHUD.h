@@ -19,6 +19,9 @@ public:
 
     void NativeTick(const FGeometry& MyGeometry, float InDeltaTime);
 
+	void DeleteCompasItem(ANS_BaseItem* DeleteItem);
+
+
     UPROPERTY(meta = (BindWidget))
     class UNS_QuickSlotPanel* NS_QuickSlotPanel;
 
