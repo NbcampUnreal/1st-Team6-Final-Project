@@ -352,8 +352,9 @@ void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
     
     // 카메라 회전 적용
     FVector2D LookInput = Value.Get<FVector2D>(); 
-    AddControllerYawInput  (LookInput.X); 
-    AddControllerPitchInput(LookInput.Y); 
+    AddControllerYawInput  (LookInput.X * LookMagnification); 
+	UE_LOG(LogTemp, Warning, TEXT("LookInput.X: %f"), LookInput.X); // Yaw값 확인용 로그
+    AddControllerPitchInput(LookInput.Y * LookMagnification); 
 
     // Actor Rotation과 Control Rotation을 Delta를 이용해 Yaw값 추출
     const FRotator ActorRot   = GetActorRotation(); 

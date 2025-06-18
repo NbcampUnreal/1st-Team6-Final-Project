@@ -166,6 +166,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	float CamPitch;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Look|Assist")
+	float LookMagnification = 0.5f;
+
 	// 왼쪽으로 몸을 회전시키는 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool TurnLeft = false;
