@@ -18,7 +18,7 @@ void UNS_ReadyUI::NativeConstruct()
 		ReadyButton->OnClicked.AddDynamic(this, &UNS_ReadyUI::OnReadyButtonClicked);
 	}
 
-	// ✅ 0.5초 후에 호출하도록 딜레이 설정
+	// 0.5초 후에 호출하도록 딜레이 설정
 	FTimerHandle InitTimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(
 		InitTimerHandle,

@@ -7,6 +7,7 @@
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Item/NS_BaseMagazine.h"
 #include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 APickup::APickup()
 {
@@ -157,6 +158,10 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 				case EItemAddResult::TAR_NoItemAdded:
 					break;
 				case EItemAddResult::TAR_PartialAmountItemAdded:
+					if (ReplicatedItemData.ItemAssetData.GetSound)
+					{
+						UGameplayStatics::PlaySound2D(this, ReplicatedItemData.ItemAssetData.GetSound);
+					}
 					UpdateInteractableData();
 					if (UInteractionComponent* InteractionComp = Taker->GetInteractionComponent())
 					{
@@ -164,6 +169,10 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 					}
 					break;
 				case EItemAddResult::TAR_AllItemAdded:
+					if (ReplicatedItemData.ItemAssetData.GetSound)
+					{
+						UGameplayStatics::PlaySound2D(this, ReplicatedItemData.ItemAssetData.GetSound);
+					}
 					Destroy();
 					break;
 				}

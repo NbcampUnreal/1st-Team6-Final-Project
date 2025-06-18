@@ -39,8 +39,8 @@ public:
 	UNS_GameInstance();
 	virtual void Init() override;
 
-	UFUNCTION()
-	void OnLevelLoaded(UWorld* LoadedWorld);
+	//UFUNCTION()
+	//void OnLevelLoaded(UWorld* LoadedWorld);
 
 	void SetCurrentSaveSlot(FString SlotNameInfo);
 
@@ -80,6 +80,7 @@ public:
 	void SendHeartbeat();
 
 	TArray<FString> CharacterList;
+	TArray<FString> LobbyCharacterList;
 	TMap<int32, FNS_PlayerData> PlayerDataMap;
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")

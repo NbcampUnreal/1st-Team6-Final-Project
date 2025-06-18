@@ -30,7 +30,7 @@ void ANS_LobbyMode::BeginPlay()
 
     if (UNS_GameInstance* GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
     {
-        for (const FString& Item : GameInstance->CharacterList)
+        for (const FString& Item : GameInstance->LobbyCharacterList)
         {
             UClass* LoadedClass = StaticLoadClass(APawn::StaticClass(), nullptr, *Item);
             if (LoadedClass)
@@ -90,31 +90,31 @@ void ANS_LobbyMode::PostLogin(APlayerController* NewPlayer)
     {
         NewPlayer->Possess(SpawnedPawn);
 
-        // 입력 차단 - 컨트롤러 레벨
-        NewPlayer->SetIgnoreMoveInput(true);
-        NewPlayer->SetIgnoreLookInput(true);
-
-        // 캐릭터 입력 차단
-        SpawnedPawn->DisableInput(nullptr);
-
-        // 회전 및 움직임 완전 차단
-        if (ANS_PlayerCharacterBase* Character = Cast<ANS_PlayerCharacterBase>(SpawnedPawn))
-        {
-            Character->bUseControllerRotationYaw = false;
-
-            if (UCharacterMovementComponent* MoveComp = Character->GetCharacterMovement())
-            {
-                MoveComp->DisableMovement();
-                MoveComp->bOrientRotationToMovement = false;
-            }
-        }
-
-
-        // 키 바인딩 제거 (C, F 등 작동 방지)
-        if (NewPlayer->InputComponent)
-        {
-            NewPlayer->InputComponent->ClearActionBindings();
-        }
+        // // 입력 차단 - 컨트롤러 레벨
+        // NewPlayer->SetIgnoreMoveInput(true);
+        // NewPlayer->SetIgnoreLookInput(true);
+        //
+        // // 캐릭터 입력 차단
+        // SpawnedPawn->DisableInput(nullptr);
+        //
+        // // 회전 및 움직임 완전 차단
+        // if (ANS_PlayerCharacterBase* Character = Cast<ANS_PlayerCharacterBase>(SpawnedPawn))
+        // {
+        //     Character->bUseControllerRotationYaw = false;
+        //
+        //     if (UCharacterMovementComponent* MoveComp = Character->GetCharacterMovement())
+        //     {
+        //         MoveComp->DisableMovement();
+        //         MoveComp->bOrientRotationToMovement = false;
+        //     }
+        // }
+        //
+        //
+        // // 키 바인딩 제거 (C, F 등 작동 방지)
+        // if (NewPlayer->InputComponent)
+        // {
+        //     NewPlayer->InputComponent->ClearActionBindings();
+        // }
 
         // 캐릭터 모델 경로 저장
         if (UNS_GameInstance* GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
@@ -211,31 +211,22 @@ void ANS_LobbyMode::CheckAllPlayersReady()
     const AGameStateBase* GS = GetGameState<AGameStateBase>();
     if (!GS) return;
 
-    UE_LOG(LogTemp, Warning, TEXT("현재 플레이어 수: %d"), NumPlayers);
-
     for (APlayerState* PS : GS->PlayerArray)
     {
         if (ANS_PlayerState* MyPS = Cast<ANS_PlayerState>(PS))
         {
-            UE_LOG(LogTemp, Warning, TEXT(" - %s: %s"),
-                *MyPS->GetPlayerName(),
-                MyPS->GetIsReady() ? TEXT("READY") : TEXT("NOT READY"));
-
             if (!MyPS->GetIsReady())
             {
-                UE_LOG(LogTemp, Warning, TEXT("⛔ 아직 준비 안된 플레이어 존재. 종료."));
+                UE_LOG(LogTemp, Warning, TEXT(" 아직 준비 안된 플레이어 있음"));
                 return;
             }
         }
     }
 
-
-    UE_LOG(LogTemp, Log, TEXT(" All players ready. Starting game."));
-    Multicast_ShowLoadingScreen();
-
-    FTimerHandle TravelTimer;
-    GetWorld()->GetTimerManager().SetTimer(TravelTimer, this, &ANS_LobbyMode::GoToGameLevel, 10.0f, false);
+    UE_LOG(LogTemp, Log, TEXT(" All players ready. Traveling now."));
+    GoToGameLevel(); 
 }
+
 
 
 void ANS_LobbyMode::GoToGameLevel()
@@ -243,22 +234,5 @@ void ANS_LobbyMode::GoToGameLevel()
     const FString LevelPath = TEXT("/Game/Maps/MainWorld");
     const FString Options = TEXT("Game=/Game/GameFlowBP/BP_NS_MultiPlayMode.BP_NS_MultiPlayMode_C");
     GetWorld()->ServerTravel(LevelPath + TEXT("?") + Options);
-}
-
-
-void ANS_LobbyMode::Multicast_ShowLoadingScreen_Implementation()
-{
-    if (!IsValid(GetWorld()) || !GetWorld()->IsGameWorld()) return;
-
-    if (IsValid(GetWorld()->GetFirstPlayerController()) && GetWorld()->GetFirstPlayerController()->IsLocalController())
-    {
-        if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
-        {
-            if (GI->NS_UIManager)
-            {
-                GI->NS_UIManager->LoadingScreen(GetWorld()); 
-            }
-        }
-    }
 }
 
