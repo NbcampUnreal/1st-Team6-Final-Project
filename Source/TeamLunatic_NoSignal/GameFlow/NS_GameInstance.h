@@ -79,8 +79,6 @@ public:
 
 	void SendHeartbeat();
 
-	TArray<FString> CharacterList;
-	TArray<FString> LobbyCharacterList;
 	TMap<int32, FNS_PlayerData> PlayerDataMap;
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")

@@ -18,15 +18,6 @@ UNS_GameInstance::UNS_GameInstance()
 		UIManagerClass = BP_UIManager.Class;
 	}
 
-	CharacterList.Add(TEXT("/Game/Character/Blueprints/Character/BP_NS_Male1.BP_NS_Male1_C"));
-	CharacterList.Add(TEXT("/Game/Character/Blueprints/Character/BP_NS_Male2.BP_NS_Male2_C"));
-	CharacterList.Add(TEXT("/Game/Character/Blueprints/Character/BP_NS_Male3.BP_NS_Male3_C"));
-	CharacterList.Add(TEXT("/Game/Character/Blueprints/Character/BP_NS_Female1.BP_NS_Female1_C"));
-
-	LobbyCharacterList.Add(TEXT("/Game/Character/Blueprints/Lobby/BP_NS_LobbyMale1.BP_NS_LobbyMale1_C"));
-	LobbyCharacterList.Add(TEXT("/Game/Character/Blueprints/Lobby/BP_NS_LobbyMale2.BP_NS_LobbyMale2_C"));
-	LobbyCharacterList.Add(TEXT("/Game/Character/Blueprints/Lobby/BP_NS_LobbyMale3.BP_NS_LobbyMale3_C"));
-	LobbyCharacterList.Add(TEXT("/Game/Character/Blueprints/Lobby/BP_NS_LobbyFemale1.BP_NS_LobbyFemale1_C"));
 }
 
 void UNS_GameInstance::Init()
@@ -53,7 +44,7 @@ void UNS_GameInstance::CreateDedicatedSessionViaHTTP(FName SessionName, int32 Ma
 		*SessionName.ToString(), MaxPlayers);
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("http://13.209.195.61:5000/create_session"));
+	Request->SetURL(TEXT("http://15.164.149.46:5000/create_session"));
 	Request->SetVerb(TEXT("POST"));
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 
@@ -118,7 +109,7 @@ void UNS_GameInstance::SendHeartbeat()
 		return;
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("http://13.209.195.61:5000/heartbeat"));
+	Request->SetURL(TEXT("http://15.164.149.46:5000/heartbeat"));
 	Request->SetVerb(TEXT("POST"));
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 
@@ -149,7 +140,7 @@ void UNS_GameInstance::SendHeartbeat()
 void UNS_GameInstance::RequestSessionListFromServer()
 {
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("http://13.209.195.61:5000/session_list"));
+	Request->SetURL(TEXT("http://15.164.149.46:5000/session_list"));
 	Request->SetVerb(TEXT("GET"));
 	Request->OnProcessRequestComplete().BindUObject(this, &UNS_GameInstance::OnReceiveSessionList);
 	Request->ProcessRequest();
@@ -184,7 +175,7 @@ void UNS_GameInstance::OnReceiveSessionList(FHttpRequestPtr Request, FHttpRespon
 		}
 	}
 
-	OnSessionListReceived.Broadcast(ParsedSessions);
+	OnSessionListReceived.Broadcast(ParsedSessions); 
 }
 
 void UNS_GameInstance::SetCurrentSaveSlot(FString SlotNameInfo)
