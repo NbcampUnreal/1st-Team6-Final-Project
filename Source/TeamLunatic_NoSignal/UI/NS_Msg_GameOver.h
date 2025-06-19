@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UI/NS_MasterMenuPanel.h"
+#include "Components/HorizontalBox.h" 
 #include "NS_Msg_GameOver.generated.h"
 
 class UButton;
@@ -30,6 +31,13 @@ public:
 
 	UFUNCTION()
 	void OnQuit();
+
+	UFUNCTION()
+	void OnObserverButtonClicked();
+
+	UFUNCTION(BlueprintCallable, Category = "GameOver")
+	void UpdateBoxVisibility();
+
 protected:
 	//load save 버튼 막아놨음/  기획상 빠짐 
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
@@ -41,6 +49,12 @@ protected:
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
 	UButton* MainMenuBtn;
 
+	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
+	UButton* ObserverButton;
+
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* FadeIn;
+
+	UPROPERTY(meta = (BindWidget))
+	UHorizontalBox* ObserverHorizontalBox;
 };
