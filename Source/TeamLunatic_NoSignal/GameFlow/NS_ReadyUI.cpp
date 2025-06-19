@@ -2,6 +2,7 @@
 #include "NS_ReadyUI.h"
 #include "Components/VerticalBox.h"
 #include "Components/Button.h"
+#include "NS_GameInstance.h"
 #include "Components/TextBlock.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerState.h"
@@ -16,6 +17,12 @@ void UNS_ReadyUI::NativeConstruct()
 	if (ReadyButton)
 	{
 		ReadyButton->OnClicked.AddDynamic(this, &UNS_ReadyUI::OnReadyButtonClicked);
+		
+	}
+
+	if (QuitButton)
+	{
+		QuitButton->OnClicked.AddDynamic(this, &UNS_ReadyUI::OnQuitButtonClicked);
 	}
 
 }
@@ -37,6 +44,31 @@ void UNS_ReadyUI::OnReadyButtonClicked()
 		bool bNewReady = !PS->GetIsReady();
 
 		PS->ServerSetIsReady(bNewReady);
+	}
+}
+
+void UNS_ReadyUI::OnQuitButtonClicked()
+{
+	APlayerController* PC = GetOwningPlayer();
+	if (!PC) return;
+
+	if (ANS_PlayerState* PS = Cast<ANS_PlayerState>(PC->PlayerState))
+	{
+		int32 MyIndex = PS->PlayerIndex;
+
+		if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+		{
+			if (MyIndex == 0)
+			{
+				GI->DestroyCurrentSession();
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("[ReadyUI] Guest가 세션에서 이탈합니다 (Index: %d)"), MyIndex);
+			}
+		}
+
+		PC->ClientTravel(TEXT("/Game/Maps/MainTitle"), ETravelType::TRAVEL_Absolute);
 	}
 }
 

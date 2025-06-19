@@ -4,6 +4,8 @@
 #include "HttpModule.h"
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
+#include "OnlineSubsystem.h"
+#include "Interfaces/OnlineSessionInterface.h"
 #include "Dom/JsonObject.h"
 #include "Dom/JsonValue.h"
 #include "Serialization/JsonSerializer.h"
@@ -16,6 +18,12 @@ UNS_GameInstance::UNS_GameInstance()
 	if (BP_UIManager.Succeeded())
 	{
 		UIManagerClass = BP_UIManager.Class;
+	}
+
+	static ConstructorHelpers::FClassFinder<UUserWidget> BP_LoadingWait(TEXT("/Game/UI/Blueprints/BP_Wait.BP_Wait_C"));
+	if (BP_LoadingWait.Succeeded())
+	{
+		WaitClass = BP_LoadingWait.Class;
 	}
 
 }
@@ -44,7 +52,7 @@ void UNS_GameInstance::CreateDedicatedSessionViaHTTP(FName SessionName, int32 Ma
 		*SessionName.ToString(), MaxPlayers);
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("http://15.164.149.46:5000/create_session"));
+	Request->SetURL(TEXT("http://121.163.249.108:5000/create_session"));
 	Request->SetVerb(TEXT("POST"));
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 
@@ -109,7 +117,7 @@ void UNS_GameInstance::SendHeartbeat()
 		return;
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("http://15.164.149.46:5000/heartbeat"));
+	Request->SetURL(TEXT("http://121.163.249.108:5000/heartbeat"));
 	Request->SetVerb(TEXT("POST"));
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 
@@ -140,7 +148,7 @@ void UNS_GameInstance::SendHeartbeat()
 void UNS_GameInstance::RequestSessionListFromServer()
 {
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("http://15.164.149.46:5000/session_list"));
+	Request->SetURL(TEXT("http://121.163.249.108:5000/session_list"));
 	Request->SetVerb(TEXT("GET"));
 	Request->OnProcessRequestComplete().BindUObject(this, &UNS_GameInstance::OnReceiveSessionList);
 	Request->ProcessRequest();
@@ -212,5 +220,44 @@ void UNS_GameInstance::HideReadyUI()
 	if (ReadyUIInstance && ReadyUIInstance->IsInViewport())
 	{
 		ReadyUIInstance->RemoveFromParent();
+	}
+}
+
+void UNS_GameInstance::ShowWait()
+{
+	if (!WaitClass) return;
+
+	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	if (!PC) return;
+
+	if (!WaitWidget)
+	{
+		WaitWidget = CreateWidget<UUserWidget>(PC, WaitClass);
+	}
+
+	if (WaitWidget && !WaitWidget->IsInViewport())
+	{
+		WaitWidget->AddToViewport();
+	}
+}
+
+void UNS_GameInstance::HideWait()
+{
+	if (WaitWidget && WaitWidget->IsInViewport())
+	{
+		WaitWidget->RemoveFromParent();
+	}
+}
+
+void UNS_GameInstance::DestroyCurrentSession()
+{
+	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
+	if (!Subsystem) return;
+
+	IOnlineSessionPtr SessionInterface = Subsystem->GetSessionInterface();
+	if (SessionInterface.IsValid())
+	{
+		SessionInterface->DestroySession(NAME_GameSession);
+		UE_LOG(LogTemp, Warning, TEXT("[GameInstance] 세션 파기 요청됨"));
 	}
 }

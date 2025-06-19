@@ -20,6 +20,9 @@ public:
 	UFUNCTION()
 	void OnReadyButtonClicked();
 
+	UFUNCTION()
+	void OnQuitButtonClicked();
+
 	// 플레이어 상태 갱신용 함수
 	void UpdatePlayerStatusList();
 
@@ -29,6 +32,12 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	class UButton* ReadyButton;
+
+	UPROPERTY(meta = (BindWidget))
+	class UButton* QuitButton;
+	
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* QuitText;
 
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* Text_Player0;

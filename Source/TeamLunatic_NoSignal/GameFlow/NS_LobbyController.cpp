@@ -59,3 +59,11 @@ void ANS_LobbyController::OnPossess(APawn* InPawn)
 		}
 	}
 }
+
+void ANS_LobbyController::Client_ShowWait_Implementation()
+{
+	if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+	{
+		GI->ShowWait();
+	}
+}

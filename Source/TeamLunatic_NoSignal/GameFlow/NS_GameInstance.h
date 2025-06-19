@@ -90,6 +90,22 @@ public:
 	void ShowReadyUI();
 	void HideReadyUI();
 
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UUserWidget> WaitClass;
+
+	UPROPERTY()
+	UUserWidget* WaitWidget;
+
+	UFUNCTION(BlueprintCallable)
+	void ShowWait();
+
+	UFUNCTION(BlueprintCallable)
+	void HideWait();
+
+	UFUNCTION(BlueprintCallable, Category = "Network")
+	void DestroyCurrentSession();
+
+
 private:
 	EGameModeType GameModeType = EGameModeType::SinglePlayMode;
 	int32 MyServerPort = -1;
