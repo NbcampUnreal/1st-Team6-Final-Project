@@ -23,11 +23,17 @@ void UNS_ServerListingR::OnJoinButtonClicked()
     {
         if (!CustomAddress.IsEmpty())
         {
+            if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+            {
+                GI->ShowWait(); // 참가 누르면 웨잇 UI 띄우기
+            }
+
             UE_LOG(LogTemp, Log, TEXT("[JoinButton] Connecting to %s"), *CustomAddress);
             PC->ClientTravel(CustomAddress, ETravelType::TRAVEL_Absolute);
         }
     }
 }
+
 
 
 

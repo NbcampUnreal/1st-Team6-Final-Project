@@ -41,7 +41,7 @@ void ANS_YeddaItem::TryAssignToHUD()
 
 	UE_LOG(LogTemp, Warning, TEXT("ANS_YeddaItem::TryAssignToHUD "));
 
-	// ❗HUD가 아직 생성되지 않았을 경우 재시도
+	// HUD가 아직 생성되지 않았을 경우 재시도
 	FTimerHandle RetryHandle;
 	GetWorldTimerManager().SetTimer(
 		RetryHandle,
