@@ -44,7 +44,6 @@ void ANS_ChaserController::BeginPlay()
         BlackboardComp->SetValueAsBool(TEXT("IsChasingEvent"), false);
         BlackboardComp->ClearValue(TEXT("TargetActor"));
     }
-    //RequestPlayerLocation();
     PerceptionComp->OnTargetPerceptionUpdated.RemoveDynamic(this, &ANS_ChaserController::OnPerceptionUpdated);
     PerceptionComp->OnTargetPerceptionUpdated.AddDynamic(this, &ANS_ChaserController::OnPerceptionUpdated);
 }
@@ -150,6 +149,12 @@ void ANS_ChaserController::OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimul
     if (BlackboardComp->GetValueAsBool(TEXT("IsChasingEvent")))
     {
         return;
+    }
+
+    if (!BlackboardComp->GetValueAsBool(TEXT("IsActivated"))) // 아직 활성화되지 않았다면
+    {
+        BlackboardComp->SetValueAsBool(TEXT("IsActivated"), true); // 활성화 상태로 변경
+        UE_LOG(LogTemp, Log, TEXT("Chaser 활성화됨: 플레이어 처음 감지됨!"));
     }
 
     // 추격 시작
