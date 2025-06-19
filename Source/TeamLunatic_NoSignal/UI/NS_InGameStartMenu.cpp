@@ -26,6 +26,8 @@ void UNS_InGameStartMenu::NativeConstruct()
         BP_LoadGame->RootButton->OnClicked.AddUniqueDynamic(this, &UNS_InGameStartMenu::OnLoadGameClicked);
     if (BP_Settings)
         BP_Settings->RootButton->OnClicked.AddUniqueDynamic(this, &UNS_InGameStartMenu::OnSettingsClicked);
+    if (BP_Controls)
+        BP_Controls->RootButton->OnClicked.AddUniqueDynamic(this, &UNS_InGameStartMenu::OnControlsClicked);
     if (BP_MainMenu)
         BP_MainMenu->RootButton->OnClicked.AddUniqueDynamic(this, &UNS_InGameStartMenu::On_MainMenuClicked);
     //if (BP_Disconnect)
@@ -59,6 +61,7 @@ void UNS_InGameStartMenu::Init(UNS_BaseMainMenu* NsMainMenu)
     SubMenus.Add(EWidgetToggleType::LoadGame, MainMenu->GetWidget(EWidgetToggleType::LoadGame));
     SubMenus.Add(EWidgetToggleType::Settings, MainMenu->GetWidget(EWidgetToggleType::Settings));
     SubMenus.Add(EWidgetToggleType::LoadMenuInGameOver, MainMenu->GetWidget(EWidgetToggleType::LoadMenuInGameOver));
+    SubMenus.Add(EWidgetToggleType::Controls, MainMenu->GetWidget(EWidgetToggleType::Controls));
 }
 
 void UNS_InGameStartMenu::ShowWidget()
@@ -101,7 +104,13 @@ void UNS_InGameStartMenu::OnSettingsClicked()
     if (UNS_MasterMenuPanel* Widget = MainMenu->GetWidget(EWidgetToggleType::Settings))
         Widget->ShowWidget();
 }
-
+void UNS_InGameStartMenu::OnControlsClicked()
+{
+	HideSubMenuWidget();
+	//HideWidget();
+	if (UNS_MasterMenuPanel* Widget = MainMenu->GetWidget(EWidgetToggleType::Controls))
+		Widget->ShowWidget();
+}
 void UNS_InGameStartMenu::On_MainMenuClicked()
 {
     //HideSubMenuWidget();
