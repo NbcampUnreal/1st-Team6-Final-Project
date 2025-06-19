@@ -146,7 +146,11 @@ public:
 	FName ThrowSocketName;
 
 	// 한번만 던져지도록 실행하는 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool bHasThrown = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool IsThrow = false;
 	////////////////////////////////////////병투척 변수 끝!///////////////////////////////////////////////
 
 
