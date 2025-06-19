@@ -46,6 +46,16 @@ void ANS_PlayerController::SetupInputComponent()
 //ProjectSetting>Input>입력매핑>추가 "ToggleInGameMenu" (단축키"M"설정)
 void ANS_PlayerController::ToggleInGameMenu()
 {
+#if WITH_EDITOR
+    // 에디터에서는 M 일 때 작동
+    if (!IsInputKeyDown(EKeys::M))
+        return;
+#else
+    // 패키징 버전에서는 ESC 일 때 작동
+    if (!IsInputKeyDown(EKeys::Escape))
+        return;
+#endif
+
     if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
     {
         if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
