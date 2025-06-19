@@ -288,3 +288,17 @@ void UNS_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	}
 }
 
+void UNS_PlayerHUD::DeleteCompasItem(ANS_BaseItem* DeleteItem)
+{
+	if (!DeleteItem || !CachedPlayerCharacter) return;
+	if (YeddaItemArray.Contains(DeleteItem))
+	{
+		YeddaItemArray.Remove(DeleteItem);
+		//UE_LOG(LogTemp, Warning, TEXT("▶️ DeleteItem: %s"), *DeleteItem->GetName());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("▶️ DeleteItem not found: %s"), *DeleteItem->GetName());
+	}
+}
+
