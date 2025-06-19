@@ -30,7 +30,7 @@ void UNS_Service_CalculateDistance::TickNode(UBehaviorTreeComponent& OwnerComp, 
 					Distance = FVector::Dist(Pawn->GetActorLocation(), TargetActor->GetActorLocation());
 					BlackboardComponent->SetValueAsFloat("Distance", Distance);
 					float AttackRange = BlackboardComponent->GetValueAsFloat("AttackRange");
-					if (AttackRange>Distance)
+					if (AttackRange > Distance)
 					{
 						BlackboardComponent->SetValueAsBool("bIsAttackable", true);
 					}

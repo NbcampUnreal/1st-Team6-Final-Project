@@ -17,15 +17,10 @@ void UNS_Service_LookPlayer::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* 
 	AAIController* AICon = OwnerComp.GetAIOwner();
 	APawn* Pawn = AICon ? AICon->GetPawn() : nullptr;
 	AActor* Target = Cast<AActor>(OwnerComp.GetBlackboardComponent()->GetValueAsObject("TargetActor"));
+	UBlackboardComponent* BlackboardComp = AICon->GetBlackboardComponent();
 
-	if (AICon && Pawn && Target)
+	if (BlackboardComp)
 	{
-		FVector Direction = Target->GetActorLocation() - Pawn->GetActorLocation();
-		Direction.Z = 0;
-		Direction.Normalize();
-
-		FRotator TargetRotation = Direction.Rotation();
-		FRotator NewRotation = FMath::RInterpTo(Pawn->GetActorRotation(), TargetRotation, DeltaSeconds, 0.5f);
-		Pawn->SetActorRotation(NewRotation);
+		BlackboardComp->SetValueAsVector(Key.SelectedKeyName, Target->GetActorLocation());
 	}
 }

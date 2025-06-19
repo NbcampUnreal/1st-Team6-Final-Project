@@ -1,4 +1,5 @@
 #include "NS_RangedWeaponAnimInstance.h"
+#include "Character/Components/NS_EquipedWeaponComponent.h"
 #include "Item/NS_BaseRangedWeapon.h"
 
 void UNS_RangedWeaponAnimInstance::NativeInitializeAnimation()
@@ -35,5 +36,10 @@ void UNS_RangedWeaponAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	if (OwnerCharacter)
 	{
 		bIsReloading = OwnerCharacter->IsReload;
+	}
+
+	if (OwnerCharacter)
+	{
+		bIsAttacking = OwnerCharacter->EquipedWeaponComp->IsAttack;
 	}
 }

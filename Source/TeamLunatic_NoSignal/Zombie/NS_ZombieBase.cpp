@@ -7,6 +7,7 @@
 #include "Enum/EZombieType.h"
 #include "Kismet/GameplayStatics.h"
 #include "Enum/EZombieAttackType.h"
+#include "Zombie/AIController/NS_AIController.h"
 #include "AIController/NS_AIController.h"
 #include "PhysicsEngine/BodyInstance.h"
 #include "Engine/DamageEvents.h"
@@ -14,10 +15,12 @@
 #include "Net/UnrealNetwork.h"
 #include "Sound/SoundCue.h"
 #include "PhysicsEngine/PhysicalAnimationComponent.h"
+#include "NiagaraFunctionLibrary.h"
+#include "BehaviorTree/BlackboardComponent.h"
 
 ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), CurrentState(EZombieState::IDLE),
                                    BaseDamage(20.f),PatrolSpeed(20.f), ChaseSpeed(100.f),AccelerationSpeed(200.f),
-                                   ZombieType(EZombieType::BASIC), bIsDead(false), bIsGotHit(false), UnSafeBones({"pelvis","tight_l","calf_l","foot_l","tight_r","calf_r","foot_r", "root"})
+ZombieType(EZombieType::BASIC), bIsDead(false), bIsGotHit(false), SafeBones({"clavicle_r","clavicle_l","upperarm_r","upperarm_r","lowerarm_r","lowerarm_r","neck_01","head","spine_02","spine_03"})
 {
 	PrimaryActorTick.bCanEverTick = true;
 	bUseControllerRotationYaw = false;
@@ -48,6 +51,26 @@ void ANS_ZombieBase::BeginPlay()
 	SetState(CurrentState);
 	GetMesh()->GetAnimInstance()->RootMotionMode = ERootMotionMode::RootMotionFromEverything;
 	InitializePhysics();
+	
+	if (!Controller)
+	{
+		// AIController를 스폰
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		AAIController* SpawnedController = GetWorld()->SpawnActor<AAIController>(AIControllerClass, GetActorLocation(), GetActorRotation(), SpawnParams);
+		if (SpawnedController)
+		{
+			SpawnedController->Possess(this); // 이 캐릭터를 Possess
+		}
+	}
+}
+
+void ANS_ZombieBase::Multicast_PlayMontage_Implementation(UAnimMontage* MontageToPlay)
+{
+	if (MontageToPlay)
+	{
+		PlayAnimMontage(MontageToPlay,1.f);
+	}
 }
 
 void ANS_ZombieBase::Tick(float DeltaTime)
@@ -82,12 +105,25 @@ float ANS_ZombieBase::TakeDamage(float DamageAmount, struct FDamageEvent const& 
 	if (DamageEvent.GetTypeID() == FPointDamageEvent::ClassID)
 	{
 		const FPointDamageEvent* Point = static_cast<const FPointDamageEvent*>(&DamageEvent);
+		
 		FName Bone = Point->HitInfo.BoneName;
-		FVector HitDirection = Point->ShotDirection;
+		
+		FVector HitDirection = -Point->ShotDirection;
+		
+		FVector Up = FVector::UpVector;
+		FRotator HitRotation = FRotationMatrix::MakeFromXZ(HitDirection,Up).Rotator();
+		
 		if (Bone == "head")
 		{
-			ActualDamage*= 2.f;
+			ActualDamage*= 10.f;
 		}
+		ANS_AIController* AICon = Cast<ANS_AIController>(GetController());
+		if (AICon)
+		{
+			AICon->GetBlackboardComponent()->SetValueAsBool("bGetHit", true);
+		}
+		GetWorldTimerManager().SetTimer(HitTimer, this, &ANS_ZombieBase::ResetHit, .5f,false);
+		Multicast_SpawnEffect(Bone, Point->HitInfo.Location, HitRotation);
 		ApplyPhysics(Bone, HitDirection * 3000.f);
 	}
 	
@@ -101,32 +137,43 @@ float ANS_ZombieBase::TakeDamage(float DamageAmount, struct FDamageEvent const& 
 	return ActualDamage;
 }
 
+void ANS_ZombieBase::ResetHit()
+{
+	ANS_AIController* AICon = Cast<ANS_AIController>(GetController());
+	if (AICon)
+	{
+		AICon->GetBlackboardComponent()->SetValueAsBool("bGetHit", false);
+	}
+}
+
 void ANS_ZombieBase::ApplyPhysics(FName Bone, FVector Impulse)
 {
-	if (UnSafeBones.Contains(Bone)) return;
-	USkeletalMeshComponent* MeshComp = GetMesh();
-	// FBodyInstance* BodyInstance = MeshComp->GetBodyInstance(Bone);
-	// if (BodyInstance)
-	// {
-	// 	BodyInstance->SetInstanceSimulatePhysics(true);
-	// 	BodyInstance->PhysicsBlendWeight = 1.f;
-	// 	BodyInstance->AddImpulse(Impulse,true);
-	// }
-	GetMesh()->SetAllBodiesBelowSimulatePhysics(Bone,true,true);
-	GetMesh()->SetAllBodiesBelowPhysicsBlendWeight(Bone, 1.f, false);
+	if (SafeBones.Contains(Bone))
+	{
+		USkeletalMeshComponent* MeshComp = GetMesh();
+		// FBodyInstance* BodyInstance = MeshComp->GetBodyInstance(Bone);
+		// if (BodyInstance)
+		// {
+		// 	BodyInstance->SetInstanceSimulatePhysics(true);
+		// 	BodyInstance->PhysicsBlendWeight = 1.f;
+		// 	BodyInstance->AddImpulse(Impulse,true);
+		// }
+		GetMesh()->SetAllBodiesBelowSimulatePhysics(Bone,true,true);
+		GetMesh()->SetAllBodiesBelowPhysicsBlendWeight(Bone, 1.f, false);
 	
-	GetMesh()->AddImpulse(Impulse, Bone, false);
+		GetMesh()->AddImpulse(Impulse, Bone, false);
 
-	// if (HitTimers.Contains(Bone))
-	// {
-	// 	GetWorldTimerManager().ClearTimer(HitTimers[Bone]);
-	// }
+		// if (HitTimers.Contains(Bone))
+		// {
+		// 	GetWorldTimerManager().ClearTimer(HitTimers[Bone]);
+		// }
 
-	// FTimerHandle& NewTimer = HitTimers.FindOrAdd(Bone);
-	// GetWorldTimerManager().SetTimer(NewTimer, [this, Bone]()
-	// {
-	// 	ResetPhysics(Bone);
-	// }, 1.f, false);
+		// FTimerHandle& NewTimer = HitTimers.FindOrAdd(Bone);
+		// GetWorldTimerManager().SetTimer(NewTimer, [this, Bone]()
+		// {
+		// 	ResetPhysics(Bone);
+		// }, 1.f, false);
+	}
 }
 
 void ANS_ZombieBase::ResetPhysics(FName Bone)
@@ -175,6 +222,14 @@ void ANS_ZombieBase::OnFrozenState()
 {
 }
 
+void ANS_ZombieBase::Multicast_SpawnEffect_Implementation(FName Bone,FVector Location, FRotator Rotation)
+{
+	if (Blood)
+	{
+		UNiagaraComponent* Comp = UNiagaraFunctionLibrary::SpawnSystemAttached(Blood,GetMesh(),Bone, Location, -1*Rotation,EAttachLocation::KeepWorldPosition,true, true);
+	}
+}
+
 void ANS_ZombieBase::Server_PlaySound_Implementation(USoundCue* Sound)
 {
 	Multicast_PlaySound(Sound);
@@ -207,6 +262,7 @@ void ANS_ZombieBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(ANS_ZombieBase, CurrentHealth);
 	DOREPLIFETIME(ANS_ZombieBase, CurrentAttackType);
 	DOREPLIFETIME(ANS_ZombieBase, CurrentState);
+	DOREPLIFETIME(ANS_ZombieBase, bGetHit);
 }
 
 void ANS_ZombieBase::InitializePhysics()
@@ -318,3 +374,4 @@ void ANS_ZombieBase::Server_SetAttackType_Implementation(EZombieAttackType NewAt
 	CurrentAttackType = NewAttackType;
 	SetAttackType(CurrentAttackType);
 }
+

@@ -5,6 +5,7 @@
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
 #include "Components/TextBlock.h"
+#include "Components/Image.h"
 
 void UEndingResultWidget::SetPlayerResultLists(const TArray<FString>& SuccessList, const TArray<FString>& FailList)
 {
@@ -36,5 +37,22 @@ void UEndingResultWidget::SetPlayerResultLists(const TArray<FString>& SuccessLis
             NameText->SetText(FText::FromString(Name));
             FailPlayer->AddChild(NameText);
         }
+    }
+}
+
+void UEndingResultWidget::SetEndingType(FName EndingType)
+{
+    if (RadioEndingImage)
+        RadioEndingImage->SetVisibility(ESlateVisibility::Collapsed);
+    if (CarEndingImage)
+        CarEndingImage->SetVisibility(ESlateVisibility::Collapsed);
+
+    if (EndingType == "Radio" && RadioEndingImage)
+    {
+        RadioEndingImage->SetVisibility(ESlateVisibility::Visible);
+    }
+    else if (EndingType == "Car" && CarEndingImage)
+    {
+        CarEndingImage->SetVisibility(ESlateVisibility::Visible);
     }
 }
