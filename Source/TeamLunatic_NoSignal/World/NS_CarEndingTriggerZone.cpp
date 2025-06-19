@@ -12,6 +12,8 @@
 #include "GameFramework/PlayerState.h"
 #include "World/EndingUI/EndingResultWidget.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
+#include <Kismet/GameplayStatics.h>
+
 
 ANS_CarEndingTriggerZone::ANS_CarEndingTriggerZone()
 {
@@ -215,6 +217,18 @@ void ANS_CarEndingTriggerZone::Multicast_ShowEndingResultList_Implementation(con
     {
         EndingWidget->AddToViewport();
         EndingWidget->SetPlayerResultLists(SuccessList, FailList);
+        EndingWidget->SetEndingType(FName("Car"));
+
+        // 게임 일시 정지
+        UGameplayStatics::SetGamePaused(PlayerController->GetWorld(), true);
+
+        // UI 입력 모드 설정
+        FInputModeGameAndUI InputMode;
+        InputMode.SetWidgetToFocus(EndingWidget->TakeWidget());
+        InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+
+        PlayerController->SetInputMode(InputMode);
+        PlayerController->bShowMouseCursor = true;
     }
 }
 
