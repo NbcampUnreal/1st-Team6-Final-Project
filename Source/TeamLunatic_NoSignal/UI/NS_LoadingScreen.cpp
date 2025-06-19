@@ -13,8 +13,6 @@ void UNS_LoadingScreen::NativeConstruct()
 }
 void UNS_LoadingScreen::UpdateProgress()
 {
-	bIsFinished = false;
-
 	TWeakObjectPtr<UNS_LoadingScreen> SafeThis = this;
 	float ElapsedTime = 0.f;
 	float PrevTime = GetWorld()->GetTimeSeconds();
@@ -38,7 +36,6 @@ void UNS_LoadingScreen::UpdateProgress()
 			if (1.f <= Alpha)
 			{
 				SafeThis->ProgressBar_Loading->SetPercent(CurValue);
-				SafeThis->bIsFinished = true;
 				if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(World->GetGameInstance()) )
 				{
 					if (GI->GetUIManager()->OnLoadingFinished.IsBound())
