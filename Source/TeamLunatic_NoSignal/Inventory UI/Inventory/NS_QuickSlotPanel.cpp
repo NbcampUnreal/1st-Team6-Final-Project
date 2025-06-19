@@ -71,8 +71,17 @@ void UNS_QuickSlotPanel::TryBindQuickSlotPanel()
     }
 
     QuickSlotComponent->QuickSlotUpdated.AddUObject(this, &UNS_QuickSlotPanel::OnQuickSlotDataUpdated);
-    InitializeSlots();
-    RefreshQuickSlots(QuickSlotComponent->GetQuickSlots());
+    GetWorld()->GetTimerManager().SetTimerForNextTick(
+        FTimerDelegate::CreateLambda([this]()
+            {
+                if (QuickSlotComponent)
+                {
+                    UE_LOG(LogTemp, Warning, TEXT("[QuickSlotPanel] 다음 틱에 슬롯 생성 재시도"));
+                    InitializeSlots();
+                    RefreshQuickSlots(QuickSlotComponent->GetQuickSlots());
+                }
+            })
+    );
 
     UE_LOG(LogTemp, Warning, TEXT("[UI-Bind] QuickSlotComponent 바인딩 성공"));
     RetryCount = 0;

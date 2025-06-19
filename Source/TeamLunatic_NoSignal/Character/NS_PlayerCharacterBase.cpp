@@ -352,17 +352,19 @@ void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
     
     // 카메라 회전 적용
     FVector2D LookInput = Value.Get<FVector2D>(); 
-    AddControllerYawInput  (LookInput.X); 
-    AddControllerPitchInput(LookInput.Y); 
+    AddControllerYawInput  (LookInput.X * LookMagnification); 
+	UE_LOG(LogTemp, Warning, TEXT("LookInput.X: %f"), LookInput.X); // Yaw값 확인용 로그
+    AddControllerPitchInput(LookInput.Y * LookMagnification); 
 
     // Actor Rotation과 Control Rotation을 Delta를 이용해 Yaw값 추출
     const FRotator ActorRot   = GetActorRotation(); 
     const FRotator ControlRot = Controller->GetControlRotation(); 
-    const FRotator DeltaRot   = UKismetMathLibrary::NormalizedDeltaRotator(ControlRot, ActorRot); 
+    const FRotator DeltaRot   = UKismetMathLibrary::NormalizedDeltaRotator(ControlRot, ActorRot);
     
     const float DeltaTime = GetWorld()->GetDeltaSeconds();
     
-    CamYaw   = FMath::FInterpTo(CamYaw,   DeltaRot.Yaw,   DeltaTime, AimSendInterpSpeed); 
+    //CamYaw   = FMath::FInterpTo(CamYaw,   DeltaRot.Yaw,   DeltaTime, AimSendInterpSpeed);
+	CamYaw = DeltaRot.Yaw; // 서버로 전송할 때는 보간하지 않고 바로 전송
     CamPitch = FMath::FInterpTo(CamPitch, DeltaRot.Pitch, DeltaTime, AimSendInterpSpeed); 
 
     // InterpTo를 이요해서 부드러운 Yaw/Pitch값을 서버로 전송
@@ -418,9 +420,20 @@ void ANS_PlayerCharacterBase::StopSprint_Server_Implementation(const FInputActio
 
 void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputActionValue& Value)
 {
-    if (GetCharacterMovement()->IsFalling()) {return;} 
+	if (GetCharacterMovement()->IsFalling()) { return; } // 낙하 중에는 아이템 줍기 불가
 
-    IsPickUp = true; 
+    if (UInteractionComponent* InteractComp = FindComponentByClass<UInteractionComponent>())
+    {
+        const TScriptInterface<IInteractionInterface>& CurrentTarget = InteractComp->GetCurrentInteractable();
+
+        if (!CurrentTarget.GetObject())
+        {
+            UE_LOG(LogTemp, Warning, TEXT("상호작용 대상 없음"));
+            return;
+        }
+    }
+
+    IsPickUp = true;
 }
 
 void ANS_PlayerCharacterBase::StartAimingAction_Server_Implementation(const FInputActionValue& Value)
@@ -545,15 +558,23 @@ void ANS_PlayerCharacterBase::Client_NotifyQuickSlotUpdated_Implementation()
 
 void ANS_PlayerCharacterBase::UseThrowableItem_Internal(int32 Index)
 {
-    if (!HasAuthority())
+    if (HasAuthority())
     {
-        Server_UseThrowableItem(Index); 
+        HandleUseThrowableItem(Index); // 싱글플레이 / 서버 권한
+    }
+    else
+    {
+        Server_UseThrowableItem(Index); // 클라 → 서버
     }
 }
 
 void ANS_PlayerCharacterBase::Server_UseThrowableItem_Implementation(int32 Index)
 {
-    HandleUseThrowableItem(Index);
+    if (!IsThrow)
+    {
+        IsThrow = true;  // 애니메이션 실행 상태 플래그
+        UE_LOG(LogTemp, Warning, TEXT("[Server_UseThrowableItem] 슬롯 %d 애니메이션 시작 준비"), Index);
+    }
 }
 
 void ANS_PlayerCharacterBase::HandleUseThrowableItem(int32 Index)
@@ -594,7 +615,7 @@ void ANS_PlayerCharacterBase::HandleUseThrowableItem(int32 Index)
             }
         }
     }
-
+    UE_LOG(LogTemp, Warning, TEXT("HandleUseThrowableItem 실행됨 - NetMode: %d"), GetNetMode());
     Client_NotifyInventoryUpdated();
 }
 
@@ -615,6 +636,7 @@ void ANS_PlayerCharacterBase::UseQuickSlotByIndex(int32 Index)
 {
     if (HasAuthority())
     {
+        Server_UseQuickSlotByIndex(Index);
         Multicast_UseQuickSlotByIndex(Index);
     }
     else

@@ -153,12 +153,12 @@ void ANS_ZombieBase::OnDetectState()
 
 void ANS_ZombieBase::OnChaseState()
 {
-	TargetSpeed = 300.f;
+	TargetSpeed = 600.f;
 }
 
 void ANS_ZombieBase::OnAttackState()
 {
-	TargetSpeed = 300.f;
+	TargetSpeed = 600.f;
 }
 
 void ANS_ZombieBase::OnDeadState()

@@ -30,7 +30,7 @@ void ANS_LobbyMode::BeginPlay()
 
     if (UNS_GameInstance* GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
     {
-        for (const FString& Item : GameInstance->CharacterList)
+        for (const FString& Item : GameInstance->LobbyCharacterList)
         {
             UClass* LoadedClass = StaticLoadClass(APawn::StaticClass(), nullptr, *Item);
             if (LoadedClass)

@@ -21,7 +21,7 @@ ANS_FatZombie::ANS_FatZombie()
 
 void ANS_FatZombie::OnChaseState()
 {
-	TargetSpeed = 140.f;
+	TargetSpeed = 350.f;
 }
 
 void ANS_FatZombie::OnAttackState()
