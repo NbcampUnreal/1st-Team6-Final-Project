@@ -41,7 +41,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status|Stamina")
 	float CurrentStaminaRegenRate; // 현재 스태미너 재생 속도
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status|Stamina")
-    float StaminaDereaseRate = 10.f;
+    float StaminaDereaseRate = -40.f;
 
 
 
@@ -49,9 +49,10 @@ public:
     void AddHealthGauge(float Value);
     void AddStamina(float Value);
     void AddStaminaRegenRate(float Value);
+    bool CheckEnableSprint();
 
 private:
-
+    bool bEnableSprint = true;
 
     //틱 내부에서 업데이트하는 함수 모음
     void UpdateAllStatus(float DeltaTime);

@@ -369,7 +369,6 @@ void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
     // 카메라 회전 적용
     FVector2D LookInput = Value.Get<FVector2D>(); 
     AddControllerYawInput  (LookInput.X * LookMagnification); 
-	UE_LOG(LogTemp, Warning, TEXT("LookInput.X: %f"), LookInput.X); // Yaw값 확인용 로그
     AddControllerPitchInput(LookInput.Y * LookMagnification); 
 
     // Actor Rotation과 Control Rotation을 Delta를 이용해 Yaw값 추출
@@ -422,9 +421,19 @@ void ANS_PlayerCharacterBase::StopCrouch(const FInputActionValue& Value)
 
 void ANS_PlayerCharacterBase::StartSprint_Server_Implementation(const FInputActionValue& Value)
 {
-    IsSprint = true; 
-    if (GetCharacterMovement()) 
-        GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier * SpeedMultiAtStat; 
+    if (StatusComp->CheckEnableSprint())
+    {
+        IsSprint = true;
+        if (GetCharacterMovement())
+            GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier * SpeedMultiAtStat;
+    }
+    else
+    {
+        IsSprint = false;
+        if (GetCharacterMovement())
+            GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SpeedMultiAtStat;
+    }
+
 }
 
 void ANS_PlayerCharacterBase::StopSprint_Server_Implementation(const FInputActionValue& Value)
@@ -686,7 +695,7 @@ void ANS_PlayerCharacterBase::Server_UseQuickSlotByIndex_Implementation(int32 In
 
         return;  // 무기 없으므로 더 이상 진행하지 않음
     }
-
+    
     if (!IsChangeAnim)
     {
         IsChangeAnim = true;  // 애니메이션 실행 상태 플래그

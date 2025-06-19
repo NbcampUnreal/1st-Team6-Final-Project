@@ -31,14 +31,15 @@ public:
 	// 현재 장착중인 무기 타입 변수
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Replicated, Category="Replicated Variables")
 	EWeaponType WeaponType = EWeaponType::Unarmed;
+
+	// 현재 원거리무기에 사격 모드 설정
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Replicated Variables")
+	ERangeChangeFireMode CurrentFireMode;
 	
 	// 현재 장착 중인 무기 액터 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Replicated, Category="Replicated Variables")	ANS_BaseWeapon* CurrentWeapon;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Replicated, Category="Replicated Variables")
+	ANS_BaseWeapon* CurrentWeapon;
 	///////////////////////////////////////////////////////////////////////////////////////////
-	
-	// 현재 원거리무기에 사격 모드 설정
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Range Weapon Fire Mode")
-	ERangeChangeFireMode CurrentFireMode;
 
 	// 서버-클라이언트 복제 설정
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
