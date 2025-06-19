@@ -29,8 +29,6 @@ void UNS_EquipedWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProp
 	DOREPLIFETIME(UNS_EquipedWeaponComponent, IsAttack); // 공격중인지 확인 변수
 	DOREPLIFETIME(UNS_EquipedWeaponComponent, IsEmpty); // 총알이 있는지 없는지 확인 변수
     DOREPLIFETIME(UNS_EquipedWeaponComponent, WeaponType); // 무기 타입 변수
-    DOREPLIFETIME(UNS_EquipedWeaponComponent, CurrentWeapon); // 현재 장착중인 무기 변수
-
 }
 
 void UNS_EquipedWeaponComponent::SwapWeapon(TSubclassOf<ANS_BaseWeapon> WeaponClass, UNS_InventoryBaseItem* SourceItem)

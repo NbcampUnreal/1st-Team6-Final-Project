@@ -4,6 +4,8 @@
 #include "HttpModule.h"
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
+#include "OnlineSubsystem.h"
+#include "Interfaces/OnlineSessionInterface.h"
 #include "Dom/JsonObject.h"
 #include "Dom/JsonValue.h"
 #include "Serialization/JsonSerializer.h"
@@ -18,15 +20,12 @@ UNS_GameInstance::UNS_GameInstance()
 		UIManagerClass = BP_UIManager.Class;
 	}
 
-	CharacterList.Add(TEXT("/Game/Character/Blueprints/Character/BP_NS_Male1.BP_NS_Male1_C"));
-	CharacterList.Add(TEXT("/Game/Character/Blueprints/Character/BP_NS_Male2.BP_NS_Male2_C"));
-	CharacterList.Add(TEXT("/Game/Character/Blueprints/Character/BP_NS_Male3.BP_NS_Male3_C"));
-	CharacterList.Add(TEXT("/Game/Character/Blueprints/Character/BP_NS_Female1.BP_NS_Female1_C"));
+	static ConstructorHelpers::FClassFinder<UUserWidget> BP_LoadingWait(TEXT("/Game/UI/Blueprints/BP_Wait.BP_Wait_C"));
+	if (BP_LoadingWait.Succeeded())
+	{
+		WaitClass = BP_LoadingWait.Class;
+	}
 
-	LobbyCharacterList.Add(TEXT("/Game/Character/Blueprints/Lobby/BP_NS_LobbyMale1.BP_NS_LobbyMale1_C"));
-	LobbyCharacterList.Add(TEXT("/Game/Character/Blueprints/Lobby/BP_NS_LobbyMale2.BP_NS_LobbyMale2_C"));
-	LobbyCharacterList.Add(TEXT("/Game/Character/Blueprints/Lobby/BP_NS_LobbyMale3.BP_NS_LobbyMale3_C"));
-	LobbyCharacterList.Add(TEXT("/Game/Character/Blueprints/Lobby/BP_NS_LobbyFemale1.BP_NS_LobbyFemale1_C"));
 }
 
 void UNS_GameInstance::Init()
@@ -184,7 +183,7 @@ void UNS_GameInstance::OnReceiveSessionList(FHttpRequestPtr Request, FHttpRespon
 		}
 	}
 
-	OnSessionListReceived.Broadcast(ParsedSessions);
+	OnSessionListReceived.Broadcast(ParsedSessions); 
 }
 
 void UNS_GameInstance::SetCurrentSaveSlot(FString SlotNameInfo)
@@ -221,5 +220,44 @@ void UNS_GameInstance::HideReadyUI()
 	if (ReadyUIInstance && ReadyUIInstance->IsInViewport())
 	{
 		ReadyUIInstance->RemoveFromParent();
+	}
+}
+
+void UNS_GameInstance::ShowWait()
+{
+	if (!WaitClass) return;
+
+	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	if (!PC) return;
+
+	if (!WaitWidget)
+	{
+		WaitWidget = CreateWidget<UUserWidget>(PC, WaitClass);
+	}
+
+	if (WaitWidget && !WaitWidget->IsInViewport())
+	{
+		WaitWidget->AddToViewport();
+	}
+}
+
+void UNS_GameInstance::HideWait()
+{
+	if (WaitWidget && WaitWidget->IsInViewport())
+	{
+		WaitWidget->RemoveFromParent();
+	}
+}
+
+void UNS_GameInstance::DestroyCurrentSession()
+{
+	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
+	if (!Subsystem) return;
+
+	IOnlineSessionPtr SessionInterface = Subsystem->GetSessionInterface();
+	if (SessionInterface.IsValid())
+	{
+		SessionInterface->DestroySession(NAME_GameSession);
+		UE_LOG(LogTemp, Warning, TEXT("[GameInstance] 세션 파기 요청됨"));
 	}
 }

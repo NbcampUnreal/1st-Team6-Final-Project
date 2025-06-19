@@ -116,21 +116,15 @@ void UNS_NewGameR::StartGame()
     {
         GI->SetCurrentSaveSlot(SlotName);
 
-        // 싱글 모드 전용 GameMode 지정
         FString GameModePath = TEXT("Game=/Game/GameFlowBP/BP_NS_SinglePlayMode.BP_NS_SinglePlayMode_C");
 
-        UE_LOG(LogTemp, Warning, TEXT("[StartGame] Opening level with options: %s"), *GameModePath);
-		
         GI->GetUIManager()->LoadingScreen(GetWorld());
+
         GI->GetUIManager()->OnLoadingFinished.BindLambda([SelectedLevelName, GameModePath, GI]()
         {
-           UGameplayStatics::OpenLevel(GI->GetWorld(), FName(*SelectedLevelName), true, GameModePath);
+            UGameplayStatics::OpenLevel(GI->GetWorld(), FName(*SelectedLevelName), true, GameModePath);
         });
     }
-    else
-    {
-        // fallback: GameMode 없이 오픈
-        UGameplayStatics::OpenLevel(this, FName(*SelectedLevelName));
-    }
 }
+
 

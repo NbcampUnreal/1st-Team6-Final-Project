@@ -60,6 +60,7 @@ void UNS_HostNewGameServerR::StartGame()
 
     if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
+        GI->ShowWait();
         GI->SetGameModeType(EGameModeType::MultiPlayMode);
 
         //저장은 여기서 해도 괜찮지만, 실패 복구 고려 시 나중으로 미루는 것도 방법

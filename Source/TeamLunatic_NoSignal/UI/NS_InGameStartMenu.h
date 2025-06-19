@@ -36,6 +36,9 @@ protected:
     UNS_MenuButtonWidget* BP_Settings;
 
     UPROPERTY(meta = (BindWidget))
+    UNS_MenuButtonWidget* BP_Controls;
+
+    UPROPERTY(meta = (BindWidget))
     UNS_MenuButtonWidget* BP_MainMenu;
 
     //UPROPERTY(meta = (BindWidget))
@@ -52,6 +55,9 @@ protected:
     void OnLoadGameClicked();
     UFUNCTION()
     void OnSettingsClicked();
+
+    UFUNCTION()
+    void OnControlsClicked();
 
     UFUNCTION()
     void OnDisconnectClicked();
