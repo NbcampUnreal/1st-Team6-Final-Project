@@ -73,6 +73,10 @@ public:
 
 	void UseQuickSlot3();
 
+	void UseQuickSlot4();
+
+	void UseQuickSlot5();
+
 	UFUNCTION(BlueprintCallable)
 	void UseQuickSlotByIndex(int32 Index);
 
@@ -247,6 +251,10 @@ public:
 	UInputAction* InputQuickSlot2;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputQuickSlot3;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* InputQuickSlot4;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* InputQuickSlot5;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* ToggleHeadLampAction;
 

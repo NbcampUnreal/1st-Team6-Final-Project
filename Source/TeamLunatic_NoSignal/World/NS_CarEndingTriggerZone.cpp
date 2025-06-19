@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "NS_EndingTriggerZone.h"
+#include "World/NS_CarEndingTriggerZone.h"
 #include "Components/BoxComponent.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Inventory/InventoryComponent.h"
@@ -14,7 +14,8 @@
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include <Kismet/GameplayStatics.h>
 
-ANS_EndingTriggerZone::ANS_EndingTriggerZone()
+
+ANS_CarEndingTriggerZone::ANS_CarEndingTriggerZone()
 {
     PrimaryActorTick.bCanEverTick = false;
 
@@ -26,26 +27,27 @@ ANS_EndingTriggerZone::ANS_EndingTriggerZone()
     TriggerBox->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
     TriggerBox->SetGenerateOverlapEvents(true);
 
-    TriggerBox->OnComponentBeginOverlap.AddDynamic(this, &ANS_EndingTriggerZone::OnOverlapBegin);
+    TriggerBox->OnComponentBeginOverlap.AddDynamic(this, &ANS_CarEndingTriggerZone::OnOverlapBegin);
     UE_LOG(LogTemp, Warning, TEXT("TriggerBox OnOverlapBegin event bound"));
-    TriggerBox->OnComponentEndOverlap.AddDynamic(this, &ANS_EndingTriggerZone::OnOverlapEnd);
+    TriggerBox->OnComponentEndOverlap.AddDynamic(this, &ANS_CarEndingTriggerZone::OnOverlapEnd);
     UE_LOG(LogTemp, Warning, TEXT("TriggerBox OnOverlapEnd event bound"));
 
     EndingStatusWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("EndingStatusWidget"));
     EndingStatusWidget->SetupAttachment(RootComponent);
     EndingStatusWidget->SetWidgetSpace(EWidgetSpace::World);
-    EndingStatusWidget->SetVisibility(false); 
+    EndingStatusWidget->SetVisibility(false);
 
     bReplicates = true;
 }
 
-void ANS_EndingTriggerZone::BeginPlay()
+// Called when the game starts or when spawned
+void ANS_CarEndingTriggerZone::BeginPlay()
 {
-    Super::BeginPlay();
+	Super::BeginPlay();
+	
 }
 
-void ANS_EndingTriggerZone::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-    UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void ANS_CarEndingTriggerZone::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
     if (ANS_PlayerCharacterBase* Player = Cast<ANS_PlayerCharacterBase>(OtherActor))
     {
@@ -54,8 +56,7 @@ void ANS_EndingTriggerZone::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, 
     }
 }
 
-void ANS_EndingTriggerZone::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-    UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+void ANS_CarEndingTriggerZone::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
     if (ANS_PlayerCharacterBase* Player = Cast<ANS_PlayerCharacterBase>(OtherActor))
     {
@@ -64,11 +65,11 @@ void ANS_EndingTriggerZone::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AA
     }
 }
 
-void ANS_EndingTriggerZone::CheckGroupEndingCondition()
+void ANS_CarEndingTriggerZone::CheckGroupEndingCondition()
 {
     int32 NumPlayersInZone = 0;
-    bool bHasBattery = false;
-    bool bHasWalkietalkie = false;
+    bool bHasPetrolTank = false;
+    bool bHasCarKey = false;
 
     for (ANS_PlayerCharacterBase* Player : OverlappingPlayers)
     {
@@ -76,7 +77,7 @@ void ANS_EndingTriggerZone::CheckGroupEndingCondition()
         if (!IsValid(Player)) continue;
 
         NumPlayersInZone++;
-       
+
         UInventoryComponent* Inventory = Player->FindComponentByClass<UInventoryComponent>();
         if (!Inventory) continue;
 
@@ -86,31 +87,31 @@ void ANS_EndingTriggerZone::CheckGroupEndingCondition()
             if (!Item) continue;
 
             const FName RowName = Item->ItemDataRowName;
-            if (!bHasBattery && RowName == "Battery")
+            if (!bHasPetrolTank && RowName == "PetrolTank")
             {
-                bHasBattery = true;
+                bHasPetrolTank = true;
                 UE_LOG(LogTemp, Warning, TEXT("아이템: %s"), *Item->ItemDataRowName.ToString());
             }
-            else if (!bHasWalkietalkie && RowName == "Walkietalkie")
+            else if (!bHasCarKey && RowName == "CarKey")
             {
-                bHasWalkietalkie = true;
+                bHasCarKey = true;
                 UE_LOG(LogTemp, Warning, TEXT("아이템: %s"), *Item->ItemDataRowName.ToString());
             }
 
-            if (bHasBattery && bHasWalkietalkie)
+            if (bHasPetrolTank && bHasCarKey)
             {
-                break; 
+                break;
             }
         }
     }
 
     int32 NumCollectedItems = 0;
-    if (bHasBattery) NumCollectedItems++;
-    if (bHasWalkietalkie) NumCollectedItems++;
+    if (bHasPetrolTank) NumCollectedItems++;
+    if (bHasCarKey) NumCollectedItems++;
 
     UpdateWidgetStatus(NumPlayersInZone, NumCollectedItems);
 
-    const bool bGroupConditionMet = bHasBattery && bHasWalkietalkie;
+    const bool bGroupConditionMet = bHasPetrolTank && bHasCarKey;
 
     if (bGroupConditionMet)
     {
@@ -119,9 +120,9 @@ void ANS_EndingTriggerZone::CheckGroupEndingCondition()
         {
             UE_LOG(LogTemp, Warning, TEXT("[엔딩] 조건 충족 → 10초 타이머 시작"));
 
-            GetWorld()->GetTimerManager().SetTimer(EndingConditionTimerHandle, this, &ANS_EndingTriggerZone::EndingConditionSatisfied, 10.0f, false);
+            GetWorld()->GetTimerManager().SetTimer(EndingConditionTimerHandle, this, &ANS_CarEndingTriggerZone::EndingConditionSatisfied, 10.0f, false);
             // 타이머 텍스트 업데이트용 반복 타이머 추가
-            GetWorld()->GetTimerManager().SetTimer(CountdownUpdateTimerHandle, this, &ANS_EndingTriggerZone::UpdateEndingCountdownUI, 0.1f, true);
+            GetWorld()->GetTimerManager().SetTimer(CountdownUpdateTimerHandle, this, &ANS_CarEndingTriggerZone::UpdateEndingCountdownUI, 0.1f, true);
 
             EndingCountdown = 10.0f;
             bIsEndingTimerRunning = true;
@@ -147,7 +148,7 @@ void ANS_EndingTriggerZone::CheckGroupEndingCondition()
     }
 }
 
-void ANS_EndingTriggerZone::UpdateWidgetStatus(int32 NumPlayers, int32 NumItems)
+void ANS_CarEndingTriggerZone::UpdateWidgetStatus(int32 NumPlayers, int32 NumItems)
 {
     if (!EndingStatusWidget) return;
 
@@ -164,7 +165,7 @@ void ANS_EndingTriggerZone::UpdateWidgetStatus(int32 NumPlayers, int32 NumItems)
     EndingStatusWidget->SetVisibility(NumPlayers > 0);
 }
 
-void ANS_EndingTriggerZone::UpdateEndingCountdownUI()
+void ANS_CarEndingTriggerZone::UpdateEndingCountdownUI()
 {
     EndingCountdown = FMath::Max(EndingCountdown - 0.1f, 0.f);
 
@@ -182,7 +183,7 @@ void ANS_EndingTriggerZone::UpdateEndingCountdownUI()
     }
 }
 
-void ANS_EndingTriggerZone::EndingConditionSatisfied()
+void ANS_CarEndingTriggerZone::EndingConditionSatisfied()
 {
     UE_LOG(LogTemp, Warning, TEXT("[엔딩] 조건 유지 10초 완료 → 엔딩 처리"));
 
@@ -190,7 +191,48 @@ void ANS_EndingTriggerZone::EndingConditionSatisfied()
     bIsEndingTimerRunning = false;
 }
 
-void ANS_EndingTriggerZone::Multicast_TriggerEnding_Implementation(bool bGroupConditionMet)
+void ANS_CarEndingTriggerZone::Multicast_ShowEndingResultList_Implementation(const TArray<FString>& SuccessList, const TArray<FString>& FailList)
+{
+    APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+    if (!IsValid(PlayerController) || !PlayerController->IsLocalController()) return;
+
+    TArray<UUserWidget*> FoundWidgets;
+    UWidgetBlueprintLibrary::GetAllWidgetsOfClass(GetWorld(), FoundWidgets, UEndingResultWidget::StaticClass(), false);
+
+    for (UUserWidget* Widget : FoundWidgets)
+    {
+        if (UEndingResultWidget* Existing = Cast<UEndingResultWidget>(Widget))
+        {
+            if (Existing->IsInViewport())
+            {
+                // 이미 UI가 떠있다면 → 내용만 갱신
+                Existing->SetPlayerResultLists(SuccessList, FailList);
+                return;
+            }
+        }
+    }
+
+    UEndingResultWidget* EndingWidget = CreateWidget<UEndingResultWidget>(PlayerController, EndingResultWidget);
+    if (IsValid(EndingWidget))
+    {
+        EndingWidget->AddToViewport();
+        EndingWidget->SetPlayerResultLists(SuccessList, FailList);
+        EndingWidget->SetEndingType(FName("Car"));
+
+        // 게임 일시 정지
+        UGameplayStatics::SetGamePaused(PlayerController->GetWorld(), true);
+
+        // UI 입력 모드 설정
+        FInputModeGameAndUI InputMode;
+        InputMode.SetWidgetToFocus(EndingWidget->TakeWidget());
+        InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+
+        PlayerController->SetInputMode(InputMode);
+        PlayerController->bShowMouseCursor = true;
+    }
+}
+
+void ANS_CarEndingTriggerZone::Multicast_TriggerEnding_Implementation(bool bGroupConditionMet)
 {
     TArray<FString> SuccessNames;
     TArray<FString> FailNames;
@@ -229,43 +271,4 @@ void ANS_EndingTriggerZone::Multicast_TriggerEnding_Implementation(bool bGroupCo
     }
 }
 
-void ANS_EndingTriggerZone::Multicast_ShowEndingResultList_Implementation(const TArray<FString>& SuccessList, const TArray<FString>& FailList)
-{
-    APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
-    if (!IsValid(PlayerController) || !PlayerController->IsLocalController()) return;
 
-    TArray<UUserWidget*> FoundWidgets;
-    UWidgetBlueprintLibrary::GetAllWidgetsOfClass(GetWorld(), FoundWidgets, UEndingResultWidget::StaticClass(), false);
-
-    for (UUserWidget* Widget : FoundWidgets)
-    {
-        if (UEndingResultWidget* Existing = Cast<UEndingResultWidget>(Widget))
-        {
-            if (Existing->IsInViewport())
-            {
-                // 이미 UI가 떠있다면 → 내용만 갱신
-                Existing->SetPlayerResultLists(SuccessList, FailList);
-                return;
-            }
-        }
-    }
-
-    UEndingResultWidget* EndingWidget = CreateWidget<UEndingResultWidget>(PlayerController, EndingResultWidget);
-    if (IsValid(EndingWidget))
-    {
-        EndingWidget->AddToViewport();
-        EndingWidget->SetPlayerResultLists(SuccessList, FailList);
-        EndingWidget->SetEndingType(FName("Radio"));
-
-        // 게임 일시 정지
-        UGameplayStatics::SetGamePaused(PlayerController->GetWorld(), true);
-
-        // UI 입력 모드 설정
-        FInputModeGameAndUI InputMode;
-        InputMode.SetWidgetToFocus(EndingWidget->TakeWidget());
-        InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-
-        PlayerController->SetInputMode(InputMode);
-        PlayerController->bShowMouseCursor = true;
-    }
-}

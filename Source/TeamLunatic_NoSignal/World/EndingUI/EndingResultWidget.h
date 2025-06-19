@@ -18,6 +18,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetPlayerResultLists(const TArray<FString>& SuccessList, const TArray<FString>& FailList);
 
+	void SetEndingType(FName EndingType);
 protected:
 	// 바인딩된 성공/실패 표시 영역
 	UPROPERTY(meta = (BindWidget))
@@ -25,4 +26,13 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UVerticalBox* FailPlayer;
+
+	UPROPERTY(meta = (BindWidget))
+	class UImage* RadioEndingImage;
+
+	UPROPERTY(meta = (BindWidget))
+	class UImage* CarEndingImage;
+
+	UPROPERTY(meta = (BindWidget))
+	class UButton* ReturnToLobbyButton;
 };
