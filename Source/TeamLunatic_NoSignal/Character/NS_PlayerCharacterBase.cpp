@@ -405,9 +405,19 @@ void ANS_PlayerCharacterBase::StopCrouch(const FInputActionValue& Value)
 
 void ANS_PlayerCharacterBase::StartSprint_Server_Implementation(const FInputActionValue& Value)
 {
-    IsSprint = true; 
-    if (GetCharacterMovement()) 
-        GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier * SpeedMultiAtStat; 
+    if (StatusComp->CheckEnableSprint())
+    {
+        IsSprint = true;
+        if (GetCharacterMovement())
+            GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier * SpeedMultiAtStat;
+    }
+    else
+    {
+        IsSprint = false;
+        if (GetCharacterMovement())
+            GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SpeedMultiAtStat;
+    }
+
 }
 
 void ANS_PlayerCharacterBase::StopSprint_Server_Implementation(const FInputActionValue& Value)
