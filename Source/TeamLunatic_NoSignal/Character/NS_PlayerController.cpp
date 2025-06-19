@@ -2,6 +2,7 @@
 #include "GameFlow/NS_GameInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "UI/NS_UIManager.h"
+#include "Inventory UI/NS_InventoryHUD.h"
 
 ANS_PlayerController::ANS_PlayerController()
 {
@@ -55,6 +56,20 @@ void ANS_PlayerController::ToggleInGameMenu()
     if (!IsInputKeyDown(EKeys::Escape))
         return;
 #endif
+
+    if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+    {
+        if (ANS_InventoryHUD* IvHUD = Cast<ANS_InventoryHUD>(PC->GetHUD()))
+        {
+            if (IvHUD && IvHUD->bIsMenuVisible)
+            {
+                IvHUD->HideMenu();
+                PC->SetInputMode(FInputModeGameOnly());
+                PC->SetShowMouseCursor(false);
+                return;
+            }
+        }
+    }
 
     if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
     {
