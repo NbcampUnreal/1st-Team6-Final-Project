@@ -23,9 +23,12 @@ void ANS_PlayerState::SetIsReady(bool bReady)
 {
 	if (HasAuthority())
 	{
-		bIsReady = bReady;
-		OnRep_IsReady();
-		
+		if (bIsReady != bReady)
+		{
+			bIsReady = bReady;
+	
+		}
+
 		if (UWorld* World = GetWorld())
 		{
 			if (AGameModeBase* GM = World->GetAuthGameMode())
@@ -39,6 +42,7 @@ void ANS_PlayerState::SetIsReady(bool bReady)
 		}
 	}
 }
+
 
 
 

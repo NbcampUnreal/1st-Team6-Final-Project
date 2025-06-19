@@ -2,6 +2,7 @@
 #include "NS_ReadyUI.h"
 #include "Components/VerticalBox.h"
 #include "Components/Button.h"
+#include "NS_GameInstance.h"
 #include "Components/TextBlock.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerState.h"
@@ -16,18 +17,22 @@ void UNS_ReadyUI::NativeConstruct()
 	if (ReadyButton)
 	{
 		ReadyButton->OnClicked.AddDynamic(this, &UNS_ReadyUI::OnReadyButtonClicked);
+		
 	}
 
-	// 0.5초 후에 호출하도록 딜레이 설정
-	FTimerHandle InitTimerHandle;
-	GetWorld()->GetTimerManager().SetTimer(
-		InitTimerHandle,
-		this,
-		&UNS_ReadyUI::UpdatePlayerStatusList,
-		0.5f, // 딜레이
-		false
-	);
+	if (QuitButton)
+	{
+		QuitButton->OnClicked.AddDynamic(this, &UNS_ReadyUI::OnQuitButtonClicked);
+	}
+
 }
+
+void UNS_ReadyUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+	Super::NativeTick(MyGeometry, InDeltaTime);
+	UpdatePlayerStatusList(); // 실시간 갱신
+}
+
 
 void UNS_ReadyUI::OnReadyButtonClicked()
 {
@@ -39,6 +44,31 @@ void UNS_ReadyUI::OnReadyButtonClicked()
 		bool bNewReady = !PS->GetIsReady();
 
 		PS->ServerSetIsReady(bNewReady);
+	}
+}
+
+void UNS_ReadyUI::OnQuitButtonClicked()
+{
+	APlayerController* PC = GetOwningPlayer();
+	if (!PC) return;
+
+	if (ANS_PlayerState* PS = Cast<ANS_PlayerState>(PC->PlayerState))
+	{
+		int32 MyIndex = PS->PlayerIndex;
+
+		if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+		{
+			if (MyIndex == 0)
+			{
+				GI->DestroyCurrentSession();
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("[ReadyUI] Guest가 세션에서 이탈합니다 (Index: %d)"), MyIndex);
+			}
+		}
+
+		PC->ClientTravel(TEXT("/Game/Maps/MainTitle"), ETravelType::TRAVEL_Absolute);
 	}
 }
 
@@ -84,31 +114,26 @@ void UNS_ReadyUI::UpdatePlayerStatusList()
 			if (ANS_PlayerState* PS = Cast<ANS_PlayerState>(SortedPlayers[i]))
 			{
 				NameBlocks[i]->SetText(FText::FromString(FString::Printf(TEXT("Player %d"), PS->PlayerIndex + 1)));
-				StatusBlocks[i]->SetText(FText::FromString(PS->GetIsReady() ? TEXT("Ready") : TEXT("")));
+				StatusBlocks[i]->SetText(FText::FromString(PS->GetIsReady() ? TEXT("Ready") : TEXT("Not Ready")));
 
+				// 항상 보이게
 				NameBlocks[i]->SetVisibility(ESlateVisibility::Visible);
 				StatusBlocks[i]->SetVisibility(ESlateVisibility::Visible);
 
-				// 자기 자신의 인덱스라면 화살표 표시
-				if (PS->PlayerIndex == MyIndex)
-				{
-					ArrowImages[i]->SetVisibility(ESlateVisibility::Visible);
-				}
-				else
-				{
-					ArrowImages[i]->SetVisibility(ESlateVisibility::Collapsed);
-				}
+				ArrowImages[i]->SetVisibility(PS->PlayerIndex == MyIndex ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 			}
 		}
 		else
 		{
-			NameBlocks[i]->SetText(FText::GetEmpty());
-			StatusBlocks[i]->SetText(FText::GetEmpty());
+			// 빈 슬롯도 표기
+			NameBlocks[i]->SetText(FText::FromString(FString::Printf(TEXT("Empty Slot %d"), i + 1)));
+			StatusBlocks[i]->SetText(FText::FromString(TEXT("-")));
 
-			NameBlocks[i]->SetVisibility(ESlateVisibility::Collapsed);
-			StatusBlocks[i]->SetVisibility(ESlateVisibility::Collapsed);
+			NameBlocks[i]->SetVisibility(ESlateVisibility::Visible);
+			StatusBlocks[i]->SetVisibility(ESlateVisibility::Visible);
 			ArrowImages[i]->SetVisibility(ESlateVisibility::Collapsed);
 		}
 	}
+
 }
 

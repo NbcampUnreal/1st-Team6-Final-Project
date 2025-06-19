@@ -7,6 +7,7 @@
 #include "Enum/EZombieType.h"
 #include "Kismet/GameplayStatics.h"
 #include "Enum/EZombieAttackType.h"
+#include "Zombie/AIController/NS_AIController.h"
 #include "AIController/NS_AIController.h"
 #include "PhysicsEngine/BodyInstance.h"
 #include "Engine/DamageEvents.h"
@@ -50,9 +51,17 @@ void ANS_ZombieBase::BeginPlay()
 	SetState(CurrentState);
 	GetMesh()->GetAnimInstance()->RootMotionMode = ERootMotionMode::RootMotionFromEverything;
 	InitializePhysics();
-	if (!GetController())
+	
+	if (!Controller)
 	{
-		
+		// AIController를 스폰
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		AAIController* SpawnedController = GetWorld()->SpawnActor<AAIController>(AIControllerClass, GetActorLocation(), GetActorRotation(), SpawnParams);
+		if (SpawnedController)
+		{
+			SpawnedController->Possess(this); // 이 캐릭터를 Possess
+		}
 	}
 }
 

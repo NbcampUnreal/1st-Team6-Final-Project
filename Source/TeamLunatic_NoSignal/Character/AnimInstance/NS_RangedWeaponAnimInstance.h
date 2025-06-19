@@ -19,6 +19,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category="WeaponAnim")
 	bool bIsReloading = false;
 
+	UPROPERTY(BlueprintReadOnly, Category="WeaponAnim")
+	bool bIsAttacking = false;
+
 protected:
 	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
