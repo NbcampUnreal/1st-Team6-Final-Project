@@ -12,6 +12,9 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerController : public APlayerController
 public:
 	ANS_PlayerController();
 
+	UFUNCTION(Client, Reliable)
+	void PlayTracked();
+
 protected:
 	virtual void BeginPlay() override;
 	void SetupInputComponent();
@@ -23,8 +26,6 @@ protected:
 	UFUNCTION()
 	void TestGameMsg();
 
-	UFUNCTION(Client, Reliable)
-	void PlayTracked();
 
 	UPROPERTY(EditDefaultsOnly, Category = "Chase")
 	USoundBase* ChaseStartSoundCue;
