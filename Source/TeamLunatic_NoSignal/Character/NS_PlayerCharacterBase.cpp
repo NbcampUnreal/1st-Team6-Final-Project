@@ -287,6 +287,7 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
     DOREPLIFETIME(ANS_PlayerCharacterBase, PlayerInventory);
     DOREPLIFETIME(ANS_PlayerCharacterBase, QuickSlotComponent);
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsChangeAnim); // 퀵슬롯 눌렀을때 무기 장착하는 애니메이션 재생 용 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsDead);	// 캐릭터가 죽었는지 확인 변수
 }
 
 void ANS_PlayerCharacterBase::SetMovementLockState_Server_Implementation(bool bLock)
@@ -322,6 +323,12 @@ float ANS_PlayerCharacterBase::TakeDamage(
     AActor* DamageCauser
 )
 {
+    // 이미 죽은 상태라면 데미지를 받지 않음
+    if (IsDead)
+    {
+        return 0.f;
+    }
+    
     float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
     if (!HasAuthority() || ActualDamage <= 0.f)
         return ActualDamage;
@@ -521,16 +528,23 @@ void ANS_PlayerCharacterBase::PlayDeath_Server_Implementation()
 
 void ANS_PlayerCharacterBase::PlayDeath_Multicast_Implementation()
 {
+    // 캐릭터가 죽었으면 IsDead변수를 true로 변경해서 애니메이션 몽타주가 1번만 재생되도록 구현했음
+    IsDead = true;
+    
+    // 컨트롤러에서 분리시키고
     DetachFromControllerPendingDestroy(); 
-	
+
+    // 무브먼트 없애고
     GetCharacterMovement()->DisableMovement(); 
 
-    GetMesh()->SetCollisionProfileName("Ragdoll"); 
-    GetMesh()->SetSimulatePhysics(true); 
-    GetMesh()->SetAllBodiesSimulatePhysics(true); 
-    GetMesh()->WakeAllRigidBodies(); 
-    GetMesh()->bBlendPhysics = true; 
-    SetLifeSpan(5.f); 
+    // 기존 레그돌은 부르르 떨려서 대신 몽타주 재생으로 바꿨음
+    if (DeathMontage)
+    {
+        PlayAnimMontage(DeathMontage);
+    }
+    
+    // 월드에서 사라지는 시간은 30초로
+    SetLifeSpan(30.f); 
 }
 
 void ANS_PlayerCharacterBase::DropItem_Server_Implementation(UNS_InventoryBaseItem* ItemToDrop, int32 QuantityToDrop)
