@@ -345,7 +345,7 @@ float ANS_PlayerCharacterBase::TakeDamage(
         [this]()
         {
             // 캐릭터가 있다면 IsHit을 false로 설정
-            if (IsValid(this) && HasAuthority())
+            if (IsValid(this)) //
             {
                 IsHit = false; //
             }

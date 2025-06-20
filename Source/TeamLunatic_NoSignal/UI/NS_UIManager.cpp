@@ -71,11 +71,6 @@ UNS_QuickSlotPanel* UNS_UIManager::GetQuickSlotPanel()
 }
 bool UNS_UIManager::ShowPlayerHUDWidget( UWorld* World)
 {
-    if (!World || World->IsNetMode(NM_DedicatedServer)) 
-    {
-        return false;
-    }
-
     APlayerController* PC = World->GetFirstPlayerController();
     if (!NS_PlayerHUDWidget || NS_PlayerHUDWidget && !NS_PlayerHUDWidget->IsInViewport())
     {
@@ -128,10 +123,6 @@ void UNS_UIManager::HideGameMsgWidget(UWorld* World)
 }
 bool UNS_UIManager::ShowGameOverWidget(UWorld* World)
 {
-    if (!World || World->IsNetMode(NM_DedicatedServer))
-    {
-        return false;
-    }
     APlayerController* PC = World->GetFirstPlayerController();
     if (!NS_Msg_GameOveWidget || NS_Msg_GameOveWidget && !NS_Msg_GameOveWidget->IsInViewport())//!IsValid(NS_Msg_GameOveWidget) )
     {
