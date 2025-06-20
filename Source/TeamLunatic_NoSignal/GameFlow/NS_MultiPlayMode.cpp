@@ -21,6 +21,23 @@ void ANS_MultiPlayMode::BeginPlay()
 
     if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
+        GI->SetGameModeType(EGameModeType::MultiPlayMode);
+        UE_LOG(LogTemp, Log, TEXT("[MultiPlayMode] GameModeType이 멀티플레이 모드로 설정되었습니다."));
+
+        if (GetWorld()->IsNetMode(NM_DedicatedServer) || GetWorld()->IsNetMode(NM_ListenServer))
+        {
+            if (GI->MyServerPort > 0) // 유효한 서버 포트가 있는 경우에만 요청
+            {
+                // 세션의 상태를 "in_game"으로 변경하여 세션 목록에서 숨기거나 접근을 제한합니다.
+                GI->RequestUpdateSessionStatus(GI->MyServerPort, TEXT("in_game"));
+                UE_LOG(LogTemp, Log, TEXT("[MultiPlayMode] 게임 시작 시 매치메이킹 서버에 세션 상태 업데이트 요청을 보냈습니다. Port: %d"), GI->MyServerPort);
+            }
+            else
+            {
+                UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] MyServerPort가 유효하지 않아 매치메이킹 서버에 세션 상태 업데이트 요청을 보낼 수 없습니다."));
+            }
+        }
+
         if (UNS_UIManager* UIManager = GI->GetUIManager())
         {
             UIManager->LoadingScreen(GetWorld());
@@ -36,7 +53,6 @@ void ANS_MultiPlayMode::BeginPlay()
 
     SpawnAllPlayers();
 }
-
 
 
 

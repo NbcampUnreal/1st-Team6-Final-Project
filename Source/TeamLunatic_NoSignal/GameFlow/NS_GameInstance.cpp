@@ -145,6 +145,42 @@ void UNS_GameInstance::SendHeartbeat()
 }
 
 
+void UNS_GameInstance::RequestUpdateSessionStatus(int32 Port, FString Status)
+{
+	UE_LOG(LogTemp, Log, TEXT("[RequestUpdateSessionStatus] Sending HTTP POST to update session status. Port: %d, Status: %s"), Port, *Status);
+
+	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+	Request->SetURL(TEXT("http://121.163.249.108:5000/update_session_status")); 
+	Request->SetVerb(TEXT("POST"));
+	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+
+	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
+	JsonObject->SetNumberField("port", Port);
+	JsonObject->SetStringField("status", Status); 
+
+	FString RequestBody;
+	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
+	FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer);
+
+	Request->SetContentAsString(RequestBody);
+	Request->OnProcessRequestComplete().BindUObject(this, &UNS_GameInstance::OnUpdateSessionStatusResponse);
+	Request->ProcessRequest();
+}
+
+void UNS_GameInstance::OnUpdateSessionStatusResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+{
+	if (!bWasSuccessful || !Response.IsValid())
+	{
+		UE_LOG(LogTemp, Error, TEXT("[OnUpdateSessionStatusResponse] HTTP 요청 실패"));
+		return;
+	}
+
+	FString ResponseString = Response->GetContentAsString();
+	UE_LOG(LogTemp, Log, TEXT("[OnUpdateSessionStatusResponse] HTTP Response: %s"), *ResponseString);
+
+}
+
+
 void UNS_GameInstance::RequestSessionListFromServer()
 {
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
