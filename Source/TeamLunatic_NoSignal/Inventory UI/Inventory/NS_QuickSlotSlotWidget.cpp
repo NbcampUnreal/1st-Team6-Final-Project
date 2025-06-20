@@ -11,6 +11,8 @@
 #include "Inventory UI/Inventory/DragItemVisual.h"
 #include "Inventory UI/Inventory/ItemDragDropOperation.h"
 #include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
+#include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
+#include "Item/NS_BaseRangedWeapon.h"
 #include "Item/NS_ItemDataStruct.h"
 
 
@@ -18,6 +20,46 @@ void UNS_QuickSlotSlotWidget::NativeConstruct()
 {
     Super::NativeConstruct();
 
+}
+
+void UNS_QuickSlotSlotWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+    Super::NativeTick(MyGeometry, InDeltaTime);
+
+    APlayerController* PC = GetOwningPlayer();
+    APawn* Pawn = PC ? PC->GetPawn() : nullptr;
+    ANS_PlayerCharacterBase* Char = Cast<ANS_PlayerCharacterBase>(Pawn);
+    if (!Char) return;
+
+    auto* QuickSlotComp = Char->FindComponentByClass<UNS_QuickSlotComponent>();
+    auto* WeaponComp = Char->FindComponentByClass<UNS_EquipedWeaponComponent>();
+    if (!QuickSlotComp || !WeaponComp) return;
+
+    UNS_InventoryBaseItem* ItemInSlot = QuickSlotComp->GetItemInSlot(SlotIndex);
+    UNS_InventoryBaseItem* EquippedItem = WeaponComp->GetCurrentWeaponItem();
+
+    if (ItemInSlot && EquippedItem && ItemInSlot == EquippedItem)
+    {
+        // 현재 무기 가져오기 → 원거리 무기인지 확인
+        if (auto* RangedWeapon = Cast<ANS_BaseRangedWeapon>(WeaponComp->CurrentWeapon))
+        {
+            int32 CurrentAmmo = RangedWeapon->GetCurrentAmmo();
+            int32 MaxAmmo = RangedWeapon->GetMaxAmmo();
+
+            // UI 갱신
+            AmmoText->SetText(FText::FromString(FString::Printf(TEXT("%d / %d"), CurrentAmmo, MaxAmmo)));
+            AmmoText->SetVisibility(ESlateVisibility::Visible);
+            UE_LOG(LogTemp, Warning, TEXT("[QuickSlot %d] ItemInSlot: %s, EquippedItem: %s"),
+                SlotIndex,
+                *GetNameSafe(ItemInSlot),
+                *GetNameSafe(EquippedItem));
+        }
+    }
+    else
+    {
+        AmmoText->SetText(FText::GetEmpty());
+        AmmoText->SetVisibility(ESlateVisibility::Collapsed);
+    }
 }
 
 void UNS_QuickSlotSlotWidget::SetAssignedItem(const FNS_ItemDataStruct* ItemData, int32 Quantity)
@@ -45,6 +87,7 @@ void UNS_QuickSlotSlotWidget::SetAssignedItem(const FNS_ItemDataStruct* ItemData
 
 void UNS_QuickSlotSlotWidget::SetSlotIndex(int32 Index)
 {
+    SlotIndex = Index;
     if (QuickSlotKey)
     {
         QuickSlotKey->SetSlotIndex(Index);

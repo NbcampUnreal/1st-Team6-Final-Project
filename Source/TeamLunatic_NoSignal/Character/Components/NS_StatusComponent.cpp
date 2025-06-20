@@ -100,7 +100,6 @@ void UNS_StatusComponent::AddHealthGauge_Implementation(float Value)
 void UNS_StatusComponent::AddStamina(float Value)
 {
     Stamina = FMath::Clamp(Stamina + Value, 0.f, MaxStamina);
-	UE_LOG(LogTemp, Warning, TEXT("Current Stamina: %f"), Stamina); // 현재 스태미너 로그 출력
 }
 
 void UNS_StatusComponent::AddStaminaRegenRate(float Value)
