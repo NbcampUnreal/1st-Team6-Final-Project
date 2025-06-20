@@ -250,6 +250,22 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                 this,
                 &ANS_PlayerCharacterBase::UseQuickSlot3);
         }
+        if (InputQuickSlot4)
+        {
+            EnhancedInput->BindAction(
+                InputQuickSlot4,
+                ETriggerEvent::Started,
+                this,
+                &ANS_PlayerCharacterBase::UseQuickSlot4);
+        }
+        if (InputQuickSlot5)
+        {
+            EnhancedInput->BindAction(
+                InputQuickSlot5,
+                ETriggerEvent::Started,
+                this,
+                &ANS_PlayerCharacterBase::UseQuickSlot5);
+        }
     }
 }
 
@@ -647,6 +663,8 @@ void ANS_PlayerCharacterBase::Server_AssignQuickSlot_Implementation(int32 SlotIn
 void ANS_PlayerCharacterBase::UseQuickSlot1() { UseQuickSlotByIndex(0); }
 void ANS_PlayerCharacterBase::UseQuickSlot2() { UseQuickSlotByIndex(1); }
 void ANS_PlayerCharacterBase::UseQuickSlot3() { UseQuickSlotByIndex(2); }
+void ANS_PlayerCharacterBase::UseQuickSlot4() { UseQuickSlotByIndex(3); }
+void ANS_PlayerCharacterBase::UseQuickSlot5() { UseQuickSlotByIndex(4); }
 
 void ANS_PlayerCharacterBase::UseQuickSlotByIndex(int32 Index)
 {

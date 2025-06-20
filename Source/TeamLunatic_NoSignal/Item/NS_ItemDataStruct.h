@@ -30,7 +30,7 @@ struct FItemTextData
 	UPROPERTY(EditAnywhere)
 	FText ItemName;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, meta = (MultiLine = "true"))
 	FText ItemDescription;
 
 	UPROPERTY(EditAnywhere)
