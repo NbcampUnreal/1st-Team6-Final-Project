@@ -6,6 +6,9 @@
 #include "GameFramework/Character.h"
 #include "NS_ZombieBase.generated.h"
 
+class ADecalActor;
+class UNiagaraComponent;
+class UNiagaraSystem;
 class UPhysicalAnimationComponent;
 class ANS_AIController;
 enum class EZombieAttackType : uint8;
@@ -33,7 +36,9 @@ protected:
 	float BaseDamage;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "Stat")
 	bool bIsDead;
-	
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Replicated ,Category = "Stat")
+	bool bGetHit;
+
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "Speed")
 	float PatrolSpeed;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "Speed")
@@ -45,7 +50,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "Hit Reaction")
 	UPhysicalAnimationComponent* PhysicsComponent;
-	
+	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category = "Hit Reaction")
+	UNiagaraSystem* Blood;
+
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Replicated, Category = "State")
 	EZombieState CurrentState;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "State")
@@ -55,11 +62,18 @@ protected:
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Replicated, Category = "State")
 	bool bIsGotHit;
 	
+	//피격관련
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 	UFUNCTION(NetMulticast, reliable)
 	void Die_Multicast();
-public:
+	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly, Category = "State")
+	UAnimMontage* KnockBackMontage;
+	UFUNCTION(NetMulticast, reliable)
+	void Multicast_PlayMontage(UAnimMontage* MontageToPlay);
+	FTimerHandle HitTimer;
+	void ResetHit();
 	
+public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
@@ -68,9 +82,9 @@ public:
 	void ApplyPhysics(FName Bone, FVector Impulse);
 	void ResetPhysics(FName Bone);
 	UPROPERTY()
-	TMap<FName, FTimerHandle> HitTimers;
+	TMap<FName, FTimerHandle> HitBoneTimers;
 	UPROPERTY()
-	TSet<FName> UnSafeBones;
+	TSet<FName> SafeBones;
 	
 	//상태 패턴
 	UFUNCTION()
@@ -95,6 +109,11 @@ public:
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multicast_PlaySound(USoundCue* Sound);
 
+	//이펙트
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multicast_SpawnEffect(FName Bone,FVector Location, FRotator Rotation);
+
+	//공격 컴포넌트
 	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Sound")
 	USphereComponent* SphereComp;
 	
@@ -118,6 +137,7 @@ public:
 	FORCEINLINE const EZombieType GetType() const {return ZombieType;}
 	FORCEINLINE USphereComponent* GetSphereComp() const {return SphereComp;}
 };
+
 
 
 

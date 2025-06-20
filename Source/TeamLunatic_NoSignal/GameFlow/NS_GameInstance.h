@@ -79,8 +79,6 @@ public:
 
 	void SendHeartbeat();
 
-	TArray<FString> CharacterList;
-	TArray<FString> LobbyCharacterList;
 	TMap<int32, FNS_PlayerData> PlayerDataMap;
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
@@ -91,6 +89,22 @@ public:
 
 	void ShowReadyUI();
 	void HideReadyUI();
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UUserWidget> WaitClass;
+
+	UPROPERTY()
+	UUserWidget* WaitWidget;
+
+	UFUNCTION(BlueprintCallable)
+	void ShowWait();
+
+	UFUNCTION(BlueprintCallable)
+	void HideWait();
+
+	UFUNCTION(BlueprintCallable, Category = "Network")
+	void DestroyCurrentSession();
+
 
 private:
 	EGameModeType GameModeType = EGameModeType::SinglePlayMode;

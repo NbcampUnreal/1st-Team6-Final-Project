@@ -63,10 +63,15 @@ void UNS_StatusComponent::UpdateStamina(float DeltaTime)
 
 		AddStamina(ChangingStaminaValue);
 
+		if (bEnableSprint == false && Stamina * 2 >= MaxStamina)
+		{
+			bEnableSprint = true; // 스태미너가 충분하면 스프린트 활성화
+		}
+
 		// 스태미너가 0 이하로 떨어지면 스프린트 비활성화
 		if (PlayChar->IsSprint && Stamina <= 0.f)
 		{
-			PlayChar->IsSprint = false;
+			bEnableSprint = false;
 		}
 	}
 }
@@ -89,11 +94,16 @@ void UNS_StatusComponent::AddHealthGauge(float Value)
 void UNS_StatusComponent::AddStamina(float Value)
 {
     Stamina = FMath::Clamp(Stamina + Value, 0.f, MaxStamina);
+	UE_LOG(LogTemp, Warning, TEXT("Current Stamina: %f"), Stamina); // 현재 스태미너 로그 출력
 }
 
 void UNS_StatusComponent::AddStaminaRegenRate(float Value)
 {
 	CurrentStaminaRegenRate = DefalutStaminaRegenRate * Value; // 기본 재생 속도에 배율 적용
+}
+bool UNS_StatusComponent::CheckEnableSprint()
+{
+	return bEnableSprint; // 스프린트 가능 여부 반환
 }
 //================================================================
 

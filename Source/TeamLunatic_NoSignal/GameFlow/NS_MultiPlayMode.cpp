@@ -6,6 +6,7 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
+#include "UI/NS_UIManager.h"
 #include "NS_MainGamePlayerState.h"
 #include "NS_GameState.h"
 
@@ -17,8 +18,28 @@ ANS_MultiPlayMode::ANS_MultiPlayMode()
 void ANS_MultiPlayMode::BeginPlay()
 {
     Super::BeginPlay();
+
+    if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+    {
+        if (UNS_UIManager* UIManager = GI->GetUIManager())
+        {
+            UIManager->LoadingScreen(GetWorld());
+            FTimerHandle Timer;
+            GetWorld()->GetTimerManager().SetTimer(Timer, [UIManager, this]()
+            {
+                UIManager->CloseLoadingUI();
+                UIManager->ShowPlayerHUDWidget(GetWorld());
+
+            }, 1.5f, false);
+        }
+    }
+
     SpawnAllPlayers();
 }
+
+
+
+
 
 void ANS_MultiPlayMode::SpawnAllPlayers()
 {

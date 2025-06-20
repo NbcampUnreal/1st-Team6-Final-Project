@@ -178,8 +178,8 @@ void UNS_UIManager::CloseLoadingUI()
     {
         UE_LOG(LogTemp, Log, TEXT("Remove Loading Screen!!!!"));
 		NS_LoadingScreen = nullptr;
-        //NS_LoadingScreen->RemoveFromParent();
-        //if (NS_LoadingScreen->IsInViewport()) NS_LoadingScreen->RemoveFromParent();
+        NS_LoadingScreen->RemoveFromParent();
+        if (NS_LoadingScreen->IsInViewport()) NS_LoadingScreen->RemoveFromParent();
     }
 }
 

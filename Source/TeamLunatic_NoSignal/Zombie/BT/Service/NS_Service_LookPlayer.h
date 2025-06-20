@@ -17,5 +17,6 @@ public:
 	UNS_Service_LookPlayer();
 protected:
 	virtual void TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
-	
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Key")
+	FBlackboardKeySelector Key;
 };

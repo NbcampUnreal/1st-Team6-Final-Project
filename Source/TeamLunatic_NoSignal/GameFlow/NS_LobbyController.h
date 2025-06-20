@@ -13,5 +13,9 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void OnPossess(APawn* InPawn) override;
 
+public:
+	UFUNCTION(Client, Reliable)
+	void Client_ShowWait();
+
 	FTimerHandle CheckLoadingHandle;
 };

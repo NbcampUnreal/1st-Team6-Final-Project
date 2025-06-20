@@ -16,152 +16,91 @@
 
 ANS_LobbyMode::ANS_LobbyMode()
 {
-    DefaultPawnClass = nullptr; // 자동 생성 방지
-
+	DefaultPawnClass = nullptr; // 자동 스폰 방지
 }
-
-
-
 
 void ANS_LobbyMode::BeginPlay()
 {
-    Super::BeginPlay();
+	Super::BeginPlay();
 
+	UE_LOG(LogTemp, Warning, TEXT("ANS_LobbyMode::BeginPlay 진입"));
+	UE_LOG(LogTemp, Warning, TEXT("LobbyCharacterClasses 수: %d"), LobbyCharacterClasses.Num());
 
-    if (UNS_GameInstance* GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
-    {
-        for (const FString& Item : GameInstance->LobbyCharacterList)
-        {
-            UClass* LoadedClass = StaticLoadClass(APawn::StaticClass(), nullptr, *Item);
-            if (LoadedClass)
-            {
-                PlayableCharacter.Add(LoadedClass);
-                UE_LOG(LogTemp, Log, TEXT("Loaded character class: %s"), *Item);
-            }
-            else
-            {
-                UE_LOG(LogTemp, Error, TEXT("Failed to load character blueprint class: %s"), *Item);
-            }
-        }
+	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
+	if (!Subsystem) return;
 
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("Failed to cast GameInstance to UNS_GameInstance"));
-    }
+	IOnlineSessionPtr Sessions = Subsystem->GetSessionInterface();
+	if (!Sessions.IsValid()) return;
 
-    IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
-    if (!Subsystem) return;
+	FOnlineSessionSettings SessionSettings;
+	SessionSettings.bIsDedicated = true;
+	SessionSettings.bIsLANMatch = false;
+	SessionSettings.NumPublicConnections = 4;
+	SessionSettings.bShouldAdvertise = true;
+	SessionSettings.bUsesPresence = true;
+	SessionSettings.bAllowJoinInProgress = true;
 
-    IOnlineSessionPtr Sessions = Subsystem->GetSessionInterface();
-    if (!Sessions.IsValid()) return;
+	Sessions->CreateSession(0, NAME_GameSession, SessionSettings);
 
-    FOnlineSessionSettings SessionSettings;
-    SessionSettings.bIsDedicated = true;
-    SessionSettings.bIsLANMatch = false;
-    SessionSettings.NumPublicConnections = 4;
-    SessionSettings.bShouldAdvertise = true;
-    SessionSettings.bUsesPresence = true;
-    SessionSettings.bAllowJoinInProgress = true;
-
-    Sessions->CreateSession(0, NAME_GameSession, SessionSettings);
-
-    UE_LOG(LogTemp, Warning, TEXT("Dedicated Server에서 CreateSession 호출됨"));
+	UE_LOG(LogTemp, Warning, TEXT("Dedicated Server에서 CreateSession 호출됨"));
 }
 
 void ANS_LobbyMode::PostLogin(APlayerController* NewPlayer)
 {
-    Super::PostLogin(NewPlayer);
+	Super::PostLogin(NewPlayer);
 
-    int32 PlayerIndex = GetGameState<AGameState>()->PlayerArray.Num() - 1;
+	int32 PlayerIndex = GetGameState<AGameState>()->PlayerArray.Num() - 1;
 
-    AActor* StartSpot = FindSpawnPointByIndex(PlayerIndex);
-    if (!StartSpot)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("No PlayerStart found for index %d"), PlayerIndex);
-        return;
-    }
+	if (!LobbyCharacterClasses.IsValidIndex(PlayerIndex))
+	{
+		UE_LOG(LogTemp, Error, TEXT("LobbyCharacterClasses[%d] 존재하지 않음! 배열 크기: %d"), PlayerIndex, LobbyCharacterClasses.Num());
+		return;
+	}
 
-    FTransform SpawnTransform = StartSpot->GetActorTransform();
+	AActor* StartSpot = FindSpawnPointByIndex(PlayerIndex);
+	if (!StartSpot)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No PlayerStart found for index %d"), PlayerIndex);
+		return;
+	}
 
-    APawn* SpawnedPawn = GetWorld()->SpawnActor<APawn>(PlayableCharacter[PlayerIndex], SpawnTransform);
+	FTransform SpawnTransform = StartSpot->GetActorTransform();
+	APawn* SpawnedPawn = GetWorld()->SpawnActor<APawn>(LobbyCharacterClasses[PlayerIndex], SpawnTransform);
 
-    if (SpawnedPawn)
-    {
-        NewPlayer->Possess(SpawnedPawn);
+	if (SpawnedPawn)
+	{
+		NewPlayer->Possess(SpawnedPawn);
+		UE_LOG(LogTemp, Log, TEXT("Spawned & Possessed Pawn: %s"), *SpawnedPawn->GetName());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Pawn spawn failed."));
+	}
 
-        // // 입력 차단 - 컨트롤러 레벨
-        // NewPlayer->SetIgnoreMoveInput(true);
-        // NewPlayer->SetIgnoreLookInput(true);
-        //
-        // // 캐릭터 입력 차단
-        // SpawnedPawn->DisableInput(nullptr);
-        //
-        // // 회전 및 움직임 완전 차단
-        // if (ANS_PlayerCharacterBase* Character = Cast<ANS_PlayerCharacterBase>(SpawnedPawn))
-        // {
-        //     Character->bUseControllerRotationYaw = false;
-        //
-        //     if (UCharacterMovementComponent* MoveComp = Character->GetCharacterMovement())
-        //     {
-        //         MoveComp->DisableMovement();
-        //         MoveComp->bOrientRotationToMovement = false;
-        //     }
-        // }
-        //
-        //
-        // // 키 바인딩 제거 (C, F 등 작동 방지)
-        // if (NewPlayer->InputComponent)
-        // {
-        //     NewPlayer->InputComponent->ClearActionBindings();
-        // }
+	if (ANS_PlayerState* PS = Cast<ANS_PlayerState>(NewPlayer->PlayerState))
+	{
+		PS->SetPlayerIndex(PlayerIndex);
+		PS->SavePlayerData();
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("PlayerState cast to ANS_PlayerState failed."));
+	}
 
-        // 캐릭터 모델 경로 저장
-        if (UNS_GameInstance* GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
-        {
-            FString ModelPath = GameInstance->CharacterList.IsValidIndex(PlayerIndex)
-                ? GameInstance->CharacterList[PlayerIndex]
-                : TEXT("");
-
-            if (ANS_PlayerState* PlayerState = Cast<ANS_PlayerState>(NewPlayer->PlayerState))
-            {
-                PlayerState->SetPlayerModelPath(ModelPath);
-            }
-        }
-
-        UE_LOG(LogTemp, Log, TEXT("Spawned & Possessed Pawn: %s"), *SpawnedPawn->GetName());
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("Pawn spawn failed."));
-    }
-
-    // PlayerState 저장
-    if (ANS_PlayerState* PS = Cast<ANS_PlayerState>(NewPlayer->PlayerState))
-    {
-        PS->SetPlayerIndex(PlayerIndex);
-        PS->SavePlayerData();
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("PlayerState cast to ANS_PlayerState failed."));
-    }
-
-    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-    {
-        if (ANS_LobbyController* LC = Cast<ANS_LobbyController>(*It))
-        {
-            if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
-            {
-                if (GI->ReadyUIInstance)
-                {
-                    GI->ReadyUIInstance->UpdatePlayerStatusList();
-                }
-            }
-        }
-    }
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ANS_LobbyController* LC = Cast<ANS_LobbyController>(*It))
+		{
+			if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+			{
+				if (GI->ReadyUIInstance)
+				{
+					GI->ReadyUIInstance->UpdatePlayerStatusList();
+				}
+			}
+		}
+	}
 }
-
 
 void ANS_LobbyMode::Logout(AController* Exiting)
 {
@@ -178,61 +117,88 @@ void ANS_LobbyMode::Logout(AController* Exiting)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Failed to cast PlayerState to ANS_PlayerState during logout."));
 	}
-    
-    if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
-    {
-        if (GI->ReadyUIInstance)
-        {
-            GI->ReadyUIInstance->UpdatePlayerStatusList();
-        }
-    }
 
+	if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+	{
+		if (GI->ReadyUIInstance)
+		{
+			GI->ReadyUIInstance->UpdatePlayerStatusList();
+		}
+	}
 }
-
 
 AActor* ANS_LobbyMode::FindSpawnPointByIndex(int32 Index)
 {
-    int32 CurrentIndex = 0;
-
-    for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
-    {
-        if (CurrentIndex == Index)
-        {
-            return *It;
-        }
-        ++CurrentIndex;
-    }
-
-    return nullptr;
+	int32 CurrentIndex = 0;
+	for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+	{
+		if (CurrentIndex == Index)
+		{
+			return *It;
+		}
+		++CurrentIndex;
+	}
+	return nullptr;
 }
 
 void ANS_LobbyMode::CheckAllPlayersReady()
 {
-    const AGameStateBase* GS = GetGameState<AGameStateBase>();
-    if (!GS) return;
+	const AGameStateBase* GS = GetGameState<AGameStateBase>();
+	if (!GS) return;
 
-    for (APlayerState* PS : GS->PlayerArray)
-    {
-        if (ANS_PlayerState* MyPS = Cast<ANS_PlayerState>(PS))
-        {
-            if (!MyPS->GetIsReady())
-            {
-                UE_LOG(LogTemp, Warning, TEXT(" 아직 준비 안된 플레이어 있음"));
-                return;
-            }
-        }
-    }
+	// 플레이어 수 체크 (최소 2명)
+	if (GS->PlayerArray.Num() < 2)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("플레이어 수 부족. 현재 인원: %d"), GS->PlayerArray.Num());
+		return;
+	}
 
-    UE_LOG(LogTemp, Log, TEXT(" All players ready. Traveling now."));
-    GoToGameLevel(); 
+	// 전원 레디 상태인지 확인
+	for (APlayerState* PS : GS->PlayerArray)
+	{
+		if (ANS_PlayerState* MyPS = Cast<ANS_PlayerState>(PS))
+		{
+			if (!MyPS->GetIsReady())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("아직 준비 안된 플레이어 있음"));
+				return;
+			}
+		}
+	}
+
+	// 모든 플레이어가 레디 완료된 경우 - 전원에게 ShowWait 띄우기
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (APlayerController* PC = It->Get())
+		{
+			if (PC->IsLocalController()) // 로컬인 경우에도 띄움 (Dedicated라면 true 안될 수 있음)
+			{
+				if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+				{
+					GI->ShowWait();
+				}
+			}
+			else
+			{
+				// 원격 클라이언트에게도 ShowWait 전송 필요 → 클라이언트 RPC 필요
+				ANS_LobbyController* LC = Cast<ANS_LobbyController>(PC);
+				if (LC)
+				{
+					LC->Client_ShowWait(); 
+				}
+			}
+		}
+	}
+
+	FTimerHandle DelayHandle;
+	GetWorld()->GetTimerManager().SetTimer(DelayHandle, this, &ANS_LobbyMode::GoToGameLevel, 1.0f, false);
 }
 
 
 
 void ANS_LobbyMode::GoToGameLevel()
 {
-    const FString LevelPath = TEXT("/Game/Maps/MainWorld");
-    const FString Options = TEXT("Game=/Game/GameFlowBP/BP_NS_MultiPlayMode.BP_NS_MultiPlayMode_C");
-    GetWorld()->ServerTravel(LevelPath + TEXT("?") + Options);
+	const FString LevelPath = TEXT("/Game/Maps/MainWorld");
+	const FString Options = TEXT("Game=/Game/GameFlowBP/BP_NS_MultiPlayMode.BP_NS_MultiPlayMode_C");
+	GetWorld()->ServerTravel(LevelPath + TEXT("?") + Options);
 }
-

@@ -10,17 +10,17 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_LobbyMode : public AGameMode
     GENERATED_BODY()
 
 public:
-    ANS_LobbyMode(); // 생성자 선언
+    ANS_LobbyMode();
     virtual void PostLogin(APlayerController* NewPlayer) override;
-	virtual void Logout(AController* Exiting) override;
+    virtual void Logout(AController* Exiting) override;
     virtual void BeginPlay() override;
-    
+
     void GoToGameLevel();
-    UPROPERTY(EditDefaultsOnly, Category = "Character")
-    TArray<TSubclassOf<APawn>> PlayableCharacter;
     void CheckAllPlayersReady();
+
 protected:
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Lobby")
+    TArray<TSubclassOf<APawn>> LobbyCharacterClasses;
+
     AActor* FindSpawnPointByIndex(int32 Index);
-
-
 };
