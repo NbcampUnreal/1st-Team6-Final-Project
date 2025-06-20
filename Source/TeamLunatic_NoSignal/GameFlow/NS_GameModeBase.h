@@ -36,14 +36,13 @@ public:
     // 좀비 사망시 콜백
     UFUNCTION()
     void OnZombieDestroyed(AActor* DestroyedActor);
-
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie")
     // 현재 좀비 수
     int32 CurrentZombieCount = 0;
 
     // 최대 좀비 수
     UPROPERTY(EditAnywhere, Category = "Zombie")
-    int32 MaxZombieCount = 10;
+    int32 MaxZombieCount = 200;
     
     UPROPERTY(EditDefaultsOnly, Category = "Zombie")
     TSubclassOf<class ANS_BasicZombie> BasicZombieClass;
