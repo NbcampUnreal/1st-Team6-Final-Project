@@ -334,7 +334,14 @@ float ANS_PlayerCharacterBase::TakeDamage(
     FTimerHandle ResetHitTime;
     GetWorldTimerManager().SetTimer(
         ResetHitTime,
-        [this]() { IsHit = false;},
+        [this]()
+        {
+            // 캐릭터가 있다면 IsHit을 false로 설정
+            if (IsValid(this) && HasAuthority())
+            {
+                IsHit = false; //
+            }
+        },
         0.5f,
         false
         );

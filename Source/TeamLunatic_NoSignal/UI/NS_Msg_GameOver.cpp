@@ -15,6 +15,7 @@ void UNS_Msg_GameOver::NativeConstruct()
 	LoadSavedGameBtn->OnClicked.AddDynamic(this, &UNS_Msg_GameOver::OnLoadSavedGameBtnClicked);
 	MainMenuBtn->OnClicked.AddDynamic(this, &UNS_Msg_GameOver::OnMainMenuBtnClicked);
 	ExitGameBtn->OnClicked.AddDynamic(this, &UNS_Msg_GameOver::OnQuit);
+	ObserverButton->OnClicked.AddDynamic(this, &UNS_Msg_GameOver::OnObserverButtonClicked);
 }
 
 void UNS_Msg_GameOver::Init(UNS_BaseMainMenu* NsMainMenu)
@@ -69,4 +70,40 @@ void UNS_Msg_GameOver::OnMainMenuBtnClicked()
 			UIManager->HideGameOverWidget(GetWorld());
 	}
 	UGameplayStatics::OpenLevel(GetWorld(), FName(TEXT("MainTitle")));//MenuMap / MainTitle
+}
+
+void UNS_Msg_GameOver::UpdateBoxVisibility()
+{
+	UWorld* World = GetWorld();
+	if (!World) return;
+
+	UNS_GameInstance* GameInstance = Cast<UNS_GameInstance>(UGameplayStatics::GetGameInstance(World));
+	if (!GameInstance) return;
+
+	EGameModeType Mode = GameInstance->GetGameModeType();
+
+	if (ObserverHorizontalBox) 
+	{
+		ObserverHorizontalBox->SetVisibility(
+			Mode == EGameModeType::MultiPlayMode ? ESlateVisibility::Visible : ESlateVisibility::Collapsed
+		);
+	}
+}
+
+void UNS_Msg_GameOver::OnObserverButtonClicked()
+{
+	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+	{
+		PC->ChangeState(NAME_Spectating);
+		PC->UnPossess();
+
+		if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+		{
+			if (UNS_UIManager* UIManager = GI->GetUIManager())
+			{
+				UIManager->ShowSpectatorWidget(GetWorld());
+			}
+		}
+	}
+	this->RemoveFromParent();
 }

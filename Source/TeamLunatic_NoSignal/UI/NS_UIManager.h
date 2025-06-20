@@ -13,6 +13,7 @@ class UNS_CircleProgressBar;
 class UNS_InGameMenu;
 class UNS_QuickSlotPanel;
 class UNS_LoadingScreen;
+class UNS_SpectatorWidgetClass;
 
 DECLARE_DELEGATE(FOnLoadingFinished);
 
@@ -64,6 +65,10 @@ public:
 
 	FOnLoadingFinished OnLoadingFinished;
 
+	UFUNCTION(BlueprintCallable)
+	bool ShowSpectatorWidget(UWorld* World);
+
+
 protected:
 	UPROPERTY()
 	UNS_InGameMenu* InGameMenuWidget;
@@ -71,6 +76,9 @@ protected:
 	UNS_InGameMsg* NS_InGameMsgWidget;
 	UNS_PlayerHUD* NS_PlayerHUDWidget;
 	UNS_LoadingScreen* NS_LoadingScreen;
+
+
+
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UNS_BaseMainMenu> InGameMenuWidgetClass;
@@ -86,7 +94,12 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UNS_LoadingScreen> NS_LoadingScreenClass;
-	
+
+	UPROPERTY()
+	UNS_SpectatorWidgetClass* SpectatorWidget;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UNS_SpectatorWidgetClass> SpectatorWidgetClass;
 private:
 
 };

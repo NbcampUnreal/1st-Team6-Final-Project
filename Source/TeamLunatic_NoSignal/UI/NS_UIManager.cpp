@@ -7,6 +7,7 @@
 #include "UI/NS_InGameMsg.h"
 #include "UI/NS_PlayerHUD.h"
 #include "UI/NS_LoadingScreen.h"
+#include "UI/NS_SpectatorWidgetClass.h" 
 #include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
 #include "Containers/Ticker.h" 
 #include "Kismet/GameplayStatics.h"
@@ -70,6 +71,11 @@ UNS_QuickSlotPanel* UNS_UIManager::GetQuickSlotPanel()
 }
 bool UNS_UIManager::ShowPlayerHUDWidget( UWorld* World)
 {
+    if (!World || World->IsNetMode(NM_DedicatedServer)) 
+    {
+        return false;
+    }
+
     APlayerController* PC = World->GetFirstPlayerController();
     if (!NS_PlayerHUDWidget || NS_PlayerHUDWidget && !NS_PlayerHUDWidget->IsInViewport())
     {
@@ -122,6 +128,10 @@ void UNS_UIManager::HideGameMsgWidget(UWorld* World)
 }
 bool UNS_UIManager::ShowGameOverWidget(UWorld* World)
 {
+    if (!World || World->IsNetMode(NM_DedicatedServer))
+    {
+        return false;
+    }
     APlayerController* PC = World->GetFirstPlayerController();
     if (!NS_Msg_GameOveWidget || NS_Msg_GameOveWidget && !NS_Msg_GameOveWidget->IsInViewport())//!IsValid(NS_Msg_GameOveWidget) )
     {
@@ -241,4 +251,30 @@ void UNS_UIManager::HideInGameMenuWidget(UWorld* World)
         APlayerController* PC = World->GetFirstPlayerController();
         SetFInputModeGameOnly(PC);
     }
+}
+
+bool UNS_UIManager::ShowSpectatorWidget(UWorld* World)
+{
+    APlayerController* PC = World->GetFirstPlayerController();
+    if (!PC) return false;
+
+    if (!SpectatorWidget || !SpectatorWidget->IsInViewport())
+    {
+        if (SpectatorWidgetClass)
+        {
+            SpectatorWidget = CreateWidget<UNS_SpectatorWidgetClass>(PC, SpectatorWidgetClass);
+            if (SpectatorWidget)
+            {
+                SpectatorWidget->AddToViewport();
+            }
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("SpectatorWidgetClass is NULL!"));
+            return false;
+        }
+    }
+
+    SetFInputModeGameAndUI(PC, SpectatorWidget);
+    return true;
 }

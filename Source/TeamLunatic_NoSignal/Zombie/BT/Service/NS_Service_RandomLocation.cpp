@@ -12,7 +12,7 @@ UNS_Service_RandomLocation::UNS_Service_RandomLocation()
 	bNotifyTick = true;
 	bNotifyBecomeRelevant = true;
 	Interval = 0.5f;
-	Radius = 1000.f;
+	Radius = 500.f;
 	NodeName = "Generate Random Location";
 }
 

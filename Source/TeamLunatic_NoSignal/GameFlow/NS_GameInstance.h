@@ -63,6 +63,12 @@ public:
 	void RequestSessionListFromServer();
 	void OnReceiveSessionList(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 
+	// HTTP 세션 리스트 숨김
+	void RequestUpdateSessionStatus(int32 Port, FString Status); 
+	void OnUpdateSessionStatusResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
+
+
+
 	UPROPERTY(EditAnywhere, Category = "Level")
 	TSoftObjectPtr<UWorld> WaitingRoom;
 
@@ -105,9 +111,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Network")
 	void DestroyCurrentSession();
 
+	int32 MyServerPort = -1;
 
 private:
 	EGameModeType GameModeType = EGameModeType::SinglePlayMode;
-	int32 MyServerPort = -1;
 	FTimerHandle HeartbeatTimerHandle;
 };
