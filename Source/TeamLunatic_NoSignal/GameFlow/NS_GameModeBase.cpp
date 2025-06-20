@@ -58,7 +58,7 @@ void ANS_GameModeBase::CheckAndSpawnZombies()
 		TArray<AActor*> Shuffled = SpawnPoints;
 		Algo::RandomShuffle(Shuffled); // Algo::Shuffle 대신 Algo::RandomShuffle을 사용합니다.
 
-        int32 NumToSpawn = FMath::Min(Missing, 5); // 부족한 좀비 수와 5 중 더 작은 값만큼 스폰 (최대 5마리)
+        int32 NumToSpawn = FMath::Min(Missing, 10); // 부족한 좀비 수와 5 중 더 작은 값만큼 스폰 (최대 5마리)
         NumToSpawn = FMath::Min(NumToSpawn, Shuffled.Num()); // 스폰 포인트 수보다 많이 스폰하지 않도록
 		
 		for (int32 i = 0; i < NumToSpawn; ++i)
