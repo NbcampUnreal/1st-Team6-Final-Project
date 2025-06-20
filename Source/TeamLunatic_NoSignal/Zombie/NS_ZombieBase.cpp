@@ -132,6 +132,15 @@ void ANS_ZombieBase::SetActive(bool NewIsActive) // 매개변수 이름을 NewIs
 		for (UActorComponent* Component : Components)
 		{
 			Component->SetComponentTickEnabled(true);
+
+			// ABP 활성화
+			if (USkeletalMeshComponent* SkeletalMeshComp = Cast<USkeletalMeshComponent>(Component))
+			{
+				if (UAnimInstance* AnimInst = SkeletalMeshComp->GetAnimInstance())
+				{
+					AnimInst->EnableUpdateAnimation(true);
+				}
+			}
 		}
 
 		// AI 컨트롤러 확인 및 재생성 로직
@@ -191,6 +200,15 @@ void ANS_ZombieBase::SetActive(bool NewIsActive) // 매개변수 이름을 NewIs
 		for (UActorComponent* Component : Components)
 		{
 			Component->SetComponentTickEnabled(false);
+
+			// ABP 비활성화
+			if (USkeletalMeshComponent* SkeletalMeshComp = Cast<USkeletalMeshComponent>(Component))
+			{
+				if (UAnimInstance* AnimInst = SkeletalMeshComp->GetAnimInstance())
+				{
+					AnimInst->EnableUpdateAnimation(false);
+				}
+			}
 		}
 
 		// AI 컨트롤러가 있다면, 그 컨트롤러의 틱도 비활성화합니다.
