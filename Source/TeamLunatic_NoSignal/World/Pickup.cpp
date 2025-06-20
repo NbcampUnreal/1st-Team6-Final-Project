@@ -45,7 +45,7 @@ void APickup::InitializePickup(const TSubclassOf<UNS_InventoryBaseItem> BaseClas
 		ReplicatedItemData.Quantity = InQuantity > 0 ? InQuantity : 1;
 		OnRep_ReplicatedItemData();
 
-		ItemReference = NewObject<UNS_InventoryBaseItem>(this, BaseClass);
+		ItemReference = NewObject<UNS_InventoryBaseItem>(GetWorld(), BaseClass);
 		ItemReference->ItemType = ItemData->ItemType;
 		ItemReference->WeaponType = ItemData->WeaponType;
 		ItemReference->WeaponData = ItemData->WeaponData;
@@ -84,7 +84,12 @@ void APickup::OnRep_ReplicatedItemData()
 {
 	if (!ItemReference)
 	{
-		ItemReference = NewObject<UNS_InventoryBaseItem>(this, UNS_InventoryBaseItem::StaticClass());
+		ItemReference = NewObject<UNS_InventoryBaseItem>(GetWorld(), UNS_InventoryBaseItem::StaticClass());
+		if (!ItemReference)
+		{
+			UE_LOG(LogTemp, Error, TEXT("[OnRep_ReplicatedItemData] ItemReference 생성 실패"));
+			return;
+		}
 	}
 
 	ItemReference->ItemDataRowName = ReplicatedItemData.ItemDataRowName;
@@ -147,8 +152,11 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 
 	if (!IsPendingKillPending())
 	{
-		if (ItemReference)
-		{
+			if (!ItemReference || !IsValid(ItemReference))
+			{
+				UE_LOG(LogTemp, Error, TEXT("[TakePickup] ItemReference is null or invalid. GC로 수거되었을 가능성 있음."));
+				return;
+			}
 			if (UInventoryComponent* PlayerInventory = Taker->GetInventory())
 			{
 				const FItemAddResult AddResult = PlayerInventory->HandleAddItem(ItemReference);
@@ -185,11 +193,6 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Player Inventory Component is null"));
 			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Pickup internal Item reference was somehow null"));
-		}
 	}
 }
 
