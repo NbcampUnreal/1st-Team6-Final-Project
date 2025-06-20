@@ -15,6 +15,13 @@ public:
 	UFUNCTION(Client, Reliable)
 	void PlayTracked();
 
+	UFUNCTION(Client, Reliable)
+	void ClientShowGameOverUI();
+
+	// 클라이언트 RPC: 게임 오버 시 입력 모드 변경 (마우스 활성화, 입력 차단)
+	UFUNCTION(Client, Reliable)
+	void ClientSetGameOverInputMode();
+
 protected:
 	virtual void BeginPlay() override;
 	void SetupInputComponent();

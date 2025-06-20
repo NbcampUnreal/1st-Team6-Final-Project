@@ -100,6 +100,7 @@ void UNS_UIManager::HidePlayerHUDWidget(UWorld* World)
     if (NS_PlayerHUDWidget && NS_PlayerHUDWidget->IsInViewport())
         NS_PlayerHUDWidget->HideWidget();
 }
+
 bool UNS_UIManager::ShowGameMsgWidget(FString& GameMsg, UWorld* World)
 {
     APlayerController* PC = World->GetFirstPlayerController();
@@ -121,6 +122,7 @@ bool UNS_UIManager::ShowGameMsgWidget(FString& GameMsg, UWorld* World)
     }
     return false;
 }
+
 void UNS_UIManager::HideGameMsgWidget(UWorld* World)
 {
     if (NS_InGameMsgWidget && NS_InGameMsgWidget->IsInViewport())

@@ -35,4 +35,5 @@ void ANS_MainGamePlayerState::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 
     DOREPLIFETIME(ANS_MainGamePlayerState, SelectedPawnClass);
     DOREPLIFETIME(ANS_MainGamePlayerState, PlayerIndex);
+	DOREPLIFETIME(ANS_MainGamePlayerState, bIsAlive);
 }

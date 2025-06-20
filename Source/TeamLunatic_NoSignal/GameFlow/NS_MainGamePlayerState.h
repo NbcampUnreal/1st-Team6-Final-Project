@@ -27,6 +27,9 @@ public:
 
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+    UPROPERTY(BlueprintReadWrite, Replicated)
+    bool bIsAlive; // 플레이어의 생존 상태
+    
 private:
 	// 플레이어 모델 경로 (예: 캐릭터 모델 경로)
 	UPROPERTY(BlueprintReadWrite, Replicated, Category = "PlayerData", meta = (AllowPrivateAccess = "true"))

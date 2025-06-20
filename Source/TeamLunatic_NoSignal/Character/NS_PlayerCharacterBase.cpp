@@ -511,11 +511,19 @@ void ANS_PlayerCharacterBase::PlayDeath_Server_Implementation()
         ANS_GameModeBase* BaseGameMode = Cast<ANS_GameModeBase>(UGameplayStatics::GetGameMode(World));
         if (BaseGameMode)
         {
-            BaseGameMode->OnPlayerCharacterDied(this); 
+            BaseGameMode->OnPlayerCharacterDied(this);
+
+            if (AController* OwningController = GetController())
+            {
+                if (ANS_MainGamePlayerState* PS = Cast<ANS_MainGamePlayerState>(OwningController->PlayerState))
+                {
+                    PS->bIsAlive = false; 
+                    UE_LOG(LogTemp, Warning, TEXT("Player %s PlayerState set to Dead."), *PS->GetPlayerName());
+                }
+            }
         }
     }
-
-    PlayDeath_Multicast(); 
+    PlayDeath_Multicast();
 }
 
 void ANS_PlayerCharacterBase::PlayDeath_Multicast_Implementation()

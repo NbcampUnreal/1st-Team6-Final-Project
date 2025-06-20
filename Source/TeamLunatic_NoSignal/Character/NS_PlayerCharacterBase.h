@@ -6,6 +6,7 @@
 #include "Interaction/Component/InteractionComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFlow/NS_GameModeBase.h"
+#include "GameFlow/NS_MainGamePlayerState.h"
 #include "Character/ThrowActor/NS_ThrowActor.h"
 #include "NS_PlayerCharacterBase.generated.h"
 
