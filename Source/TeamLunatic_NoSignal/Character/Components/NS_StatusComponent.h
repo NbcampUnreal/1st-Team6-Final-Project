@@ -30,9 +30,9 @@ public:
     // --- Health & Stamina ---
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Status|Health")
     float MaxHealth = 100.f;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Status|Health")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category="Status|Health")
     float Health;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status|Stamina")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Status|Stamina")
     float MaxStamina = 100.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Status|Stamina")
     float Stamina;
@@ -41,17 +41,20 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status|Stamina")
 	float CurrentStaminaRegenRate; // 현재 스태미너 재생 속도
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status|Stamina")
-    float StaminaDereaseRate = -40.f;
-
-
+    float StaminaDereaseRate = -20.f;
 
     //스탯 수치 변경용
+    UFUNCTION(BlueprintCallable, NetMulticast, Reliable)
     void AddHealthGauge(float Value);
+
+
     void AddStamina(float Value);
     void AddStaminaRegenRate(float Value);
     bool CheckEnableSprint();
 
 private:
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
     bool bEnableSprint = true;
 
     //틱 내부에서 업데이트하는 함수 모음
