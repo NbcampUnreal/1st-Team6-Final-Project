@@ -55,10 +55,11 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     GetCharacterMovement()->bOrientRotationToMovement = false;
     GetCharacterMovement()->bUseControllerDesiredRotation = false;
 
-    // 스탯 컴포넌트 부착
+    // 스탯 컴포넌트
     StatusComp = CreateDefaultSubobject<UNS_StatusComponent>(TEXT("StatusComponent"));
+    // 상호작용 컴포넌트
     InteractionComponent = CreateDefaultSubobject<UInteractionComponent>(TEXT("InteractionComponent"));
-
+    // 장착 무기 컴포넌트
     EquipedWeaponComp = CreateDefaultSubobject<UNS_EquipedWeaponComponent>(TEXT("EquipedWeaponComponent"));
 
     BaseEyeHeight = 74.0f;
