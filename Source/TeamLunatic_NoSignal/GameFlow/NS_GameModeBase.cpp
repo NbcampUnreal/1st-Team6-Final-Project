@@ -8,6 +8,7 @@
 #include "GameFramework/Actor.h" // AActor를 위해 필요할 수 있음
 #include "Engine/World.h" // GetWorld() 사용을 위해 필요
 #include "TimerManager.h" // FTimerManager 사용을 위해 필요
+#include "Zombie/ZombieActivateManager/NS_ZombieActivationManager.h"
 
 void ANS_GameModeBase::BeginPlay()
 {
@@ -58,7 +59,7 @@ void ANS_GameModeBase::CheckAndSpawnZombies()
 		TArray<AActor*> Shuffled = SpawnPoints;
 		Algo::RandomShuffle(Shuffled); // Algo::Shuffle 대신 Algo::RandomShuffle을 사용합니다.
 
-        int32 NumToSpawn = FMath::Min(Missing, 5); // 부족한 좀비 수와 5 중 더 작은 값만큼 스폰 (최대 5마리)
+        int32 NumToSpawn = FMath::Min(Missing, 20); // 부족한 좀비 수와 5 중 더 작은 값만큼 스폰 (최대 5마리)
         NumToSpawn = FMath::Min(NumToSpawn, Shuffled.Num()); // 스폰 포인트 수보다 많이 스폰하지 않도록
 		
 		for (int32 i = 0; i < NumToSpawn; ++i)
@@ -105,15 +106,22 @@ void ANS_GameModeBase::SpawnZombieAtPoint(AActor* SpawnPoint)
     // 충돌 처리 방식 설정 가능한 경우 조정하고, 불가능하면 스폰 강행하는데 이러면 벽 안에도 스폰될 수 있음
     Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
     Params.bNoFail = true; // 스폰 실패를 강제하지 않지만 그래도 스폰이 안 될 수 있음
-
-
+	
     ANS_ZombieBase* Zombie = GetWorld()->SpawnActor<ANS_ZombieBase>(ZombieToSpawn, SpawnTransform, Params);
-
+	AActor* ZombieActivationManager = UGameplayStatics::GetActorOfClass(GetWorld(),ANS_ZombieActivationManager::StaticClass());
+	ANS_ZombieActivationManager* ZombieActivationManagerCasted = Cast<ANS_ZombieActivationManager>(ZombieActivationManager);
+	
     if (Zombie)
     {
         // 새로 스폰된 좀비의 OnDestroyed 델리게이트에 바인딩
         Zombie->OnDestroyed.AddDynamic(this, &ANS_GameModeBase::OnZombieDestroyed);
         ++CurrentZombieCount;
+
+    	if (ZombieActivationManagerCasted)
+    	{
+    		// 좀비 스폰 매니저에 좀비 추가
+    		ZombieActivationManagerCasted->AppendSpawnZombie(Zombie);
+    	}
     }
 }
 
