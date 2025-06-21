@@ -9,6 +9,8 @@ ANS_PlayerController::ANS_PlayerController()
     bShowMouseCursor = false; // false로 시작 (InGameMenu에서는 true로 전환)
     bEnableClickEvents = true;
     bEnableMouseOverEvents = true;
+
+
 }
 
 void ANS_PlayerController::BeginPlay()
@@ -20,12 +22,16 @@ void ANS_PlayerController::BeginPlay()
 
     if (!IsLocalController()) return; // 서버일 경우 바로 반환해서 UI 안 띄움
 
-    if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
+
+    if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
-        if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
+ /*     GI->GetUIManager()->CompleteLoadingProcess();
+        GI->GetUIManager()->OnLoadingFinished.BindLambda([GI]()
         {
-            UIManager->ShowPlayerHUDWidget(GetWorld());
-        }
+           GI->GetUIManager()->CloseLoadingUI();
+           GI->GetUIManager()->ShowPlayerHUDWidget(GI->GetWorld());
+        });*/
+        GI->GetUIManager()->ShowPlayerHUDWidget(GI->GetWorld());
     }
 }
 
@@ -88,7 +94,6 @@ void ANS_PlayerController::TestGameOver()
     {
         if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
         {
-            FString Msg = TEXT("TEST!! HELLOW!~~~~");
             UIManager->ShowGameOverWidget(GetWorld());
         }
     }

@@ -62,8 +62,10 @@ public:
 	void LoadingScreen(UWorld* World);
 	void CloseLoadingUI();
 
-	FOnLoadingFinished OnLoadingFinished;
+	void CompleteLoadingProcess();
 
+	FOnLoadingFinished OnLoadingFinished;
+	//bool bLoading = false;
 protected:
 	UPROPERTY()
 	UNS_InGameMenu* InGameMenuWidget;
@@ -88,5 +90,5 @@ protected:
 	TSubclassOf<UNS_LoadingScreen> NS_LoadingScreenClass;
 	
 private:
-
+	
 };
