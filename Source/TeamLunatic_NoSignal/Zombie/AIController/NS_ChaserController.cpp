@@ -280,9 +280,19 @@ void ANS_ChaserController::ApplyDamageToTarget()
 {
     if (!DamageTarget) return;
 
-    // 플레이어인지 체크
-    if (!DamageTarget->IsA(ANS_PlayerCharacterBase::StaticClass())) return;
+    if (ANS_PlayerCharacterBase* PlayerChar = Cast<ANS_PlayerCharacterBase>(DamageTarget))
+    {
+        // 데미지 적용
+        UGameplayStatics::ApplyDamage(PlayerChar, 10.0f, this, GetPawn(), nullptr);
 
-    UGameplayStatics::ApplyDamage(DamageTarget, 10.0f, this, GetPawn(), nullptr);
+        // 환각 효과 발동
+        if (ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(DamageTarget))
+        {
+            UGameplayStatics::ApplyDamage(PlayerCharacter, 10.0f, this, GetPawn(), nullptr);
+
+            PlayerCharacter->ActivateHallucinationEffect(3.0f); // 3초간 환각
+        }
+
+    }
 }
 

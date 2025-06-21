@@ -99,6 +99,13 @@ void ANS_PlayerCharacterBase::BeginPlay()
     {
         GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed;
     }
+
+    // 환각 효과
+    if (CameraComp && HallucinationMaterial)
+    {
+        HallucinationMID = UMaterialInstanceDynamic::Create(HallucinationMaterial, this);
+        CameraComp->AddOrUpdateBlendable(HallucinationMID, 0.f); // Weight 0 = 비활성
+    }
 }
 
 void ANS_PlayerCharacterBase::Tick(float DeltaTime)
@@ -883,4 +890,19 @@ void ANS_PlayerCharacterBase::ThrowBottle()
     {
         bHasThrown = false;
     });
+}
+
+void ANS_PlayerCharacterBase::ActivateHallucinationEffect(float Duration)
+{
+    if (CameraComp && HallucinationMID)
+    {
+        CameraComp->AddOrUpdateBlendable(HallucinationMID, 1.f); // 활성화
+
+        // 일정 시간 뒤 자동 비활성화
+        FTimerHandle TimerHandle;
+        GetWorldTimerManager().SetTimer(TimerHandle, [this]()
+        {
+            CameraComp->AddOrUpdateBlendable(HallucinationMID, 0.f); // 비활성화
+        }, Duration, false);
+    }
 }

@@ -134,6 +134,14 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "QuickSlot", Replicated)
 	UNS_QuickSlotComponent* QuickSlotComponent;
 
+
+	//환각 관련
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PostProcess")
+	UMaterialInterface* HallucinationMaterial;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PostProcess")
+	UMaterialInstanceDynamic* HallucinationMID;
+
 	// 장착 무기 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UNS_EquipedWeaponComponent* EquipedWeaponComp;
@@ -326,4 +334,8 @@ public:
 	// 캐릭터가 병투척해서 날아가는 속도/방향/궤도 함수
 	UFUNCTION(BlueprintCallable)
 	void ThrowBottle();
+
+
+	// 환각효과 켜기
+	void ActivateHallucinationEffect(float Duration);
 };
