@@ -1,7 +1,8 @@
 #include "NS_ChaserController.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
-#include "GameFlow/NS_SinglePlayMode.h"
+#include "GameFlow/NS_GameModeBase.h"
+#include "GameFlow/NS_GameState.h"
 #include "Character/NS_PlayerController.h"
 #include "Character/NS_PlayerCharacterBase.h"
 
@@ -119,12 +120,38 @@ void ANS_ChaserController::RequestPlayerLocation()
     if (Location.IsNearlyZero())
     {
         UE_LOG(LogTemp, Warning, TEXT("플레이어 위치가 ZeroVector로 반환됨"));
-    }
-    else
-    {
-        UE_LOG(LogTemp, Log, TEXT("플레이어 위치 갱신됨: %s"), *Location.ToString());
+
+        // 살아있는 플레이어가 아무도 없다면 재요청 불필요
+        if (ANS_GameState* GS = GetWorld()->GetGameState<ANS_GameState>())
+        {
+            int32 AliveCount = 0;
+            for (APlayerState* PS : GS->PlayerArray)
+            {
+                if (ANS_MainGamePlayerState* MPS = Cast<ANS_MainGamePlayerState>(PS))
+                {
+                    if (MPS->bIsAlive)
+                    {
+                        AliveCount++;
+                        break;
+                    }
+                }
+            }
+
+            if (AliveCount == 0)
+            {
+                UE_LOG(LogTemp, Warning, TEXT("모든 플레이어가 사망하여 위치 요청 중지"));
+                return;
+            }
+        }
+
+        // 0.5초 뒤 재요청
+        FTimerHandle RetryHandle;
+        GetWorld()->GetTimerManager().SetTimer(RetryHandle, this, &ANS_ChaserController::RequestPlayerLocation, 0.5f, false);
+        return;
     }
 
+    // 유효한 위치면 블랙보드에 저장
+    UE_LOG(LogTemp, Log, TEXT("플레이어 위치 갱신됨: %s"), *Location.ToString());
     BlackboardComp->SetValueAsVector(TEXT("TargetLocation"), Location);
 }
 
@@ -168,23 +195,23 @@ void ANS_ChaserController::OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimul
 
 void ANS_ChaserController::SetChaseTarget(AActor* Target, float Duration)
 {
-    if (!BlackboardComp || !Target) return;
+    // 서버에서만 로직 실행 (ChaserController는 서버에서만 동작해야 함)
+    if (!HasAuthority() || !BlackboardComp || !Target) return;
 
     if (BlackboardComp->GetValueAsBool(TEXT("IsCooldownWait"))) return;
 
     BlackboardComp->SetValueAsBool(TEXT("IsChasingEvent"), true);
     BlackboardComp->SetValueAsObject(TEXT("TargetActor"), Target);
     BlackboardComp->ClearValue(TEXT("TargetLocation")); // 좌표 기반 추적 중단
-    // 디버깅용
-    
-    // 클라이언트에 소리키기 
+
+    // 클라이언트에 소리 키기
     if (APawn* PawnTarget = Cast<APawn>(Target))
     {
         if (APlayerController* PC = Cast<APlayerController>(PawnTarget->GetController()))
         {
             if (ANS_PlayerController* APC = Cast<ANS_PlayerController>(PC))
             {
-                APC->PlayTracked_Implementation();
+                APC->PlayTracked(); 
             }
         }
     }
@@ -200,7 +227,6 @@ void ANS_ChaserController::SetChaseTarget(AActor* Target, float Duration)
 
     UE_LOG(LogTemp, Warning, TEXT("강제 추적 시작: %s (%.1f초)"), *Target->GetName(), Duration);
 }
-
 void ANS_ChaserController::ResetChase()
 {
     if (!BlackboardComp) return;
@@ -254,9 +280,19 @@ void ANS_ChaserController::ApplyDamageToTarget()
 {
     if (!DamageTarget) return;
 
-    // 플레이어인지 체크
-    if (!DamageTarget->IsA(ANS_PlayerCharacterBase::StaticClass())) return;
+    if (ANS_PlayerCharacterBase* PlayerChar = Cast<ANS_PlayerCharacterBase>(DamageTarget))
+    {
+        // 데미지 적용
+        UGameplayStatics::ApplyDamage(PlayerChar, 10.0f, this, GetPawn(), nullptr);
 
-    UGameplayStatics::ApplyDamage(DamageTarget, 10.0f, this, GetPawn(), nullptr);
+        // 환각 효과 발동
+        if (ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(DamageTarget))
+        {
+            UGameplayStatics::ApplyDamage(PlayerCharacter, 10.0f, this, GetPawn(), nullptr);
+
+            PlayerCharacter->ActivateHallucinationEffect(3.0f); // 3초간 환각
+        }
+
+    }
 }
 

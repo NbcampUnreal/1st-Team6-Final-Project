@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "BehaviorTree/BTService.h"
+#include "NavigationSystem.h"
+#include "NavAreas/NavArea_Obstacle.h"
 #include "NS_Service_RandomLocation.generated.h"
 
 UCLASS()
@@ -19,5 +21,5 @@ protected:
 	FBlackboardKeySelector RandomLocationKey;
 
 	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Random")
-	float Radius = 50;
+	float Radius = 500;
 };

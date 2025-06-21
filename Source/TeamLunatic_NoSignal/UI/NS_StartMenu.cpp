@@ -76,6 +76,6 @@ void UNS_StartMenu::OnMultiPlayerClicked()
     if (NS_GameInstance)
     {
         NS_GameInstance->bIsSinglePlayer = false; // 싱글 플레이어 모드로 설정
-        UE_LOG(LogTemp, Warning, TEXT("싱글 플레이어 모드로 설정됨"));
+        UE_LOG(LogTemp, Warning, TEXT("멀티플레이어 모드로 설정됨"));
     }
 }

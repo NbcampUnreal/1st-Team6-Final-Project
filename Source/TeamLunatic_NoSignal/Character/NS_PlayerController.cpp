@@ -2,6 +2,8 @@
 #include "GameFlow/NS_GameInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "UI/NS_UIManager.h"
+#include "UI/NS_Msg_GameOver.h" 
+#include "Blueprint/UserWidget.h" 
 #include "Inventory UI/NS_InventoryHUD.h"
 
 ANS_PlayerController::ANS_PlayerController()
@@ -123,3 +125,55 @@ void ANS_PlayerController::PlayTracked_Implementation()
 
 }
 
+void ANS_PlayerController::HandleGameOver(bool bPlayerSurvived)
+{
+    UE_LOG(LogTemp, Warning, TEXT(">> HandleGameOver 진입 (bPlayerSurvived: %s)"), bPlayerSurvived ? TEXT("true") : TEXT("false"));
+
+    SetIgnoreMoveInput(true);
+    SetIgnoreLookInput(true);
+    bShowMouseCursor = true;
+
+    FInputModeUIOnly InputMode;
+    InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+    SetInputMode(InputMode);
+
+    if (GetWorld()->GetNumPlayerControllers() == 1)
+    {
+        UE_LOG(LogTemp, Warning, TEXT(">> 싱글플레이 - 글로벌 시간 정지"));
+        UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 0.f);
+    }
+
+    if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
+    {
+        if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
+        {
+            UE_LOG(LogTemp, Warning, TEXT(">> UIManager 유효. 위젯 표시 요청"));
+            UIManager->ShowGameOverWidget(GetWorld());
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT(">> UIManager is nullptr"));
+        }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT(">> GameInstance 캐스팅 실패"));
+    }
+}
+
+void ANS_PlayerController::Client_ShowGameOverUI_Implementation()
+{
+    UE_LOG(LogTemp, Error, TEXT("!!! URGENT: 오래된 RPC 경로(PlayerController::Client_ShowGameOverUI)가 호출되었습니다! GameMode의 OnPlayerCharacterDied 함수가 PlayerState의 bIsAlive 변수만 수정하도록 변경되었는지 확인하세요!"));
+}
+
+
+void ANS_PlayerController::Client_ShowHitEffect_Implementation()
+{
+    if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
+    {
+        if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
+        {
+            UIManager->ShowHitEffectWidget(GetWorld());
+        }
+    }
+}

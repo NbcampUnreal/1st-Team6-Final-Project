@@ -14,6 +14,7 @@ ANS_SinglePlayMode::ANS_SinglePlayMode()
 	PlayerControllerClass = ANS_PlayerController::StaticClass(); 
 }
 
+
 void ANS_SinglePlayMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
@@ -57,61 +58,24 @@ void ANS_SinglePlayMode::PostLogin(APlayerController* NewPlayer)
 
 void ANS_SinglePlayMode::OnPlayerCharacterDied_Implementation(ANS_PlayerCharacterBase* DeadCharacter)
 {
-	if (bIsGameOver)
+	if (bIsGameOver || !DeadCharacter) return;
+
+	if (DeadCharacter->IsPlayerControlled())
 	{
-		return;
-	}
-	if (DeadCharacter)
-	{
-		if (DeadCharacter->IsPlayerControlled())
+		if (APlayerController* PC = DeadCharacter->GetController<APlayerController>())
 		{
-			bIsGameOver = true;
-			HandleGameOver(false, EEscapeRoute::None);
-		}
-
-	}
-}
-
-
-
-void ANS_SinglePlayMode::HandleGameOver(bool bPlayerSurvived, EEscapeRoute EscapeRoute)
-{
-	CurrentEscapeRoute = EscapeRoute;
-
-	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-	if (PC)
-	{
-		// 입력 차단
-		PC->SetIgnoreMoveInput(true);
-		PC->SetIgnoreLookInput(true);
-
-		// UI 전용 모드 설정
-		PC->bShowMouseCursor = true;
-		FInputModeUIOnly InputMode;
-		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-		PC->SetInputMode(InputMode);
-	}
-
-	// 사운드 전체 정지 
-	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 0.f);
-
-	if (bPlayerSurvived)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("GAME CLEAR! Route: %s"),
-			*UEnum::GetValueAsString(CurrentEscapeRoute));
-	}
-	else
-	{
-		if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
-		{
-			if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
+			if (ANS_PlayerController* NS_PC = Cast<ANS_PlayerController>(PC))
 			{
-				UIManager->ShowGameOverWidget(GetWorld());
+				NS_PC->HandleGameOver(false);
 			}
-
 		}
+
+		bIsGameOver = true;
 	}
 }
+
+
+
 
 
 

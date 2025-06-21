@@ -7,6 +7,7 @@
 #include "Item/NS_InventoryBaseItem.h"
 #include "Components/NS_EquipedWeaponComponent.h"
 #include "Character/Components/NS_StatusComponent.h"
+#include "Character/NS_PlayerController.h"
 #include "Item/NS_BaseRangedWeapon.h"
 #include "Character/ThrowActor/NS_ThrowActor.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -14,9 +15,6 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "World/Pickup.h"
 #include "TimerManager.h"
-#include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
-#include "GameFramework/ProjectileMovementComponent.h"
-#include "Components/SplineMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include <Net/UnrealNetwork.h>
 #include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
@@ -55,10 +53,11 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     GetCharacterMovement()->bOrientRotationToMovement = false;
     GetCharacterMovement()->bUseControllerDesiredRotation = false;
 
-    // 스탯 컴포넌트 부착
+    // 스탯 컴포넌트
     StatusComp = CreateDefaultSubobject<UNS_StatusComponent>(TEXT("StatusComponent"));
+    // 상호작용 컴포넌트
     InteractionComponent = CreateDefaultSubobject<UInteractionComponent>(TEXT("InteractionComponent"));
-
+    // 장착 무기 컴포넌트
     EquipedWeaponComp = CreateDefaultSubobject<UNS_EquipedWeaponComponent>(TEXT("EquipedWeaponComponent"));
 
     BaseEyeHeight = 74.0f;
@@ -71,6 +70,17 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     // 퀵슬롯 
     QuickSlotComponent = CreateDefaultSubobject<UNS_QuickSlotComponent>(TEXT("QuickSlotComponent"));
     QuickSlotComponent->SetIsReplicated(true);
+
+    // 스팟라이트 컴포넌트 
+    FlashlightComponent = CreateDefaultSubobject<USpotLightComponent>(TEXT("FlashlightComponent"));
+    // 카메라에 부착
+    FlashlightComponent->SetupAttachment(CameraComp);
+    FlashlightComponent->SetRelativeRotation(FRotator::ZeroRotator);
+    FlashlightComponent->SetVisibility(true); 
+    FlashlightComponent->SetIntensity(8000.0f);
+    FlashlightComponent->SetOuterConeAngle(30.0f);
+    FlashlightComponent->SetInnerConeAngle(15.0f);
+    FlashlightComponent->SetAttenuationRadius(2000.0f);
 }
 
 void ANS_PlayerCharacterBase::BeginPlay()
@@ -97,11 +107,33 @@ void ANS_PlayerCharacterBase::BeginPlay()
     {
         GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed;
     }
+
+    // 환각 효과
+    if (CameraComp && HallucinationMaterial)
+    {
+        HallucinationMID = UMaterialInstanceDynamic::Create(HallucinationMaterial, this);
+        CameraComp->AddOrUpdateBlendable(HallucinationMID, 0.f); // Weight 0 = 비활성
+    }
 }
 
 void ANS_PlayerCharacterBase::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
+    
+    // 로컬 플레이어인 경우에만 Turn In Place 업데이트
+    if (IsLocallyControlled())
+    {
+        // Turn In Place 업데이트
+        if (bIsTurningInPlace)
+        {
+            UpdateTurnInPlace(DeltaTime);
+        }
+        // Yaw 리셋 업데이트
+        else if (bIsResettingYaw)
+        {
+            UpdateYawReset(DeltaTime);
+        }
+    }
 }
 
 void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -226,6 +258,15 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                &ANS_PlayerCharacterBase::ReloadAction_Server);
         }
 
+        if (InputFlashlightAction)
+        {
+            EnhancedInput->BindAction(
+                InputFlashlightAction,
+                ETriggerEvent::Started,
+                this,
+                &ANS_PlayerCharacterBase::ToggleFlashlight);
+        }
+
         if (InputQuickSlot1)
         {
             EnhancedInput->BindAction(
@@ -273,19 +314,21 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsSprint);  // 달리기 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsPickUp);  // 아이템줍기 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsHit);     // 맞는지 확인 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, CamYaw);    // 카메라 좌/우 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, CamPitch);  // 카메라 상/하 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsAiming);  // 조준중인지 확인 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsReload); // 장전중인지 확인 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, TurnLeft);  // 몸을 왼쪽으로 회전시키는 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, TurnRight); // 몸을 오른쪽으로 회전시키는 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, NowFire);   // 사격시 몸전체Mesh 사격 애니메이션 재생 용 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsSprint);            // 달리기 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsPickUp);            // 아이템줍기 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsHit);               // 맞는지 확인 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, CamYaw);              // 카메라 좌/우 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, CamPitch);            // 카메라 상/하 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsAiming);            // 조준중인지 확인 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsReload);            // 장전중인지 확인 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, TurnLeft);            // 몸을 왼쪽으로 회전시키는 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, TurnRight);           // 몸을 오른쪽으로 회전시키는 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, NowFire);             // 사격시 몸전체Mesh 사격 애니메이션 재생 용 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, bFlashlightOnOff);    // 헤드램프 키고 끄는 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, PlayerInventory);
     DOREPLIFETIME(ANS_PlayerCharacterBase, QuickSlotComponent);
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsChangeAnim); // 퀵슬롯 눌렀을때 무기 장착하는 애니메이션 재생 용 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsChangeAnim);        // 퀵슬롯 눌렀을때 무기 장착하는 애니메이션 재생 용 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsDead);	             // 캐릭터가 죽었는지 확인 변수
 }
 
 void ANS_PlayerCharacterBase::SetMovementLockState_Server_Implementation(bool bLock)
@@ -321,6 +364,12 @@ float ANS_PlayerCharacterBase::TakeDamage(
     AActor* DamageCauser
 )
 {
+    // 이미 죽은 상태라면 데미지를 받지 않음
+    if (IsDead)
+    {
+        return 0.f;
+    }
+    
     float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
     if (!HasAuthority() || ActualDamage <= 0.f)
         return ActualDamage;
@@ -328,13 +377,30 @@ float ANS_PlayerCharacterBase::TakeDamage(
     // 캐릭터 체력 감소
     StatusComp->AddHealthGauge(-ActualDamage);
 
+    if (AController* PC = GetController())
+    {
+        if (ANS_PlayerController* NS_PC = Cast<ANS_PlayerController>(PC))
+        {
+            NS_PC->Client_ShowHitEffect();
+        }
+    }
+
+
+
     IsHit = true;
     
     // IsHit 타이머핸들 람다로 0.5초간 실행
     FTimerHandle ResetHitTime;
     GetWorldTimerManager().SetTimer(
         ResetHitTime,
-        [this]() { IsHit = false;},
+        [this]()
+        {
+            // 캐릭터가 있다면 IsHit을 false로 설정
+            if (IsValid(this)) //
+            {
+                IsHit = false; //
+            }
+        },
         0.5f,
         false
         );
@@ -368,22 +434,64 @@ void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
     
     // 카메라 회전 적용
     FVector2D LookInput = Value.Get<FVector2D>(); 
-    AddControllerYawInput  (LookInput.X * LookMagnification); 
+    AddControllerYawInput(LookInput.X * LookMagnification); 
     AddControllerPitchInput(LookInput.Y * LookMagnification); 
 
     // Actor Rotation과 Control Rotation을 Delta를 이용해 Yaw값 추출
-    const FRotator ActorRot   = GetActorRotation(); 
+    const FRotator ActorRot = GetActorRotation(); 
     const FRotator ControlRot = Controller->GetControlRotation(); 
-    const FRotator DeltaRot   = UKismetMathLibrary::NormalizedDeltaRotator(ControlRot, ActorRot);
+    const FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(ControlRot, ActorRot);
     
     const float DeltaTime = GetWorld()->GetDeltaSeconds();
     
-    //CamYaw   = FMath::FInterpTo(CamYaw,   DeltaRot.Yaw,   DeltaTime, AimSendInterpSpeed);
-	CamYaw = DeltaRot.Yaw; // 서버로 전송할 때는 보간하지 않고 바로 전송
+    // 회전 중이 아니고 Yaw 리셋 중이 아닐 때만 CamYaw 업데이트
+    if (!bIsTurningInPlace && !bIsResettingYaw)
+    {
+        // 마우스 입력이 있을 때만 CamYaw 업데이트 (마우스 입력이 없으면 이전 값 유지)
+        if (FMath::Abs(LookInput.X) > KINDA_SMALL_NUMBER)
+        {
+            CamYaw = DeltaRot.Yaw;
+        }
+        
+        // 회전 시작 조건 확인
+        if (!TurnLeft && !TurnRight)
+        {
+            if (FMath::Abs(CamYaw) >= TurnInPlaceThreshold)
+            {
+                // 회전 시작 - 현재 Yaw 값 저장
+                CurrentTurnYaw = CamYaw;
+                LastTurnYaw = CamYaw;
+                bIsTurningInPlace = true;
+                bIsResettingYaw = false;
+                
+                // 왼쪽/오른쪽 회전 설정
+                bool bNewTurnLeft = CamYaw < 0;
+                bool bNewTurnRight = CamYaw > 0;
+                
+                // bUseControllerDesiredRotation 활성화
+                GetCharacterMovement()->bUseControllerDesiredRotation = true;
+                
+                // 서버에 상태 업데이트 요청
+                if (HasAuthority())
+                {
+                    // 서버에서 직접 설정하고 멀티캐스트
+                    TurnLeft = bNewTurnLeft;
+                    TurnRight = bNewTurnRight;
+                    Multicast_UpdateTurnInPlaceState(bNewTurnLeft, bNewTurnRight, true);
+                }
+                else
+                {
+                    // 클라이언트에서는 서버에 요청
+                    Server_UpdateTurnInPlaceState(bNewTurnLeft, bNewTurnRight, true);
+                }
+            }
+        }
+    }
+    
     CamPitch = FMath::FInterpTo(CamPitch, DeltaRot.Pitch, DeltaTime, AimSendInterpSpeed); 
 
-    // InterpTo를 이요해서 부드러운 Yaw/Pitch값을 서버로 전송
-    UpdateAim_Server(CamYaw, CamPitch); 
+    // 카메라 회전 정보를 서버로 전송 (손전등 회전도 함께 처리됨)
+    UpdateAim_Server(CamYaw, CamPitch);
 }
 
 void ANS_PlayerCharacterBase::JumpAction(const FInputActionValue& Value)
@@ -476,6 +584,11 @@ void ANS_PlayerCharacterBase::StopAimingAction_Server_Implementation(const FInpu
 void ANS_PlayerCharacterBase::ReloadAction_Server_Implementation(const FInputActionValue& Value)
 {
     // 실제 총알 재장전 로직은 애님노티파이로 애니메이션 안에서 EquipedWeapon에있는 Server_Reload()함수를 블루프린트로 실행 할 예정
+
+    if (IsReload)
+    {
+        return;
+    }
     
     // 현재 무기가 없거나, 원거리 무기가 아니면 재장전 불가
     if (!EquipedWeaponComp->CurrentWeapon)// 현재 무기가 없으면 return
@@ -489,7 +602,10 @@ void ANS_PlayerCharacterBase::ReloadAction_Server_Implementation(const FInputAct
         return;
     }
     
-	IsReload = true;
+    if (!IsReload)
+    {
+        IsReload = true;
+    }
 
     // 노티파이로 IsReload 변수값을 false로 변경하고 있음
 }
@@ -504,25 +620,40 @@ void ANS_PlayerCharacterBase::PlayDeath_Server_Implementation()
         ANS_GameModeBase* BaseGameMode = Cast<ANS_GameModeBase>(UGameplayStatics::GetGameMode(World));
         if (BaseGameMode)
         {
-            BaseGameMode->OnPlayerCharacterDied(this); 
+            BaseGameMode->OnPlayerCharacterDied(this);
+
+            if (AController* OwningController = GetController())
+            {
+                if (ANS_MainGamePlayerState* PS = Cast<ANS_MainGamePlayerState>(OwningController->PlayerState))
+                {
+                    PS->bIsAlive = false; 
+                    UE_LOG(LogTemp, Warning, TEXT("Player %s PlayerState set to Dead."), *PS->GetPlayerName());
+                }
+            }
         }
     }
-
-    PlayDeath_Multicast(); 
+    PlayDeath_Multicast();
 }
 
 void ANS_PlayerCharacterBase::PlayDeath_Multicast_Implementation()
 {
+    // 캐릭터가 죽었으면 IsDead변수를 true로 변경해서 애니메이션 몽타주가 1번만 재생되도록 구현했음
+    IsDead = true;
+    
+    // 컨트롤러에서 분리시키고
     DetachFromControllerPendingDestroy(); 
-	
+
+    // 무브먼트 없애고
     GetCharacterMovement()->DisableMovement(); 
 
-    GetMesh()->SetCollisionProfileName("Ragdoll"); 
-    GetMesh()->SetSimulatePhysics(true); 
-    GetMesh()->SetAllBodiesSimulatePhysics(true); 
-    GetMesh()->WakeAllRigidBodies(); 
-    GetMesh()->bBlendPhysics = true; 
-    SetLifeSpan(5.f); 
+    // 기존 레그돌은 부르르 떨려서 대신 몽타주 재생으로 바꿨음
+    if (DeathMontage)
+    {
+        PlayAnimMontage(DeathMontage);
+    }
+    
+    // 월드에서 사라지는 시간은 30초로
+    SetLifeSpan(30.f); 
 }
 
 void ANS_PlayerCharacterBase::DropItem_Server_Implementation(UNS_InventoryBaseItem* ItemToDrop, int32 QuantityToDrop)
@@ -795,10 +926,34 @@ void ANS_PlayerCharacterBase::Client_NotifyInventoryUpdated_Implementation()
 
 
 // 클라이언트면 서버로 클라이언트 자신에 Yaw값과 Pitch값을 서버로 전송
-void ANS_PlayerCharacterBase::UpdateAim_Server_Implementation(float NewCamYaw, float NewCamPitch)
+void ANS_PlayerCharacterBase::UpdateAim_Server_Implementation(float Yaw, float Pitch)
 {
-    CamYaw   = NewCamYaw; 
-    CamPitch = NewCamPitch; 
+    // 서버에서 변수 업데이트
+    CamYaw = Yaw;
+    CamPitch = Pitch;
+    
+    // 모든 클라이언트에 전파
+    UpdateAim_Multicast(Yaw, Pitch);
+}
+
+void ANS_PlayerCharacterBase::UpdateAim_Multicast_Implementation(float Yaw, float Pitch)
+{
+    // 애니메이션 업데이트를 위한 변수 설정
+    CamYaw = Yaw;
+    CamPitch = Pitch;
+    
+    // 손전등이 켜져 있다면 회전도 업데이트
+    if (bFlashlightOnOff && FlashlightComponent)
+    {
+        // 카메라 회전 계산 (캐릭터 회전 + Yaw/Pitch 오프셋)
+        FRotator ActorRotation = GetActorRotation();
+        FRotator CameraRot = ActorRotation;
+        CameraRot.Yaw += Yaw;
+        CameraRot.Pitch = Pitch; // Pitch는 직접 설정 (상대적이지 않음)
+        
+        // 손전등 회전 업데이트
+        FlashlightComponent->SetWorldRotation(CameraRot);
+    }
 }
 
 void ANS_PlayerCharacterBase::ThrowBottle()
@@ -834,4 +989,166 @@ void ANS_PlayerCharacterBase::ThrowBottle()
     {
         bHasThrown = false;
     });
+}
+
+void ANS_PlayerCharacterBase::ToggleFlashlight()
+{
+    if (HasAuthority())
+    {
+        ToggleFlashlight_Multicast();
+    }
+    else
+    {
+        ToggleFlashlight_Server();
+    }
+}
+
+void ANS_PlayerCharacterBase::ToggleFlashlight_Server_Implementation()
+{
+    ToggleFlashlight_Multicast();
+}
+
+void ANS_PlayerCharacterBase::ToggleFlashlight_Multicast_Implementation()
+{
+    bFlashlightOnOff = !bFlashlightOnOff;
+    FlashlightComponent->SetVisibility(bFlashlightOnOff);
+}
+
+void ANS_PlayerCharacterBase::UpdateTurnInPlace(float DeltaTime)
+{
+    if (!Controller) return;
+    
+    // 회전 중이 아니면 종료
+    if (!bIsTurningInPlace) return;
+    
+    // 현재 카메라와 캐릭터 간의 Yaw 차이 계산
+    const FRotator ActorRot = GetActorRotation();
+    const FRotator ControlRot = Controller->GetControlRotation();
+    const FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(ControlRot, ActorRot);
+    const float CurrentYawDelta = DeltaRot.Yaw;
+    
+    // 회전 방향 결정 왼쪽 또는 오른쪽
+    const float RotationDirection = TurnLeft ? -1.0f : 1.0f;
+    
+    // 캐릭터 회전을 부드럽게 회전하도록 설정
+    FRotator NewRotation = GetActorRotation();
+    NewRotation.Yaw += RotationDirection * TurnInPlaceSpeed * DeltaTime;
+    SetActorRotation(NewRotation);
+    
+    // CamYaw 값을 부드럽게 보간 애님인스턴스인 ABP에서 사용할 값임
+    // 회전 중에는 CamYaw를 현재 회전 방향에 맞게 부드럽게 감소
+    float TargetYaw = 0.0f;
+    if (TurnLeft)
+    {
+        // 왼쪽 회전 중이면 음수 값에서 0으로 보간
+        TargetYaw = FMath::Min(0.0f, CurrentYawDelta);
+    }
+    else
+    {
+        // 오른쪽 회전 중이면 양수 값에서 0으로 보간
+        TargetYaw = FMath::Max(0.0f, CurrentYawDelta);
+    }
+    
+    CamYaw = FMath::FInterpTo(CamYaw, TargetYaw, DeltaTime, TurnInPlaceSpeed * 0.5f);
+    
+    // 회전이 충분히 이루어졌는지 확인 임계값 이하로 떨어졌는지
+    if (FMath::Abs(CurrentYawDelta) <= TurnInPlaceResetThreshold)
+    {
+        // 회전 종료 노티파이에서 OnTurnInPlaceFinished 호출될거임
+        bIsTurningInPlace = false;
+        
+        // 마지막 CamYaw 값 저장 ===== 부드러운 리셋을 위해
+        LastTurnYaw = CamYaw;
+        bIsResettingYaw = true;
+    }
+    
+    // 서버에 업데이트된 CamYaw 전송
+    UpdateAim_Server(CamYaw, CamPitch);
+}
+
+// 애니메이션 노티파이에서 호출할 함수 수정
+void ANS_PlayerCharacterBase::OnTurnInPlaceFinished()
+{
+    // 회전 완료 후 변수 초기화
+    bIsTurningInPlace = false;
+    
+    // 마지막 CamYaw 값 저장 (부드러운 리셋을 위해)
+    if (!bIsResettingYaw)
+    {
+        LastTurnYaw = CamYaw;
+        bIsResettingYaw = true;
+    }
+    
+    // bUseControllerDesiredRotation 비활성화
+    GetCharacterMovement()->bUseControllerDesiredRotation = false;
+    
+    // 서버에 상태 업데이트
+    if (HasAuthority())
+    {
+        // 서버에서 직접 설정하고 멀티캐스트
+        TurnLeft = false;
+        TurnRight = false;
+        Multicast_UpdateTurnInPlaceState(false, false, false);
+    }
+    else
+    {
+        // 클라이언트에서는 서버에 요청
+        Server_UpdateTurnInPlaceState(false, false, false);
+    }
+}
+
+void ANS_PlayerCharacterBase::Server_UpdateTurnInPlaceState_Implementation(bool bInTurnLeft, bool bInTurnRight, bool bInUseControllerDesiredRotation)
+{
+    // 서버에서 상태 업데이트
+    TurnLeft = bInTurnLeft;
+    TurnRight = bInTurnRight;
+    GetCharacterMovement()->bUseControllerDesiredRotation = bInUseControllerDesiredRotation;
+    
+    // 모든 클라이언트에 멀티캐스트
+    Multicast_UpdateTurnInPlaceState(bInTurnLeft, bInTurnRight, bInUseControllerDesiredRotation);
+}
+
+void ANS_PlayerCharacterBase::Multicast_UpdateTurnInPlaceState_Implementation(bool bInTurnLeft, bool bInTurnRight, bool bInUseControllerDesiredRotation)
+{
+    // 로컬 플레이어가 아닌 경우에만 적용
+    if (!IsLocallyControlled())
+    {
+        TurnLeft = bInTurnLeft;
+        TurnRight = bInTurnRight;
+        GetCharacterMovement()->bUseControllerDesiredRotation = bInUseControllerDesiredRotation;
+    }
+}
+
+void ANS_PlayerCharacterBase::UpdateYawReset(float DeltaTime)
+{
+    if (!bIsResettingYaw) return;
+    
+    // CamYaw를 부드럽게 0으로 보간
+    CamYaw = FMath::FInterpTo(CamYaw, 0.0f, DeltaTime, TurnInPlaceYawResetSpeed);
+    
+    // 충분히 0에 가까워지면 리셋 완료
+    if (FMath::Abs(CamYaw) < 0.5f)
+    {
+        CamYaw = 0.0f;
+        bIsResettingYaw = false;
+    }
+    
+    // 서버에 업데이트된 CamYaw 전송
+    UpdateAim_Server(CamYaw, CamPitch);
+}
+
+
+void ANS_PlayerCharacterBase::ActivateHallucinationEffect(float Duration)
+{
+    if (CameraComp && HallucinationMID)
+    {
+        CameraComp->AddOrUpdateBlendable(HallucinationMID, 1.f); // 활성화
+
+        // 일정 시간 뒤 자동 비활성화
+        FTimerHandle TimerHandle;
+        GetWorldTimerManager().SetTimer(TimerHandle, [this]()
+        {
+            CameraComp->AddOrUpdateBlendable(HallucinationMID, 0.f); // 비활성화
+        }, Duration, false);
+    }
 }
