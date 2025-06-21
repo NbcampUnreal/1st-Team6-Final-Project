@@ -159,6 +159,10 @@ public:
 	////////////////////////////////////////병투척 변수 끝!///////////////////////////////////////////////
 
 
+	// 죽음 애니메이션 몽타주
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Animation")
+	UAnimMontage* DeathMontage;
+
 
 	// LookAction에 카메라 회전값 보간 속도 ---> 8은 너무 느려서 10이상은 되어야할 듯
 	UPROPERTY(EditDefaultsOnly, Category = "Aim")
@@ -210,7 +214,11 @@ public:
 	// 퀵슬롯을 누르면 퀵슬롯에 있는 무기를 장착하는 애니메이션 재생용 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_IsChangeAnim, Category = "Replicated Variables")
 	bool IsChangeAnim = false;
+	// 캐릭터가 죽었는지 확인 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool IsDead = false; // 캐릭터가 죽었는지 여부를 나타내는 변수 추가
 
+	
 	UFUNCTION()
 	void OnRep_IsChangeAnim();
 	//////////////////////////////////////////////////////////////////////////////////////
