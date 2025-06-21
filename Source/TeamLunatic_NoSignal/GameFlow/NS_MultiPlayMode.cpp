@@ -2,7 +2,6 @@
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "NS_GameInstance.h"
-#include "UI/NS_UIManager.h"
 #include "NS_MainGamePlayerState.h"
 #include "NS_GameState.h"
 #include "Character/NS_PlayerCharacterBase.h"
@@ -19,14 +18,13 @@ void ANS_MultiPlayMode::BeginPlay()
 
     UE_LOG(LogTemp, Warning, TEXT("MultiPlayMode BeginPlay Set !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!."));
 
-    // 🔥 플레이어 스폰 추가
     SpawnAllPlayers();
 
     if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
         GI->SetGameModeType(EGameModeType::MultiPlayMode);
 
-        if (GetWorld()->IsNetMode(NM_DedicatedServer) || GetWorld()->IsNetMode(NM_ListenServer))
+        if (IsRunningDedicatedServer())
         {
             if (GI->MyServerPort > 0)
             {
@@ -36,38 +34,6 @@ void ANS_MultiPlayMode::BeginPlay()
             {
                 UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] MyServerPort가 유효하지 않아 매치메이킹 서버에 세션 상태 업데이트 요청을 보낼 수 없습니다."));
             }
-        }
-
-        if (UNS_UIManager* UIManager = GI->GetUIManager())
-        {
-            UIManager->LoadingScreen(GetWorld());
-
-            FTimerHandle Timer;
-            GetWorld()->GetTimerManager().SetTimer(Timer, [UIManager, this]()
-            {
-                UIManager->CloseLoadingUI();
-                UIManager->ShowPlayerHUDWidget(GetWorld());
-
-                if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
-                {
-                    if (PC->IsLocalController())
-                    {
-                        PC->SetInputMode(FInputModeGameOnly());
-                        PC->bShowMouseCursor = false;
-                        UE_LOG(LogTemp, Warning, TEXT("입력 모드 GameOnly로 설정 완료"));
-
-                        if (APawn* CurrentPawn = PC->GetPawn())
-                        {
-                            UE_LOG(LogTemp, Warning, TEXT("[BeginPlay] 현재 Possess 중인 Pawn: %s (%s)"), *CurrentPawn->GetName(), *CurrentPawn->GetClass()->GetName());
-                        }
-                        else
-                        {
-                            UE_LOG(LogTemp, Warning, TEXT("[BeginPlay] 현재 Possess 중인 Pawn이 없습니다."));
-                        }
-                    }
-                }
-
-            }, 1.5f, false);
         }
     }
 }

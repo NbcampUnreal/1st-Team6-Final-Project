@@ -42,8 +42,22 @@ void UNS_GameInstance::Init()
 		NS_UIManager->InitUi(GetWorld());
 	}
 
-
+	// Dedicated 서버가 실행될 경우, 커맨드라인에서 포트 추출
+	if (IsRunningDedicatedServer())
+	{
+		FString PortStr;
+		if (FParse::Value(FCommandLine::Get(), TEXT("PORT="), PortStr))
+		{
+			MyServerPort = FCString::Atoi(*PortStr);
+			UE_LOG(LogTemp, Warning, TEXT("[GameInstance] 커맨드라인에서 포트 추출: %d"), MyServerPort);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[GameInstance] 커맨드라인에서 포트 추출 실패. FCommandLine: %s"), FCommandLine::Get());
+		}
+	}
 }
+
 
 
 void UNS_GameInstance::SetGameModeType(EGameModeType Type)

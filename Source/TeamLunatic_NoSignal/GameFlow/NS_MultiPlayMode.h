@@ -19,7 +19,6 @@ public:
     void SpawnAllPlayers();
 protected:
     virtual void BeginPlay() override;
-
     UPROPERTY()
     bool bIsGameOver = false;
 };

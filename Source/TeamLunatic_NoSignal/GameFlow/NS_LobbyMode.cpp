@@ -146,12 +146,12 @@ void ANS_LobbyMode::CheckAllPlayersReady()
 	const AGameStateBase* GS = GetGameState<AGameStateBase>();
 	if (!GS) return;
 
-	// 플레이어 수 체크
-	if (GS->PlayerArray.Num() < 2)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("플레이어 수 부족. 현재 인원: %d"), GS->PlayerArray.Num());
-		return;
-	}
+	//// 플레이어 수 체크
+	//if (GS->PlayerArray.Num() < 2)
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("플레이어 수 부족. 현재 인원: %d"), GS->PlayerArray.Num());
+	//	return;
+	//}
 
 	// 전원 레디 확인
 	for (APlayerState* PS : GS->PlayerArray)
