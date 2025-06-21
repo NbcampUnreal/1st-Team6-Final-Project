@@ -491,6 +491,11 @@ void ANS_PlayerCharacterBase::StopAimingAction_Server_Implementation(const FInpu
 void ANS_PlayerCharacterBase::ReloadAction_Server_Implementation(const FInputActionValue& Value)
 {
     // 실제 총알 재장전 로직은 애님노티파이로 애니메이션 안에서 EquipedWeapon에있는 Server_Reload()함수를 블루프린트로 실행 할 예정
+
+    if (IsReload)
+    {
+        return;
+    }
     
     // 현재 무기가 없거나, 원거리 무기가 아니면 재장전 불가
     if (!EquipedWeaponComp->CurrentWeapon)// 현재 무기가 없으면 return
@@ -504,7 +509,10 @@ void ANS_PlayerCharacterBase::ReloadAction_Server_Implementation(const FInputAct
         return;
     }
     
-	IsReload = true;
+    if (!IsReload)
+    {
+        IsReload = true;
+    }
 
     // 노티파이로 IsReload 변수값을 false로 변경하고 있음
 }
