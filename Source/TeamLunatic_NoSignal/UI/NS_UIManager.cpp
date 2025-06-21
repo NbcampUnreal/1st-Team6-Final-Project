@@ -224,8 +224,8 @@ void UNS_UIManager::LoadingScreen(UWorld* World)
 
     OnLoadingFinished.Unbind();
     NS_LoadingScreen->AddToViewport();
-	NS_LoadingScreen->FakeUpdateProgress();
-   // NS_LoadingScreen->UpdateProgress();
+	//NS_LoadingScreen->FakeUpdateProgress();
+    NS_LoadingScreen->UpdateProgress();
 }
 
 bool UNS_UIManager::IsInViewportInGameMenuWidget()
