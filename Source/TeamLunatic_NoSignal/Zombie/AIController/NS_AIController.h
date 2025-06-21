@@ -18,7 +18,7 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_AIController : public AAIController
 {
 	GENERATED_BODY()
 
-protected:
+public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
 	UAIPerceptionComponent* Perception;
 	UPROPERTY()

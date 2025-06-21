@@ -14,6 +14,7 @@ ANS_SinglePlayMode::ANS_SinglePlayMode()
 	PlayerControllerClass = ANS_PlayerController::StaticClass(); 
 }
 
+
 void ANS_SinglePlayMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);

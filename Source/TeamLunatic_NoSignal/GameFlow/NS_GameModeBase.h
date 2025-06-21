@@ -43,7 +43,7 @@ public:
 
     // 최대 좀비 수
     UPROPERTY(EditAnywhere, Category = "Zombie")
-    int32 MaxZombieCount = 10;
+    int32 MaxZombieCount = 150;
     
     UPROPERTY(EditDefaultsOnly, Category = "Zombie")
     TSubclassOf<class ANS_BasicZombie> BasicZombieClass;

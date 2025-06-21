@@ -1,7 +1,7 @@
 #include "NS_ChaserController.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
-#include "GameFlow/NS_SinglePlayMode.h"
+#include "GameFlow/NS_GameModeBase.h"
 #include "Character/NS_PlayerController.h"
 #include "Character/NS_PlayerCharacterBase.h"
 
@@ -168,23 +168,23 @@ void ANS_ChaserController::OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimul
 
 void ANS_ChaserController::SetChaseTarget(AActor* Target, float Duration)
 {
-    if (!BlackboardComp || !Target) return;
+    // 서버에서만 로직 실행 (ChaserController는 서버에서만 동작해야 함)
+    if (!HasAuthority() || !BlackboardComp || !Target) return;
 
     if (BlackboardComp->GetValueAsBool(TEXT("IsCooldownWait"))) return;
 
     BlackboardComp->SetValueAsBool(TEXT("IsChasingEvent"), true);
     BlackboardComp->SetValueAsObject(TEXT("TargetActor"), Target);
     BlackboardComp->ClearValue(TEXT("TargetLocation")); // 좌표 기반 추적 중단
-    // 디버깅용
-    
-    // 클라이언트에 소리키기 
+
+    // 클라이언트에 소리 키기
     if (APawn* PawnTarget = Cast<APawn>(Target))
     {
         if (APlayerController* PC = Cast<APlayerController>(PawnTarget->GetController()))
         {
             if (ANS_PlayerController* APC = Cast<ANS_PlayerController>(PC))
             {
-                APC->PlayTracked_Implementation();
+                APC->PlayTracked(); 
             }
         }
     }
@@ -200,7 +200,6 @@ void ANS_ChaserController::SetChaseTarget(AActor* Target, float Duration)
 
     UE_LOG(LogTemp, Warning, TEXT("강제 추적 시작: %s (%.1f초)"), *Target->GetName(), Duration);
 }
-
 void ANS_ChaserController::ResetChase()
 {
     if (!BlackboardComp) return;

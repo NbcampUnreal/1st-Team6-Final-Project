@@ -8,7 +8,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Enum/EZombieAttackType.h"
 #include "Zombie/AIController/NS_AIController.h"
-#include "AIController/NS_AIController.h"
+#include "BrainComponent.h"
 #include "PhysicsEngine/BodyInstance.h"
 #include "Engine/DamageEvents.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -43,11 +43,17 @@ ZombieType(EZombieType::BASIC), bIsDead(false), bIsGotHit(false), SafeBones({"cl
 	SphereComp->SetupAttachment(GetMesh());
 	SphereComp->OnComponentBeginOverlap.AddDynamic(this,&ANS_ZombieBase::OnOverlapSphere);
 	SphereComp->SetGenerateOverlapEvents(true);
+
+	// bIsActive의 초기값은 false로 설정해서 처음부터 캐릭터가 활성화 거리 밖에있으면 안보이도록 설정
+	bIsActive = false;
 }
 
 void ANS_ZombieBase::BeginPlay()
 {
 	Super::BeginPlay();
+
+	SetActive(false);
+	
 	SetState(CurrentState);
 	GetMesh()->GetAnimInstance()->RootMotionMode = ERootMotionMode::RootMotionFromEverything;
 	InitializePhysics();
@@ -61,6 +67,16 @@ void ANS_ZombieBase::BeginPlay()
 		if (SpawnedController)
 		{
 			SpawnedController->Possess(this); // 이 캐릭터를 Possess
+		}
+	}
+	// 서버라면 AIController의 틱도 비활성화합니다.
+	if (HasAuthority())
+	{
+		if (AAIController* AIController = Cast<AAIController>(GetController()))
+		{
+			AIController->SetActorTickEnabled(false);
+			// 비헤이비어 트리가 있다면 여기서 Pause 또는 초기 상태로 리셋하는 로직 추가 가능
+			AIController->GetBrainComponent()->PauseLogic("Reason");
 		}
 	}
 }
@@ -93,6 +109,130 @@ void ANS_ZombieBase::OnOverlapSphere(UPrimitiveComponent* OverlappedComp, AActor
 	if (ANS_PlayerCharacterBase* Player = Cast<ANS_PlayerCharacterBase>(OtherActor))
 	{
 		UGameplayStatics::ApplyDamage(Player, BaseDamage,GetController(), this, nullptr);
+	}
+}
+
+void ANS_ZombieBase::SetActive(bool NewIsActive) // 매개변수 이름을 NewIsActive로 변경하여 혼동 방지
+{
+	bIsActive = NewIsActive;
+	UE_LOG(LogTemp, Warning, TEXT("Zombie %s SetActive Called. Current bIsActive: %s"), *GetName(), bIsActive ? TEXT("True") : TEXT("False"));
+	
+	if (bIsActive) // 활성화 상태로 전환 (true)
+	{
+		SetActorHiddenInGame(false); // 액터를 숨기지 않고 보이게 함
+		GetMesh()->SetVisibility(true, true); // 좀비 메쉬를 보이게 함 (자식 컴포넌트 포함)
+		SetActorEnableCollision(true); // 충돌을 활성화함 (다른 액터와 상호작용 가능)
+		
+		// 액터 자체의 Tick 활성화
+		SetActorTickEnabled(true);
+		
+		// 모든 컴포넌트의 Tick 활성화
+		TArray<UActorComponent*> Components;
+		GetComponents(Components);
+		for (UActorComponent* Component : Components)
+		{
+			Component->SetComponentTickEnabled(true);
+
+			// ABP 활성화
+			if (USkeletalMeshComponent* SkeletalMeshComp = Cast<USkeletalMeshComponent>(Component))
+			{
+				if (UAnimInstance* AnimInst = SkeletalMeshComp->GetAnimInstance())
+				{
+					AnimInst->EnableUpdateAnimation(true);
+				}
+			}
+		}
+
+		// AI 컨트롤러 확인 및 재생성 로직
+		if (HasAuthority())
+		{
+			AAIController* AIController = Cast<AAIController>(GetController());
+			
+			// 컨트롤러가 없으면 새로 생성
+			if (!AIController && AIControllerClass)
+			{
+				FActorSpawnParameters SpawnParams;
+				SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+				AIController = GetWorld()->SpawnActor<AAIController>(AIControllerClass, GetActorLocation(), GetActorRotation(), SpawnParams);
+				
+				if (AIController)
+				{
+					AIController->Possess(this);
+					UE_LOG(LogTemp, Warning, TEXT("Zombie %s: New AIController created and possessed."), *GetName());
+				}
+			}
+			
+			// 컨트롤러가 있으면 활성화
+			if (AIController)
+			{
+				AIController->SetActorTickEnabled(true);
+				
+				// BrainComponent가 있으면 로직 재개
+				if (AIController->GetBrainComponent())
+				{
+					AIController->GetBrainComponent()->ResumeLogic("Activation");
+					UE_LOG(LogTemp, Warning, TEXT("Zombie %s: AIController brain logic resumed."), *GetName());
+				}
+				
+				// 비헤이비어 트리 실행 (필요한 경우)
+				ANS_AIController* NSAIController = Cast<ANS_AIController>(AIController);
+				if (NSAIController && NSAIController->BehaviorTreeAsset)
+				{
+					NSAIController->RunBehaviorTree(NSAIController->BehaviorTreeAsset);
+					UE_LOG(LogTemp, Warning, TEXT("Zombie %s: Behavior tree restarted."), *GetName());
+				}
+			}
+		}
+		UE_LOG(LogTemp, Warning, TEXT("Zombie %s is now fully ACTIVE."), *GetName());
+	}
+	else // 비활성화 상태로 전환 (false)
+	{
+		SetActorHiddenInGame(true); // 액터를 숨김
+		GetMesh()->SetVisibility(false, true); // 좀비 메쉬를 숨김 (자식 컴포넌트 포함)
+		SetActorEnableCollision(false); // 충돌을 비활성화함 (다른 액터가 통과 가능)
+		
+		// 액터 자체의 Tick 비활성화
+		SetActorTickEnabled(false);
+		
+		// 모든 컴포넌트의 Tick 비활성화
+		TArray<UActorComponent*> Components;
+		GetComponents(Components);
+		for (UActorComponent* Component : Components)
+		{
+			Component->SetComponentTickEnabled(false);
+
+			// ABP 비활성화
+			if (USkeletalMeshComponent* SkeletalMeshComp = Cast<USkeletalMeshComponent>(Component))
+			{
+				if (UAnimInstance* AnimInst = SkeletalMeshComp->GetAnimInstance())
+				{
+					AnimInst->EnableUpdateAnimation(false);
+				}
+			}
+		}
+
+		// AI 컨트롤러가 있다면, 그 컨트롤러의 틱도 비활성화합니다.
+		// 서버에서만 AI 컨트롤러의 틱을 제어하는 것이 일반적입니다.
+		if (HasAuthority()) // 서버에서만 AI 컨트롤러를 제어
+		{
+			if (AAIController* AIController = Cast<AAIController>(GetController()))
+			{
+				AIController->SetActorTickEnabled(false);
+				// 추가적으로 비헤이비어 트리를 일시정지하는 로직을 여기에 추가할 수 있습니다.
+				AIController->GetBrainComponent()->PauseLogic("Reason");
+				
+				// AI 컨트롤러의 모든 컴포넌트도 비활성화
+				TArray<UActorComponent*> ControllerComponents;
+				AIController->GetComponents(ControllerComponents);
+				for (UActorComponent* Component : ControllerComponents)
+				{
+					Component->SetComponentTickEnabled(false);
+				}
+				
+				UE_LOG(LogTemp, Warning, TEXT("Zombie %s AIController tick disabled on server."), *GetName());
+			}
+		}
+		UE_LOG(LogTemp, Warning, TEXT("Zombie %s is now fully INACTIVE."), *GetName());
 	}
 }
 
@@ -259,6 +399,7 @@ void ANS_ZombieBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	DOREPLIFETIME(ANS_ZombieBase, bIsActive); 	// 이 좀비가 활성화 되었는지 확인 변수
 	DOREPLIFETIME(ANS_ZombieBase, CurrentHealth);
 	DOREPLIFETIME(ANS_ZombieBase, CurrentAttackType);
 	DOREPLIFETIME(ANS_ZombieBase, CurrentState);

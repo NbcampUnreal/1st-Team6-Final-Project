@@ -28,6 +28,7 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+public:
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite, Category = "Stat")
 	float MaxHealth;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Replicated, Category = "Stat")
@@ -61,6 +62,14 @@ protected:
 	EZombieAttackType CurrentAttackType;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Replicated, Category = "State")
 	bool bIsGotHit;
+
+	// 이 좀비가 활성화 되었는지 확인 변수
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "Activation")
+	bool bIsActive; // 기본적으로 비활성화 상태로 시작
+
+	// bIsActive가 리플리케이트될 때 호출될 함수
+	UFUNCTION()
+	void SetActive(bool setActive);
 	
 	//피격관련
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
