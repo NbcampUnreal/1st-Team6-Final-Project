@@ -23,6 +23,8 @@ void ANS_PlayerController::BeginPlay()
     if (!IsLocalController()) return; // 서버일 경우 바로 반환해서 UI 안 띄움
 
 
+
+
     if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
  /*     GI->GetUIManager()->CompleteLoadingProcess();
@@ -31,7 +33,11 @@ void ANS_PlayerController::BeginPlay()
            GI->GetUIManager()->CloseLoadingUI();
            GI->GetUIManager()->ShowPlayerHUDWidget(GI->GetWorld());
         });*/
-        GI->GetUIManager()->ShowPlayerHUDWidget(GI->GetWorld());
+        FTimerHandle DelayHandle;
+        GetWorld()->GetTimerManager().SetTimer(DelayHandle, [this, GI]()
+            {
+                GI->GetUIManager()->ShowPlayerHUDWidget(GI->GetWorld());
+            }, 0.5f, false);
     }
 }
 
