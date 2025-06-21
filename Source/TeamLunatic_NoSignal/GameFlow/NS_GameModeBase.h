@@ -3,7 +3,6 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include "Zombie/ZombieSpawner/NS_ZombieSpawner.h"
-
 #include "NS_GameModeBase.generated.h"
 
 UCLASS(Abstract)
