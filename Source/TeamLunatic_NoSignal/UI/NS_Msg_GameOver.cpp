@@ -37,6 +37,8 @@ void UNS_Msg_GameOver::ShowWidgetD()
 			LoadSavedGameBtn->SetVisibility(ESlateVisibility::Collapsed);
 	}
 	PlayOpenAnimation();
+
+	UpdateBoxVisibility();
 }
 
 void UNS_Msg_GameOver::PlayOpenAnimation()

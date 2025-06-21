@@ -132,27 +132,19 @@ void UNS_UIManager::HideGameMsgWidget(UWorld* World)
 
 bool UNS_UIManager::ShowGameOverWidget(UWorld* World)
 {
-    UE_LOG(LogTemp, Warning, TEXT("ShowGameOverWidget: 함수 실행 시작."));
-    UE_LOG(LogTemp, Warning, TEXT("ShowGameOverWidget: NetMode = %d"), static_cast<int32>(World->GetNetMode()));
-    // 1. 전달받은 World가 유효한지, 데디케이티드 서버는 아닌지 확인합니다.
     if (!World || World->IsNetMode(NM_DedicatedServer))
     {
         UE_LOG(LogTemp, Warning, TEXT("ShowGameOverWidget: 전달받은 월드가 유효하지 않거나 데디케이티드 서버이므로 UI를 표시하지 않습니다."));
         return false;
     }
 
-    UE_LOG(LogTemp, Log, TEXT("ShowGameOverWidget: 월드 유효성 검사 통과."));
-
-    // 2. 전달받은 World에서 로컬 플레이어 컨트롤러를 가져옵니다.
     APlayerController* PC = World->GetFirstPlayerController();
     if (!PC)
     {
         UE_LOG(LogTemp, Error, TEXT("ShowGameOverWidget: World->GetFirstPlayerController()가 null을 반환했습니다."));
         return false;
     }
-    UE_LOG(LogTemp, Log, TEXT("ShowGameOverWidget: 로컬 플레이어 컨트롤러 (%s) 가져오기 성공."), *PC->GetName());
 
-    // 3. 위젯 생성 로직 (이하 동일)
     if (!NS_Msg_GameOveWidget || !NS_Msg_GameOveWidget->IsInViewport())
     {
         if (NS_MsgGameOverWidgetClass)
@@ -168,7 +160,6 @@ bool UNS_UIManager::ShowGameOverWidget(UWorld* World)
         }
     }
 
-    // 4. 위젯 표시 및 입력 모드 설정 (이하 동일)
     if (NS_Msg_GameOveWidget)
     {
         UE_LOG(LogTemp, Log, TEXT("ShowGameOverWidget: 위젯 표시 및 입력 모드 설정을 시작합니다."));
