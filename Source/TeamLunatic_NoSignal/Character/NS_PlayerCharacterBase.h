@@ -20,7 +20,7 @@ class ANS_BaseWeapon;
 class UNS_EquipedWeaponComponent;
 class UNS_QuickSlotPanel;
 class UNS_QuickSlotComponent;
-
+class UNS_PlayerController;
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
 {

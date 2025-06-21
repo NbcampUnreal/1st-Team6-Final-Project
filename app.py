@@ -169,12 +169,12 @@ def cleanup_sessions():
                 port = s.get("port")
                 if proc and proc.pid:
                     try:
-                        # [수정됨] subprocess.run과 taskkill /T /F 옵션을 사용하여 프로세스와 자식 프로세스 모두 종료
+                        #subprocess.run과 taskkill /T /F 옵션을 사용하여 프로세스와 자식 프로세스 모두 종료
                         command = ['taskkill', '/PID', str(proc.pid), '/T', '/F']
                         subprocess.run(command, check=True, capture_output=True, text=True)
                         print(f"[Cleanup] 서버 프로세스 강제 종료 성공 (PID={proc.pid}, Port={port})")
                     except subprocess.CalledProcessError as e:
-                        # taskkill 명령이 실패한 경우 (예: 프로세스가 이미 없음)
+                        # taskkill 명령이 실패한 경우 
                         print(f"[Cleanup] 프로세스 종료 실패 (PID={proc.pid}, Port={port}). 이미 종료되었을 수 있습니다. Error: {e.stderr.strip()}")
                     except Exception as e:
                         print(f"[Cleanup] 프로세스 종료 중 예외 발생 (Port={port}): {type(e).__name__} - {e}")

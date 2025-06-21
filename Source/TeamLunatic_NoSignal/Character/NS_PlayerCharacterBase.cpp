@@ -7,6 +7,7 @@
 #include "Item/NS_InventoryBaseItem.h"
 #include "Components/NS_EquipedWeaponComponent.h"
 #include "Character/Components/NS_StatusComponent.h"
+#include "Character/NS_PlayerController.h"
 #include "Item/NS_BaseRangedWeapon.h"
 #include "Character/ThrowActor/NS_ThrowActor.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -335,6 +336,16 @@ float ANS_PlayerCharacterBase::TakeDamage(
 
     // 캐릭터 체력 감소
     StatusComp->AddHealthGauge(-ActualDamage);
+
+    if (AController* PC = GetController())
+    {
+        if (ANS_PlayerController* NS_PC = Cast<ANS_PlayerController>(PC))
+        {
+            NS_PC->Client_ShowHitEffect();
+        }
+    }
+
+
 
     IsHit = true;
     

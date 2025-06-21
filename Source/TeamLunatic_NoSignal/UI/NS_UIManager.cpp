@@ -134,14 +134,12 @@ bool UNS_UIManager::ShowGameOverWidget(UWorld* World)
 {
     if (!World || World->IsNetMode(NM_DedicatedServer))
     {
-        UE_LOG(LogTemp, Warning, TEXT("ShowGameOverWidget: 전달받은 월드가 유효하지 않거나 데디케이티드 서버이므로 UI를 표시하지 않습니다."));
         return false;
     }
 
     APlayerController* PC = World->GetFirstPlayerController();
     if (!PC)
     {
-        UE_LOG(LogTemp, Error, TEXT("ShowGameOverWidget: World->GetFirstPlayerController()가 null을 반환했습니다."));
         return false;
     }
 
@@ -151,21 +149,17 @@ bool UNS_UIManager::ShowGameOverWidget(UWorld* World)
         {
             NS_Msg_GameOveWidget = CreateWidget<UNS_Msg_GameOver>(PC, NS_MsgGameOverWidgetClass);
             NS_Msg_GameOveWidget->AddToViewport();
-            UE_LOG(LogTemp, Log, TEXT("ShowGameOverWidget: 위젯 생성 및 뷰포트 추가 완료."));
         }
         else
         {
-            UE_LOG(LogTemp, Error, TEXT("ShowGameOverWidget: NS_MsgGameOverWidgetClass가 설정되지 않았습니다!"));
             return false;
         }
     }
 
     if (NS_Msg_GameOveWidget)
     {
-        UE_LOG(LogTemp, Log, TEXT("ShowGameOverWidget: 위젯 표시 및 입력 모드 설정을 시작합니다."));
         NS_Msg_GameOveWidget->ShowWidgetD();
         SetFInputModeGameAndUI(PC, NS_Msg_GameOveWidget);
-        UE_LOG(LogTemp, Warning, TEXT("ShowGameOverWidget: 모든 과정 성공, 게임 오버 UI가 표시됩니다."));
         return true;
     }
 
@@ -296,4 +290,29 @@ bool UNS_UIManager::ShowSpectatorWidget(UWorld* World)
 
     SetFInputModeGameAndUI(PC, SpectatorWidget);
     return true;
+}
+
+
+void UNS_UIManager::ShowHitEffectWidget(UWorld* World)
+{
+    if (!World) return;
+
+    APlayerController* PC = UGameplayStatics::GetPlayerController(World, 0);
+    if (!PC || !PC->IsLocalController()) return;
+
+    if (HitEffectWidgetClass)
+    {
+        UUserWidget* HitWidget = CreateWidget<UUserWidget>(PC, HitEffectWidgetClass);
+        if (HitWidget)
+        {
+            HitWidget->AddToViewport();
+
+            FTimerHandle TempHandle;
+            PC->GetWorldTimerManager().SetTimer(TempHandle, [HitWidget]()
+            {
+                if (HitWidget && HitWidget->IsInViewport())
+                    HitWidget->RemoveFromParent();
+            }, 0.5f, false);
+        }
+    }
 }

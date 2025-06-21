@@ -49,6 +49,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void HideGameOverWidget(UWorld* World);
 
+	UFUNCTION(BlueprintCallable)
+	void ShowHitEffectWidget(UWorld* World);
+
+
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	bool ShowGameMsgWidget(FString& GameMsg, UWorld* World);
 	UFUNCTION(BlueprintCallable, Category = "UI")
@@ -95,6 +99,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UNS_LoadingScreen> NS_LoadingScreenClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UUserWidget> HitEffectWidgetClass;
 
 	UPROPERTY()
 	UNS_SpectatorWidgetClass* SpectatorWidget;

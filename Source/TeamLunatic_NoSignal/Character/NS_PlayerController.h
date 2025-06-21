@@ -22,6 +22,8 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_ShowGameOverUI();
 
+	UFUNCTION(Client, Reliable)
+	void Client_ShowHitEffect();
 
 protected:
 	virtual void BeginPlay() override;
