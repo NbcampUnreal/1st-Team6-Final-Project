@@ -5,6 +5,7 @@
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
 #include "OnlineSubsystem.h"
+#include "GameFramework/GameModeBase.h"
 #include "Interfaces/OnlineSessionInterface.h"
 #include "Dom/JsonObject.h"
 #include "Dom/JsonValue.h"
@@ -26,6 +27,9 @@ UNS_GameInstance::UNS_GameInstance()
 		WaitClass = BP_LoadingWait.Class;
 	}
 
+	// GameMode 강제 참조로 패키징 포함 유도
+	static ConstructorHelpers::FClassFinder<AGameModeBase> IncludeMulti(TEXT("/Game/GameFlowBP/BP_NS_MultiPlayMode.BP_NS_MultiPlayMode_C"));
+	static ConstructorHelpers::FClassFinder<AGameModeBase> IncludeSingle(TEXT("/Game/GameFlowBP/BP_NS_SinglePlayMode.BP_NS_SinglePlayMode_C"));
 }
 
 void UNS_GameInstance::Init()
@@ -37,7 +41,23 @@ void UNS_GameInstance::Init()
 		NS_UIManager = NewObject<UNS_UIManager>(this, UIManagerClass);
 		NS_UIManager->InitUi(GetWorld());
 	}
+
+	// Dedicated 서버가 실행될 경우, 커맨드라인에서 포트 추출
+	if (IsRunningDedicatedServer())
+	{
+		FString PortStr;
+		if (FParse::Value(FCommandLine::Get(), TEXT("PORT="), PortStr))
+		{
+			MyServerPort = FCString::Atoi(*PortStr);
+			UE_LOG(LogTemp, Warning, TEXT("[GameInstance] 커맨드라인에서 포트 추출: %d"), MyServerPort);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[GameInstance] 커맨드라인에서 포트 추출 실패. FCommandLine: %s"), FCommandLine::Get());
+		}
+	}
 }
+
 
 
 void UNS_GameInstance::SetGameModeType(EGameModeType Type)
