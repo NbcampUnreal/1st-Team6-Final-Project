@@ -5,6 +5,7 @@
 #include "NS_MainGamePlayerState.generated.h"
 
 class APawn;
+class NS_UIManagerClass;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_MainGamePlayerState : public APlayerState
@@ -27,8 +28,12 @@ public:
 
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-    UPROPERTY(BlueprintReadWrite, Replicated)
-    bool bIsAlive; // 플레이어의 생존 상태
+    UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_IsAlive)
+    bool bIsAlive = true; // 기본값을 true로 설정합니다.
+
+    // bIsAlive 변수가 복제되었을 때 호출될 함수입니다.
+    UFUNCTION()
+    void OnRep_IsAlive();
     
 private:
 	// 플레이어 모델 경로 (예: 캐릭터 모델 경로)

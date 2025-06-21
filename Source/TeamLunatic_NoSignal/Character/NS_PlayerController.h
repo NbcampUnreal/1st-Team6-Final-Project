@@ -4,6 +4,8 @@
 #include "GameFramework/PlayerController.h"
 #include "NS_PlayerController.generated.h"
 
+class UNS_Msg_GameOver;
+
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerController : public APlayerController
 {
@@ -15,12 +17,11 @@ public:
 	UFUNCTION(Client, Reliable)
 	void PlayTracked();
 
+	void HandleGameOver(bool bPlayerSurvived);
+	
 	UFUNCTION(Client, Reliable)
-	void ClientShowGameOverUI();
+	void Client_ShowGameOverUI();
 
-	// 클라이언트 RPC: 게임 오버 시 입력 모드 변경 (마우스 활성화, 입력 차단)
-	UFUNCTION(Client, Reliable)
-	void ClientSetGameOverInputMode();
 
 protected:
 	virtual void BeginPlay() override;
@@ -33,6 +34,8 @@ protected:
 	UFUNCTION()
 	void TestGameMsg();
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<UNS_Msg_GameOver> GameOverWidgetClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Chase")
 	USoundBase* ChaseStartSoundCue;

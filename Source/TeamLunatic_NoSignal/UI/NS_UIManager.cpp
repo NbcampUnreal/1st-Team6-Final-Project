@@ -8,6 +8,7 @@
 #include "UI/NS_PlayerHUD.h"
 #include "UI/NS_LoadingScreen.h"
 #include "UI/NS_SpectatorWidgetClass.h" 
+#include "GameFlow/NS_GameInstance.h"
 #include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
 #include "Containers/Ticker.h" 
 #include "Kismet/GameplayStatics.h"
@@ -128,33 +129,58 @@ void UNS_UIManager::HideGameMsgWidget(UWorld* World)
     if (NS_InGameMsgWidget && NS_InGameMsgWidget->IsInViewport())
         NS_InGameMsgWidget->HideWidget();
 }
+
 bool UNS_UIManager::ShowGameOverWidget(UWorld* World)
 {
+    UE_LOG(LogTemp, Warning, TEXT("ShowGameOverWidget: 함수 실행 시작."));
+    UE_LOG(LogTemp, Warning, TEXT("ShowGameOverWidget: NetMode = %d"), static_cast<int32>(World->GetNetMode()));
+    // 1. 전달받은 World가 유효한지, 데디케이티드 서버는 아닌지 확인합니다.
     if (!World || World->IsNetMode(NM_DedicatedServer))
     {
+        UE_LOG(LogTemp, Warning, TEXT("ShowGameOverWidget: 전달받은 월드가 유효하지 않거나 데디케이티드 서버이므로 UI를 표시하지 않습니다."));
         return false;
     }
+
+    UE_LOG(LogTemp, Log, TEXT("ShowGameOverWidget: 월드 유효성 검사 통과."));
+
+    // 2. 전달받은 World에서 로컬 플레이어 컨트롤러를 가져옵니다.
     APlayerController* PC = World->GetFirstPlayerController();
-    if (!NS_Msg_GameOveWidget || NS_Msg_GameOveWidget && !NS_Msg_GameOveWidget->IsInViewport())//!IsValid(NS_Msg_GameOveWidget) )
+    if (!PC)
+    {
+        UE_LOG(LogTemp, Error, TEXT("ShowGameOverWidget: World->GetFirstPlayerController()가 null을 반환했습니다."));
+        return false;
+    }
+    UE_LOG(LogTemp, Log, TEXT("ShowGameOverWidget: 로컬 플레이어 컨트롤러 (%s) 가져오기 성공."), *PC->GetName());
+
+    // 3. 위젯 생성 로직 (이하 동일)
+    if (!NS_Msg_GameOveWidget || !NS_Msg_GameOveWidget->IsInViewport())
     {
         if (NS_MsgGameOverWidgetClass)
+        {
             NS_Msg_GameOveWidget = CreateWidget<UNS_Msg_GameOver>(PC, NS_MsgGameOverWidgetClass);
+            NS_Msg_GameOveWidget->AddToViewport();
+            UE_LOG(LogTemp, Log, TEXT("ShowGameOverWidget: 위젯 생성 및 뷰포트 추가 완료."));
+        }
         else
         {
-            UE_LOG(LogTemp, Warning, TEXT("ERROR!!! EMPTY NS_MsgGameOverWidgetClass!!!!!"));
+            UE_LOG(LogTemp, Error, TEXT("ShowGameOverWidget: NS_MsgGameOverWidgetClass가 설정되지 않았습니다!"));
             return false;
         }
-        NS_Msg_GameOveWidget->AddToViewport();
     }
 
+    // 4. 위젯 표시 및 입력 모드 설정 (이하 동일)
     if (NS_Msg_GameOveWidget)
     {
+        UE_LOG(LogTemp, Log, TEXT("ShowGameOverWidget: 위젯 표시 및 입력 모드 설정을 시작합니다."));
         NS_Msg_GameOveWidget->ShowWidgetD();
         SetFInputModeGameAndUI(PC, NS_Msg_GameOveWidget);
+        UE_LOG(LogTemp, Warning, TEXT("ShowGameOverWidget: 모든 과정 성공, 게임 오버 UI가 표시됩니다."));
         return true;
     }
+
     return false;
 }
+
 void UNS_UIManager::HideGameOverWidget(UWorld* World)
 {
     if (NS_Msg_GameOveWidget && NS_Msg_GameOveWidget->IsInViewport())

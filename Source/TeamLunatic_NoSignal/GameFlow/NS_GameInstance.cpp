@@ -5,6 +5,7 @@
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
 #include "OnlineSubsystem.h"
+#include "GameFramework/GameModeBase.h"
 #include "Interfaces/OnlineSessionInterface.h"
 #include "Dom/JsonObject.h"
 #include "Dom/JsonValue.h"
@@ -26,6 +27,9 @@ UNS_GameInstance::UNS_GameInstance()
 		WaitClass = BP_LoadingWait.Class;
 	}
 
+	// GameMode 강제 참조로 패키징 포함 유도
+	static ConstructorHelpers::FClassFinder<AGameModeBase> IncludeMulti(TEXT("/Game/GameFlowBP/BP_NS_MultiPlayMode.BP_NS_MultiPlayMode_C"));
+	static ConstructorHelpers::FClassFinder<AGameModeBase> IncludeSingle(TEXT("/Game/GameFlowBP/BP_NS_SinglePlayMode.BP_NS_SinglePlayMode_C"));
 }
 
 void UNS_GameInstance::Init()
@@ -37,6 +41,8 @@ void UNS_GameInstance::Init()
 		NS_UIManager = NewObject<UNS_UIManager>(this, UIManagerClass);
 		NS_UIManager->InitUi(GetWorld());
 	}
+
+
 }
 
 
@@ -52,7 +58,7 @@ void UNS_GameInstance::CreateDedicatedSessionViaHTTP(FName SessionName, int32 Ma
 		*SessionName.ToString(), MaxPlayers);
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("http://43.202.120.161:5000/create_session"));
+	Request->SetURL(TEXT("http://121.163.249.108:5000/create_session"));
 	Request->SetVerb(TEXT("POST"));
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 
@@ -117,7 +123,7 @@ void UNS_GameInstance::SendHeartbeat()
 		return;
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("http://43.202.120.161:5000/heartbeat"));
+	Request->SetURL(TEXT("http://121.163.249.108:5000/heartbeat"));
 	Request->SetVerb(TEXT("POST"));
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 
@@ -150,7 +156,7 @@ void UNS_GameInstance::RequestUpdateSessionStatus(int32 Port, FString Status)
 	UE_LOG(LogTemp, Log, TEXT("[RequestUpdateSessionStatus] Sending HTTP POST to update session status. Port: %d, Status: %s"), Port, *Status);
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("http://43.202.120.161:5000/update_session_status")); 
+	Request->SetURL(TEXT("http://121.163.249.108:5000/update_session_status")); 
 	Request->SetVerb(TEXT("POST"));
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 
@@ -184,7 +190,7 @@ void UNS_GameInstance::OnUpdateSessionStatusResponse(FHttpRequestPtr Request, FH
 void UNS_GameInstance::RequestSessionListFromServer()
 {
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("http://43.202.120.161:5000/session_list"));
+	Request->SetURL(TEXT("http://121.163.249.108:5000/session_list"));
 	Request->SetVerb(TEXT("GET"));
 	Request->OnProcessRequestComplete().BindUObject(this, &UNS_GameInstance::OnReceiveSessionList);
 	Request->ProcessRequest();

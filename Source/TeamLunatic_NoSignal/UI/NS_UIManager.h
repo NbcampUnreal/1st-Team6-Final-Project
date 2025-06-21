@@ -14,6 +14,7 @@ class UNS_InGameMenu;
 class UNS_QuickSlotPanel;
 class UNS_LoadingScreen;
 class UNS_SpectatorWidgetClass;
+class UNS_GameInstanceClass;
 
 DECLARE_DELEGATE(FOnLoadingFinished);
 
@@ -44,6 +45,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	bool ShowGameOverWidget(UWorld* World);
+
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void HideGameOverWidget(UWorld* World);
 
@@ -67,8 +69,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	bool ShowSpectatorWidget(UWorld* World);
-
-
+\
 protected:
 	UPROPERTY()
 	UNS_InGameMenu* InGameMenuWidget;

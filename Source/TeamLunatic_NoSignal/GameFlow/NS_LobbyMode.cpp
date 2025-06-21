@@ -146,14 +146,14 @@ void ANS_LobbyMode::CheckAllPlayersReady()
 	const AGameStateBase* GS = GetGameState<AGameStateBase>();
 	if (!GS) return;
 
-	// 플레이어 수 체크 (최소 2명)
+	// 플레이어 수 체크
 	if (GS->PlayerArray.Num() < 2)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("플레이어 수 부족. 현재 인원: %d"), GS->PlayerArray.Num());
 		return;
 	}
 
-	// 전원 레디 상태인지 확인
+	// 전원 레디 확인
 	for (APlayerState* PS : GS->PlayerArray)
 	{
 		if (ANS_PlayerState* MyPS = Cast<ANS_PlayerState>(PS))
@@ -166,39 +166,30 @@ void ANS_LobbyMode::CheckAllPlayersReady()
 		}
 	}
 
-	// 모든 플레이어가 레디 완료된 경우 - 전원에게 ShowWait 띄우기
+	// 전원 레디 완료됨 → 클라이언트에 ShowWait 전달 (UI만 띄우는 용도)
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		if (APlayerController* PC = It->Get())
 		{
-			if (PC->IsLocalController()) // 로컬인 경우에도 띄움 (Dedicated라면 true 안될 수 있음)
+			// ShowWait은 클라이언트에만 띄움 → 반드시 클라이언트 RPC로 분리
+			if (ANS_LobbyController* LC = Cast<ANS_LobbyController>(PC))
 			{
-				if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
-				{
-					GI->ShowWait();
-				}
-			}
-			else
-			{
-				// 원격 클라이언트에게도 ShowWait 전송 필요 → 클라이언트 RPC 필요
-				ANS_LobbyController* LC = Cast<ANS_LobbyController>(PC);
-				if (LC)
-				{
-					LC->Client_ShowWait(); 
-				}
+				LC->Client_ShowWait();
 			}
 		}
 	}
 
-	FTimerHandle DelayHandle;
-	GetWorld()->GetTimerManager().SetTimer(DelayHandle, this, &ANS_LobbyMode::GoToGameLevel, 1.0f, false);
+	// 안전한 ServerTravel → 1초 지연 후 람다로 실행
+	GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
+	{
+		FTimerHandle DelayHandle;
+		GetWorld()->GetTimerManager().SetTimer(DelayHandle, [this]()
+		{
+			UE_LOG(LogTemp, Warning, TEXT("ServerTravel 실행: MainWorld 이동"));
+			const FString LevelPath = TEXT("/Game/Maps/MainWorld");
+			const FString Options = TEXT("Game=/Game/GameFlowBP/BP_NS_MultiPlayMode.BP_NS_MultiPlayMode_C");
+			GetWorld()->ServerTravel(LevelPath + TEXT("?") + Options);
+		}, 1.0f, false);
+	});
 }
 
-
-
-void ANS_LobbyMode::GoToGameLevel()
-{
-	const FString LevelPath = TEXT("/Game/Maps/MainWorld");
-	const FString Options = TEXT("Game=/Game/GameFlowBP/BP_NS_MultiPlayMode.BP_NS_MultiPlayMode_C");
-	GetWorld()->ServerTravel(LevelPath + TEXT("?") + Options);
-}
