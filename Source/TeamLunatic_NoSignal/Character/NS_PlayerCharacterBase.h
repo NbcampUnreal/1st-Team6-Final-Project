@@ -179,6 +179,34 @@ public:
 	// ====================================
 
 
+	// =================================Turn In Place관련 변수들 ===============================
+	// Turn In Place가 가능한 Yaw회전 값
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	float TurnInPlaceThreshold = 90.0f; 
+	// 몸 회전 속도
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	float TurnInPlaceSpeed = 5.0f;   
+	// 몸 회전이 완료된 후 Yaw값을 0으로 리셋하는 속도
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	float TurnInPlaceResetThreshold = 10.0f;
+
+	// 현재 회전할 때 Yaw값
+	float CurrentTurnYaw = 0.0f;
+	// 현재 회전 중인지 여부
+	bool bIsTurningInPlace = false;
+	// CamYaw를 0으로 보간하는 속도
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	float TurnInPlaceYawResetSpeed = 10.0f;
+	// 회전 후 Yaw 값을 리셋 중인지 여부
+	UPROPERTY(BlueprintReadOnly, Category = "Animation")
+	bool bIsResettingYaw = false;
+	// 마지막 회전 Yaw 값
+	UPROPERTY(BlueprintReadOnly, Category = "Animation")
+	float LastTurnYaw = 0.0f;
+	// ===============================Turn In Place변수 끝!===================================
+
+
+	
 	/////////////////////////////// 리플리케이션용 변수들////////////////////////////////
 	// 캐릭터가 바라보고있는 좌/우 값
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
@@ -330,22 +358,43 @@ public:
 	// 카메라 Yaw값, Pitch값 서버로 전송
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void UpdateAim_Server(float NewCamYaw, float NewCamPitch);
-	
+
+	// 헤드램프 켜고 끄는 함수
 	UFUNCTION(BlueprintCallable, Category = "Flashlight")
 	void ToggleFlashlight();
-	
+
+	// 헤드램프 켜고 끄는 서버 전송 함수
 	UFUNCTION(Server, Reliable)
 	void ToggleFlashlight_Server();
-	
+	// 헤드램프 켜고 끄는 멀티캐스트 전송 함수
 	UFUNCTION(NetMulticast, Reliable)
 	void ToggleFlashlight_Multicast();
-	
-protected:
-	
+
+	// 현재 캐릭터가 바라보는 카메라 Yaw값 업데이트 함수
 	UFUNCTION(NetMulticast, Unreliable)
 	void UpdateAim_Multicast(float Yaw, float Pitch);
 
 	// 캐릭터가 병투척해서 날아가는 속도/방향/궤도 함수
 	UFUNCTION(BlueprintCallable)
 	void ThrowBottle();
+	
+	// ======================== Turn In Place 관련 함수 =================================
+	// Turn In Place 업데이트 함수
+	void UpdateTurnInPlace(float DeltaTime);
+	
+	// TurnLeft/Right 변수값 false로 만들고 CamYaw값 0으로 부드럽게 보간할 함수 (노티파이에서 호출할 함수임)
+	UFUNCTION(BlueprintCallable, Category = "Animation")
+	void OnTurnInPlaceFinished();
+
+	// Turn In Place 상태를 서버에 업데이트하는 함수
+	UFUNCTION(Server, Reliable)
+	void Server_UpdateTurnInPlaceState(bool bInTurnLeft, bool bInTurnRight, bool bInUseControllerDesiredRotation);
+	// Turn In Place 상태를 모든 클라이언트에 멀티캐스트하는 함수
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_UpdateTurnInPlaceState(bool bInTurnLeft, bool bInTurnRight, bool bInUseControllerDesiredRotation);
+
+	// Yaw 리셋 관련 함수
+	void UpdateYawReset(float DeltaTime);
+	// ======================== Turn In Place 끝! =================================
+
 };

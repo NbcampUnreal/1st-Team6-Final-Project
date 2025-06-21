@@ -112,7 +112,20 @@ void ANS_PlayerCharacterBase::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
     
-    // 손전등 회전 업데이트는 LookAction과 UpdateAim_Multicast에서 처리하므로 여기서 제거
+    // 로컬 플레이어인 경우에만 Turn In Place 업데이트
+    if (IsLocallyControlled())
+    {
+        // Turn In Place 업데이트
+        if (bIsTurningInPlace)
+        {
+            UpdateTurnInPlace(DeltaTime);
+        }
+        // Yaw 리셋 업데이트
+        else if (bIsResettingYaw)
+        {
+            UpdateYawReset(DeltaTime);
+        }
+    }
 }
 
 void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -413,8 +426,50 @@ void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
     
     const float DeltaTime = GetWorld()->GetDeltaSeconds();
     
-    // CamYaw = FMath::FInterpTo(CamYaw, DeltaRot.Yaw, DeltaTime, AimSendInterpSpeed);
-    CamYaw = DeltaRot.Yaw; // 서버로 전송할 때는 보간하지 않고 바로 전송
+    // 회전 중이 아니고 Yaw 리셋 중이 아닐 때만 CamYaw 업데이트
+    if (!bIsTurningInPlace && !bIsResettingYaw)
+    {
+        // 마우스 입력이 있을 때만 CamYaw 업데이트 (마우스 입력이 없으면 이전 값 유지)
+        if (FMath::Abs(LookInput.X) > KINDA_SMALL_NUMBER)
+        {
+            CamYaw = DeltaRot.Yaw;
+        }
+        
+        // 회전 시작 조건 확인
+        if (!TurnLeft && !TurnRight)
+        {
+            if (FMath::Abs(CamYaw) >= TurnInPlaceThreshold)
+            {
+                // 회전 시작 - 현재 Yaw 값 저장
+                CurrentTurnYaw = CamYaw;
+                LastTurnYaw = CamYaw;
+                bIsTurningInPlace = true;
+                bIsResettingYaw = false;
+                
+                // 왼쪽/오른쪽 회전 설정
+                bool bNewTurnLeft = CamYaw < 0;
+                bool bNewTurnRight = CamYaw > 0;
+                
+                // bUseControllerDesiredRotation 활성화
+                GetCharacterMovement()->bUseControllerDesiredRotation = true;
+                
+                // 서버에 상태 업데이트 요청
+                if (HasAuthority())
+                {
+                    // 서버에서 직접 설정하고 멀티캐스트
+                    TurnLeft = bNewTurnLeft;
+                    TurnRight = bNewTurnRight;
+                    Multicast_UpdateTurnInPlaceState(bNewTurnLeft, bNewTurnRight, true);
+                }
+                else
+                {
+                    // 클라이언트에서는 서버에 요청
+                    Server_UpdateTurnInPlaceState(bNewTurnLeft, bNewTurnRight, true);
+                }
+            }
+        }
+    }
+    
     CamPitch = FMath::FInterpTo(CamPitch, DeltaRot.Pitch, DeltaTime, AimSendInterpSpeed); 
 
     // 카메라 회전 정보를 서버로 전송 (손전등 회전도 함께 처리됨)
@@ -918,7 +973,6 @@ void ANS_PlayerCharacterBase::ThrowBottle()
     });
 }
 
-// 손전등 토글 함수
 void ANS_PlayerCharacterBase::ToggleFlashlight()
 {
     if (HasAuthority())
@@ -940,4 +994,127 @@ void ANS_PlayerCharacterBase::ToggleFlashlight_Multicast_Implementation()
 {
     bFlashlightOnOff = !bFlashlightOnOff;
     FlashlightComponent->SetVisibility(bFlashlightOnOff);
+}
+
+void ANS_PlayerCharacterBase::UpdateTurnInPlace(float DeltaTime)
+{
+    if (!Controller) return;
+    
+    // 회전 중이 아니면 종료
+    if (!bIsTurningInPlace) return;
+    
+    // 현재 카메라와 캐릭터 간의 Yaw 차이 계산
+    const FRotator ActorRot = GetActorRotation();
+    const FRotator ControlRot = Controller->GetControlRotation();
+    const FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(ControlRot, ActorRot);
+    const float CurrentYawDelta = DeltaRot.Yaw;
+    
+    // 회전 방향 결정 왼쪽 또는 오른쪽
+    const float RotationDirection = TurnLeft ? -1.0f : 1.0f;
+    
+    // 캐릭터 회전을 부드럽게 회전하도록 설정
+    FRotator NewRotation = GetActorRotation();
+    NewRotation.Yaw += RotationDirection * TurnInPlaceSpeed * DeltaTime;
+    SetActorRotation(NewRotation);
+    
+    // CamYaw 값을 부드럽게 보간 애님인스턴스인 ABP에서 사용할 값임
+    // 회전 중에는 CamYaw를 현재 회전 방향에 맞게 부드럽게 감소
+    float TargetYaw = 0.0f;
+    if (TurnLeft)
+    {
+        // 왼쪽 회전 중이면 음수 값에서 0으로 보간
+        TargetYaw = FMath::Min(0.0f, CurrentYawDelta);
+    }
+    else
+    {
+        // 오른쪽 회전 중이면 양수 값에서 0으로 보간
+        TargetYaw = FMath::Max(0.0f, CurrentYawDelta);
+    }
+    
+    CamYaw = FMath::FInterpTo(CamYaw, TargetYaw, DeltaTime, TurnInPlaceSpeed * 0.5f);
+    
+    // 회전이 충분히 이루어졌는지 확인 임계값 이하로 떨어졌는지
+    if (FMath::Abs(CurrentYawDelta) <= TurnInPlaceResetThreshold)
+    {
+        // 회전 종료 노티파이에서 OnTurnInPlaceFinished 호출될거임
+        bIsTurningInPlace = false;
+        
+        // 마지막 CamYaw 값 저장 ===== 부드러운 리셋을 위해
+        LastTurnYaw = CamYaw;
+        bIsResettingYaw = true;
+    }
+    
+    // 서버에 업데이트된 CamYaw 전송
+    UpdateAim_Server(CamYaw, CamPitch);
+}
+
+// 애니메이션 노티파이에서 호출할 함수 수정
+void ANS_PlayerCharacterBase::OnTurnInPlaceFinished()
+{
+    // 회전 완료 후 변수 초기화
+    bIsTurningInPlace = false;
+    
+    // 마지막 CamYaw 값 저장 (부드러운 리셋을 위해)
+    if (!bIsResettingYaw)
+    {
+        LastTurnYaw = CamYaw;
+        bIsResettingYaw = true;
+    }
+    
+    // bUseControllerDesiredRotation 비활성화
+    GetCharacterMovement()->bUseControllerDesiredRotation = false;
+    
+    // 서버에 상태 업데이트
+    if (HasAuthority())
+    {
+        // 서버에서 직접 설정하고 멀티캐스트
+        TurnLeft = false;
+        TurnRight = false;
+        Multicast_UpdateTurnInPlaceState(false, false, false);
+    }
+    else
+    {
+        // 클라이언트에서는 서버에 요청
+        Server_UpdateTurnInPlaceState(false, false, false);
+    }
+}
+
+void ANS_PlayerCharacterBase::Server_UpdateTurnInPlaceState_Implementation(bool bInTurnLeft, bool bInTurnRight, bool bInUseControllerDesiredRotation)
+{
+    // 서버에서 상태 업데이트
+    TurnLeft = bInTurnLeft;
+    TurnRight = bInTurnRight;
+    GetCharacterMovement()->bUseControllerDesiredRotation = bInUseControllerDesiredRotation;
+    
+    // 모든 클라이언트에 멀티캐스트
+    Multicast_UpdateTurnInPlaceState(bInTurnLeft, bInTurnRight, bInUseControllerDesiredRotation);
+}
+
+void ANS_PlayerCharacterBase::Multicast_UpdateTurnInPlaceState_Implementation(bool bInTurnLeft, bool bInTurnRight, bool bInUseControllerDesiredRotation)
+{
+    // 로컬 플레이어가 아닌 경우에만 적용
+    if (!IsLocallyControlled())
+    {
+        TurnLeft = bInTurnLeft;
+        TurnRight = bInTurnRight;
+        GetCharacterMovement()->bUseControllerDesiredRotation = bInUseControllerDesiredRotation;
+    }
+}
+
+void ANS_PlayerCharacterBase::UpdateYawReset(float DeltaTime)
+{
+    if (!bIsResettingYaw) return;
+    
+    // CamYaw를 부드럽게 0으로 보간
+    CamYaw = FMath::FInterpTo(CamYaw, 0.0f, DeltaTime, TurnInPlaceYawResetSpeed);
+    
+    // 충분히 0에 가까워지면 리셋 완료
+    if (FMath::Abs(CamYaw) < 0.5f)
+    {
+        CamYaw = 0.0f;
+        bIsResettingYaw = false;
+    }
+    
+    // 서버에 업데이트된 CamYaw 전송
+    UpdateAim_Server(CamYaw, CamPitch);
 }
