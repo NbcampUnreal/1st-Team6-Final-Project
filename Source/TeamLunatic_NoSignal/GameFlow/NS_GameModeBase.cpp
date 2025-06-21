@@ -1,43 +1,46 @@
 #include "GameFlow/NS_GameModeBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Zombie/NS_ZombieBase.h"
-#include "Algo/RandomShuffle.h" 
-#include "Zombie/Zombies/NS_BasicZombie.h" 
-#include "Zombie/Zombies/NS_FatZombie.h"   
-#include "Zombie/Zombies/NS_RunnerZombie.h" 
-#include "GameFramework/Actor.h" 
-#include "Engine/World.h" 
-#include "TimerManager.h" 
+#include "Algo/RandomShuffle.h"
+#include "Zombie/Zombies/NS_BasicZombie.h"
+#include "Zombie/Zombies/NS_FatZombie.h"
+#include "Zombie/Zombies/NS_RunnerZombie.h"
+#include "GameFramework/Actor.h"
+#include "Engine/World.h"
+#include "TimerManager.h"
 #include "Zombie/ZombieActivateManager/NS_ZombieActivationManager.h"
-#include "Zombie/ZombieSpawner/NS_ZombieSpawner.h" 
-#include "GameFramework/Character.h" 
-#include "DrawDebugHelpers.h" // 디버그 드로잉을 위해 추가
-// #include "Kismet/KismetSystemLibrary.h" // UE_LOG 사용 시 필요 (이미 위에서 include되었을 수 있음)
+#include "Zombie/ZombieSpawner/NS_ZombieSpawner.h"
+#include "GameFramework/Character.h"
 
 
 void ANS_GameModeBase::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// 레벨의 모든 좀비 스포너 찾기
 	TArray<AActor*> FoundActors;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AANS_ZombieSpawner::StaticClass(), FoundActors); 
 	
-    ZombieSpawnPoints.Empty(); 
-    for (AActor* Actor : FoundActors)
-    {
-        if (AANS_ZombieSpawner* Spawner = Cast<AANS_ZombieSpawner>(Actor))
-        {
-            ZombieSpawnPoints.Add(Spawner);
-        }
-    }
-	// UE_LOG(LogTemp, Warning, TEXT("Found %d Zombie Spawners in BeginPlay."), ZombieSpawnPoints.Num()); // 디버그 로그 추가
+	ZombieSpawnPoints.Empty(); 
 	
+	for (AActor* Actor : FoundActors)
+	{
+		if (AANS_ZombieSpawner* Spawner = Cast<AANS_ZombieSpawner>(Actor))
+		{
+			if (Spawner->GetLevel() == GetLevel())
+			{
+				ZombieSpawnPoints.Add(Spawner);
+			}
+		}
+	}
+	
+	// 현재 레벨의 좀비 액터 찾기
 	TArray<AActor*> ExistingZombies;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(),
-	  ANS_ZombieBase::StaticClass(), ExistingZombies);
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ANS_ZombieBase::StaticClass(), ExistingZombies);
 
 	CurrentZombieCount = ExistingZombies.Num();
 	
+	// 기존 좀비 파괴 이벤트 바인딩
 	for (AActor* Z : ExistingZombies)
 	{
 		if (IsValid(Z))
@@ -46,10 +49,11 @@ void ANS_GameModeBase::BeginPlay()
 		}
 	}
 
-	GetWorldTimerManager().SetTimer(ZombieSpawnTimer, this,
-	  &ANS_GameModeBase::CheckAndSpawnZombies, 10.0f, true);
+	// 좀비 스폰 타이머 설정
+	GetWorldTimerManager().SetTimer(ZombieSpawnTimer, this, &ANS_GameModeBase::CheckAndSpawnZombies, 1.0f, true);
 }
 
+// 플레이어 위치 반환
 FVector ANS_GameModeBase::GetPlayerLocation_Implementation() const
 {
 	ACharacter* PlayerCharacter = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
@@ -60,131 +64,165 @@ FVector ANS_GameModeBase::GetPlayerLocation_Implementation() const
 	return FVector::ZeroVector;
 }
 
+// 좀비 스폰 여부 확인 및 스폰
 void ANS_GameModeBase::CheckAndSpawnZombies()
 {
-    int32 Missing = MaxZombieCount - CurrentZombieCount;
-    // UE_LOG(LogTemp, Warning, TEXT("CheckAndSpawnZombies called. Missing: %d, CurrentZombieCount: %d"), Missing, CurrentZombieCount);
-    
-    // 이전에 플레이어 위치 반경 3000 유닛 내 스포너만 필터링하는 로직이 있었으나,
-    // 일단은 모든 활성화된 스포너를 대상으로 스폰을 시도하도록 임시 변경 (테스트용)
-    // 실제 게임에서는 3000 유닛 범위 로직을 다시 추가해야 함
-    TArray<AANS_ZombieSpawner*> ActiveAndValidSpawnPoints; // 유효한 스포너 목록
-    FVector PlayerLocation = GetPlayerLocation(); 
+	int32 Missing = MaxZombieCount - CurrentZombieCount;
+	FVector PlayerLocation = GetPlayerLocation(); 
+	
+	if (Missing <= 0)
+	{
+		return;
+	}
+	
+	TArray<AANS_ZombieSpawner*> SuitableSpawnPoints; 
+	TMap<AANS_ZombieSpawner*, bool> SpawnerHasZombie;
+	
+	// 현재 좀비 위치 확인
+	TArray<AActor*> ExistingZombies;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ANS_ZombieBase::StaticClass(), ExistingZombies);
+	
+	// 각 좀비의 가장 가까운 스포너 찾기
+	for (AActor* ZombieActor : ExistingZombies)
+	{
+		ANS_ZombieBase* Zombie = Cast<ANS_ZombieBase>(ZombieActor);
+		if (!Zombie) continue;
+		
+		FVector ZombieLocation = Zombie->GetActorLocation();
+		float ClosestDistance = MAX_FLT;
+		AANS_ZombieSpawner* ClosestSpawner = nullptr;
+		
+		for (AANS_ZombieSpawner* Spawner : ZombieSpawnPoints)
+		{
+			if (!IsValid(Spawner)) continue;
+			
+			float Distance = FVector::Dist(ZombieLocation, Spawner->GetActorLocation());
+			if (Distance < ClosestDistance)
+			{
+				ClosestDistance = Distance;
+				ClosestSpawner = Spawner;
+			}
+		}
+		
+		if (ClosestSpawner && ClosestDistance < 500.0f)
+		{
+			SpawnerHasZombie.Add(ClosestSpawner, true);
+		}
+	}
+	
+	// 적합한 스포너 찾기
+	for (AANS_ZombieSpawner* Spawner : ZombieSpawnPoints) 
+	{
+		if (!IsValid(Spawner) || !Spawner->bIsEnabled)
+		{
+			continue;
+		}
+		
+		if (SpawnerHasZombie.Contains(Spawner) && SpawnerHasZombie[Spawner])
+		{
+			continue;
+		}
+		
+		FVector SpawnerLocation = Spawner->GetActorLocation();
+		float DistanceToPlayer = FVector::Dist(PlayerLocation, SpawnerLocation);
 
-    for (AANS_ZombieSpawner* Spawner : ZombieSpawnPoints) 
-    {
-        if (IsValid(Spawner) && Spawner->bIsEnabled)
-        {
-            float Distance = FVector::Dist(PlayerLocation, Spawner->GetActorLocation());
-            if (Distance <= 3000.0f) // 플레이어 주변 3000 유닛 범위 내 스포너만 고려
-            {
-                ActiveAndValidSpawnPoints.Add(Spawner);
-            }
-        }
-    }
-    // UE_LOG(LogTemp, Warning, TEXT("Active and Valid SpawnPoints found: %d"), ActiveAndValidSpawnPoints.Num());
+		if (DistanceToPlayer < MinSpawnDistance || DistanceToPlayer > MaxSpawnDistance)
+		{
+			continue;
+		}
+		
+		SuitableSpawnPoints.Add(Spawner);
+	}
 
-    // 스폰해야 할 총 좀비 수 (최대 15마리까지, 5마리씩 스폰)
-    // 예시: 5마리를 스폰하고 싶다면 TotalZombiesToSpawn = FMath::Min(Missing, 5); 로 설정
-    // 현재 요구사항에 따라 5마리씩 스폰한다면 Missing에서 5를 넘지 않게 조정
-    int32 NumZombiesToSpawnThisWave = FMath::Min(Missing, 10); // 10초마다 최대 5마리 스폰
-
-    // 스폰해야 할 좀비가 있고, 유효한 스포너가 1개 이상 있을 경우
-    if (NumZombiesToSpawnThisWave > 0 && ActiveAndValidSpawnPoints.Num() > 0) 
-    {
-        // 스포너를 무작위로 섞음
-        Algo::RandomShuffle(ActiveAndValidSpawnPoints);
-
-        int32 CurrentSpawnedCount = 0;
-        int32 SpawnerIndex = 0;
-
-        while (CurrentSpawnedCount < NumZombiesToSpawnThisWave)
-        {
-            // 모든 스포너를 순환
-            AANS_ZombieSpawner* SpawnerToUse = ActiveAndValidSpawnPoints[SpawnerIndex % ActiveAndValidSpawnPoints.Num()];
-            
-            // 이 스포너에서 좀비 한 마리 스폰
-            SpawnZombieAtPoint(SpawnerToUse);
-            CurrentSpawnedCount++;
-
-            // 다음 스포너로 이동 (Round Robin)
-            SpawnerIndex++;
-        }
-        // UE_LOG(LogTemp, Warning, TEXT("Attempted to spawn %d zombies this wave."), CurrentSpawnedCount);
-    }
+	if (SuitableSpawnPoints.Num() <= 0)
+	{
+		return;
+	}
+	
+	// 스포너 목록 무작위 섞기
+	Algo::RandomShuffle(SuitableSpawnPoints);
+	
+	// 1초당 1마리 스폰 제한
+	int32 NumZombiesToSpawnThisWave = FMath::Min(1, FMath::Min(Missing, SuitableSpawnPoints.Num()));
+	
+	if (NumZombiesToSpawnThisWave > 0)
+	{
+		SpawnZombieAtPoint(SuitableSpawnPoints[0]);
+	}
 }
 
+/**
+ * SpawnZombieAtPoint - 지정된 스포너에서 좀비를 스폰하는 함수
+ */
 void ANS_GameModeBase::SpawnZombieAtPoint(AANS_ZombieSpawner* SpawnSpawner) 
 {
-    if (!SpawnSpawner) 
-    {
-        // UE_LOG(LogTemp, Error, TEXT("SpawnZombieAtPoint: SpawnSpawner is null."));
-        return;
-    }
+	// 스포너가 유효한지 확인합니다
+	if (!SpawnSpawner) 
+	{
+		return;
+	}
 
-    TSubclassOf<ANS_ZombieBase> ZombieToSpawn = nullptr;
-    int32 RandNum = FMath::RandRange(1, 100); 
+	// 좀비 클래스 선택
+	TSubclassOf<ANS_ZombieBase> ZombieToSpawn = nullptr;
+	int32 RandNum = FMath::RandRange(1, 100); 
 
-    if (RandNum <= 40 && BasicZombieClass) 
-    {
-        ZombieToSpawn = BasicZombieClass;
-    }
-    else if (RandNum <= 70 && FatZombieClass) 
-    {
-        ZombieToSpawn = FatZombieClass;
-    }
-    else if (RandNum <= 100 && RunnerZombieClass) 
-    {
-        ZombieToSpawn = RunnerZombieClass;
-    }
+	if (RandNum <= 60 && BasicZombieClass) 
+	{
+		ZombieToSpawn = BasicZombieClass;
+	}
+	else if (RandNum <= 95 && FatZombieClass) 
+	{
+		ZombieToSpawn = FatZombieClass;
+	}
+	else if (RandNum <= 100 && RunnerZombieClass) 
+	{
+		ZombieToSpawn = RunnerZombieClass;
+	}
 
-    if (!ZombieToSpawn)
-    {
-        // UE_LOG(LogTemp, Error, TEXT("SpawnZombieAtPoint: No zombie class selected for spawn."));
-        return; 
-    }
+	if (!ZombieToSpawn)
+	{
+		return; 
+	}
 
-    // 스포너 액터의 GetRandomSpawnLocationInBounds 함수를 호출하여 랜덤 스폰 위치 획득
-    // 이 함수가 스포너의 스케일을 고려한 랜덤 위치를 반환합니다.
-    FVector SpawnLocation = SpawnSpawner->GetRandomSpawnLocationInBounds(); 
-    FRotator SpawnRotation = FRotator::ZeroRotator; 
-    // 좀비가 스폰될 때 약간 랜덤한 회전을 주는 것도 자연스러움을 더할 수 있습니다.
-    // FRotator SpawnRotation = FRotator(0, FMath::RandRange(0, 360), 0); 
-    FTransform SpawnTransform(SpawnRotation, SpawnLocation); 
+	// 스폰 위치 및 파라미터 설정
+	FVector SpawnLocation = SpawnSpawner->GetRandomSpawnLocationInBounds(); 
+	FRotator SpawnRotation = FRotator::ZeroRotator; 
+	FTransform SpawnTransform(SpawnRotation, SpawnLocation); 
 
-    FActorSpawnParameters Params;
-    Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-    Params.bNoFail = true; 
+	FActorSpawnParameters Params;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+	Params.bNoFail = true; 
 	
-    ANS_ZombieBase* Zombie = GetWorld()->SpawnActor<ANS_ZombieBase>(ZombieToSpawn, SpawnTransform, Params);
-	AActor* ZombieActivationManager = UGameplayStatics::GetActorOfClass(GetWorld(),ANS_ZombieActivationManager::StaticClass());
+	// 좀비 스폰
+	ANS_ZombieBase* Zombie = GetWorld()->SpawnActor<ANS_ZombieBase>(ZombieToSpawn, SpawnTransform, Params);
+	
+	// 좀비 활성화 매니저 찾기
+	AActor* ZombieActivationManager = UGameplayStatics::GetActorOfClass(GetWorld(), ANS_ZombieActivationManager::StaticClass());
 	ANS_ZombieActivationManager* ZombieActivationManagerCasted = Cast<ANS_ZombieActivationManager>(ZombieActivationManager);
 	
-    if (Zombie)
-    {
-        Zombie->OnDestroyed.AddDynamic(this, &ANS_GameModeBase::OnZombieDestroyed); 
-        ++CurrentZombieCount; 
+	if (Zombie)
+	{
+		Zombie->OnDestroyed.AddDynamic(this, &ANS_GameModeBase::OnZombieDestroyed); 
+		++CurrentZombieCount; 
 
-    	if (ZombieActivationManagerCasted)
-    	{
-    		ZombieActivationManagerCasted->AppendSpawnZombie(Zombie);
-    	}
-        // UE_LOG(LogTemp, Warning, TEXT("Zombie spawned successfully at %s by spawner %s."), *Zombie->GetActorLocation().ToString(), *SpawnSpawner->GetName());
-    }
-    else
-    {
-        // UE_LOG(LogTemp, Error, TEXT("Failed to spawn zombie at: %s from spawner %s."), *SpawnLocation.ToString(), *SpawnSpawner->GetName());
-    }
+		if (ZombieActivationManagerCasted)
+		{
+			ZombieActivationManagerCasted->AppendSpawnZombie(Zombie);
+		}
+	}
 }
 
+/**
+ * OnZombieDestroyed - 좀비가 파괴될 때 호출되는 콜백 함수
+ */
 void ANS_GameModeBase::OnZombieDestroyed(AActor* DestroyedActor)
 {
-    if (IsValid(DestroyedActor))
-    {
-        if (DestroyedActor->IsA(ANS_ZombieBase::StaticClass()))
-        {
-            --CurrentZombieCount; 
-            CurrentZombieCount = FMath::Max(0, CurrentZombieCount); 
-        }
-    }
+	if (IsValid(DestroyedActor))
+	{
+		if (DestroyedActor->IsA(ANS_ZombieBase::StaticClass()))
+		{
+			--CurrentZombieCount; 
+			CurrentZombieCount = FMath::Max(0, CurrentZombieCount); 
+		}
+	}
 }
