@@ -11,6 +11,7 @@
 #include "BehaviorTree/BehaviorTree.h"
 #include "Zombie/NS_ZombieBase.h"
 #include "BrainComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Zombie/Enum/EZombieType.h"
 
 ANS_AIController::ANS_AIController() : MaxSeenDistance(1000.f)
@@ -33,6 +34,25 @@ ANS_AIController::ANS_AIController() : MaxSeenDistance(1000.f)
 void ANS_AIController::BeginPlay()
 {
 	Super::BeginPlay();
+	SetTargetPoint();
+}
+
+void ANS_AIController::SetTargetPoint()
+{
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), TargetClass, TargetActors);
+	if (TargetActors.Num() > 0)
+	{
+		for (AActor* Target : TargetActors)
+		{
+			TargetLocations.Push(Target->GetActorLocation());
+		}
+	}
+	if (TargetLocations.Num() > 0)
+	{
+		int RandomIndex = FMath::RandRange(0, TargetActors.Num() - 1);
+		FVector Location = TargetLocations[RandomIndex];
+		GetBlackboardComponent()->SetValueAsVector("TargetLocation", Location);
+	}
 }
 
 void ANS_AIController::OnPossess(APawn* PossessedPawn)
@@ -145,6 +165,7 @@ void ANS_AIController::InitializeHeardBool()
 	BlackboardComp->SetValueAsBool("bWasAlreadyHeard", false);
 	GetWorldTimerManager().ClearTimer(HearingTimerHandle);
 }
+
 
 void ANS_AIController::HandleDamageStimulus(AActor* Attacker)
 {

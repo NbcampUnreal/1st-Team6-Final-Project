@@ -6,6 +6,7 @@
 #include "GameFramework/Pawn.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "AIController.h"
+#include "NavAreas/NavArea_Obstacle.h"
 
 UNS_Service_RandomLocation::UNS_Service_RandomLocation()
 {
@@ -25,14 +26,14 @@ void UNS_Service_RandomLocation::TickNode(UBehaviorTreeComponent& OwnerComp, uin
 
 	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
 	if (!NavSys) return;
-
+	
 	FVector Origin = AIPawn->GetActorLocation();
 	FNavLocation RandomLocation;
-
 	if (NavSys->GetRandomReachablePointInRadius(Origin, Radius, RandomLocation))
 	{
 		OwnerComp.GetBlackboardComponent()->SetValueAsVector(RandomLocationKey.SelectedKeyName,RandomLocation.Location);
 	}
+
 }
 
 

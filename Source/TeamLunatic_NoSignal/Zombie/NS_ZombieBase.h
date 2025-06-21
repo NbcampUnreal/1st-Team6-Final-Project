@@ -64,12 +64,16 @@ protected:
 	
 	//피격관련
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+	
 	UFUNCTION(NetMulticast, reliable)
 	void Die_Multicast();
+	
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly, Category = "State")
 	UAnimMontage* KnockBackMontage;
+	
 	UFUNCTION(NetMulticast, reliable)
 	void Multicast_PlayMontage(UAnimMontage* MontageToPlay);
+	
 	FTimerHandle HitTimer;
 	void ResetHit();
 	

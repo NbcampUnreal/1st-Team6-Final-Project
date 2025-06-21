@@ -124,7 +124,7 @@ float ANS_ZombieBase::TakeDamage(float DamageAmount, struct FDamageEvent const& 
 		}
 		GetWorldTimerManager().SetTimer(HitTimer, this, &ANS_ZombieBase::ResetHit, .5f,false);
 		Multicast_SpawnEffect(Bone, Point->HitInfo.Location, HitRotation);
-		ApplyPhysics(Bone, HitDirection * 3000.f);
+		ApplyPhysics(Bone, HitDirection * 10000.f);
 	}
 	
 	CurrentHealth = FMath::Clamp(CurrentHealth - DamageAmount, 0.f, MaxHealth);

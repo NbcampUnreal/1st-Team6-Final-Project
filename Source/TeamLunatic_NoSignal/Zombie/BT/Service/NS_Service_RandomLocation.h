@@ -14,7 +14,9 @@ public:
 	UNS_Service_RandomLocation();
 protected:
 	virtual void TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	ANavigationData* Filter;
+	
 	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "BlackBoard")
 	FBlackboardKeySelector RandomLocationKey;
 
