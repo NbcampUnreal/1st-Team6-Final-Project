@@ -5,6 +5,7 @@
 #include "InputActionValue.h"
 #include "Interaction/Component/InteractionComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Components/SpotLightComponent.h"
 #include "GameFlow/NS_GameModeBase.h"
 #include "GameFlow/NS_MainGamePlayerState.h"
 #include "Character/ThrowActor/NS_ThrowActor.h"
@@ -117,6 +118,11 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "FirstPerson")
 	USkeletalMeshComponent* FirstPersonArms;
 
+	// 헤드램프 컴포넌트
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Flashlight")
+	USpotLightComponent* FlashlightComponent;
+	
+
 	// 스탯 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UNS_StatusComponent* StatusComp;
@@ -208,6 +214,9 @@ public:
 	// 조준중인지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsAiming = false;
+	// 헤드램프 키고 끄는 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool bFlashlightOnOff = true;
 	// 무기 교체중인지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsChangingWeapon = false;
@@ -253,6 +262,8 @@ public:
 	UInputAction* InteractAction;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* ToggleMenuAction;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* InputFlashlightAction;
 	//퀵슬롯 바인딩
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputQuickSlot1;
@@ -264,9 +275,7 @@ public:
 	UInputAction* InputQuickSlot4;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputQuickSlot5;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-	UInputAction* ToggleHeadLampAction;
-
+	
 
 	// 캐릭터 EnhancedInput을 없앴다가 다시 부착하는는 함수 IMC를 지워웠다가 다시 장착하게해서 AnimNotify로 발차기 공격동안 IMC없앰
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category = "Input")
@@ -321,7 +330,20 @@ public:
 	// 카메라 Yaw값, Pitch값 서버로 전송
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void UpdateAim_Server(float NewCamYaw, float NewCamPitch);
-
+	
+	UFUNCTION(BlueprintCallable, Category = "Flashlight")
+	void ToggleFlashlight();
+	
+	UFUNCTION(Server, Reliable)
+	void ToggleFlashlight_Server();
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void ToggleFlashlight_Multicast();
+	
+protected:
+	
+	UFUNCTION(NetMulticast, Unreliable)
+	void UpdateAim_Multicast(float Yaw, float Pitch);
 
 	// 캐릭터가 병투척해서 날아가는 속도/방향/궤도 함수
 	UFUNCTION(BlueprintCallable)

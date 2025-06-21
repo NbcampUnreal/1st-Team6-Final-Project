@@ -14,9 +14,6 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "World/Pickup.h"
 #include "TimerManager.h"
-#include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
-#include "GameFramework/ProjectileMovementComponent.h"
-#include "Components/SplineMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include <Net/UnrealNetwork.h>
 #include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
@@ -72,6 +69,17 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     // 퀵슬롯 
     QuickSlotComponent = CreateDefaultSubobject<UNS_QuickSlotComponent>(TEXT("QuickSlotComponent"));
     QuickSlotComponent->SetIsReplicated(true);
+
+    // 스팟라이트 컴포넌트 
+    FlashlightComponent = CreateDefaultSubobject<USpotLightComponent>(TEXT("FlashlightComponent"));
+    // 카메라에 부착
+    FlashlightComponent->SetupAttachment(CameraComp);
+    FlashlightComponent->SetRelativeRotation(FRotator::ZeroRotator);
+    FlashlightComponent->SetVisibility(true); 
+    FlashlightComponent->SetIntensity(8000.0f);
+    FlashlightComponent->SetOuterConeAngle(30.0f);
+    FlashlightComponent->SetInnerConeAngle(15.0f);
+    FlashlightComponent->SetAttenuationRadius(2000.0f);
 }
 
 void ANS_PlayerCharacterBase::BeginPlay()
@@ -103,6 +111,8 @@ void ANS_PlayerCharacterBase::BeginPlay()
 void ANS_PlayerCharacterBase::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
+    
+    // 손전등 회전 업데이트는 LookAction과 UpdateAim_Multicast에서 처리하므로 여기서 제거
 }
 
 void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -227,6 +237,15 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                &ANS_PlayerCharacterBase::ReloadAction_Server);
         }
 
+        if (InputFlashlightAction)
+        {
+            EnhancedInput->BindAction(
+                InputFlashlightAction,
+                ETriggerEvent::Started,
+                this,
+                &ANS_PlayerCharacterBase::ToggleFlashlight);
+        }
+
         if (InputQuickSlot1)
         {
             EnhancedInput->BindAction(
@@ -274,20 +293,21 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsSprint);  // 달리기 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsPickUp);  // 아이템줍기 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsHit);     // 맞는지 확인 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, CamYaw);    // 카메라 좌/우 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, CamPitch);  // 카메라 상/하 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsAiming);  // 조준중인지 확인 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsReload); // 장전중인지 확인 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, TurnLeft);  // 몸을 왼쪽으로 회전시키는 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, TurnRight); // 몸을 오른쪽으로 회전시키는 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, NowFire);   // 사격시 몸전체Mesh 사격 애니메이션 재생 용 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsSprint);            // 달리기 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsPickUp);            // 아이템줍기 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsHit);               // 맞는지 확인 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, CamYaw);              // 카메라 좌/우 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, CamPitch);            // 카메라 상/하 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsAiming);            // 조준중인지 확인 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsReload);            // 장전중인지 확인 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, TurnLeft);            // 몸을 왼쪽으로 회전시키는 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, TurnRight);           // 몸을 오른쪽으로 회전시키는 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, NowFire);             // 사격시 몸전체Mesh 사격 애니메이션 재생 용 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, bFlashlightOnOff);    // 헤드램프 키고 끄는 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, PlayerInventory);
     DOREPLIFETIME(ANS_PlayerCharacterBase, QuickSlotComponent);
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsChangeAnim); // 퀵슬롯 눌렀을때 무기 장착하는 애니메이션 재생 용 변수
-    DOREPLIFETIME(ANS_PlayerCharacterBase, IsDead);	// 캐릭터가 죽었는지 확인 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsChangeAnim);        // 퀵슬롯 눌렀을때 무기 장착하는 애니메이션 재생 용 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsDead);	             // 캐릭터가 죽었는지 확인 변수
 }
 
 void ANS_PlayerCharacterBase::SetMovementLockState_Server_Implementation(bool bLock)
@@ -383,22 +403,22 @@ void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
     
     // 카메라 회전 적용
     FVector2D LookInput = Value.Get<FVector2D>(); 
-    AddControllerYawInput  (LookInput.X * LookMagnification); 
+    AddControllerYawInput(LookInput.X * LookMagnification); 
     AddControllerPitchInput(LookInput.Y * LookMagnification); 
 
     // Actor Rotation과 Control Rotation을 Delta를 이용해 Yaw값 추출
-    const FRotator ActorRot   = GetActorRotation(); 
+    const FRotator ActorRot = GetActorRotation(); 
     const FRotator ControlRot = Controller->GetControlRotation(); 
-    const FRotator DeltaRot   = UKismetMathLibrary::NormalizedDeltaRotator(ControlRot, ActorRot);
+    const FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(ControlRot, ActorRot);
     
     const float DeltaTime = GetWorld()->GetDeltaSeconds();
     
-    //CamYaw   = FMath::FInterpTo(CamYaw,   DeltaRot.Yaw,   DeltaTime, AimSendInterpSpeed);
-	CamYaw = DeltaRot.Yaw; // 서버로 전송할 때는 보간하지 않고 바로 전송
+    // CamYaw = FMath::FInterpTo(CamYaw, DeltaRot.Yaw, DeltaTime, AimSendInterpSpeed);
+    CamYaw = DeltaRot.Yaw; // 서버로 전송할 때는 보간하지 않고 바로 전송
     CamPitch = FMath::FInterpTo(CamPitch, DeltaRot.Pitch, DeltaTime, AimSendInterpSpeed); 
 
-    // InterpTo를 이요해서 부드러운 Yaw/Pitch값을 서버로 전송
-    UpdateAim_Server(CamYaw, CamPitch); 
+    // 카메라 회전 정보를 서버로 전송 (손전등 회전도 함께 처리됨)
+    UpdateAim_Server(CamYaw, CamPitch);
 }
 
 void ANS_PlayerCharacterBase::JumpAction(const FInputActionValue& Value)
@@ -833,10 +853,34 @@ void ANS_PlayerCharacterBase::Client_NotifyInventoryUpdated_Implementation()
 
 
 // 클라이언트면 서버로 클라이언트 자신에 Yaw값과 Pitch값을 서버로 전송
-void ANS_PlayerCharacterBase::UpdateAim_Server_Implementation(float NewCamYaw, float NewCamPitch)
+void ANS_PlayerCharacterBase::UpdateAim_Server_Implementation(float Yaw, float Pitch)
 {
-    CamYaw   = NewCamYaw; 
-    CamPitch = NewCamPitch; 
+    // 서버에서 변수 업데이트
+    CamYaw = Yaw;
+    CamPitch = Pitch;
+    
+    // 모든 클라이언트에 전파
+    UpdateAim_Multicast(Yaw, Pitch);
+}
+
+void ANS_PlayerCharacterBase::UpdateAim_Multicast_Implementation(float Yaw, float Pitch)
+{
+    // 애니메이션 업데이트를 위한 변수 설정
+    CamYaw = Yaw;
+    CamPitch = Pitch;
+    
+    // 손전등이 켜져 있다면 회전도 업데이트
+    if (bFlashlightOnOff && FlashlightComponent)
+    {
+        // 카메라 회전 계산 (캐릭터 회전 + Yaw/Pitch 오프셋)
+        FRotator ActorRotation = GetActorRotation();
+        FRotator CameraRot = ActorRotation;
+        CameraRot.Yaw += Yaw;
+        CameraRot.Pitch = Pitch; // Pitch는 직접 설정 (상대적이지 않음)
+        
+        // 손전등 회전 업데이트
+        FlashlightComponent->SetWorldRotation(CameraRot);
+    }
 }
 
 void ANS_PlayerCharacterBase::ThrowBottle()
@@ -872,4 +916,28 @@ void ANS_PlayerCharacterBase::ThrowBottle()
     {
         bHasThrown = false;
     });
+}
+
+// 손전등 토글 함수
+void ANS_PlayerCharacterBase::ToggleFlashlight()
+{
+    if (HasAuthority())
+    {
+        ToggleFlashlight_Multicast();
+    }
+    else
+    {
+        ToggleFlashlight_Server();
+    }
+}
+
+void ANS_PlayerCharacterBase::ToggleFlashlight_Server_Implementation()
+{
+    ToggleFlashlight_Multicast();
+}
+
+void ANS_PlayerCharacterBase::ToggleFlashlight_Multicast_Implementation()
+{
+    bFlashlightOnOff = !bFlashlightOnOff;
+    FlashlightComponent->SetVisibility(bFlashlightOnOff);
 }
