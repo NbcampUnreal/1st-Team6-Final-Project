@@ -8,6 +8,10 @@
 #include "Item/NS_BaseMagazine.h"
 #include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFlow/NS_GameInstance.h"
+#include "UI/NS_UIManager.h"
+#include "UI/NS_PlayerHUD.h"
+#include "GameFlow/NS_PlayerState.h"
 
 APickup::APickup()
 {
@@ -28,6 +32,18 @@ void APickup::BeginPlay()
 	if (HasAuthority())
 	{
 		InitializePickup(UNS_InventoryBaseItem::StaticClass(), ItemQuantity);
+
+		if (DesiredItemID == FName("Memo"))
+		{
+			FTimerHandle DelayHandle;
+			GetWorldTimerManager().SetTimer(
+				DelayHandle,
+				this,
+				&APickup::TryAssignToHUD,
+				0.2f,
+				false
+			);
+		}
 	}
 	else
 	{
@@ -153,44 +169,84 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 			{
 				const FItemAddResult AddResult = PlayerInventory->HandleAddItem(ItemReference);
 
-				switch (AddResult.OperationResult)
+				if (AddResult.OperationResult == EItemAddResult::TAR_AllItemAdded || AddResult.OperationResult == EItemAddResult::TAR_PartialAmountItemAdded)
 				{
-				case EItemAddResult::TAR_NoItemAdded:
-					break;
-				case EItemAddResult::TAR_PartialAmountItemAdded:
-					if (ReplicatedItemData.ItemAssetData.GetSound)
-					{
-						UGameplayStatics::PlaySound2D(this, ReplicatedItemData.ItemAssetData.GetSound);
-					}
-					UpdateInteractableData();
-					if (UInteractionComponent* InteractionComp = Taker->GetInteractionComponent())
-					{
-						InteractionComp->UpdateInteractionWidget();
-					}
-					break;
-				case EItemAddResult::TAR_AllItemAdded:
-					if (ReplicatedItemData.ItemAssetData.GetSound)
-					{
-						UGameplayStatics::PlaySound2D(this, ReplicatedItemData.ItemAssetData.GetSound);
-					}
-					Destroy();
-					break;
-				}
+						UNS_PlayerHUD* PlayerHUD = nullptr;
+						if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+						{
+							if (UNS_UIManager* UIManager = GI->GetUIManager())
+							{
+								PlayerHUD = UIManager->GetPlayerHUDWidget();
+							}
+						}
 
-				UE_LOG(LogTemp, Warning, TEXT("[TakePickup] AddResult: %d, Message: %s"),
-					(int32)AddResult.OperationResult,
-					*AddResult.ResultMessage.ToString());
+						if (PlayerHUD)
+						{
+							if (ItemReference->ItemDataRowName == FName("Memo"))
+							{
+								TArray<AActor*> FoundPickups;
+								UGameplayStatics::GetAllActorsOfClass(GetWorld(), APickup::StaticClass(), FoundPickups);
+
+								for (AActor* PickupActor : FoundPickups)
+								{
+									APickup* QuestPickup = Cast<APickup>(PickupActor);
+									if (!QuestPickup || !QuestPickup->GetItemData()) continue;
+
+									FName ItemID = QuestPickup->GetItemData()->ItemDataRowName;
+
+									const TArray<FName> TargetNoteIDs = {
+										FName("One"), FName("Two"), FName("Three"), FName("Four"), FName("Five")
+									};
+
+									if (TargetNoteIDs.Contains(ItemID))
+									{
+										PlayerHUD->SetYeddaItem(QuestPickup);
+									}
+								}
+							}
+
+							PlayerHUD->DeleteCompasItem(this);
+						}
+					}
+
+					switch (AddResult.OperationResult)
+					{
+					case EItemAddResult::TAR_NoItemAdded:
+						break;
+					case EItemAddResult::TAR_PartialAmountItemAdded:
+						if (ReplicatedItemData.ItemAssetData.GetSound)
+						{
+							UGameplayStatics::PlaySound2D(this, ReplicatedItemData.ItemAssetData.GetSound);
+						}
+						UpdateInteractableData();
+						if (UInteractionComponent* InteractionComp = Taker->GetInteractionComponent())
+						{
+							InteractionComp->UpdateInteractionWidget();
+						}
+						break;
+					case EItemAddResult::TAR_AllItemAdded:
+						if (ReplicatedItemData.ItemAssetData.GetSound)
+						{
+							UGameplayStatics::PlaySound2D(this, ReplicatedItemData.ItemAssetData.GetSound);
+						}
+						Destroy();
+						break;
+					}
+
+					UE_LOG(LogTemp, Warning, TEXT("[TakePickup] AddResult: %d, Message: %s"),
+						(int32)AddResult.OperationResult,
+						*AddResult.ResultMessage.ToString());
+				}
+				else
+				{
+					UE_LOG(LogTemp, Warning, TEXT("Player Inventory Component is null"));
+				}
 			}
 			else
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Player Inventory Component is null"));
+				UE_LOG(LogTemp, Warning, TEXT("Pickup internal Item reference was somehow null"));
 			}
 		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Pickup internal Item reference was somehow null"));
-		}
-	}
 }
 
 void APickup::Server_TakePickup_Implementation(AActor* InteractingActor)
@@ -218,6 +274,32 @@ void APickup::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent
 			}
 		}
 	}
+}
+void APickup::TryAssignToHUD()
+{
+	if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+	{
+		if (UNS_UIManager* UIManager = GI->GetUIManager())
+		{
+			if (UNS_PlayerHUD* PlayerHUD = UIManager->GetPlayerHUDWidget())
+			{
+				PlayerHUD->SetYeddaItem(this);
+				return;
+			}
+		}
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("APickup::TryAssignToHUD "));
+
+	// HUD가 아직 생성되지 않았을 경우 재시도
+	FTimerHandle RetryHandle;
+	GetWorldTimerManager().SetTimer(
+		RetryHandle,
+		this,
+		&APickup::TryAssignToHUD,
+		0.2f,
+		false
+	);
 }
 #endif
 
