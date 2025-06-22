@@ -8,6 +8,7 @@
 #include "Kismet/GameplayStatics.h"  
 #include "GameFlow/NS_GameInstance.h"
 #include "UI/NS_UIManager.h"
+#include "AsyncLoadingScreenLibrary.h"
 
 void UNS_Msg_GameOver::NativeConstruct()
 {
@@ -37,6 +38,8 @@ void UNS_Msg_GameOver::ShowWidgetD()
 			LoadSavedGameBtn->SetVisibility(ESlateVisibility::Collapsed);
 	}
 	PlayOpenAnimation();
+
+	UpdateBoxVisibility();
 }
 
 void UNS_Msg_GameOver::PlayOpenAnimation()
@@ -69,6 +72,8 @@ void UNS_Msg_GameOver::OnMainMenuBtnClicked()
 		if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
 			UIManager->HideGameOverWidget(GetWorld());
 	}
+
+	UAsyncLoadingScreenLibrary::SetEnableLoadingScreen(false);
 	UGameplayStatics::OpenLevel(GetWorld(), FName(TEXT("MainTitle")));//MenuMap / MainTitle
 }
 

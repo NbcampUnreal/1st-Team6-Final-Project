@@ -63,12 +63,12 @@ void UNS_PlayerHUD::NativeConstruct()
         TEXT(" 240 "), TEXT(" 255 "), TEXT(" W "),   TEXT(" 285 "),
         TEXT(" 300 "), TEXT(" NW "),  TEXT(" 330 "), TEXT(" 345 "),
 
-        //TEXT(" N "),   TEXT(" 15 "),  TEXT(" 30 "),  TEXT(" NE "),
-        //TEXT(" 60 "),  TEXT(" 75 "),  TEXT(" E "),   TEXT(" 105 "),
-        //TEXT(" 120 "), TEXT(" SE "),  TEXT(" 150 "), TEXT(" 165 "),
-        //TEXT(" S "),   TEXT(" 195 "), TEXT(" 210 "), TEXT(" SW "),
-        //TEXT(" 240 "), TEXT(" 255 "), TEXT(" W "),   TEXT(" 285 "),
-        //TEXT(" 300 "), TEXT(" NW "),  TEXT(" 330 "), TEXT(" 345 "),
+        TEXT(" N "),   TEXT(" 15 "),  TEXT(" 30 "),  TEXT(" NE "),
+        TEXT(" 60 "),  TEXT(" 75 "),  TEXT(" E "),   TEXT(" 105 "),
+        TEXT(" 120 "), TEXT(" SE "),  TEXT(" 150 "), TEXT(" 165 "),
+        TEXT(" S "),   TEXT(" 195 "), TEXT(" 210 "), TEXT(" SW "),
+        TEXT(" 240 "), TEXT(" 255 "), TEXT(" W "),   TEXT(" 285 "),
+        TEXT(" 300 "), TEXT(" NW "),  TEXT(" 330 "), TEXT(" 345 "),
     };
 
     for (const FString& Label : DirectionLabels)
@@ -100,6 +100,10 @@ void UNS_PlayerHUD::NativeConstruct()
         UWidget* Child = ScrollBox_Compass->GetChildAt(i);
         if (UNS_CompassElement* Text = Cast<UNS_CompassElement>(Child))//UNS_CompassElement UTextBlock
             CompassTextArray.Add(Text);
+        else
+        {
+			UE_LOG(LogTemp, Warning, TEXT(" UNS_CompassElement nullptr idx : %d"),i);
+        }
     }
    // if (ScrollBox_Compass && ItemArray.IsValidIndex(49)) // 0부터 시작하니 49 = 50번째
   //      ScrollBox_Compass->ScrollWidgetIntoView(CompassTextArray[ChildCount/3], true, EDescendantScrollDestination::Center, 0.f);
@@ -108,6 +112,7 @@ void UNS_PlayerHUD::NativeConstruct()
     ScrollBox_Compass->SetScrollBarVisibility(ESlateVisibility::Collapsed); 
 
     testcheck = true;
+   // UE_LOG(LogTemp, Warning, TEXT("UNS_PlayerHUD ::NativeConstruct"));
 }
 
 void UNS_PlayerHUD::ShowWidget()
@@ -175,45 +180,55 @@ void UNS_PlayerHUD::SetYeddaItem(APickup* YeddaItem)
 void UNS_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
     Super::NativeTick(MyGeometry, InDeltaTime);
-   if (!testcheck)return;
-
+    if (!testcheck) return;
     if (!GetOwningPlayer()) return;
 
     FRotator ControlRot = GetOwningPlayer()->GetControlRotation();
     float Yaw = FMath::Fmod(ControlRot.Yaw + 360.f, 360.f);
-   
-    int32 FixIndx = 24;
-    if (Yaw > 180.f)
-        FixIndx = 0;
+
+    int32 FixIndx = (Yaw > 180.f) ? 0 : 24;
     float AngleGap = 15.f;
-    float CurTempIdx = Yaw / AngleGap;
-    int32 CurIdx = FMath::FloorToInt(CurTempIdx);
+    int32 CurIdx = FMath::FloorToInt(Yaw / AngleGap);
     int32 CurFinalIdx = CurIdx + FixIndx;
-  
 
     float MovePercent = (Yaw - (CurIdx * AngleGap)) / AngleGap;
 
-    float Offset = 0.f;
-   // UE_LOG(LogTemp, Warning, TEXT("CurFinalIdx = %d / Yaw = %f / MovePercent = %f"), CurFinalIdx, Yaw, MovePercent);
+    //인덱스 유효성
+    bool bValidA = CompassTextArray.IsValidIndex(CurFinalIdx);
+    bool bValidB = CompassTextArray.IsValidIndex(CurFinalIdx + 1);
+    if (!bValidA || !bValidB)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Compass index out of: CurFinalIdx=%d / Num=%d"), CurFinalIdx, CompassTextArray.Num());
+        return;
+    }
+ //   UE_LOG(LogTemp, Warning, TEXT("UNS_PlayerHUD ::NativeTick1"));
+ //   UE_LOG(LogTemp, Warning, TEXT("CurFinalIdx: %d / CompassTextArray Les :  %d" ), CurFinalIdx, CompassTextArray.Num());
     // 현재 인덱스까지의 거리 누적
+    float Offset = 0.f;
     for (int32 i = 0; i < CurFinalIdx; ++i)
     {
-        Offset += CompassTextArray[i]->GetSizeBoxWideth();
+        if (CompassTextArray.IsValidIndex(i))
+            Offset += CompassTextArray[i]->GetSizeBoxWideth();
     }
 
-    // 현재~다음 인덱스 사이 거리 보간
-    float WidthA = CompassTextArray[CurFinalIdx]->GetSizeBoxWideth();
-    float WidthB = CompassTextArray[CurFinalIdx + 1]->GetSizeBoxWideth();
+    float InterpolatedOffset = 0.f;
+	float WidthA = 0.f;
+	float WidthB = 0.f;
+    if (!IsValid(CompassTextArray[CurFinalIdx]) || !IsValid(CompassTextArray[CurFinalIdx + 1]))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("CompassTextArray !!!!!IsValid"));
+        return;
+    }
+    else
+    {
+        WidthA = CompassTextArray[CurFinalIdx]->GetSizeBoxWideth();
+        WidthB = CompassTextArray[CurFinalIdx + 1]->GetSizeBoxWideth();
+        InterpolatedOffset = ((WidthA / 2.f) + (WidthB / 2.f)) * MovePercent;
+    }
 
-    float InterpolatedOffset = ((WidthA / 2.f) + (WidthB / 2.f)) * MovePercent;
-
-    // View 중앙 보정
     float ViewWidth = ScrollBox_Compass->GetCachedGeometry().GetLocalSize().X;
-
-    float FixDist = 16.f;//17.f;
-
-    float FinalOffset = Offset + InterpolatedOffset - (ViewWidth / 2.f)+ FixDist;
-
+    float FixDist = 16.f;
+    float FinalOffset = Offset + InterpolatedOffset - (ViewWidth / 2.f) + FixDist;
     ScrollBox_Compass->SetScrollOffset(FinalOffset);
 
     //if (0 == YeddaItemArray.Num())
@@ -325,7 +340,8 @@ void UNS_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
     }
       
         PrvFinalIdx = CurFinalIdx;
-       // UE_LOG(LogTemp, Warning, TEXT("▶️ RelativeAngle: %.2f°, Index: %d"), RelativeAngle, Index);
+    }
+   // UE_LOG(LogTemp, Warning, TEXT("UNS_PlayerHUD ::NativeTick3"));
 }
 
 void UNS_PlayerHUD::DeleteCompasItem(APickup* DeleteItem)
@@ -334,11 +350,11 @@ void UNS_PlayerHUD::DeleteCompasItem(APickup* DeleteItem)
 	if (YeddaItemArray.Contains(DeleteItem))
 	{
 		YeddaItemArray.Remove(DeleteItem);
-		//UE_LOG(LogTemp, Warning, TEXT("▶️ DeleteItem: %s"), *DeleteItem->GetName());
+		//UE_LOG(LogTemp, Warning, TEXT(" DeleteItem: %s"), *DeleteItem->GetName());
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("▶️ DeleteItem not found: %s"), *DeleteItem->GetName());
+		UE_LOG(LogTemp, Warning, TEXT(" DeleteItem not found: %s"), *DeleteItem->GetName());
 	}
 }
 

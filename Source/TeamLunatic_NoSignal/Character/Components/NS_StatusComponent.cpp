@@ -3,7 +3,6 @@
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include <Net/UnrealNetwork.h>
 
 UNS_StatusComponent::UNS_StatusComponent()
 {
@@ -22,12 +21,6 @@ void UNS_StatusComponent::BeginPlay()
     Stamina = MaxStamina;
 	PlayerCharacter = Cast<ANS_PlayerCharacterBase>(GetOwner());
 
-}
-void UNS_StatusComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(UNS_StatusComponent, Health); // 체력
-	DOREPLIFETIME(UNS_StatusComponent, MaxStamina); // 최대 스태미너
 }
 
 // 스탯 컴포넌트의 TickComponent 함수에서 매 프레임마다 스탯을 업데이트
@@ -70,7 +63,7 @@ void UNS_StatusComponent::UpdateStamina(float DeltaTime)
 
 		AddStamina(ChangingStaminaValue);
 
-		if (bEnableSprint == false && Stamina * 10 >= MaxStamina)
+		if (bEnableSprint == false && Stamina * 2 >= MaxStamina)
 		{
 			bEnableSprint = true; // 스태미너가 충분하면 스프린트 활성화
 		}
@@ -89,10 +82,11 @@ void UNS_StatusComponent::UpdateMaxStamina()
 	MaxStamina = FMath::Clamp((Health / MaxHealth) * 100, 0.f, 100.f);
 }
 
-void UNS_StatusComponent::AddHealthGauge_Implementation(float Value)
+//체력 증감 처리
+void UNS_StatusComponent::AddHealthGauge(float Value)
 {
-	Health = FMath::Clamp(Health + Value, 0.f, MaxHealth);
-	UpdateMaxStamina();
+    Health = FMath::Clamp(Health + Value, 0.f, MaxHealth);
+    UpdateMaxStamina();
 }
 
 // 각 스탯 변경===============================================
@@ -100,7 +94,6 @@ void UNS_StatusComponent::AddHealthGauge_Implementation(float Value)
 void UNS_StatusComponent::AddStamina(float Value)
 {
     Stamina = FMath::Clamp(Stamina + Value, 0.f, MaxStamina);
-	UE_LOG(LogTemp, Warning, TEXT("Current Stamina: %f"), Stamina); // 현재 스태미너 로그 출력
 }
 
 void UNS_StatusComponent::AddStaminaRegenRate(float Value)

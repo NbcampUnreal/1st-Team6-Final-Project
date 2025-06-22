@@ -5,7 +5,9 @@
 #include "InputActionValue.h"
 #include "Interaction/Component/InteractionComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Components/SpotLightComponent.h"
 #include "GameFlow/NS_GameModeBase.h"
+#include "GameFlow/NS_MainGamePlayerState.h"
 #include "Character/ThrowActor/NS_ThrowActor.h"
 #include "NS_PlayerCharacterBase.generated.h"
 
@@ -19,7 +21,7 @@ class ANS_BaseWeapon;
 class UNS_EquipedWeaponComponent;
 class UNS_QuickSlotPanel;
 class UNS_QuickSlotComponent;
-
+class UNS_PlayerController;
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
 {
@@ -116,6 +118,11 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "FirstPerson")
 	USkeletalMeshComponent* FirstPersonArms;
 
+	// 헤드램프 컴포넌트
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Flashlight")
+	USpotLightComponent* FlashlightComponent;
+	
+
 	// 스탯 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UNS_StatusComponent* StatusComp;
@@ -132,6 +139,14 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "QuickSlot", Replicated)
 	UNS_QuickSlotComponent* QuickSlotComponent;
+
+
+	//환각 관련
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PostProcess")
+	UMaterialInterface* HallucinationMaterial;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PostProcess")
+	UMaterialInstanceDynamic* HallucinationMID;
 
 	// 장착 무기 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
@@ -158,6 +173,10 @@ public:
 	////////////////////////////////////////병투척 변수 끝!///////////////////////////////////////////////
 
 
+	// 죽음 애니메이션 몽타주
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Animation")
+	UAnimMontage* DeathMontage;
+
 
 	// LookAction에 카메라 회전값 보간 속도 ---> 8은 너무 느려서 10이상은 되어야할 듯
 	UPROPERTY(EditDefaultsOnly, Category = "Aim")
@@ -168,6 +187,34 @@ public:
 	// ====================================
 
 
+	// =================================Turn In Place관련 변수들 ===============================
+	// Turn In Place가 가능한 Yaw회전 값
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	float TurnInPlaceThreshold = 90.0f; 
+	// 몸 회전 속도
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	float TurnInPlaceSpeed = 5.0f;   
+	// 몸 회전이 완료된 후 Yaw값을 0으로 리셋하는 속도
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	float TurnInPlaceResetThreshold = 10.0f;
+
+	// 현재 회전할 때 Yaw값
+	float CurrentTurnYaw = 0.0f;
+	// 현재 회전 중인지 여부
+	bool bIsTurningInPlace = false;
+	// CamYaw를 0으로 보간하는 속도
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	float TurnInPlaceYawResetSpeed = 10.0f;
+	// 회전 후 Yaw 값을 리셋 중인지 여부
+	UPROPERTY(BlueprintReadOnly, Category = "Animation")
+	bool bIsResettingYaw = false;
+	// 마지막 회전 Yaw 값
+	UPROPERTY(BlueprintReadOnly, Category = "Animation")
+	float LastTurnYaw = 0.0f;
+	// ===============================Turn In Place변수 끝!===================================
+
+
+	
 	/////////////////////////////// 리플리케이션용 변수들////////////////////////////////
 	// 캐릭터가 바라보고있는 좌/우 값
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
@@ -203,13 +250,20 @@ public:
 	// 조준중인지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsAiming = false;
+	// 헤드램프 키고 끄는 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool bFlashlightOnOff = true;
 	// 무기 교체중인지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsChangingWeapon = false;
 	// 퀵슬롯을 누르면 퀵슬롯에 있는 무기를 장착하는 애니메이션 재생용 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_IsChangeAnim, Category = "Replicated Variables")
 	bool IsChangeAnim = false;
+	// 캐릭터가 죽었는지 확인 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool IsDead = false; // 캐릭터가 죽었는지 여부를 나타내는 변수 추가
 
+	
 	UFUNCTION()
 	void OnRep_IsChangeAnim();
 	//////////////////////////////////////////////////////////////////////////////////////
@@ -244,6 +298,8 @@ public:
 	UInputAction* InteractAction;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* ToggleMenuAction;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* InputFlashlightAction;
 	//퀵슬롯 바인딩
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputQuickSlot1;
@@ -255,9 +311,7 @@ public:
 	UInputAction* InputQuickSlot4;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputQuickSlot5;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-	UInputAction* ToggleHeadLampAction;
-
+	
 
 	// 캐릭터 EnhancedInput을 없앴다가 다시 부착하는는 함수 IMC를 지워웠다가 다시 장착하게해서 AnimNotify로 발차기 공격동안 IMC없앰
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category = "Input")
@@ -313,8 +367,46 @@ public:
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void UpdateAim_Server(float NewCamYaw, float NewCamPitch);
 
+	// 헤드램프 켜고 끄는 함수
+	UFUNCTION(BlueprintCallable, Category = "Flashlight")
+	void ToggleFlashlight();
+
+	// 헤드램프 켜고 끄는 서버 전송 함수
+	UFUNCTION(Server, Reliable)
+	void ToggleFlashlight_Server();
+	// 헤드램프 켜고 끄는 멀티캐스트 전송 함수
+	UFUNCTION(NetMulticast, Reliable)
+	void ToggleFlashlight_Multicast();
+
+	// 현재 캐릭터가 바라보는 카메라 Yaw값 업데이트 함수
+	UFUNCTION(NetMulticast, Unreliable)
+	void UpdateAim_Multicast(float Yaw, float Pitch);
 
 	// 캐릭터가 병투척해서 날아가는 속도/방향/궤도 함수
 	UFUNCTION(BlueprintCallable)
 	void ThrowBottle();
+	
+	// ======================== Turn In Place 관련 함수 =================================
+	// Turn In Place 업데이트 함수
+	void UpdateTurnInPlace(float DeltaTime);
+	
+	// TurnLeft/Right 변수값 false로 만들고 CamYaw값 0으로 부드럽게 보간할 함수 (노티파이에서 호출할 함수임)
+	UFUNCTION(BlueprintCallable, Category = "Animation")
+	void OnTurnInPlaceFinished();
+
+	// Turn In Place 상태를 서버에 업데이트하는 함수
+	UFUNCTION(Server, Reliable)
+	void Server_UpdateTurnInPlaceState(bool bInTurnLeft, bool bInTurnRight, bool bInUseControllerDesiredRotation);
+	// Turn In Place 상태를 모든 클라이언트에 멀티캐스트하는 함수
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_UpdateTurnInPlaceState(bool bInTurnLeft, bool bInTurnRight, bool bInUseControllerDesiredRotation);
+
+	// Yaw 리셋 관련 함수
+	void UpdateYawReset(float DeltaTime);
+	// ======================== Turn In Place 끝! =================================
+
+
+
+	// 환각효과 켜기
+	void ActivateHallucinationEffect(float Duration);
 };

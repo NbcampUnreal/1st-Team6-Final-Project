@@ -14,6 +14,7 @@ class UNS_InGameMenu;
 class UNS_QuickSlotPanel;
 class UNS_LoadingScreen;
 class UNS_SpectatorWidgetClass;
+class UNS_GameInstanceClass;
 
 DECLARE_DELEGATE(FOnLoadingFinished);
 
@@ -44,8 +45,13 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	bool ShowGameOverWidget(UWorld* World);
+
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void HideGameOverWidget(UWorld* World);
+
+	UFUNCTION(BlueprintCallable)
+	void ShowHitEffectWidget(UWorld* World);
+
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	bool ShowGameMsgWidget(FString& GameMsg, UWorld* World);
@@ -63,11 +69,12 @@ public:
 	void LoadingScreen(UWorld* World);
 	void CloseLoadingUI();
 
-	FOnLoadingFinished OnLoadingFinished;
+	void CompleteLoadingProcess();
 
+	FOnLoadingFinished OnLoadingFinished;
+	//bool bLoading = false;
 	UFUNCTION(BlueprintCallable)
 	bool ShowSpectatorWidget(UWorld* World);
-
 
 protected:
 	UPROPERTY()
@@ -95,11 +102,14 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UNS_LoadingScreen> NS_LoadingScreenClass;
 
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UUserWidget> HitEffectWidgetClass;
+
 	UPROPERTY()
 	UNS_SpectatorWidgetClass* SpectatorWidget;
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UNS_SpectatorWidgetClass> SpectatorWidgetClass;
 private:
-
+	
 };
