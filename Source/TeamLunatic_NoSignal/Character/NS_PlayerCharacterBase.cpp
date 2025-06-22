@@ -241,15 +241,6 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
               &ANS_PlayerCharacterBase::StopAimingAction_Server);
         }
 
-        if (InputReloadAction)
-        {
-            EnhancedInput->BindAction(
-            InputReloadAction,
-             ETriggerEvent::Started,
-              this,
-               &ANS_PlayerCharacterBase::ReloadAction_Server);
-        }
-
         if (InputFlashlightAction)
         {
             EnhancedInput->BindAction(
@@ -563,34 +554,6 @@ void ANS_PlayerCharacterBase::StopAimingAction_Server_Implementation(const FInpu
     IsAiming = false; 
 }
 
-void ANS_PlayerCharacterBase::ReloadAction_Server_Implementation(const FInputActionValue& Value)
-{
-    // 실제 총알 재장전 로직은 애님노티파이로 애니메이션 안에서 EquipedWeapon에있는 Server_Reload()함수를 블루프린트로 실행 할 예정
-
-    if (IsReload)
-    {
-        return;
-    }
-    
-    // 현재 무기가 없거나, 원거리 무기가 아니면 재장전 불가
-    if (!EquipedWeaponComp->CurrentWeapon)// 현재 무기가 없으면 return
-    {
-        return;
-    }
-
-    // 근거리 무기면 return
-    if (EquipedWeaponComp->CurrentWeapon->GetWeaponType() == EWeaponType::Melee)
-    {
-        return;
-    }
-    
-    if (!IsReload)
-    {
-        IsReload = true;
-    }
-
-    // 노티파이로 IsReload 변수값을 false로 변경하고 있음
-}
 
 //////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
 
@@ -905,7 +868,6 @@ void ANS_PlayerCharacterBase::Client_NotifyInventoryUpdated_Implementation()
             }), 0.05f, false);
     }
 }
-
 
 // 클라이언트면 서버로 클라이언트 자신에 Yaw값과 Pitch값을 서버로 전송
 void ANS_PlayerCharacterBase::UpdateAim_Server_Implementation(float Yaw, float Pitch)

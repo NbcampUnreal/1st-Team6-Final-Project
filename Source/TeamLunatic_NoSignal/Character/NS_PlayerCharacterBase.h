@@ -343,10 +343,6 @@ public:
 	void StartAimingAction_Server(const FInputActionValue& Value);
 	UFUNCTION(Server, Reliable)
 	void StopAimingAction_Server(const FInputActionValue& Value);
-
-	// 재장전
-	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void ReloadAction_Server(const FInputActionValue& Value);
 	//////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
 
 	// 캐릭터 죽는 애니메이션 멀티캐스트
