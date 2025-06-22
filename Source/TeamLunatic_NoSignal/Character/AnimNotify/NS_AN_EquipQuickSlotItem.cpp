@@ -61,13 +61,13 @@ void UNS_AN_EquipQuickSlotItem::Notify(USkeletalMeshComponent* MeshComp, UAnimSe
         {
             // 서버에서는 직접 멀티캐스트 호출
             WeaponComp->Multicast_UnequipWeapon();
-            UE_LOG(LogTemp, Warning, TEXT("NS_AN_EquipQuickSlotItem: 서버에서 무기 해제"));
+            UE_LOG(LogTemp, Warning, TEXT("NS_AN_EquipQuickSlotItem: 서버에서 무기 해제 (빈 슬롯: %d)"), CurrentSlotIndex + 1);
         }
         else
         {
             // 클라이언트에서는 서버 RPC 호출
             WeaponComp->Server_UnequipWeapon();
-            UE_LOG(LogTemp, Warning, TEXT("NS_AN_EquipQuickSlotItem: 클라이언트에서 무기 해제 요청"));
+            UE_LOG(LogTemp, Warning, TEXT("NS_AN_EquipQuickSlotItem: 클라이언트에서 무기 해제 요청 (빈 슬롯: %d)"), CurrentSlotIndex + 1);
         }
         
         return;
@@ -87,10 +87,12 @@ void UNS_AN_EquipQuickSlotItem::Notify(USkeletalMeshComponent* MeshComp, UAnimSe
         if (PlayerCharacter->HasAuthority())
         {
             WeaponComp->Multicast_UnequipWeapon();
+            UE_LOG(LogTemp, Warning, TEXT("NS_AN_EquipQuickSlotItem: 서버에서 무기 해제 (장비 아이템 아님)"));
         }
         else
         {
             WeaponComp->Server_UnequipWeapon();
+            UE_LOG(LogTemp, Warning, TEXT("NS_AN_EquipQuickSlotItem: 클라이언트에서 무기 해제 요청 (장비 아이템 아님)"));
         }
         
         return;
@@ -110,13 +112,15 @@ void UNS_AN_EquipQuickSlotItem::Notify(USkeletalMeshComponent* MeshComp, UAnimSe
     {
         // 서버에서는 직접 멀티캐스트 호출
         WeaponComp->MulticastEquipWeapon(ItemData->WeaponActorClass, Item);
-        UE_LOG(LogTemp, Warning, TEXT("NS_AN_EquipQuickSlotItem: 서버에서 무기 장착 - %s"), *Item->GetName());
+        UE_LOG(LogTemp, Warning, TEXT("NS_AN_EquipQuickSlotItem: 서버에서 무기 장착 - %s (슬롯: %d)"), 
+            *Item->GetName(), CurrentSlotIndex + 1);
     }
     else
     {
         // 클라이언트에서는 서버 RPC 호출
         WeaponComp->ServerEquipWeapon(ItemData->WeaponActorClass, Item);
-        UE_LOG(LogTemp, Warning, TEXT("NS_AN_EquipQuickSlotItem: 클라이언트에서 무기 장착 요청 - %s"), *Item->GetName());
+        UE_LOG(LogTemp, Warning, TEXT("NS_AN_EquipQuickSlotItem: 클라이언트에서 무기 장착 요청 - %s (슬롯: %d)"), 
+            *Item->GetName(), CurrentSlotIndex + 1);
     }
 }
 

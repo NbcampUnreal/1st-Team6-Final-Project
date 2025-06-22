@@ -754,29 +754,20 @@ void ANS_PlayerCharacterBase::Server_AssignQuickSlot_Implementation(int32 SlotIn
         QuickSlotComponent->AssignToSlot(SlotIndex, Item);
     }
 }
-// ==========================================================================================================================================
-// 키 입력에 따른 퀵슬롯 선택 1 ~ 5번 퀵슬롯 버튼
+// =======================================================퀵슬롯 함수 시작!================================================================
 void ANS_PlayerCharacterBase::HandleQuickSlotKeyInput(int32 KeyNumber)
 {
-    // =====================================================================
-    // 1. 키 번호 변환 및 기본 검증
-    // =====================================================================
-    
-    // 키보드 입력(1~5)을 배열 인덱스(0~4)로 변환
-    // 예: 키보드 '1'키 → 배열 인덱스 0, 키보드 '2'키 → 배열 인덱스 1
+    // 키보드 입력 1 ~ 5를 배열 인덱스 0 ~ 4로 변환
+    // 예시) 키보드 '1'키 → 배열 인덱스 0, 키보드 '2'키 → 배열 인덱스 1
     int32 SlotIndex = KeyNumber - 1;
     
     // 퀵슬롯 컴포넌트가 없으면 작업 불가능
     if (!QuickSlotComponent)
     {
-        UE_LOG(LogTemp, Warning, TEXT("HandleQuickSlotKeyInput: 퀵슬롯 컴포넌트가 없습니다."));
         return;
     }
     
-    // =====================================================================
-    // 2. 중복 선택 검사 (최적화)
-    // =====================================================================
-    
+    // 중복 선택 검사 
     // 이미 같은 슬롯이 선택되어 있고 무기가 장착된 경우 → 중복 작업 방지
     if (SlotIndex == CurrentQuickSlotIndex)
     {
@@ -784,41 +775,29 @@ void ANS_PlayerCharacterBase::HandleQuickSlotKeyInput(int32 KeyNumber)
         if (WeaponComp && WeaponComp->GetCurrentWeaponItem())
         {
             // 이미 같은 슬롯의 무기가 장착되어 있으면 아무 작업도 하지 않음
-            UE_LOG(LogTemp, Verbose, TEXT("HandleQuickSlotKeyInput: 이미 슬롯 %d의 무기가 장착되어 있습니다."), SlotIndex + 1);
             return;
         }
     }
     
-    // =====================================================================
-    // 3. 현재 선택된 슬롯 업데이트
-    // =====================================================================
-    
-    // 현재 슬롯 인덱스 업데이트 (클래스 멤버 변수)
+    // 현재 선택된 슬롯대로 캐릭터에 현재 슬롯 인덱스 업데이트
     CurrentQuickSlotIndex = SlotIndex;
     
     // 퀵슬롯 컴포넌트의 현재 슬롯 인덱스도 함께 업데이트
     QuickSlotComponent->SetCurrentSlotIndex(CurrentQuickSlotIndex);
-    UE_LOG(LogTemp, Verbose, TEXT("HandleQuickSlotKeyInput: 슬롯 %d 선택됨"), CurrentQuickSlotIndex + 1);
     
-    // =====================================================================
-    // 4. 네트워크 동기화 (서버/클라이언트)
-    // =====================================================================
-    
+    // 네트워크 동기화 (서버/클라이언트)
     // 클라이언트에서 실행 중이면 서버에 요청
     if (!HasAuthority())
     {
-        UE_LOG(LogTemp, Verbose, TEXT("HandleQuickSlotKeyInput: 클라이언트에서 서버에 슬롯 %d 사용 요청"), CurrentQuickSlotIndex + 1);
         Server_UseQuickSlotByIndex(CurrentQuickSlotIndex);
     }
     else
     {
         // 서버에서 실행 중이면 직접 멀티캐스트 호출 (모든 클라이언트에 전파)
-        UE_LOG(LogTemp, Verbose, TEXT("HandleQuickSlotKeyInput: 서버에서 슬롯 %d 사용 멀티캐스트"), CurrentQuickSlotIndex + 1);
         Multicast_UseQuickSlotByIndex(CurrentQuickSlotIndex);
     }
 }
 
-// 서버에 퀵슬롯 사용 요청
 void ANS_PlayerCharacterBase::Server_UseQuickSlotByIndex_Implementation(int32 Index)
 {
     // 인덱스가 음수면 0으로 설정
@@ -827,14 +806,13 @@ void ANS_PlayerCharacterBase::Server_UseQuickSlotByIndex_Implementation(int32 In
         Index = 0;
     }
     
-    // 현재 슬롯 인덱스 업데이트
+    // 현재 선택된 슬롯대로 캐릭터에 현재 슬롯 인덱스 업데이트
     CurrentQuickSlotIndex = Index;
     
     // 서버에서 모든 클라이언트에 알림
     Multicast_UseQuickSlotByIndex(CurrentQuickSlotIndex);
 }
 
-// 모든 클라이언트에 퀵슬롯 사용 알림
 void ANS_PlayerCharacterBase::Multicast_UseQuickSlotByIndex_Implementation(int32 Index)
 {
     if (!QuickSlotComponent) 
@@ -848,7 +826,7 @@ void ANS_PlayerCharacterBase::Multicast_UseQuickSlotByIndex_Implementation(int32
         Index = 0;
     }
 
-    // 현재 슬롯 인덱스 업데이트
+    // 현재 선택된 슬롯대로 캐릭터에 현재 슬롯 인덱스 업데이트
     CurrentQuickSlotIndex = Index;
     
     // 퀵슬롯 컴포넌트의 현재 슬롯 인덱스도 설정
@@ -873,15 +851,38 @@ void ANS_PlayerCharacterBase::Multicast_UseQuickSlotByIndex_Implementation(int32
         return;
     }
 
-    // 비어 있는 슬롯일 경우 → 현재 무기 해제
+    // 비어 있는 슬롯일 경우엔 현재 무기 해제
     if (!Item || Item->ItemDataRowName.IsNone())
     {
-        if (WeaponComp->GetCurrentWeaponItem())
+        if (!IsReload) // 재장전 중이 아니고
         {
-            // 무기 해제 처리
-            WeaponComp->UnequipWeapon();
+            if (!EquipedWeaponComp->IsAttack) // 공격 중이 아니고
+            {
+                if (!IsPickUp) // 아이템 획득 중이 아니고
+                {
+                    if (!IsChangeAnim) // 아이템 교체 중이 아니여야지만
+                    {
+                        if (WeaponComp->GetCurrentWeaponItem())
+                        {
+                            // 무기 해제 처리를 실행
+                            IsChangeAnim = true;
+            
+                            // 1.4초 후 애니메이션 플래그 리셋
+                            FTimerHandle ResetAnimTimerHandle;
+                            GetWorldTimerManager().SetTimer(
+                                ResetAnimTimerHandle,
+                                FTimerDelegate::CreateLambda([this]() { 
+                                    IsChangeAnim = false;
+                                }),
+                                1.4f,
+                                false
+                            );
+                            return;
+                        }
+                    }
+                }
+            }
         }
-        return;
     }
 
     // 아이템 데이터 확인
@@ -895,26 +896,17 @@ void ANS_PlayerCharacterBase::Multicast_UseQuickSlotByIndex_Implementation(int32
     {
         return;
     }
-
-    // 무기 장착 처리 - 여기서 직접 장착하지 않고 애니메이션 플래그만 설정
+    
     if (!ItemData->WeaponActorClass)
     {
         return;
     }
-    
-    // 무기 교체 애니메이션 플래그 설정 - 실제 무기 교체는 애니메이션 노티파이에서 처리
-    IsChangeAnim = true;
-    
-    UE_LOG(LogTemp, Warning, TEXT("Multicast_UseQuickSlotByIndex: 무기 교체 애니메이션 시작 (IsChangeAnim = true), 슬롯: %d"), CurrentQuickSlotIndex + 1);
-    
-    // 여기서 WeaponComp->SwapWeapon(ItemData->WeaponActorClass, Item); 호출 제거
-    // 실제 무기 교체는 NS_AN_EquipQuickSlotItem 노티파이에서 처리
 }
 
 // 아이템 획득 시 자동으로 퀵슬롯에 할당하고 장착 애니메이션 실행
 void ANS_PlayerCharacterBase::AutoEquipPickedUpItem(UNS_InventoryBaseItem* NewItem)
 {
-    // 아이템이 없거나 장비 아이템이 아니면 무시
+    // 아이템이 없거나 장비 아이템이 아니면 리턴
     if (!NewItem || NewItem->ItemType != EItemType::Equipment || NewItem->WeaponType == EWeaponType::Ammo)
     {
         return;
@@ -935,15 +927,10 @@ void ANS_PlayerCharacterBase::AutoEquipPickedUpItem(UNS_InventoryBaseItem* NewIt
         // 첫 번째 빈 슬롯에 할당 시도
         bool bAssigned = QuickSlotComponent->AssignToFirstEmptySlot(NewItem);
         
-        // 할당 실패 시 (모든 슬롯이 차있는 경우) 첫 번째 슬롯에 강제 할당
+        // 모든 슬롯이 차있어서 할당 실패한 경우 첫 번째 슬롯에 강제 할당
         if (!bAssigned)
         {
             QuickSlotComponent->AssignToSlot(0, NewItem);
-            UE_LOG(LogTemp, Warning, TEXT("AutoEquipPickedUpItem: 모든 슬롯이 차있어 슬롯 1에 강제 할당: %s"), *NewItem->GetName());
-        }
-        else
-        {
-            UE_LOG(LogTemp, Warning, TEXT("AutoEquipPickedUpItem: 첫 빈 슬롯에 할당 성공: %s"), *NewItem->GetName());
         }
     }
     
@@ -955,24 +942,33 @@ void ANS_PlayerCharacterBase::AutoEquipPickedUpItem(UNS_InventoryBaseItem* NewIt
         CurrentQuickSlotIndex = ItemSlotIndex;
         QuickSlotComponent->SetCurrentSlotIndex(CurrentQuickSlotIndex);
         
-        // 장착 애니메이션 실행 플래그 설정
-        IsChangeAnim = true;
-        
-        // 1.4초 후 애니메이션 플래그 리셋
-        FTimerHandle ResetAnimTimerHandle;
-        GetWorldTimerManager().SetTimer(
-            ResetAnimTimerHandle,
-            FTimerDelegate::CreateLambda([this]() { 
-                IsChangeAnim = false;
-                UE_LOG(LogTemp, Verbose, TEXT("AutoEquipPickedUpItem: 장착 애니메이션 플래그 리셋"));
-            }),
-            1.4f,
-            false
-        );
-        
-        UE_LOG(LogTemp, Warning, TEXT("AutoEquipPickedUpItem: 슬롯 %d에 아이템 장착 애니메이션 시작: %s"), 
-            CurrentQuickSlotIndex + 1, *NewItem->GetName());
+        // 1.4초 후 애니메이션 리셋
+        if (!IsReload) // 재장전 중이 아니고
+        {
+            if (!EquipedWeaponComp->IsAttack) // 공격 중이 아니고
+            {
+                if (!IsPickUp) // 아이템 획득 중이 아니고
+                {
+                    if (!IsChangeAnim) // 아이템 교체 중이 아니여야지만
+                    {
+                        // 무기 해제 처리를 실행
+                        IsChangeAnim = true;
             
+                        FTimerHandle ResetAnimTimerHandle;
+                        GetWorldTimerManager().SetTimer(
+                            ResetAnimTimerHandle,
+                            FTimerDelegate::CreateLambda([this]() { 
+                                IsChangeAnim = false;
+                            }),
+                            1.4f,
+                            false
+                        );
+                        return;
+                    }
+                }
+            }
+        }
+        
         // 서버/클라이언트 상태에 따라 적절한 함수 호출
         if (!HasAuthority())
         {
@@ -984,7 +980,7 @@ void ANS_PlayerCharacterBase::AutoEquipPickedUpItem(UNS_InventoryBaseItem* NewIt
         }
     }
 }
-// ===============================================================================================================================
+// ==================================================퀵슬롯 함수 끝!==================================================================
 
 void ANS_PlayerCharacterBase::Server_UseInventoryItem_Implementation(FName ItemRowName)
 {

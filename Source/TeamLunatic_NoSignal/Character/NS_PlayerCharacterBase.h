@@ -70,7 +70,7 @@ public:
 	void HandleUseThrowableItem(int32 Index);
 
 
-// ==========================================================================================
+// =========================================퀵슬롯 관련 변수 및 함수들=================================================
 	// 퀵슬롯 선택 함수들
 	UFUNCTION()
 	void QuickSlot1Selected();
@@ -87,7 +87,7 @@ public:
 	UFUNCTION()
 	void QuickSlot5Selected();
 
-	// 키 입력에 따른 퀵슬롯 선택 (1~5키)
+	// 키 입력에 따른 퀵슬롯 선택
 	UFUNCTION(BlueprintCallable, Category = "QuickSlot")
 	void HandleQuickSlotKeyInput(int32 KeyNumber);
 

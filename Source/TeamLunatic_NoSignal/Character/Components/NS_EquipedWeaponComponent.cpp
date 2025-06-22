@@ -175,11 +175,26 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
 }
 void UNS_EquipedWeaponComponent::UnequipWeapon()
 {
-    Server_UnequipWeapon();
+    // 네트워크 모드에 따라 적절한 함수 호출
+    if (GetOwnerRole() == ROLE_Authority)
+    {
+        // 서버에서 직접 멀티캐스트 호출
+        Multicast_UnequipWeapon();
+        UE_LOG(LogTemp, Warning, TEXT("[UnequipWeapon] 서버에서 직접 멀티캐스트 호출"));
+    }
+    else
+    {
+        // 클라이언트에서 서버에 요청
+        Server_UnequipWeapon();
+        UE_LOG(LogTemp, Warning, TEXT("[UnequipWeapon] 클라이언트에서 서버 요청"));
+    }
 }
+
 void UNS_EquipedWeaponComponent::Server_UnequipWeapon_Implementation()
 {
+    // 서버에서 모든 클라이언트에 멀티캐스트
     Multicast_UnequipWeapon();
+    UE_LOG(LogTemp, Warning, TEXT("[Server_UnequipWeapon] 서버에서 멀티캐스트 호출"));
 }
 
 void UNS_EquipedWeaponComponent::Multicast_UnequipWeapon_Implementation()
@@ -219,11 +234,11 @@ void UNS_EquipedWeaponComponent::Server_Reload_Implementation()
 
 void UNS_EquipedWeaponComponent::Multicast_Reload_Implementation()
 {
-    // 유효성 검사: 캐릭터나 무기 없으면 종료
+    // 캐릭터나 무기 없으면 종료
     if (!OwnerCharacter || !CurrentWeapon)
         return;
 
-    // 무기 타입 확인: 원거리 무기 또는 권총이 아니면 재장전 불가
+    // 원거리 무기 또는 권총이 아니면 재장전 불가
     const EWeaponType CurrentType = CurrentWeapon->GetWeaponType();
     if (CurrentType != EWeaponType::Ranged && CurrentType != EWeaponType::Pistol)
         return;

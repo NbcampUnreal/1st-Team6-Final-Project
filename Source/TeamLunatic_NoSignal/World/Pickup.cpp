@@ -162,7 +162,7 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 					// 퀵슬롯 컴포넌트 확인
 					if (UNS_QuickSlotComponent* QuickSlotComp = Taker->GetQuickSlotComponent())
 					{
-						// 인벤토리에 추가된 아이템 찾기 (ItemReference는 이제 사용할 수 없음)
+						// 인벤토리에 추가된 아이템 찾기
 						UNS_InventoryBaseItem* AddedItem = nullptr;
 						
 						// 인벤토리에서 같은 ItemDataRowName을 가진 아이템 찾기
@@ -192,8 +192,6 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 									QuickSlotComp->AssignToSlot(CurrentSlotIndex, AddedItem);
 									AssignedSlot = CurrentSlotIndex;
 									bAssignedToCurrentSlot = true;
-									UE_LOG(LogTemp, Warning, TEXT("TakePickup: 현재 선택된 퀵슬롯 %d번에 아이템 할당: %s"), 
-										AssignedSlot + 1, *AddedItem->GetName());
 								}
 								else
 								{
@@ -215,8 +213,6 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 									{
 										QuickSlotComp->AssignToSlot(0, AddedItem);
 										AssignedSlot = 0;
-										UE_LOG(LogTemp, Warning, TEXT("TakePickup: 모든 슬롯이 차있어 슬롯 1에 강제 할당: %s"), 
-											*AddedItem->GetName());
 									}
 								}
 								
@@ -224,8 +220,6 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 								if (QuickSlotComp->GetTotalAssignedItems() == 1)
 								{
 									Taker->CurrentQuickSlotIndex = AssignedSlot;
-									UE_LOG(LogTemp, Warning, TEXT("TakePickup: 첫 번째 아이템 획득 - 현재 퀵슬롯 인덱스 설정: %d"), 
-										AssignedSlot + 1);
 								}
 							}
 						}
@@ -234,21 +228,12 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 				
 				// 아이템 획득 애니메이션 시작
 				Taker->IsPickUp = true;
-				UE_LOG(LogTemp, Warning, TEXT("TakePickup: 아이템 획득 애니메이션 시작 (IsPickUp = true)"));
 				
 				if (AddResult.OperationResult == EItemAddResult::TAR_AllItemAdded)
 				{
 					Destroy();
 				}
 			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Player Inventory Component is null"));
-			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Pickup internal Item reference was somehow null"));
 		}
 	}
 }
