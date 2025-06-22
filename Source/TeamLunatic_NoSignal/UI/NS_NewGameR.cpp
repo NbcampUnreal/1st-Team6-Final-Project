@@ -101,7 +101,7 @@ void UNS_NewGameR::HideConfirmationMenu()
 void UNS_NewGameR::StartGame()
 {
     const FString SlotName = GetSaveSlotName();
-    FString SelectedLevelName = TEXT("/Game/Maps/MainWorld");//TEXT("/Game/SurvivalGameKitV2/Maps/Showcase");//TEXT("/Game/Maps/MainWorld");
+    FString SelectedLevelName = TEXT("/Game/Maps/MainWorld");////TEXT("/Game/Maps/MainWorld");//TEXT("/Game/SurvivalGameKitV2/Maps/Showcase");//TEXT("/Game/Maps/MainWorld");
 
     FPlayerSaveData PlayerData;
     PlayerData.PlayerName = SlotName;
@@ -136,7 +136,6 @@ void UNS_NewGameR::StartGame()
     
 
     FString GameModePath = TEXT("Game=/Game/GameFlowBP/BP_NS_SinglePlayMode.BP_NS_SinglePlayMode_C");
-
     if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
         UAsyncLoadingScreenLibrary::SetEnableLoadingScreen(true);
@@ -149,11 +148,15 @@ void UNS_NewGameR::StartGame()
 
     //    FString GameModePath = TEXT("Game=/Game/GameFlowBP/BP_NS_SinglePlayMode.BP_NS_SinglePlayMode_C");
 
+    //    UE_LOG(LogTemp, Warning, TEXT("NS_NewGameR  LoadingScreen"));
+
     //    GI->GetUIManager()->LoadingScreen(GetWorld());
 
     //    GI->GetUIManager()->OnLoadingFinished.BindLambda([SelectedLevelName, GameModePath, GI]()
     //    {
     //        UGameplayStatics::OpenLevel(GI->GetWorld(), FName(*SelectedLevelName), true, GameModePath);
+
+    //        UE_LOG(LogTemp, Warning, TEXT("NS_NewGameR  OpenLevel "));
     //    });
     //}
 }

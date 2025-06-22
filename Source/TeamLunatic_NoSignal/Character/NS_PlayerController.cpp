@@ -25,21 +25,25 @@ void ANS_PlayerController::BeginPlay()
     if (!IsLocalController()) return; // 서버일 경우 바로 반환해서 UI 안 띄움
 
 
-
-
     if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
- /*     GI->GetUIManager()->CompleteLoadingProcess();
-        GI->GetUIManager()->OnLoadingFinished.BindLambda([GI]()
-        {
-           GI->GetUIManager()->CloseLoadingUI();
-           GI->GetUIManager()->ShowPlayerHUDWidget(GI->GetWorld());
-        });*/
+      //GI->GetUIManager()->CompleteLoadingProcess();
+      //  GI->GetUIManager()->OnLoadingFinished.BindLambda([GI]()
+      //  {
+      //     UE_LOG(LogTemp, Warning, TEXT("NS_PlayerController CloseLoadingUI "));
+      //     GI->GetUIManager()->CloseLoadingUI();
+      //     GI->GetUIManager()->ShowPlayerHUDWidget(GI->GetWorld());
+      //  });//로딩스크린 위젯 띄워서  로딩바 몇초 움직이고 OpenLevel()하는 방식.
+
+
+
+
         FTimerHandle DelayHandle;
         GetWorld()->GetTimerManager().SetTimer(DelayHandle, [this, GI]()
-            {
-                GI->GetUIManager()->ShowPlayerHUDWidget(GI->GetWorld());
-            }, 0.5f, false);
+        {
+            // asybc loading screen PlugIn 활용할때 사용하는 로직.
+            GI->GetUIManager()->ShowPlayerHUDWidget(GI->GetWorld());
+        }, 1.f, false);
     }
 }
 
