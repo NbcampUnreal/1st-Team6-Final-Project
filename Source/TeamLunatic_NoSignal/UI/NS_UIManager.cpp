@@ -7,7 +7,10 @@
 #include "UI/NS_InGameMsg.h"
 #include "UI/NS_PlayerHUD.h"
 #include "UI/NS_LoadingScreen.h"
+
+#include "UI/NS_LoadingScreen.h"
 #include "UI/NS_SpectatorWidgetClass.h" 
+#include "GameFlow/NS_GameInstance.h"
 #include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
 #include "Containers/Ticker.h" 
 #include "Kismet/GameplayStatics.h"
@@ -100,6 +103,7 @@ void UNS_UIManager::HidePlayerHUDWidget(UWorld* World)
     if (NS_PlayerHUDWidget && NS_PlayerHUDWidget->IsInViewport())
         NS_PlayerHUDWidget->HideWidget();
 }
+
 bool UNS_UIManager::ShowGameMsgWidget(FString& GameMsg, UWorld* World)
 {
     APlayerController* PC = World->GetFirstPlayerController();
@@ -121,28 +125,37 @@ bool UNS_UIManager::ShowGameMsgWidget(FString& GameMsg, UWorld* World)
     }
     return false;
 }
+
 void UNS_UIManager::HideGameMsgWidget(UWorld* World)
 {
     if (NS_InGameMsgWidget && NS_InGameMsgWidget->IsInViewport())
         NS_InGameMsgWidget->HideWidget();
 }
+
 bool UNS_UIManager::ShowGameOverWidget(UWorld* World)
 {
     if (!World || World->IsNetMode(NM_DedicatedServer))
     {
         return false;
     }
+
     APlayerController* PC = World->GetFirstPlayerController();
-    if (!NS_Msg_GameOveWidget || NS_Msg_GameOveWidget && !NS_Msg_GameOveWidget->IsInViewport())//!IsValid(NS_Msg_GameOveWidget) )
+    if (!PC)
+    {
+        return false;
+    }
+
+    if (!NS_Msg_GameOveWidget || !NS_Msg_GameOveWidget->IsInViewport())
     {
         if (NS_MsgGameOverWidgetClass)
+        {
             NS_Msg_GameOveWidget = CreateWidget<UNS_Msg_GameOver>(PC, NS_MsgGameOverWidgetClass);
+            NS_Msg_GameOveWidget->AddToViewport();
+        }
         else
         {
-            UE_LOG(LogTemp, Warning, TEXT("ERROR!!! EMPTY NS_MsgGameOverWidgetClass!!!!!"));
             return false;
         }
-        NS_Msg_GameOveWidget->AddToViewport();
     }
 
     if (NS_Msg_GameOveWidget)
@@ -151,8 +164,10 @@ bool UNS_UIManager::ShowGameOverWidget(UWorld* World)
         SetFInputModeGameAndUI(PC, NS_Msg_GameOveWidget);
         return true;
     }
+
     return false;
 }
+
 void UNS_UIManager::HideGameOverWidget(UWorld* World)
 {
     if (NS_Msg_GameOveWidget && NS_Msg_GameOveWidget->IsInViewport())
@@ -184,12 +199,18 @@ void UNS_UIManager::SetFInputModeGameOnly(APlayerController* PC)
 
 void UNS_UIManager::CloseLoadingUI()
 {
-    if (NS_LoadingScreen)
+    if (NS_LoadingScreen && NS_LoadingScreen->IsInViewport())
     {
         UE_LOG(LogTemp, Log, TEXT("Remove Loading Screen!!!!"));
-		NS_LoadingScreen = nullptr;
         NS_LoadingScreen->RemoveFromParent();
-        if (NS_LoadingScreen->IsInViewport()) NS_LoadingScreen->RemoveFromParent();
+        NS_LoadingScreen = nullptr;
+    }
+}
+void UNS_UIManager::CompleteLoadingProcess()
+{
+    if (NS_LoadingScreen)
+    {
+        NS_LoadingScreen->LevelLoadComplete();
     }
 }
 
@@ -203,6 +224,7 @@ void UNS_UIManager::LoadingScreen(UWorld* World)
 
     OnLoadingFinished.Unbind();
     NS_LoadingScreen->AddToViewport();
+	//NS_LoadingScreen->FakeUpdateProgress();
     NS_LoadingScreen->UpdateProgress();
 }
 
@@ -277,4 +299,29 @@ bool UNS_UIManager::ShowSpectatorWidget(UWorld* World)
 
     SetFInputModeGameAndUI(PC, SpectatorWidget);
     return true;
+}
+
+
+void UNS_UIManager::ShowHitEffectWidget(UWorld* World)
+{
+    if (!World) return;
+
+    APlayerController* PC = UGameplayStatics::GetPlayerController(World, 0);
+    if (!PC || !PC->IsLocalController()) return;
+
+    if (HitEffectWidgetClass)
+    {
+        UUserWidget* HitWidget = CreateWidget<UUserWidget>(PC, HitEffectWidgetClass);
+        if (HitWidget)
+        {
+            HitWidget->AddToViewport();
+
+            FTimerHandle TempHandle;
+            PC->GetWorldTimerManager().SetTimer(TempHandle, [HitWidget]()
+            {
+                if (HitWidget && HitWidget->IsInViewport())
+                    HitWidget->RemoveFromParent();
+            }, 0.5f, false);
+        }
+    }
 }

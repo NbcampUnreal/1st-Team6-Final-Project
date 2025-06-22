@@ -40,7 +40,7 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_TakePickup(AActor* InteractingActor);
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Pickup | Components")
+	UPROPERTY(VisibleAnywhere, Category = "Pickup | Components")
 	UStaticMeshComponent* PickupMesh;
 
 	UPROPERTY(EditInstanceOnly, Category = "Pickup | ItemInitialization")

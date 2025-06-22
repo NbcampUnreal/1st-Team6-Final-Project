@@ -14,6 +14,7 @@
 #include "GameFramework/PlayerController.h"
 #include "UI/NS_MasterMenuPanel.h"
 #include "UI/NS_UIManager.h"
+#include "AsyncLoadingScreenLibrary.h"
 
 void UNS_InGameStartMenu::NativeConstruct()
 {
@@ -118,13 +119,13 @@ void UNS_InGameStartMenu::On_MainMenuClicked()
 
     OnDisconnectClicked();
     
-    UGameplayStatics::OpenLevel(GetWorld(), FName(TEXT("MainTitle")));//MenuMap / MainTitle
-
     if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
     {
         if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
             UIManager->HideInGameMenuWidget(GetWorld());
     }
+    UAsyncLoadingScreenLibrary::SetEnableLoadingScreen(false);
+    UGameplayStatics::OpenLevel(GetWorld(), FName(TEXT("MainTitle")));//MenuMap / MainTitle
 }
 
 void UNS_InGameStartMenu::OnDisconnectClicked()

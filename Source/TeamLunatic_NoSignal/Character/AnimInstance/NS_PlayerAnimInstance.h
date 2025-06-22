@@ -25,11 +25,23 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category="Aim")
 	float AimPitch = 0.f;
 
-	UPROPERTY(BlueprintReadOnly, Category="IK")
-	FTransform LeftHandIKTransform;
+	// Turn In Place 관련 변수
+	// 왼쪽으로 돌고 있는지
+	UPROPERTY(BlueprintReadOnly, Category = "Turn In Place")
+	bool bTurnLeft = false;
+	// 오른쪽으로 돌고 있는지
+	UPROPERTY(BlueprintReadOnly, Category = "Turn In Place")
+	bool bTurnRight = false;
+	// 현재 Turn In Place 중인지
+	UPROPERTY(BlueprintReadOnly, Category = "Turn In Place")
+	bool bIsTurningInPlace = false;
+	// 현재 Turn In Place 각도
+	UPROPERTY(BlueprintReadOnly, Category = "Turn In Place")
+	float TurnInPlaceAngle = 0.0f;
 	
+	// Turn In Place 업데이트 함수
+	void UpdateTurnInPlace(float DeltaSeconds);
+
 	// AimOffset용 Yaw와 Pitch값 업데이트 함수
 	void UpdateAimOffset(float DeltaSeconds);
-	// 왼손이 무기소켓에 부착되는 위치 업데이트 함수
-	void UpdateLeftHandIK(float DeltaSeconds);
 };

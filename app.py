@@ -3,6 +3,7 @@ import subprocess
 import socket
 import time
 import threading
+import os
 
 app = Flask(__name__)
 
@@ -59,7 +60,7 @@ def create_session():
     ]
 
     try:
-        subprocess.Popen(command)
+        proc = subprocess.Popen(command)
         time.sleep(1.0)  # 포트 바인딩 시간 확보
 
         # 세션 리스트에 추가 (초기 상태는 "available")
@@ -68,6 +69,7 @@ def create_session():
                 "name": name,
                 "ip": EC2_PUBLIC_IP,
                 "port": port,
+ 	            "process": proc,
                 "max_players": max_players,
                 "current_players": 1, # 세션 생성 시 기본적으로 1 (호스트)
                 "last_seen": time.time(),
@@ -93,12 +95,22 @@ def get_session_list():
     current_sessions = []
     with session_list_lock:
         for session in session_list:
-            # 'available' 상태인 세션만 반환
-            # 게임이 시작된 세션 (status: "in_game")은 제외
             if session.get("status") == "available":
-                current_sessions.append(session)
+                # JSON으로 직렬화 가능한 필드만 복사
+                safe_session = {
+                    "name": session["name"],
+                    "ip": session["ip"],
+                    "port": session["port"],
+                    "max_players": session["max_players"],
+                    "current_players": session["current_players"],
+                    "status": session["status"],
+                    "last_seen": session["last_seen"],
+                }
+                current_sessions.append(safe_session)
+
     print(f"[SessionList] Returning {len(current_sessions)} available sessions.")
     return jsonify(current_sessions), 200
+
 
 # 세션 핑 갱신 API (POST) - 수정됨
 @app.route('/heartbeat', methods=['POST'])
@@ -139,20 +151,36 @@ def update_session_status():
     return jsonify({"error": "Session not found"}), 404
 
 
-# 주기적으로 세션 정리 (15초 이상 응답 없거나 'closed' 상태면 제거) 
+# 주기적으로 세션 정리 (30초 이상 응답 없거나 'closed' 상태면 제거) 
 def cleanup_sessions():
     while True:
         now = time.time()
-        
+
         with session_list_lock:
             before = len(session_list)
-            
-            # last_seen이 15초 이상 지났거나, status가 "closed"인 세션 제거
-            session_list[:] = [
-                s for s in session_list if (now - s.get("last_seen", 0) <= 15 and s.get("status") != "closed")
+
+            stale_sessions = [
+                s for s in session_list
+                if (now - s.get("last_seen", 0) > 30 or s.get("status") == "closed")
             ]
 
-            # used_ports 재계산
+            for s in stale_sessions:
+                proc = s.get("process")
+                port = s.get("port")
+                if proc and proc.pid:
+                    try:
+                        #subprocess.run과 taskkill /T /F 옵션을 사용하여 프로세스와 자식 프로세스 모두 종료
+                        command = ['taskkill', '/PID', str(proc.pid), '/T', '/F']
+                        subprocess.run(command, check=True, capture_output=True, text=True)
+                        print(f"[Cleanup] 서버 프로세스 강제 종료 성공 (PID={proc.pid}, Port={port})")
+                    except subprocess.CalledProcessError as e:
+                        # taskkill 명령이 실패한 경우 
+                        print(f"[Cleanup] 프로세스 종료 실패 (PID={proc.pid}, Port={port}). 이미 종료되었을 수 있습니다. Error: {e.stderr.strip()}")
+                    except Exception as e:
+                        print(f"[Cleanup] 프로세스 종료 중 예외 발생 (Port={port}): {type(e).__name__} - {e}")
+
+            session_list[:] = [s for s in session_list if s not in stale_sessions]
+
             used_ports.clear()
             used_ports.update(s["port"] for s in session_list)
 
@@ -161,6 +189,7 @@ def cleanup_sessions():
                 print(f"[Cleanup] Removed {before - after} stale/closed session(s)")
 
         time.sleep(10)
+
 
 # 백그라운드 쓰레드 시작
 cleanup_thread = threading.Thread(target=cleanup_sessions, daemon=True)
