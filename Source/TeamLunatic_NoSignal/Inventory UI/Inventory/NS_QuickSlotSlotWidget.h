@@ -16,7 +16,7 @@ struct FNS_ItemDataStruct;
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UNS_QuickSlotSlotWidget : public UUserWidget
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 	
 public:
     virtual void NativeConstruct() override;
