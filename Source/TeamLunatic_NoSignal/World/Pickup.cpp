@@ -151,21 +151,78 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 		{
 			if (UInventoryComponent* PlayerInventory = Taker->GetInventory())
 			{
+				// 인벤토리에 아이템 추가
 				const FItemAddResult AddResult = PlayerInventory->HandleAddItem(ItemReference);
-
-				switch (AddResult.OperationResult)
+				
+				// 아이템 추가 성공 시 장비 아이템인 경우 자동 퀵슬롯 할당 처리
+				if (AddResult.ActualAmountAdded > 0 && 
+					ItemReference->ItemType == EItemType::Equipment && 
+					ItemReference->WeaponType != EWeaponType::Ammo)
 				{
-				case EItemAddResult::TAR_NoItemAdded:
-					break;
-				case EItemAddResult::TAR_PartialAmountItemAdded:
-					if (ReplicatedItemData.ItemAssetData.GetSound)
+					// 퀵슬롯 컴포넌트 확인
+					if (UNS_QuickSlotComponent* QuickSlotComp = Taker->GetQuickSlotComponent())
 					{
-						UGameplayStatics::PlaySound2D(this, ReplicatedItemData.ItemAssetData.GetSound);
-					}
-					UpdateInteractableData();
-					if (UInteractionComponent* InteractionComp = Taker->GetInteractionComponent())
-					{
-						InteractionComp->UpdateInteractionWidget();
+						// 인벤토리에 추가된 아이템 찾기
+						UNS_InventoryBaseItem* AddedItem = nullptr;
+						
+						// 인벤토리에서 같은 ItemDataRowName을 가진 아이템 찾기
+						for (UNS_InventoryBaseItem* Item : PlayerInventory->GetInventoryContents())
+						{
+							if (Item && Item->ItemDataRowName == ItemReference->ItemDataRowName)
+							{
+								AddedItem = Item;
+								break;
+							}
+						}
+						
+						if (AddedItem)
+						{
+							// 현재 선택된 퀵슬롯 인덱스 가져오기
+							int32 CurrentSlotIndex = Taker->GetCurrentQuickSlotIndex();
+							bool bAssignedToCurrentSlot = false;
+							
+							// 아이템이 이미 퀵슬롯에 할당되어 있는지 확인
+							if (!QuickSlotComp->IsItemAlreadyAssigned(AddedItem))
+							{
+								int32 AssignedSlot = -1;
+								
+								// 현재 선택된 슬롯이 비어있으면 해당 슬롯에 할당
+								if (!QuickSlotComp->GetItemInSlot(CurrentSlotIndex))
+								{
+									QuickSlotComp->AssignToSlot(CurrentSlotIndex, AddedItem);
+									AssignedSlot = CurrentSlotIndex;
+									bAssignedToCurrentSlot = true;
+								}
+								else
+								{
+									// 현재 선택된 슬롯이 이미 차있으면 첫 번째 빈 슬롯에 할당
+									for (int32 i = 0; i < QuickSlotComp->GetMaxSlots(); i++)
+									{
+										if (!QuickSlotComp->GetItemInSlot(i))
+										{
+											QuickSlotComp->AssignToSlot(i, AddedItem);
+											AssignedSlot = i;
+											UE_LOG(LogTemp, Warning, TEXT("TakePickup: 빈 퀵슬롯 %d번에 아이템 할당: %s"), 
+												AssignedSlot + 1, *AddedItem->GetName());
+											break;
+										}
+									}
+									
+									// 모든 슬롯이 차있는 경우 첫 번째 슬롯에 강제 할당
+									if (AssignedSlot == -1)
+									{
+										QuickSlotComp->AssignToSlot(0, AddedItem);
+										AssignedSlot = 0;
+									}
+								}
+								
+								// 첫 번째 아이템을 획득한 경우에만 현재 퀵슬롯 인덱스 설정
+								if (QuickSlotComp->GetTotalAssignedItems() == 1)
+								{
+									Taker->CurrentQuickSlotIndex = AssignedSlot;
+								}
+							}
+						}
 					}
 					break;
 				case EItemAddResult::TAR_AllItemAdded:
@@ -176,14 +233,14 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 					Destroy();
 					break;
 				}
-
-				UE_LOG(LogTemp, Warning, TEXT("[TakePickup] AddResult: %d, Message: %s"),
-					(int32)AddResult.OperationResult,
-					*AddResult.ResultMessage.ToString());
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Player Inventory Component is null"));
+				
+				// 아이템 획득 애니메이션 시작
+				Taker->IsPickUp = true;
+				
+				if (AddResult.OperationResult == EItemAddResult::TAR_AllItemAdded)
+				{
+					Destroy();
+				}
 			}
 		}
 		else
