@@ -14,44 +14,44 @@ class ANS_PlayerCharacterBase;
 UENUM(BlueprintType)
 enum class EEscapeRoute : uint8
 {
-	None,
-	Car,
-	Radio
+    None,
+    Car,
+    Radio
 };
 
 // 탈출 시도 정보
 USTRUCT(BlueprintType)
 struct FEscapeAttemptInfo
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
-	UPROPERTY(BlueprintReadWrite)
-	ANS_PlayerCharacterBase* Player = nullptr;
+    UPROPERTY(BlueprintReadWrite)
+    ANS_PlayerCharacterBase* Player = nullptr;
 
-	UPROPERTY(BlueprintReadWrite)
-	FName EscapeTargetTag = NAME_None;
+    UPROPERTY(BlueprintReadWrite)
+    FName EscapeTargetTag = NAME_None;
 };
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_SinglePlayMode : public ANS_GameModeBase
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
-	ANS_SinglePlayMode();
+    ANS_SinglePlayMode();
 
-	UFUNCTION(BlueprintCallable, Category = "Location")
-	virtual FVector GetPlayerLocation_Implementation() const override;
+    UFUNCTION(BlueprintCallable, Category = "Location")
+    virtual FVector GetPlayerLocation_Implementation() const override;
 
-	virtual void PostLogin(APlayerController* NewPlayer) override;
+    virtual void PostLogin(APlayerController* NewPlayer) override;
 
-	virtual void OnPlayerCharacterDied_Implementation(ANS_PlayerCharacterBase* DeadCharacter) override;
+    virtual void OnPlayerCharacterDied_Implementation(ANS_PlayerCharacterBase* DeadCharacter) override;
 
 protected:
-	void HandleGameOver(bool bPlayerSurvived, EEscapeRoute EscapeRoute);
+    void HandleGameOver(bool bPlayerSurvived, EEscapeRoute EscapeRoute);
 
 private:
 
-	bool bIsGameOver = false;
-	EEscapeRoute CurrentEscapeRoute = EEscapeRoute::None;
+    bool bIsGameOver = false;
+    EEscapeRoute CurrentEscapeRoute = EEscapeRoute::None;
 };
