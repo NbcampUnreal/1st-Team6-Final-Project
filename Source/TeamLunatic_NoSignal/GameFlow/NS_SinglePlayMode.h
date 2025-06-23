@@ -40,12 +40,17 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_SinglePlayMode : public ANS_GameModeBase
 public:
     ANS_SinglePlayMode();
 
+    virtual void BeginPlay() override;
+    
     UFUNCTION(BlueprintCallable, Category = "Location")
     virtual FVector GetPlayerLocation_Implementation() const override;
 
     virtual void PostLogin(APlayerController* NewPlayer) override;
 
     virtual void OnPlayerCharacterDied_Implementation(ANS_PlayerCharacterBase* DeadCharacter) override;
+
+    // 좀비 스폰 체크 함수 오버라이드
+    virtual void CheckAndSpawnZombies() override;
 
 protected:
     void HandleGameOver(bool bPlayerSurvived, EEscapeRoute EscapeRoute);
