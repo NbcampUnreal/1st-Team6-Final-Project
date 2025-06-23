@@ -21,7 +21,7 @@ class ANS_BaseWeapon;
 class UNS_EquipedWeaponComponent;
 class UNS_QuickSlotPanel;
 class UNS_QuickSlotComponent;
-class UNS_PlayerController;
+
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
 {
@@ -69,26 +69,52 @@ public:
 
 	void HandleUseThrowableItem(int32 Index);
 
-	void UseQuickSlot1();
 
-	void UseQuickSlot2();
+	// =========================================퀵슬롯 관련 변수 및 함수들=================================================
+		// 퀵슬롯 선택 함수들
+	UFUNCTION()
+	void QuickSlot1Selected();
 
-	void UseQuickSlot3();
+	UFUNCTION()
+	void QuickSlot2Selected();
 
-	void UseQuickSlot4();
+	UFUNCTION()
+	void QuickSlot3Selected();
 
-	void UseQuickSlot5();
+	UFUNCTION()
+	void QuickSlot4Selected();
 
-	UFUNCTION(BlueprintCallable)
-	void UseQuickSlotByIndex(int32 Index);
+	UFUNCTION()
+	void QuickSlot5Selected();
 
-	void UseQuickSlotByIndex_Internal(int32 Index);
+	// 키 입력에 따른 퀵슬롯 선택
+	UFUNCTION(BlueprintCallable, Category = "QuickSlot")
+	void HandleQuickSlotKeyInput(int32 KeyNumber);
 
+	// 서버에 퀵슬롯 사용 요청
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void Server_UseQuickSlotByIndex(int32 Index);
 
-	UFUNCTION(NetMulticast, Reliable)
+	// 모든 클라이언트에 퀵슬롯 사용 알림
+	UFUNCTION(BlueprintCallable, NetMulticast, Reliable)
 	void Multicast_UseQuickSlotByIndex(int32 Index);
+
+	// 퀵슬롯 컴포넌트에 접근
+	UFUNCTION(BlueprintCallable, Category = "QuickSlot")
+	UNS_QuickSlotComponent* GetQuickSlotComponent() const { return QuickSlotComponent; }
+
+	// 현재 퀵슬롯 인덱스로 1번 슬롯부터 시작
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "QuickSlot", meta = (AllowPrivateAccess = "true"))
+	int32 CurrentQuickSlotIndex = 0;
+
+	// 현재 선택된 퀵슬롯 인덱스 반환 ====== 노티파이에서 호출
+	UFUNCTION(BlueprintCallable, Category = "QuickSlot")
+	int32 GetCurrentQuickSlotIndex() const { return CurrentQuickSlotIndex; }
+
+	// 아이템 획득 시 자동으로 퀵슬롯에 할당하고 장착 애니메이션 실행
+	UFUNCTION(BlueprintCallable, Category = "Inventory|QuickSlot")
+	void AutoEquipPickedUpItem(UNS_InventoryBaseItem* NewItem);
+	// ===============================================================================================================================
 
 	UPROPERTY(BlueprintReadWrite, Category = "Inventory")
 	UNS_InventoryBaseItem* AssignedItem;
@@ -121,7 +147,7 @@ public:
 	// 헤드램프 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Flashlight")
 	USpotLightComponent* FlashlightComponent;
-	
+
 
 	// 스탯 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
@@ -140,14 +166,6 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "QuickSlot", Replicated)
 	UNS_QuickSlotComponent* QuickSlotComponent;
 
-
-	//환각 관련
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PostProcess")
-	UMaterialInterface* HallucinationMaterial;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PostProcess")
-	UMaterialInstanceDynamic* HallucinationMID;
-
 	// 장착 무기 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UNS_EquipedWeaponComponent* EquipedWeaponComp;
@@ -163,13 +181,6 @@ public:
 	// 던질 때 기준이 되는 소켓 이름 == 캐릭터 블루프린트에서 설정해주면 됨
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Throw")
 	FName ThrowSocketName;
-
-	// 한번만 던져지도록 실행하는 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
-	bool bHasThrown = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
-	bool IsThrow = false;
 	////////////////////////////////////////병투척 변수 끝!///////////////////////////////////////////////
 
 
@@ -190,10 +201,10 @@ public:
 	// =================================Turn In Place관련 변수들 ===============================
 	// Turn In Place가 가능한 Yaw회전 값
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-	float TurnInPlaceThreshold = 90.0f; 
+	float TurnInPlaceThreshold = 90.0f;
 	// 몸 회전 속도
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-	float TurnInPlaceSpeed = 5.0f;   
+	float TurnInPlaceSpeed = 5.0f;
 	// 몸 회전이 완료된 후 Yaw값을 0으로 리셋하는 속도
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	float TurnInPlaceResetThreshold = 10.0f;
@@ -214,7 +225,7 @@ public:
 	// ===============================Turn In Place변수 끝!===================================
 
 
-	
+
 	/////////////////////////////// 리플리케이션용 변수들////////////////////////////////
 	// 캐릭터가 바라보고있는 좌/우 값
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
@@ -257,15 +268,17 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsChangingWeapon = false;
 	// 퀵슬롯을 누르면 퀵슬롯에 있는 무기를 장착하는 애니메이션 재생용 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_IsChangeAnim, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool IsChangeAnim = false;
 	// 캐릭터가 죽었는지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
-	bool IsDead = false; // 캐릭터가 죽었는지 여부를 나타내는 변수 추가
-
-	
-	UFUNCTION()
-	void OnRep_IsChangeAnim();
+	bool IsDead = false;
+	// 한번만 던져지도록 실행하는 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool bHasThrown = false;
+	// 병 던질 수 있는지 확인 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool IsThrow = false;
 	//////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -311,7 +324,7 @@ public:
 	UInputAction* InputQuickSlot4;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputQuickSlot5;
-	
+
 
 	// 캐릭터 EnhancedInput을 없앴다가 다시 부착하는는 함수 IMC를 지워웠다가 다시 장착하게해서 AnimNotify로 발차기 공격동안 IMC없앰
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category = "Input")
@@ -351,10 +364,6 @@ public:
 	void StartAimingAction_Server(const FInputActionValue& Value);
 	UFUNCTION(Server, Reliable)
 	void StopAimingAction_Server(const FInputActionValue& Value);
-
-	// 재장전
-	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void ReloadAction_Server(const FInputActionValue& Value);
 	//////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
 
 	// 캐릭터 죽는 애니메이션 멀티캐스트
@@ -385,11 +394,11 @@ public:
 	// 캐릭터가 병투척해서 날아가는 속도/방향/궤도 함수
 	UFUNCTION(BlueprintCallable)
 	void ThrowBottle();
-	
+
 	// ======================== Turn In Place 관련 함수 =================================
 	// Turn In Place 업데이트 함수
 	void UpdateTurnInPlace(float DeltaTime);
-	
+
 	// TurnLeft/Right 변수값 false로 만들고 CamYaw값 0으로 부드럽게 보간할 함수 (노티파이에서 호출할 함수임)
 	UFUNCTION(BlueprintCallable, Category = "Animation")
 	void OnTurnInPlaceFinished();
@@ -404,9 +413,4 @@ public:
 	// Yaw 리셋 관련 함수
 	void UpdateYawReset(float DeltaTime);
 	// ======================== Turn In Place 끝! =================================
-
-
-
-	// 환각효과 켜기
-	void ActivateHallucinationEffect(float Duration);
 };

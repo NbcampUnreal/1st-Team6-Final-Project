@@ -7,7 +7,6 @@
 #include "Item/NS_InventoryBaseItem.h"
 #include "Components/NS_EquipedWeaponComponent.h"
 #include "Character/Components/NS_StatusComponent.h"
-#include "Character/NS_PlayerController.h"
 #include "Item/NS_BaseRangedWeapon.h"
 #include "Character/ThrowActor/NS_ThrowActor.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -34,7 +33,7 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     SpringArmComp->SetupAttachment(RootComponent);
     SpringArmComp->TargetArmLength = 0.f;
     SpringArmComp->bUsePawnControlRotation = true;
-    
+
     // 카메라 설정
     CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
     CameraComp->SetupAttachment(SpringArmComp, USpringArmComponent::SocketName);
@@ -46,7 +45,7 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     FirstPersonArms->bCastDynamicShadow = false;
     FirstPersonArms->CastShadow = false;
     FirstPersonArms->SetOnlyOwnerSee(true); // 플레이어 본인만 보이게 설정 (다른클라이언트는 안보이게)
-    
+
     // 캐릭터 회전 및 이동 방향 설정
     // bUseControllerRotationYaw는 AnimInstance에서 이동여부에따라 이동중이면 true 이동중이 아니면 false로 설정되고있음
     bUseControllerRotationYaw = false; // 초기값은 false로 설정
@@ -76,7 +75,7 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     // 카메라에 부착
     FlashlightComponent->SetupAttachment(CameraComp);
     FlashlightComponent->SetRelativeRotation(FRotator::ZeroRotator);
-    FlashlightComponent->SetVisibility(true); 
+    FlashlightComponent->SetVisibility(true);
     FlashlightComponent->SetIntensity(8000.0f);
     FlashlightComponent->SetOuterConeAngle(30.0f);
     FlashlightComponent->SetInnerConeAngle(15.0f);
@@ -92,7 +91,7 @@ void ANS_PlayerCharacterBase::BeginPlay()
         GetMesh()->SetOwnerNoSee(true);          // 전체 메시는 보이지 않게
         FirstPersonArms->SetOnlyOwnerSee(true);  // 팔 메시만 본인(플레이어)이 보이게
     }
-    
+
     // 입력 매핑 컨텍스트 등록
     if (APlayerController* PC = Cast<APlayerController>(Controller))
     {
@@ -108,18 +107,18 @@ void ANS_PlayerCharacterBase::BeginPlay()
         GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed;
     }
 
-    // 환각 효과
-    if (CameraComp && HallucinationMaterial)
+    // 기본 퀵슬롯는 1번부터 시작되도록 
+    CurrentQuickSlotIndex = 0;
+    if (QuickSlotComponent)
     {
-        HallucinationMID = UMaterialInstanceDynamic::Create(HallucinationMaterial, this);
-        CameraComp->AddOrUpdateBlendable(HallucinationMID, 0.f); // Weight 0 = 비활성
+        QuickSlotComponent->SetCurrentSlotIndex(CurrentQuickSlotIndex);
     }
 }
 
 void ANS_PlayerCharacterBase::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-    
+
     // 로컬 플레이어인 경우에만 Turn In Place 업데이트
     if (IsLocallyControlled())
     {
@@ -150,52 +149,52 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                 this,
                 &ANS_PlayerCharacterBase::MoveAction);
         }
-        
+
 
         if (InputLookAction)
         {
             EnhancedInput->BindAction(
                 InputLookAction,
-             ETriggerEvent::Triggered,
-              this,
-               &ANS_PlayerCharacterBase::LookAction);
+                ETriggerEvent::Triggered,
+                this,
+                &ANS_PlayerCharacterBase::LookAction);
         }
 
         if (InputJumpAction)
         {
             EnhancedInput->BindAction(
                 InputJumpAction,
-             ETriggerEvent::Triggered,
-              this,
-               &ANS_PlayerCharacterBase::JumpAction);
+                ETriggerEvent::Triggered,
+                this,
+                &ANS_PlayerCharacterBase::JumpAction);
         }
 
         if (InputCrouchAction)
         {
             EnhancedInput->BindAction(
-            InputCrouchAction,
-             ETriggerEvent::Triggered,
-              this,
-               &ANS_PlayerCharacterBase::StartCrouch);
+                InputCrouchAction,
+                ETriggerEvent::Triggered,
+                this,
+                &ANS_PlayerCharacterBase::StartCrouch);
             EnhancedInput->BindAction(
-            InputCrouchAction,
-             ETriggerEvent::Completed,
-              this,
-               &ANS_PlayerCharacterBase::StopCrouch);
+                InputCrouchAction,
+                ETriggerEvent::Completed,
+                this,
+                &ANS_PlayerCharacterBase::StopCrouch);
         }
-        
+
         if (InputSprintAction)
         {
             EnhancedInput->BindAction(
-            InputSprintAction,
-             ETriggerEvent::Triggered,
-              this,
-               &ANS_PlayerCharacterBase::StartSprint_Server);
+                InputSprintAction,
+                ETriggerEvent::Triggered,
+                this,
+                &ANS_PlayerCharacterBase::StartSprint_Server);
             EnhancedInput->BindAction(
-            InputSprintAction,
-             ETriggerEvent::Completed,
-              this,
-               &ANS_PlayerCharacterBase::StopSprint_Server);
+                InputSprintAction,
+                ETriggerEvent::Completed,
+                this,
+                &ANS_PlayerCharacterBase::StopSprint_Server);
         }
 
         if (InteractAction)
@@ -203,16 +202,16 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
             EnhancedInput->BindAction(
                 InteractAction,
                 ETriggerEvent::Started,
-               InteractionComponent,
+                InteractionComponent,
                 &UInteractionComponent::BeginInteract
             );
 
-             EnhancedInput->BindAction(
-                 InteractAction,
-                 ETriggerEvent::Completed,
-                 InteractionComponent,
-                 &UInteractionComponent::EndInteract
-             );
+            EnhancedInput->BindAction(
+                InteractAction,
+                ETriggerEvent::Completed,
+                InteractionComponent,
+                &UInteractionComponent::EndInteract
+            );
         }
 
         if (ToggleMenuAction)
@@ -228,34 +227,28 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
         if (InteractAction)
         {
             EnhancedInput->BindAction(
-            InteractAction,
-             ETriggerEvent::Triggered,
-              this,
-               &ANS_PlayerCharacterBase::PickUpAction_Server);
+                InteractAction,
+                ETriggerEvent::Triggered,
+                this,
+                &ANS_PlayerCharacterBase::PickUpAction_Server
+            );
         }
 
         if (InputAimingAction)
         {
             EnhancedInput->BindAction(
-            InputAimingAction,
-             ETriggerEvent::Triggered,
-              this,
-               &ANS_PlayerCharacterBase::StartAimingAction_Server);
-            
-            EnhancedInput->BindAction(
-           InputAimingAction,
-            ETriggerEvent::Completed,
-             this,
-              &ANS_PlayerCharacterBase::StopAimingAction_Server);
-        }
+                InputAimingAction,
+                ETriggerEvent::Triggered,
+                this,
+                &ANS_PlayerCharacterBase::StartAimingAction_Server
+            );
 
-        if (InputReloadAction)
-        {
             EnhancedInput->BindAction(
-            InputReloadAction,
-             ETriggerEvent::Started,
-              this,
-               &ANS_PlayerCharacterBase::ReloadAction_Server);
+                InputAimingAction,
+                ETriggerEvent::Completed,
+                this,
+                &ANS_PlayerCharacterBase::StopAimingAction_Server
+            );
         }
 
         if (InputFlashlightAction)
@@ -264,48 +257,58 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                 InputFlashlightAction,
                 ETriggerEvent::Started,
                 this,
-                &ANS_PlayerCharacterBase::ToggleFlashlight);
+                &ANS_PlayerCharacterBase::ToggleFlashlight
+            );
         }
 
         if (InputQuickSlot1)
         {
             EnhancedInput->BindAction(
-                InputQuickSlot1, 
-                ETriggerEvent::Started, 
-                this, 
-                &ANS_PlayerCharacterBase::UseQuickSlot1);
+                InputQuickSlot1,
+                ETriggerEvent::Started,
+                this,
+                &ANS_PlayerCharacterBase::QuickSlot1Selected
+            );
         }
+
         if (InputQuickSlot2)
         {
             EnhancedInput->BindAction(
                 InputQuickSlot2,
                 ETriggerEvent::Started,
                 this,
-                &ANS_PlayerCharacterBase::UseQuickSlot2);
-        }       
+                &ANS_PlayerCharacterBase::QuickSlot2Selected
+            );
+        }
+
         if (InputQuickSlot3)
         {
             EnhancedInput->BindAction(
                 InputQuickSlot3,
                 ETriggerEvent::Started,
                 this,
-                &ANS_PlayerCharacterBase::UseQuickSlot3);
+                &ANS_PlayerCharacterBase::QuickSlot3Selected
+            );
         }
+
         if (InputQuickSlot4)
         {
             EnhancedInput->BindAction(
                 InputQuickSlot4,
                 ETriggerEvent::Started,
                 this,
-                &ANS_PlayerCharacterBase::UseQuickSlot4);
+                &ANS_PlayerCharacterBase::QuickSlot4Selected
+            );
         }
+
         if (InputQuickSlot5)
         {
             EnhancedInput->BindAction(
                 InputQuickSlot5,
                 ETriggerEvent::Started,
                 this,
-                &ANS_PlayerCharacterBase::UseQuickSlot5);
+                &ANS_PlayerCharacterBase::QuickSlot5Selected
+            );
         }
     }
 }
@@ -333,7 +336,7 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 
 void ANS_PlayerCharacterBase::SetMovementLockState_Server_Implementation(bool bLock)
 {
-	SetMovementLockState_Multicast(bLock);
+    SetMovementLockState_Multicast(bLock);
 }
 
 void ANS_PlayerCharacterBase::SetMovementLockState_Multicast_Implementation(bool bLock)
@@ -369,7 +372,7 @@ float ANS_PlayerCharacterBase::TakeDamage(
     {
         return 0.f;
     }
-    
+
     float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
     if (!HasAuthority() || ActualDamage <= 0.f)
         return ActualDamage;
@@ -377,33 +380,23 @@ float ANS_PlayerCharacterBase::TakeDamage(
     // 캐릭터 체력 감소
     StatusComp->AddHealthGauge(-ActualDamage);
 
-    if (AController* PC = GetController())
-    {
-        if (ANS_PlayerController* NS_PC = Cast<ANS_PlayerController>(PC))
-        {
-            NS_PC->Client_ShowHitEffect();
-        }
-    }
-
-
-
     IsHit = true;
-    
+
     // IsHit 타이머핸들 람다로 0.5초간 실행
     FTimerHandle ResetHitTime;
     GetWorldTimerManager().SetTimer(
         ResetHitTime,
         [this]()
+    {
+        // 캐릭터가 있다면 IsHit을 false로 설정
+        if (IsValid(this)) //
         {
-            // 캐릭터가 있다면 IsHit을 false로 설정
-            if (IsValid(this)) //
-            {
-                IsHit = false; //
-            }
-        },
+            IsHit = false; //
+        }
+    },
         0.5f,
         false
-        );
+    );
 
     // 캐릭터 체력이 0이면 죽음 애니메이션 실행
     if (StatusComp->Health <= 0.f)
@@ -422,28 +415,28 @@ void ANS_PlayerCharacterBase::MoveAction(const FInputActionValue& Value)
     if (!GetCharacterMovement()) return;
 
     FVector2D MoveInput = Value.Get<FVector2D>();
-    if (!FMath::IsNearlyZero(MoveInput.X)) 
-        AddMovementInput(GetActorForwardVector(), MoveInput.X); 
-    if (!FMath::IsNearlyZero(MoveInput.Y)) 
-        AddMovementInput(GetActorRightVector(), MoveInput.Y); 
+    if (!FMath::IsNearlyZero(MoveInput.X))
+        AddMovementInput(GetActorForwardVector(), MoveInput.X);
+    if (!FMath::IsNearlyZero(MoveInput.Y))
+        AddMovementInput(GetActorRightVector(), MoveInput.Y);
 }
 
 void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
 {
     if (!Controller) return;
-    
+
     // 카메라 회전 적용
-    FVector2D LookInput = Value.Get<FVector2D>(); 
-    AddControllerYawInput(LookInput.X * LookMagnification); 
-    AddControllerPitchInput(LookInput.Y * LookMagnification); 
+    FVector2D LookInput = Value.Get<FVector2D>();
+    AddControllerYawInput(LookInput.X * LookMagnification);
+    AddControllerPitchInput(LookInput.Y * LookMagnification);
 
     // Actor Rotation과 Control Rotation을 Delta를 이용해 Yaw값 추출
-    const FRotator ActorRot = GetActorRotation(); 
-    const FRotator ControlRot = Controller->GetControlRotation(); 
+    const FRotator ActorRot = GetActorRotation();
+    const FRotator ControlRot = Controller->GetControlRotation();
     const FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(ControlRot, ActorRot);
-    
+
     const float DeltaTime = GetWorld()->GetDeltaSeconds();
-    
+
     // 회전 중이 아니고 Yaw 리셋 중이 아닐 때만 CamYaw 업데이트
     if (!bIsTurningInPlace && !bIsResettingYaw)
     {
@@ -452,7 +445,7 @@ void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
         {
             CamYaw = DeltaRot.Yaw;
         }
-        
+
         // 회전 시작 조건 확인
         if (!TurnLeft && !TurnRight)
         {
@@ -463,14 +456,14 @@ void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
                 LastTurnYaw = CamYaw;
                 bIsTurningInPlace = true;
                 bIsResettingYaw = false;
-                
+
                 // 왼쪽/오른쪽 회전 설정
                 bool bNewTurnLeft = CamYaw < 0;
                 bool bNewTurnRight = CamYaw > 0;
-                
+
                 // bUseControllerDesiredRotation 활성화
                 GetCharacterMovement()->bUseControllerDesiredRotation = true;
-                
+
                 // 서버에 상태 업데이트 요청
                 if (HasAuthority())
                 {
@@ -487,8 +480,8 @@ void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
             }
         }
     }
-    
-    CamPitch = FMath::FInterpTo(CamPitch, DeltaRot.Pitch, DeltaTime, AimSendInterpSpeed); 
+
+    CamPitch = FMath::FInterpTo(CamPitch, DeltaRot.Pitch, DeltaTime, AimSendInterpSpeed);
 
     // 카메라 회전 정보를 서버로 전송 (손전등 회전도 함께 처리됨)
     UpdateAim_Server(CamYaw, CamPitch);
@@ -496,35 +489,35 @@ void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
 
 void ANS_PlayerCharacterBase::JumpAction(const FInputActionValue& Value)
 {
-    bool IsJump = Value.Get<bool>(); 
-    
-    if (IsJump && IsCanJump) 
+    bool IsJump = Value.Get<bool>();
+
+    if (IsJump && IsCanJump)
     {
-        Jump(); 
-        IsCanJump = false; 
+        Jump();
+        IsCanJump = false;
 
         // 점프한 뒤로 1.3초동안은 점프를 못함
-        FTimerHandle RestartJumpTime; 
-        GetWorldTimerManager().SetTimer( 
-            RestartJumpTime, 
-            FTimerDelegate::CreateLambda([this]() { IsCanJump = true; }), 
-            1.3f, 
-            false 
+        FTimerHandle RestartJumpTime;
+        GetWorldTimerManager().SetTimer(
+            RestartJumpTime,
+            FTimerDelegate::CreateLambda([this]() { IsCanJump = true; }),
+            1.3f,
+            false
         );
     }
 }
 
 void ANS_PlayerCharacterBase::StartCrouch(const FInputActionValue& Value)
 {
-	//점프 중이거나 발차기 중일 때는 앉지 않음
-    if (GetCharacterMovement()->IsFalling()) { return; } 
-    
-    Crouch(); 
+    //점프 중이거나 발차기 중일 때는 앉지 않음
+    if (GetCharacterMovement()->IsFalling()) { return; }
+
+    Crouch();
 }
 
 void ANS_PlayerCharacterBase::StopCrouch(const FInputActionValue& Value)
 {
-    UnCrouch(); 
+    UnCrouch();
 }
 
 void ANS_PlayerCharacterBase::StartSprint_Server_Implementation(const FInputActionValue& Value)
@@ -541,19 +534,34 @@ void ANS_PlayerCharacterBase::StartSprint_Server_Implementation(const FInputActi
         if (GetCharacterMovement())
             GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SpeedMultiAtStat;
     }
-
 }
 
 void ANS_PlayerCharacterBase::StopSprint_Server_Implementation(const FInputActionValue& Value)
 {
-    IsSprint = false; 
-    if (GetCharacterMovement()) 
+    IsSprint = false;
+    if (GetCharacterMovement())
         GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SpeedMultiAtStat;
 }
 
 void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputActionValue& Value)
 {
-	if (GetCharacterMovement()->IsFalling()) { return; } // 낙하 중에는 아이템 줍기 불가
+    // 낙하 중에는 아이템 줍기 불가
+    if (GetCharacterMovement()->IsFalling()) { return; }
+
+    // 이미 아이템 줍기 중이면 무시
+    if (IsPickUp) { return; }
+
+    // 재장전 중이면 무시
+    if (IsReload) { return; }
+
+    // 무기 교체 애니메이션 중이면 무시
+    if (IsChangeAnim) { return; }
+
+    // 공격 중이면 무시
+    if (EquipedWeaponComp && EquipedWeaponComp->IsAttack) { return; }
+
+    // 투척 중이면 무시
+    if (IsThrow) { return; }
 
     if (UInteractionComponent* InteractComp = FindComponentByClass<UInteractionComponent>())
     {
@@ -564,52 +572,48 @@ void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputAct
             UE_LOG(LogTemp, Warning, TEXT("상호작용 대상 없음"));
             return;
         }
-    }
 
-    IsPickUp = true;
+        // 상호작용 시작 전에 IsPickUp 플래그를 true로 설정
+        IsPickUp = true;
+
+        // 안전장치: 2초 후에 강제로 IsPickUp 플래그를 리셋
+        FTimerHandle SafetyTimerHandle;
+        GetWorldTimerManager().SetTimer(
+            SafetyTimerHandle,
+            FTimerDelegate::CreateLambda([this]() {
+            if (IsPickUp)
+            {
+                IsPickUp = false;
+                UE_LOG(LogTemp, Warning, TEXT("안전장치: IsPickUp 플래그 강제 리셋 (IsPickUp = false)"));
+            }
+        }),
+            2.0f,
+            false
+        );
+
+        // 상호작용 실행 (Pickup 클래스의 Interact 함수 호출)
+        IInteractionInterface::Execute_Interact(CurrentTarget.GetObject(), this);
+    }
 }
 
 void ANS_PlayerCharacterBase::StartAimingAction_Server_Implementation(const FInputActionValue& Value)
 {
-    if(IsAvaliableAiming)
-        IsAiming = true; 
+    if (IsAvaliableAiming)
+        IsAiming = true;
 }
 
 
 void ANS_PlayerCharacterBase::StopAimingAction_Server_Implementation(const FInputActionValue& Value)
 {
-    IsAiming = false; 
+    IsAiming = false;
 }
 
-void ANS_PlayerCharacterBase::ReloadAction_Server_Implementation(const FInputActionValue& Value)
-{
-    // 실제 총알 재장전 로직은 애님노티파이로 애니메이션 안에서 EquipedWeapon에있는 Server_Reload()함수를 블루프린트로 실행 할 예정
-
-    if (IsReload)
-    {
-        return;
-    }
-    
-    // 현재 무기가 없거나, 원거리 무기가 아니면 재장전 불가
-    if (!EquipedWeaponComp->CurrentWeapon)// 현재 무기가 없으면 return
-    {
-        return;
-    }
-
-    // 근거리 무기면 return
-    if (EquipedWeaponComp->CurrentWeapon->GetWeaponType() == EWeaponType::Melee)
-    {
-        return;
-    }
-    
-    if (!IsReload)
-    {
-        IsReload = true;
-    }
-
-    // 노티파이로 IsReload 변수값을 false로 변경하고 있음
-}
-
+// 퀵슬롯 선택 함수들
+void ANS_PlayerCharacterBase::QuickSlot1Selected() { HandleQuickSlotKeyInput(1); }
+void ANS_PlayerCharacterBase::QuickSlot2Selected() { HandleQuickSlotKeyInput(2); }
+void ANS_PlayerCharacterBase::QuickSlot3Selected() { HandleQuickSlotKeyInput(3); }
+void ANS_PlayerCharacterBase::QuickSlot4Selected() { HandleQuickSlotKeyInput(4); }
+void ANS_PlayerCharacterBase::QuickSlot5Selected() { HandleQuickSlotKeyInput(5); }
 //////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
 
 
@@ -626,7 +630,7 @@ void ANS_PlayerCharacterBase::PlayDeath_Server_Implementation()
             {
                 if (ANS_MainGamePlayerState* PS = Cast<ANS_MainGamePlayerState>(OwningController->PlayerState))
                 {
-                    PS->bIsAlive = false; 
+                    PS->bIsAlive = false;
                     UE_LOG(LogTemp, Warning, TEXT("Player %s PlayerState set to Dead."), *PS->GetPlayerName());
                 }
             }
@@ -639,21 +643,21 @@ void ANS_PlayerCharacterBase::PlayDeath_Multicast_Implementation()
 {
     // 캐릭터가 죽었으면 IsDead변수를 true로 변경해서 애니메이션 몽타주가 1번만 재생되도록 구현했음
     IsDead = true;
-    
+
     // 컨트롤러에서 분리시키고
-    DetachFromControllerPendingDestroy(); 
+    DetachFromControllerPendingDestroy();
 
     // 무브먼트 없애고
-    GetCharacterMovement()->DisableMovement(); 
+    GetCharacterMovement()->DisableMovement();
 
     // 기존 레그돌은 부르르 떨려서 대신 몽타주 재생으로 바꿨음
     if (DeathMontage)
     {
         PlayAnimMontage(DeathMontage);
     }
-    
+
     // 월드에서 사라지는 시간은 30초로
-    SetLifeSpan(30.f); 
+    SetLifeSpan(30.f);
 }
 
 void ANS_PlayerCharacterBase::DropItem_Server_Implementation(UNS_InventoryBaseItem* ItemToDrop, int32 QuantityToDrop)
@@ -783,105 +787,234 @@ void ANS_PlayerCharacterBase::Server_AssignQuickSlot_Implementation(int32 SlotIn
         QuickSlotComponent->AssignToSlot(SlotIndex, Item);
     }
 }
-
-void ANS_PlayerCharacterBase::UseQuickSlot1() { UseQuickSlotByIndex(0); }
-void ANS_PlayerCharacterBase::UseQuickSlot2() { UseQuickSlotByIndex(1); }
-void ANS_PlayerCharacterBase::UseQuickSlot3() { UseQuickSlotByIndex(2); }
-void ANS_PlayerCharacterBase::UseQuickSlot4() { UseQuickSlotByIndex(3); }
-void ANS_PlayerCharacterBase::UseQuickSlot5() { UseQuickSlotByIndex(4); }
-
-void ANS_PlayerCharacterBase::UseQuickSlotByIndex(int32 Index)
+// =======================================================퀵슬롯 함수 시작!================================================================
+void ANS_PlayerCharacterBase::HandleQuickSlotKeyInput(int32 KeyNumber)
 {
-    if (HasAuthority())
+    // 키보드 입력 1 ~ 5를 배열 인덱스 0 ~ 4로 변환
+    // 예시) 키보드 '1'키 → 배열 인덱스 0, 키보드 '2'키 → 배열 인덱스 1
+    int32 SlotIndex = KeyNumber - 1;
+
+    // 퀵슬롯 컴포넌트가 없으면 작업 불가능
+    if (!QuickSlotComponent)
     {
-        Server_UseQuickSlotByIndex(Index);
-        Multicast_UseQuickSlotByIndex(Index);
+        return;
+    }
+
+    // 중복 선택 검사 
+    // 이미 같은 슬롯이 선택되어 있고 무기가 장착된 경우 → 중복 작업 방지
+    if (SlotIndex == CurrentQuickSlotIndex)
+    {
+        UNS_EquipedWeaponComponent* WeaponComp = FindComponentByClass<UNS_EquipedWeaponComponent>();
+        if (WeaponComp && WeaponComp->GetCurrentWeaponItem())
+        {
+            // 이미 같은 슬롯의 무기가 장착되어 있으면 아무 작업도 하지 않음
+            return;
+        }
+    }
+
+    // 현재 선택된 슬롯대로 캐릭터에 현재 슬롯 인덱스 업데이트
+    CurrentQuickSlotIndex = SlotIndex;
+
+    // 퀵슬롯 컴포넌트의 현재 슬롯 인덱스도 함께 업데이트
+    QuickSlotComponent->SetCurrentSlotIndex(CurrentQuickSlotIndex);
+
+    // 네트워크 동기화 (서버/클라이언트)
+    // 클라이언트에서 실행 중이면 서버에 요청
+    if (!HasAuthority())
+    {
+        Server_UseQuickSlotByIndex(CurrentQuickSlotIndex);
     }
     else
     {
-        Server_UseQuickSlotByIndex(Index);  // 클라 → 서버 요청
+        // 서버에서 실행 중이면 직접 멀티캐스트 호출 (모든 클라이언트에 전파)
+        Multicast_UseQuickSlotByIndex(CurrentQuickSlotIndex);
     }
 }
 
 void ANS_PlayerCharacterBase::Server_UseQuickSlotByIndex_Implementation(int32 Index)
 {
-    if (!QuickSlotComponent) return;
-    QuickSlotComponent->SetCurrentSlotIndex(Index);
-    UNS_InventoryBaseItem* Item = QuickSlotComponent->GetItemInSlot(Index);
-    if (!Item || Item->ItemDataRowName.IsNone())
+    // 인덱스가 음수면 0으로 설정
+    if (Index < 0)
     {
-        // 무기 장착 중이면 장착 해제 처리
-        if (EquipedWeaponComp && EquipedWeaponComp->GetCurrentWeaponItem())
-        {
-            if (!IsChangeAnim)
-            {
-                IsChangeAnim = true;  // 애니메이션 실행 상태 플래그
-                UE_LOG(LogTemp, Warning, TEXT("[Server_UseQuickSlot] 슬롯 %d 애니메이션 시작 준비"), Index);
-            }
-        }
-        else
-        {
-            UE_LOG(LogTemp, Warning, TEXT("[Server_UseQuickSlot] 슬롯 %d 비어 있음 - 장착 무기 없음"), Index);
-        }
+        Index = 0;
+    }
 
-        return;  // 무기 없으므로 더 이상 진행하지 않음
-    }
-    
-    if (!IsChangeAnim)
-    {
-        IsChangeAnim = true;  // 애니메이션 실행 상태 플래그
-        UE_LOG(LogTemp, Warning, TEXT("[Server_UseQuickSlot] 슬롯 %d 애니메이션 시작 준비"), Index);
-    }
+    // 현재 선택된 슬롯대로 캐릭터에 현재 슬롯 인덱스 업데이트
+    CurrentQuickSlotIndex = Index;
+
+    // 서버에서 모든 클라이언트에 알림
+    Multicast_UseQuickSlotByIndex(CurrentQuickSlotIndex);
 }
 
 void ANS_PlayerCharacterBase::Multicast_UseQuickSlotByIndex_Implementation(int32 Index)
 {
-    UseQuickSlotByIndex_Internal(Index);
-}
+    if (!QuickSlotComponent)
+    {
+        return;
+    }
 
-void ANS_PlayerCharacterBase::UseQuickSlotByIndex_Internal(int32 Index)
-{
-    if (!QuickSlotComponent) return;
+    // 인덱스가 음수면 0으로 설정
+    if (Index < 0)
+    {
+        Index = 0;
+    }
 
-    UNS_InventoryBaseItem* Item = QuickSlotComponent->GetItemInSlot(Index);
+    // 현재 선택된 슬롯대로 캐릭터에 현재 슬롯 인덱스 업데이트
+    CurrentQuickSlotIndex = Index;
 
-    // 비어 있는 슬롯일 경우 → 현재 무기 해제
+    // 퀵슬롯 컴포넌트의 현재 슬롯 인덱스도 설정
+    QuickSlotComponent->SetCurrentSlotIndex(CurrentQuickSlotIndex);
+
+    // 슬롯에서 아이템 가져오기
+    UNS_InventoryBaseItem* Item = QuickSlotComponent->GetItemInSlot(CurrentQuickSlotIndex);
+
+    // 무기 컴포넌트 확인
+    UNS_EquipedWeaponComponent* WeaponComp = FindComponentByClass<UNS_EquipedWeaponComponent>();
+    if (!WeaponComp)
+    {
+        return;
+    }
+
+    // 현재 장착된 무기 확인
+    UNS_InventoryBaseItem* CurrentWeapon = WeaponComp->GetCurrentWeaponItem();
+
+    // 이미 같은 무기가 장착되어 있으면 무시
+    if (CurrentWeapon && Item && CurrentWeapon == Item)
+    {
+        return;
+    }
+
+    // 비어 있는 슬롯일 경우엔 현재 무기 해제
     if (!Item || Item->ItemDataRowName.IsNone())
     {
-        if (UNS_EquipedWeaponComponent* WeaponComp = FindComponentByClass<UNS_EquipedWeaponComponent>())
+        if (!IsReload) // 재장전 중이 아니고
         {
-            if (WeaponComp->GetCurrentWeaponItem())
+            if (!EquipedWeaponComp->IsAttack) // 공격 중이 아니고
             {
-                WeaponComp->UnequipWeapon();
-                UE_LOG(LogTemp, Warning, TEXT("[UseQuickSlot_Internal] 빈 슬롯 선택 - 무기 해제 완료 (슬롯: %d)"), Index);
+                if (!IsPickUp) // 아이템 획득 중이 아니고
+                {
+                    if (!IsChangeAnim) // 아이템 교체 중이 아니여야지만
+                    {
+                        if (WeaponComp->GetCurrentWeaponItem())
+                        {
+                            // 무기 해제 처리를 실행
+                            IsChangeAnim = true;
+
+                            // 1.4초 후 애니메이션 플래그 리셋
+                            FTimerHandle ResetAnimTimerHandle;
+                            GetWorldTimerManager().SetTimer(
+                                ResetAnimTimerHandle,
+                                FTimerDelegate::CreateLambda([this]() {
+                                IsChangeAnim = false;
+                            }),
+                                1.4f,
+                                false
+                            );
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+        return; // 아이템이 없으면 여기서 함수 종료
+    }
+
+    // 아이템 데이터 확인 - 여기서 Item은 null이 아님이 보장됨
+    const FNS_ItemDataStruct* ItemData = Item->GetItemData();
+    if (!ItemData)
+    {
+        return;
+    }
+
+    if (ItemData->ItemType != EItemType::Equipment)
+    {
+        return;
+    }
+
+    if (!ItemData->WeaponActorClass)
+    {
+        return;
+    }
+}
+
+// 아이템 획득 시 자동으로 퀵슬롯에 할당하고 장착 애니메이션 실행
+void ANS_PlayerCharacterBase::AutoEquipPickedUpItem(UNS_InventoryBaseItem* NewItem)
+{
+    // 아이템이 없거나 장비 아이템이 아니면 리턴
+    if (!NewItem || NewItem->ItemType != EItemType::Equipment || NewItem->WeaponType == EWeaponType::Ammo)
+    {
+        return;
+    }
+
+    // 퀵슬롯 컴포넌트 확인
+    if (!QuickSlotComponent)
+    {
+        return;
+    }
+
+    // 이미 퀵슬롯에 할당되어 있는지 확인
+    bool bAlreadyAssigned = QuickSlotComponent->IsItemAlreadyAssigned(NewItem);
+
+    // 아직 할당되지 않았다면 첫 번째 빈 슬롯에 할당
+    if (!bAlreadyAssigned)
+    {
+        // 첫 번째 빈 슬롯에 할당 시도
+        bool bAssigned = QuickSlotComponent->AssignToFirstEmptySlot(NewItem);
+
+        // 모든 슬롯이 차있어서 할당 실패한 경우 첫 번째 슬롯에 강제 할당
+        if (!bAssigned)
+        {
+            QuickSlotComponent->AssignToSlot(0, NewItem);
+        }
+    }
+
+    // 현재 슬롯 인덱스를 새 아이템이 있는 슬롯으로 설정
+    int32 ItemSlotIndex = QuickSlotComponent->FindSlotIndexForItem(NewItem);
+    if (ItemSlotIndex != -1)
+    {
+        // 현재 슬롯 인덱스 업데이트
+        CurrentQuickSlotIndex = ItemSlotIndex;
+        QuickSlotComponent->SetCurrentSlotIndex(CurrentQuickSlotIndex);
+
+        // 1.4초 후 애니메이션 리셋
+        if (!IsReload) // 재장전 중이 아니고
+        {
+            if (!EquipedWeaponComp->IsAttack) // 공격 중이 아니고
+            {
+                if (!IsPickUp) // 아이템 획득 중이 아니고
+                {
+                    if (!IsChangeAnim) // 아이템 교체 중이 아니여야지만
+                    {
+                        // 무기 해제 처리를 실행
+                        IsChangeAnim = true;
+
+                        FTimerHandle ResetAnimTimerHandle;
+                        GetWorldTimerManager().SetTimer(
+                            ResetAnimTimerHandle,
+                            FTimerDelegate::CreateLambda([this]() {
+                            IsChangeAnim = false;
+                        }),
+                            1.4f,
+                            false
+                        );
+                        return;
+                    }
+                }
             }
         }
 
-        QuickSlotComponent->SetCurrentSlotIndex(Index);
-        return;
-    }
-    if (!Item || Item->ItemDataRowName.IsNone()) return;
-
-    // 정상 아이템일 경우
-    const FNS_ItemDataStruct* ItemData = Item->GetItemData();
-    if (!ItemData || ItemData->ItemType != EItemType::Equipment) return;
-
-    if (UNS_EquipedWeaponComponent* WeaponComp = FindComponentByClass<UNS_EquipedWeaponComponent>())
-    {
-        WeaponComp->SwapWeapon(ItemData->WeaponActorClass, Item);
-    }
-
-    QuickSlotComponent->SetCurrentSlotIndex(Index);
-    UE_LOG(LogTemp, Warning, TEXT("[UseQuickSlot_Internal] 장비 장착 - 인덱스: %d, 아이템: %s"), Index, *Item->GetName());
-}
-
-void ANS_PlayerCharacterBase::OnRep_IsChangeAnim()
-{
-    if (IsChangeAnim)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("클라이언트에서 IsChangeAnim TRUE 감지됨"));
+        // 서버/클라이언트 상태에 따라 적절한 함수 호출
+        if (!HasAuthority())
+        {
+            Server_UseQuickSlotByIndex(CurrentQuickSlotIndex);
+        }
+        else
+        {
+            Multicast_UseQuickSlotByIndex(CurrentQuickSlotIndex);
+        }
     }
 }
+// ==================================================퀵슬롯 함수 끝!==================================================================
 
 void ANS_PlayerCharacterBase::Server_UseInventoryItem_Implementation(FName ItemRowName)
 {
@@ -891,6 +1024,8 @@ void ANS_PlayerCharacterBase::Server_UseInventoryItem_Implementation(FName ItemR
         {
             Item->OnUseItem(this);
 
+            // 아래 코드 제거 또는 주석 처리 - Pickup.cpp에서 처리하므로 중복 방지
+            /*
             // 장비 아이템일 경우 퀵슬롯 자동 등록
             if (Item->ItemType == EItemType::Equipment &&
                 Item->WeaponType != EWeaponType::Ammo &&
@@ -899,6 +1034,7 @@ void ANS_PlayerCharacterBase::Server_UseInventoryItem_Implementation(FName ItemR
                 QuickSlotComponent->AssignToFirstEmptySlot(Item);
                 UE_LOG(LogTemp, Warning, TEXT("[Server] 퀵슬롯 자동 등록 완료: %s"), *Item->GetName());
             }
+            */
             return;
         }
     }
@@ -912,18 +1048,17 @@ void ANS_PlayerCharacterBase::Client_NotifyInventoryUpdated_Implementation()
     {
         FTimerHandle DelayHandle;
         GetWorldTimerManager().SetTimer(DelayHandle, FTimerDelegate::CreateLambda([this]()
-            {
-                PlayerInventory->OnInventoryUpdated.Broadcast();
-                UE_LOG(LogTemp, Warning, TEXT("Client_NotifyInventoryUpdated - Inventory 갱신 (지연 호출)"));
+        {
+            PlayerInventory->OnInventoryUpdated.Broadcast();
+            UE_LOG(LogTemp, Warning, TEXT("Client_NotifyInventoryUpdated - Inventory 갱신 (지연 호출)"));
 
-                if (QuickSlotComponent)
-                {
-                    QuickSlotComponent->BroadcastSlotUpdate();
-                }
-            }), 0.05f, false);
+            if (QuickSlotComponent)
+            {
+                QuickSlotComponent->BroadcastSlotUpdate();
+            }
+        }), 0.05f, false);
     }
 }
-
 
 // 클라이언트면 서버로 클라이언트 자신에 Yaw값과 Pitch값을 서버로 전송
 void ANS_PlayerCharacterBase::UpdateAim_Server_Implementation(float Yaw, float Pitch)
@@ -931,7 +1066,7 @@ void ANS_PlayerCharacterBase::UpdateAim_Server_Implementation(float Yaw, float P
     // 서버에서 변수 업데이트
     CamYaw = Yaw;
     CamPitch = Pitch;
-    
+
     // 모든 클라이언트에 전파
     UpdateAim_Multicast(Yaw, Pitch);
 }
@@ -941,7 +1076,7 @@ void ANS_PlayerCharacterBase::UpdateAim_Multicast_Implementation(float Yaw, floa
     // 애니메이션 업데이트를 위한 변수 설정
     CamYaw = Yaw;
     CamPitch = Pitch;
-    
+
     // 손전등이 켜져 있다면 회전도 업데이트
     if (bFlashlightOnOff && FlashlightComponent)
     {
@@ -950,7 +1085,7 @@ void ANS_PlayerCharacterBase::UpdateAim_Multicast_Implementation(float Yaw, floa
         FRotator CameraRot = ActorRotation;
         CameraRot.Yaw += Yaw;
         CameraRot.Pitch = Pitch; // Pitch는 직접 설정 (상대적이지 않음)
-        
+
         // 손전등 회전 업데이트
         FlashlightComponent->SetWorldRotation(CameraRot);
     }
@@ -1017,24 +1152,24 @@ void ANS_PlayerCharacterBase::ToggleFlashlight_Multicast_Implementation()
 void ANS_PlayerCharacterBase::UpdateTurnInPlace(float DeltaTime)
 {
     if (!Controller) return;
-    
+
     // 회전 중이 아니면 종료
     if (!bIsTurningInPlace) return;
-    
+
     // 현재 카메라와 캐릭터 간의 Yaw 차이 계산
     const FRotator ActorRot = GetActorRotation();
     const FRotator ControlRot = Controller->GetControlRotation();
     const FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(ControlRot, ActorRot);
     const float CurrentYawDelta = DeltaRot.Yaw;
-    
+
     // 회전 방향 결정 왼쪽 또는 오른쪽
     const float RotationDirection = TurnLeft ? -1.0f : 1.0f;
-    
+
     // 캐릭터 회전을 부드럽게 회전하도록 설정
     FRotator NewRotation = GetActorRotation();
     NewRotation.Yaw += RotationDirection * TurnInPlaceSpeed * DeltaTime;
     SetActorRotation(NewRotation);
-    
+
     // CamYaw 값을 부드럽게 보간 애님인스턴스인 ABP에서 사용할 값임
     // 회전 중에는 CamYaw를 현재 회전 방향에 맞게 부드럽게 감소
     float TargetYaw = 0.0f;
@@ -1048,20 +1183,20 @@ void ANS_PlayerCharacterBase::UpdateTurnInPlace(float DeltaTime)
         // 오른쪽 회전 중이면 양수 값에서 0으로 보간
         TargetYaw = FMath::Max(0.0f, CurrentYawDelta);
     }
-    
+
     CamYaw = FMath::FInterpTo(CamYaw, TargetYaw, DeltaTime, TurnInPlaceSpeed * 0.5f);
-    
+
     // 회전이 충분히 이루어졌는지 확인 임계값 이하로 떨어졌는지
     if (FMath::Abs(CurrentYawDelta) <= TurnInPlaceResetThreshold)
     {
         // 회전 종료 노티파이에서 OnTurnInPlaceFinished 호출될거임
         bIsTurningInPlace = false;
-        
+
         // 마지막 CamYaw 값 저장 ===== 부드러운 리셋을 위해
         LastTurnYaw = CamYaw;
         bIsResettingYaw = true;
     }
-    
+
     // 서버에 업데이트된 CamYaw 전송
     UpdateAim_Server(CamYaw, CamPitch);
 }
@@ -1071,17 +1206,17 @@ void ANS_PlayerCharacterBase::OnTurnInPlaceFinished()
 {
     // 회전 완료 후 변수 초기화
     bIsTurningInPlace = false;
-    
+
     // 마지막 CamYaw 값 저장 (부드러운 리셋을 위해)
     if (!bIsResettingYaw)
     {
         LastTurnYaw = CamYaw;
         bIsResettingYaw = true;
     }
-    
+
     // bUseControllerDesiredRotation 비활성화
     GetCharacterMovement()->bUseControllerDesiredRotation = false;
-    
+
     // 서버에 상태 업데이트
     if (HasAuthority())
     {
@@ -1103,7 +1238,7 @@ void ANS_PlayerCharacterBase::Server_UpdateTurnInPlaceState_Implementation(bool 
     TurnLeft = bInTurnLeft;
     TurnRight = bInTurnRight;
     GetCharacterMovement()->bUseControllerDesiredRotation = bInUseControllerDesiredRotation;
-    
+
     // 모든 클라이언트에 멀티캐스트
     Multicast_UpdateTurnInPlaceState(bInTurnLeft, bInTurnRight, bInUseControllerDesiredRotation);
 }
@@ -1122,33 +1257,17 @@ void ANS_PlayerCharacterBase::Multicast_UpdateTurnInPlaceState_Implementation(bo
 void ANS_PlayerCharacterBase::UpdateYawReset(float DeltaTime)
 {
     if (!bIsResettingYaw) return;
-    
+
     // CamYaw를 부드럽게 0으로 보간
     CamYaw = FMath::FInterpTo(CamYaw, 0.0f, DeltaTime, TurnInPlaceYawResetSpeed);
-    
+
     // 충분히 0에 가까워지면 리셋 완료
     if (FMath::Abs(CamYaw) < 0.5f)
     {
         CamYaw = 0.0f;
         bIsResettingYaw = false;
     }
-    
+
     // 서버에 업데이트된 CamYaw 전송
     UpdateAim_Server(CamYaw, CamPitch);
-}
-
-
-void ANS_PlayerCharacterBase::ActivateHallucinationEffect(float Duration)
-{
-    if (CameraComp && HallucinationMID)
-    {
-        CameraComp->AddOrUpdateBlendable(HallucinationMID, 1.f); // 활성화
-
-        // 일정 시간 뒤 자동 비활성화
-        FTimerHandle TimerHandle;
-        GetWorldTimerManager().SetTimer(TimerHandle, [this]()
-        {
-            CameraComp->AddOrUpdateBlendable(HallucinationMID, 0.f); // 비활성화
-        }, Duration, false);
-    }
 }
