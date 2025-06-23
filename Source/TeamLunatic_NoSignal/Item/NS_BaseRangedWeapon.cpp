@@ -30,12 +30,6 @@ void ANS_BaseRangedWeapon::BeginPlay()
 	if (ItemData)
 	{
 		MaxAmmo = ItemData->WeaponData.MaxAmmo;
-		CurrentAmmo = MaxAmmo; // 여기서 CurrentAmmo도 설정
-	}
-	else
-	{
-		MaxAmmo = 18;
-		CurrentAmmo = MaxAmmo;
 	}
 
 	InstanceInteractableData.Quantity = 1;
