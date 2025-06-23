@@ -42,8 +42,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
 	float AttackRange;
 	
+	//스폰 관련
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Target")
+	TArray<FVector> TargetLocations;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Target")
+	TArray<AActor*> TargetActors;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Target")
+	TSubclassOf<AActor> TargetClass;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Target")
+	FVector TargetLocation;
+	
 	FTimerHandle HearingTimerHandle;
-
+	
 	float MaxSeenDistance;
 public:
 	ANS_AIController();
@@ -60,6 +70,9 @@ public:
 	void HandleDamageStimulus(AActor* Attacker);
 	void CalculateHeardRotation(FVector HeardLocation);
 	void InitializeHeardBool();
+	//스폰 함수
+	void SetTargetPoint();
+	
 	
 	AActor* GetClosestSightTarget();
 	UFUNCTION()
@@ -71,7 +84,8 @@ public:
 	//Perception Configs
 	void InitializingSightConfig();
 	void InitializingHearingConfig();
-};
 
+	FORCEINLINE FVector GetTargetLocation() const { return TargetLocation; }
+};
 
 
