@@ -2,10 +2,9 @@
 
 
 #include "Zombie/Animations/Notify/NS_AnimNotify_ZombieDAttack.h"
-
 #include "Components/SphereComponent.h"
 #include "Zombie/NS_ZombieBase.h"
-#include "Zombie/AIController/NS_AIController.h"
+
 
 void UNS_AnimNotify_ZombieDAttack::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
                                           const FAnimNotifyEventReference& EventReference)
@@ -13,5 +12,5 @@ void UNS_AnimNotify_ZombieDAttack::Notify(USkeletalMeshComponent* MeshComp, UAni
 	ANS_ZombieBase* Zombie = Cast<ANS_ZombieBase>(MeshComp->GetOwner());
 	if (!Zombie) return;
 
-	Zombie->SphereComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Zombie->GetR_SphereComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
