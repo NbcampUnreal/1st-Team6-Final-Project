@@ -2,7 +2,7 @@
 #include "NS_PlayerState.h"
 #include "EngineUtils.h"
 #include "Character/NS_PlayerCharacterBase.h"
-#include "NS_GameInstance.h"
+#include "GameFlow/NS_GameInstance.h" 
 #include "GameFramework/GameState.h"
 #include "NS_LobbyController.h"
 #include "GameFramework/PlayerController.h"
@@ -16,15 +16,12 @@
 
 ANS_LobbyMode::ANS_LobbyMode()
 {
-	DefaultPawnClass = nullptr; // 자동 스폰 방지
+	DefaultPawnClass = nullptr; 
 }
 
 void ANS_LobbyMode::BeginPlay()
 {
 	Super::BeginPlay();
-
-	UE_LOG(LogTemp, Warning, TEXT("ANS_LobbyMode::BeginPlay 진입"));
-	UE_LOG(LogTemp, Warning, TEXT("LobbyCharacterClasses 수: %d"), LobbyCharacterClasses.Num());
 
 	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
 	if (!Subsystem) return;
@@ -49,28 +46,33 @@ void ANS_LobbyMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
 
+	UNS_GameInstance* GI = GetGameInstance<UNS_GameInstance>();
+	if (!GI)
+	{
+		UE_LOG(LogTemp, Error, TEXT("UNS_GameInstance를 찾을 수 없습니다!"));
+		return;
+	}
+
 	int32 PlayerIndex = GetGameState<AGameState>()->PlayerArray.Num() - 1;
 
-	if (!LobbyCharacterClasses.IsValidIndex(PlayerIndex))
+	if (!GI->AvailableCharacterClasses.IsValidIndex(PlayerIndex))
 	{
-		UE_LOG(LogTemp, Error, TEXT("LobbyCharacterClasses[%d] 존재하지 않음! 배열 크기: %d"), PlayerIndex, LobbyCharacterClasses.Num());
 		return;
 	}
 
 	AActor* StartSpot = FindSpawnPointByIndex(PlayerIndex);
 	if (!StartSpot)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("No PlayerStart found for index %d"), PlayerIndex);
 		return;
 	}
 
 	FTransform SpawnTransform = StartSpot->GetActorTransform();
-	APawn* SpawnedPawn = GetWorld()->SpawnActor<APawn>(LobbyCharacterClasses[PlayerIndex], SpawnTransform);
 
+	APawn* SpawnedPawn = GetWorld()->SpawnActor<APawn>(GI->AvailableCharacterClasses[PlayerIndex], SpawnTransform);
 	if (SpawnedPawn)
 	{
 		NewPlayer->Possess(SpawnedPawn);
-		UE_LOG(LogTemp, Log, TEXT("Spawned & Possessed Pawn: %s"), *SpawnedPawn->GetName());
+		UE_LOG(LogTemp, Log, TEXT("Spawned & Possessed Pawn: %s from GameInstance"), *SpawnedPawn->GetName());
 	}
 	else
 	{
@@ -91,11 +93,11 @@ void ANS_LobbyMode::PostLogin(APlayerController* NewPlayer)
 	{
 		if (ANS_LobbyController* LC = Cast<ANS_LobbyController>(*It))
 		{
-			if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+			if (UNS_GameInstance* GameInst = Cast<UNS_GameInstance>(GetGameInstance()))
 			{
-				if (GI->ReadyUIInstance)
+				if (GameInst->ReadyUIInstance)
 				{
-					GI->ReadyUIInstance->UpdatePlayerStatusList();
+					GameInst->ReadyUIInstance->UpdatePlayerStatusList();
 				}
 			}
 		}
@@ -166,12 +168,10 @@ void ANS_LobbyMode::CheckAllPlayersReady()
 		}
 	}
 
-	// 전원 레디 완료됨 → 클라이언트에 ShowWait 전달 (UI만 띄우는 용도)
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		if (APlayerController* PC = It->Get())
 		{
-			// ShowWait은 클라이언트에만 띄움 → 반드시 클라이언트 RPC로 분리
 			if (ANS_LobbyController* LC = Cast<ANS_LobbyController>(PC))
 			{
 				LC->Client_ShowWait();
@@ -179,7 +179,6 @@ void ANS_LobbyMode::CheckAllPlayersReady()
 		}
 	}
 
-	// 안전한 ServerTravel → 1초 지연 후 람다로 실행
 	GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
 	{
 		FTimerHandle DelayHandle;
@@ -192,4 +191,3 @@ void ANS_LobbyMode::CheckAllPlayersReady()
 		}, 1.0f, false);
 	});
 }
-

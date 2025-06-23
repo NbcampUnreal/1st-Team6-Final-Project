@@ -2,7 +2,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerStart.h"
-#include "NS_GameInstance.h"
+#include "GameFlow/NS_GameInstance.h"
 #include "UI/NS_UIManager.h"
 #include "Character/NS_PlayerController.h"
 #include "Engine/World.h"
@@ -11,7 +11,7 @@
 ANS_SinglePlayMode::ANS_SinglePlayMode()
 {
 	DefaultPawnClass = nullptr;
-	PlayerControllerClass = ANS_PlayerController::StaticClass(); 
+	PlayerControllerClass = ANS_PlayerController::StaticClass();
 }
 
 
@@ -19,20 +19,20 @@ void ANS_SinglePlayMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
 
+	UNS_GameInstance* GI = GetGameInstance<UNS_GameInstance>();
 	UWorld* World = GetWorld();
-	if (!World || !NewPlayer || AvailablePawnClasses.Num() < 1) return;
 
-	// 기존 Pawn 제거
+	if (!World || !NewPlayer || !GI || GI->AvailableCharacterClasses.Num() < 1) return;
+
+
 	if (APawn* ExistingPawn = NewPlayer->GetPawn())
 	{
 		ExistingPawn->Destroy();
 	}
 
-	// 랜덤 선택
-	const int32 RandIndex = FMath::RandRange(0, AvailablePawnClasses.Num() - 1);
-	TSubclassOf<APawn> ChosenPawnClass = AvailablePawnClasses[RandIndex];
+	const int32 RandIndex = FMath::RandRange(0, GI->AvailableCharacterClasses.Num() - 1);
+	TSubclassOf<APawn> ChosenPawnClass = GI->AvailableCharacterClasses[RandIndex];
 
-	// 스폰 위치
 	AActor* Start = UGameplayStatics::GetActorOfClass(World, APlayerStart::StaticClass());
 	if (!Start) return;
 
@@ -75,13 +75,8 @@ void ANS_SinglePlayMode::OnPlayerCharacterDied_Implementation(ANS_PlayerCharacte
 }
 
 
-
-
-
-
 FVector ANS_SinglePlayMode::GetPlayerLocation_Implementation() const
 {
 	APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
 	return PlayerPawn ? PlayerPawn->GetActorLocation() : FVector::ZeroVector;
 }
-

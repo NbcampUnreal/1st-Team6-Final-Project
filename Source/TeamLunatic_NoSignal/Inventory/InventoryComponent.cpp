@@ -228,8 +228,9 @@ FItemAddResult UInventoryComponent::HandleNonStackableItems(UNS_InventoryBaseIte
 // 스택 가능한 아이템 처리
 int32 UInventoryComponent::HandleStackableItems(UNS_InventoryBaseItem* ItemIn, int32 RequestedAddAmount)
 {
-	if (RequestedAddAmount <= 0 || FMath::IsNearlyZero(ItemIn->GetItemStackWeight()))
+	if (!IsValid(ItemIn) || RequestedAddAmount <= 0 || FMath::IsNearlyZero(ItemIn->GetItemStackWeight()))
 	{
+		UE_LOG(LogTemp, Error, TEXT("[HandleStackableItems] ItemIn이 유효하지 않거나 수량/무게가 0입니다."));
 		return 0;
 	}
 
@@ -239,6 +240,11 @@ int32 UInventoryComponent::HandleStackableItems(UNS_InventoryBaseItem* ItemIn, i
 
 	while (ExstingItemStack)
 	{
+		if (!IsValid(ExstingItemStack))
+		{
+			UE_LOG(LogTemp, Error, TEXT("[HandleStackableItems] ExstingItemStack가 nullptr입니다. 중단."));
+			break;
+		}
 		const int32 AmountToMakeFullStack = CalculateNumberForFullStack(ExstingItemStack, AmountToDistribute);
 		const int32 WeightLimitAddAmount = CalculateWeightAddAmount(ExstingItemStack, AmountToMakeFullStack);
 
@@ -288,7 +294,14 @@ int32 UInventoryComponent::HandleStackableItems(UNS_InventoryBaseItem* ItemIn, i
 				AmountToDistribute -= WeightLimitAddAmount;
 				ItemIn->SetQuantity(AmountToDistribute);
 
-				AddNewItem(ItemIn->CreateItemCopy(), WeightLimitAddAmount);
+				UNS_InventoryBaseItem* NewItemCopy = ItemIn->CreateItemCopy();
+				if (!IsValid(NewItemCopy))
+				{
+					UE_LOG(LogTemp, Error, TEXT("[HandleStackableItems] CreateItemCopy() 실패."));
+					return RequestedAddAmount - AmountToDistribute;
+				}
+
+				AddNewItem(NewItemCopy, WeightLimitAddAmount);
 				return RequestedAddAmount - AmountToDistribute;
 			}
 
@@ -363,6 +376,8 @@ void UInventoryComponent::AddNewItem(UNS_InventoryBaseItem* Item, const int32 Am
 	UE_LOG(LogTemp, Warning, TEXT("[Inventory] Added %s"), *NewItem->GetName());
 	UE_LOG(LogTemp, Warning, TEXT("[Inventory] NewItem OwingInventory: %s"), *GetNameSafe(NewItem->OwingInventory));
 
+	// 아래 코드 제거 또는 주석 처리 - Pickup.cpp에서 처리하므로 중복 방지
+	/*
 	AActor* OwnerActor = GetOwner();
 	if (OwnerActor)
 	{
@@ -380,6 +395,7 @@ void UInventoryComponent::AddNewItem(UNS_InventoryBaseItem* Item, const int32 Am
 			}
 		}
 	}
+	*/
 }
 
 void UInventoryComponent::CleanUpZeroQuantityItems()

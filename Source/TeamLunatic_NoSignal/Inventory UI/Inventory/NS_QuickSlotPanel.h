@@ -14,7 +14,7 @@ class UNS_QuickSlotComponent;
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UNS_QuickSlotPanel : public UUserWidget
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
     virtual void NativeConstruct() override;

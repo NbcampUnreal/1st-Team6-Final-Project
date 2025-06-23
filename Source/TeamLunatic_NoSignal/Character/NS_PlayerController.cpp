@@ -126,7 +126,7 @@ void ANS_PlayerController::TestGameMsg()
 void ANS_PlayerController::PlayTracked_Implementation()
 {
     UGameplayStatics::PlaySound2D(this, ChaseStartSoundCue);
-
+    UE_LOG(LogTemp, Error, TEXT("소리재생"));
 }
 
 void ANS_PlayerController::HandleGameOver(bool bPlayerSurvived)
