@@ -16,7 +16,7 @@
 #include "Styling/SlateColor.h"
 #include "Fonts/SlateFontInfo.h"
 #include "Misc/Paths.h"
-#include "World/Pickup.h"
+#include "Item/NS_BaseItem.h"
 #include "Character/NS_PlayerController.h"
 
 const float BaseWidth = 35; // 기존 WidthOverride 값
@@ -170,7 +170,7 @@ void UNS_PlayerHUD::HideWidget()
     SetVisibility(ESlateVisibility::Hidden);
 }
 
-void UNS_PlayerHUD::SetYeddaItem(APickup* YeddaItem)
+void UNS_PlayerHUD::SetYeddaItem(ANS_BaseItem* YeddaItem)
 {
     if (!CachedPlayerCharacter || !YeddaItem || !ScrollBox_Compass) return;
 
@@ -231,120 +231,57 @@ void UNS_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
     float FinalOffset = Offset + InterpolatedOffset - (ViewWidth / 2.f) + FixDist;
     ScrollBox_Compass->SetScrollOffset(FinalOffset);
 
-    //if (0 == YeddaItemArray.Num())
-    //    return;
-
-    if (!CachedPlayerCharacter || !ScrollBox_Compass) return;
-
-	//for (APickup* YeddaItem : YeddaItemArray)
-	//{
-	//	if (!YeddaItem) continue;
-	//	// 1. 방향 계산
-	//	FVector PlayerLoc = CachedPlayerCharacter->GetActorLocation();
- //       //이건 절대 각도 계산
-	//	//FVector Dir = (YeddaItem->GetActorLocation() - PlayerLoc).GetSafeNormal2D();
-	//	//float Angle = FMath::RadiansToDegrees(FMath::Atan2(Dir.Y, Dir.X));
-	//	//if (Angle < 0.f) Angle += 360.f;
- //   
- //       //--------------------------------------------------------
- //       FVector Forward = CachedPlayerCharacter->GetActorForwardVector().GetSafeNormal2D();
- //       FVector ToItem = (YeddaItem->GetActorLocation() - PlayerLoc).GetSafeNormal2D();
-
- //       //float AngleRad = FMath::Acos(FVector::DotProduct(Forward, ToItem));
- //       //float AngleDeg = FMath::RadiansToDegrees(AngleRad);
-
- //       //// 방향 판별 (왼쪽/오른쪽)
- //       //FVector Cross = FVector::CrossProduct(Forward, ToItem);
- //       //if (Cross.Z < 0)
- //       //    AngleDeg = -AngleDeg;
- //       //
- //       
- //       // 최종 상대각: 내 정면이 0°, 왼쪽은 음수, 오른쪽은 양수
- //       //float RelativeAngle = FMath::Fmod(AngleDeg + 360.f, 360.f);
- //       //----------------------------------------------------------------------
- //       float ItemAngle = FMath::RadiansToDegrees(FMath::Atan2(ToItem.Y, ToItem.X));
- //       if (ItemAngle < 0.f) ItemAngle += 360.f;
-
- //       // 현재 카메라 기준 상대각 (0~360도)
- //       float RelativeAngle = FMath::Fmod(ItemAngle - Yaw + 360.f, 360.f);
-
- //       float SegmentAngle = 15.f;
- //       int32 Index = ( FMath::FloorToInt((RelativeAngle + SegmentAngle * 0.5f) / SegmentAngle) % 24 ) ;
-
-	//	// 3. 인덱스가 같으면 아무것도 안 함 (성능 최적화)
-	///*	if (Index == LastHighlightedIndex) return;
-	//	LastHighlightedIndex = Index;*/
-	//	// 4. UI 갱신
-	//	int32 Count = ScrollBox_Compass->GetChildrenCount();
-	//	for (int32 i = 0; i < Count; ++i)
-	//	{
-	//		if (UNS_CompassElement* Elem = Cast<UNS_CompassElement>(ScrollBox_Compass->GetChildAt(i)))
-	//		{
-	//			bool bHighlight = (i == Index) || (i == Index+24);
-	//			Elem->TextDir->SetColorAndOpacity(FSlateColor(bHighlight ? FLinearColor::Red : FLinearColor::White));
-
- //               if (CurFinalIdx != i && PrvFinalIdx != i)
- //                  bHighlight ? Elem->SetTextScale(1.2f) : Elem->ReturnTextScale();
-	//		}
-	//	}
-
-    TArray<int32> HighlightIndices;
-    for (APickup* YeddaItem : YeddaItemArray)
+    if (YeddaItemArray.Num() == 0 || !CachedPlayerCharacter || !ScrollBox_Compass)
+        return;
+   // UE_LOG(LogTemp, Warning, TEXT("UNS_PlayerHUD ::NativeTick2"));
+    for (ANS_BaseItem* YeddaItem : YeddaItemArray)
     {
         if (!YeddaItem) continue;
 
         FVector PlayerLoc = CachedPlayerCharacter->GetActorLocation();
+        FVector Forward = CachedPlayerCharacter->GetActorForwardVector().GetSafeNormal2D();
         FVector ToItem = (YeddaItem->GetActorLocation() - PlayerLoc).GetSafeNormal2D();
-
         float ItemAngle = FMath::RadiansToDegrees(FMath::Atan2(ToItem.Y, ToItem.X));
         if (ItemAngle < 0.f) ItemAngle += 360.f;
 
         float RelativeAngle = FMath::Fmod(ItemAngle - Yaw + 360.f, 360.f);
+        int32 Index = (FMath::FloorToInt((RelativeAngle + 7.5f) / 15.f)) % 24;
 
-        float SegmentAngle = 15.f;
-        int32 Index = (FMath::FloorToInt((RelativeAngle + SegmentAngle * 0.5f) / SegmentAngle) % 24);
-
-        HighlightIndices.Add(Index);
-        HighlightIndices.Add(Index + 24);
-    }
-
-    int32 Count = ScrollBox_Compass->GetChildrenCount();
-    for (int32 i = 0; i < Count; ++i)
-    {
-        if (UNS_CompassElement* Elem = Cast<UNS_CompassElement>(ScrollBox_Compass->GetChildAt(i)))
+        int32 ChildCount = ScrollBox_Compass->GetChildrenCount();
+        for (int32 i = 0; i < ChildCount; ++i)
         {
-            bool bHighlight = HighlightIndices.Contains(i);
-
-            Elem->TextDir->SetColorAndOpacity(FSlateColor(bHighlight ? FLinearColor::Red : FLinearColor::White));
-
-            if (Elem->Image_Arrow)
+            if (UNS_CompassElement* Elem = Cast<UNS_CompassElement>(ScrollBox_Compass->GetChildAt(i)))
             {
-                Elem->Image_Arrow->SetVisibility(bHighlight ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
-            }
+                bool bHighlight = (i == Index || i == Index + 24);
+                Elem->TextDir->SetColorAndOpacity(FSlateColor(bHighlight ? FLinearColor::Red : FLinearColor::White));
 
-            if (CurFinalIdx != i && PrvFinalIdx != i)
-            {
-                bHighlight ? Elem->SetTextScale(1.2f) : Elem->ReturnTextScale();
+                if (CurFinalIdx != i && PrvFinalIdx != i)
+                    bHighlight ? Elem->SetTextScale(1.2f) : Elem->ReturnTextScale();
             }
         }
-    }
 
-    if (0.5f < MovePercent)
-        CompassTextArray[CurFinalIdx + 1]->SetTextScale(1.22f);
-    else if (0.5f > MovePercent)
-        CompassTextArray[CurFinalIdx]->SetTextScale(1.22f);
-    else
-    {
-        CompassTextArray[CurFinalIdx]->ReturnTextScale();
-		CompassTextArray[CurFinalIdx + 1]->ReturnTextScale();
-    }
-      
+        if (0.5f < MovePercent && CompassTextArray.IsValidIndex(CurFinalIdx + 1))
+        {
+            CompassTextArray[CurFinalIdx + 1]->SetTextScale(1.22f);
+        }
+        else if (0.5f > MovePercent && CompassTextArray.IsValidIndex(CurFinalIdx))
+        {
+            CompassTextArray[CurFinalIdx]->SetTextScale(1.22f);
+        }
+        else
+        {
+            if (CompassTextArray.IsValidIndex(CurFinalIdx))
+                CompassTextArray[CurFinalIdx]->ReturnTextScale();
+            if (CompassTextArray.IsValidIndex(CurFinalIdx + 1))
+                CompassTextArray[CurFinalIdx + 1]->ReturnTextScale();
+        }
+
         PrvFinalIdx = CurFinalIdx;
-        // UE_LOG(LogTemp, Warning, TEXT("UNS_PlayerHUD ::NativeTick3"));
+    }
+   // UE_LOG(LogTemp, Warning, TEXT("UNS_PlayerHUD ::NativeTick3"));
 }
 
-
-void UNS_PlayerHUD::DeleteCompasItem(APickup* DeleteItem)
+void UNS_PlayerHUD::DeleteCompasItem(ANS_BaseItem* DeleteItem)
 {
 	if (!DeleteItem || !CachedPlayerCharacter) return;
 	if (YeddaItemArray.Contains(DeleteItem))

@@ -33,7 +33,7 @@ void ANS_YeddaItem::TryAssignToHUD()
 		{
 			if (UNS_PlayerHUD* PlayerHUD = UIManager->GetPlayerHUDWidget())
 			{
-				//PlayerHUD->SetYeddaItem(this);
+				PlayerHUD->SetYeddaItem(this);
 				return;
 			}
 		}

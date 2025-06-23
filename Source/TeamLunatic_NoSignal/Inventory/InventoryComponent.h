@@ -99,9 +99,6 @@ public:
 	UFUNCTION(Category = "Inventory")
 	void SplitExistingStack(UNS_InventoryBaseItem* ItemIn, const int32 AmountToSplit);
 
-	UFUNCTION(BlueprintCallable)
-	void AddNewItem(UNS_InventoryBaseItem* Item, const int32 AmountToAdd);
-
 	UFUNCTION(Category = "Inventory")
 	FORCEINLINE float GetInventoryTotalWeight() const { return InventoryTotalWeight; };
 	UFUNCTION(Category = "Inventory")
@@ -132,4 +129,7 @@ protected:
 	int32 HandleStackableItems(UNS_InventoryBaseItem* ItemIn, int32 RequestedAddAmount);
 	int32 CalculateWeightAddAmount(UNS_InventoryBaseItem* ItemIn, int32 RequestedAddAmount);
 	int32 CalculateNumberForFullStack(UNS_InventoryBaseItem* StackableItem, int32 InitialRequestedAddAmount);
+
+	UFUNCTION(BlueprintCallable)
+	void AddNewItem(UNS_InventoryBaseItem* Item, const int32 AmountToAdd);
 };

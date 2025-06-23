@@ -32,8 +32,5 @@ public:
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
 	class USizeBox* TextSizeBox;
 
-	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	class UImage* Image_Arrow;
-
 	bool bDirLetter = false;
 };
