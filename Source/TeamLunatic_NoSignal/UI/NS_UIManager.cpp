@@ -7,6 +7,8 @@
 #include "UI/NS_InGameMsg.h"
 #include "UI/NS_PlayerHUD.h"
 #include "UI/NS_LoadingScreen.h"
+
+#include "UI/NS_LoadingScreen.h"
 #include "UI/NS_SpectatorWidgetClass.h" 
 #include "GameFlow/NS_GameInstance.h"
 #include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
@@ -197,12 +199,18 @@ void UNS_UIManager::SetFInputModeGameOnly(APlayerController* PC)
 
 void UNS_UIManager::CloseLoadingUI()
 {
-    if (NS_LoadingScreen)
+    if (NS_LoadingScreen && NS_LoadingScreen->IsInViewport())
     {
         UE_LOG(LogTemp, Log, TEXT("Remove Loading Screen!!!!"));
-		NS_LoadingScreen = nullptr;
         NS_LoadingScreen->RemoveFromParent();
-        if (NS_LoadingScreen->IsInViewport()) NS_LoadingScreen->RemoveFromParent();
+        NS_LoadingScreen = nullptr;
+    }
+}
+void UNS_UIManager::CompleteLoadingProcess()
+{
+    if (NS_LoadingScreen)
+    {
+        NS_LoadingScreen->LevelLoadComplete();
     }
 }
 
@@ -216,6 +224,7 @@ void UNS_UIManager::LoadingScreen(UWorld* World)
 
     OnLoadingFinished.Unbind();
     NS_LoadingScreen->AddToViewport();
+	//NS_LoadingScreen->FakeUpdateProgress();
     NS_LoadingScreen->UpdateProgress();
 }
 

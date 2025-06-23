@@ -69,11 +69,13 @@ public:
 	void LoadingScreen(UWorld* World);
 	void CloseLoadingUI();
 
-	FOnLoadingFinished OnLoadingFinished;
+	void CompleteLoadingProcess();
 
+	FOnLoadingFinished OnLoadingFinished;
+	//bool bLoading = false;
 	UFUNCTION(BlueprintCallable)
 	bool ShowSpectatorWidget(UWorld* World);
-\
+
 protected:
 	UPROPERTY()
 	UNS_InGameMenu* InGameMenuWidget;
@@ -109,5 +111,5 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UNS_SpectatorWidgetClass> SpectatorWidgetClass;
 private:
-
+	
 };
