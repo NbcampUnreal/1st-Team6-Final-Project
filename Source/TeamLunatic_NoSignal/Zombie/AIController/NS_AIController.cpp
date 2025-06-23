@@ -145,7 +145,6 @@ void ANS_AIController::HandleSightStimulus()
 	}
 }
 
-
 void ANS_AIController::HandleHearingStimulus(FVector Location)
 {
 	const FVector NewHeardLocation = Location;
@@ -165,7 +164,6 @@ void ANS_AIController::InitializeHeardBool()
 	BlackboardComp->SetValueAsBool("bWasAlreadyHeard", false);
 	GetWorldTimerManager().ClearTimer(HearingTimerHandle);
 }
-
 
 void ANS_AIController::HandleDamageStimulus(AActor* Attacker)
 {
@@ -211,7 +209,6 @@ AActor* ANS_AIController::GetClosestSightTarget()
 	return nullptr;
 }
 
-
 void ANS_AIController::SetDisableAttackTimer()
 {
 	BlackboardComp->SetValueAsBool("bCanAttackAgain", false);
@@ -222,7 +219,6 @@ void ANS_AIController::SetEnableAttackTimer()
 	BlackboardComp->SetValueAsBool("bCanAttackAgain", true);
 }
 
-
 void ANS_AIController::InitializeAttackRange(APawn* PossesedPawn)
 {
 	ANS_ZombieBase* Zombie = Cast<ANS_ZombieBase>(PossesedPawn);
@@ -232,7 +228,7 @@ void ANS_AIController::InitializeAttackRange(APawn* PossesedPawn)
 	switch (Type)
 	{
 	case EZombieType::BASIC:
-		AttackRange=400.f;
+		AttackRange=300.f;
 		BlackboardComp->SetValueAsFloat("AttackRange", AttackRange);
 		break;
 	case EZombieType::RUNNER:
