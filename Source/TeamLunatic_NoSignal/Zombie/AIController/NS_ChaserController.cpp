@@ -211,6 +211,7 @@ void ANS_ChaserController::SetChaseTarget(AActor* Target, float Duration)
         {
             if (ANS_PlayerController* APC = Cast<ANS_PlayerController>(PC))
             {
+                UE_LOG(LogTemp, Error, TEXT("소리재생해라"));
                 APC->PlayTracked(); 
             }
         }
