@@ -165,6 +165,12 @@ void ANS_PlayerController::HandleGameOver(bool bPlayerSurvived)
     }
 }
 
+void ANS_PlayerController::Client_ShowGameOverUI_Implementation()
+{
+    UE_LOG(LogTemp, Error, TEXT("!!! URGENT: 오래된 RPC 경로(PlayerController::Client_ShowGameOverUI)가 호출되었습니다! GameMode의 OnPlayerCharacterDied 함수가 PlayerState의 bIsAlive 변수만 수정하도록 변경되었는지 확인하세요!"));
+}
+
+
 void ANS_PlayerController::Client_ShowHitEffect_Implementation()
 {
     if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))

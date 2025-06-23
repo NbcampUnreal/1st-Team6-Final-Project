@@ -18,6 +18,9 @@ public:
 	void PlayTracked();
 
 	void HandleGameOver(bool bPlayerSurvived);
+	
+	UFUNCTION(Client, Reliable)
+	void Client_ShowGameOverUI();
 
 	UFUNCTION(Client, Reliable)
 	void Client_ShowHitEffect();

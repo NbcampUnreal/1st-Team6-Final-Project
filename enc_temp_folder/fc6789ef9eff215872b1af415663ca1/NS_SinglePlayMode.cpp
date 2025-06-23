@@ -5,7 +5,6 @@
 #include "GameFlow/NS_GameInstance.h"
 #include "UI/NS_UIManager.h"
 #include "Character/NS_PlayerController.h"
-#include "GameFlow/NS_MainGamePlayerState.h" 
 #include "Engine/World.h"
 #include "Character/NS_PlayerCharacterBase.h"
 
@@ -63,11 +62,11 @@ void ANS_SinglePlayMode::OnPlayerCharacterDied_Implementation(ANS_PlayerCharacte
 
 	if (DeadCharacter->IsPlayerControlled())
 	{
-		if (AController* Controller = DeadCharacter->GetController())
+		if (APlayerController* PC = DeadCharacter->GetController<APlayerController>())
 		{
-			if (ANS_MainGamePlayerState* PS = Controller->GetPlayerState<ANS_MainGamePlayerState>())
+			if (ANS_PlayerController* NS_PC = Cast<ANS_PlayerController>(PC))
 			{
-				PS->bIsAlive = false; 
+				NS_PC->HandleGameOver(false);
 			}
 		}
 

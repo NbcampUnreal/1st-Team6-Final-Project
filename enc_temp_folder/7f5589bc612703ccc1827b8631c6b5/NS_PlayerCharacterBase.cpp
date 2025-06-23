@@ -631,57 +631,26 @@ void ANS_PlayerCharacterBase::QuickSlot5Selected() { HandleQuickSlotKeyInput(5);
 
 void ANS_PlayerCharacterBase::PlayDeath_Server_Implementation()
 {
-    // 1. [서버] 함수 실행 시작 로그
-    UE_LOG(LogTemp, Log, TEXT("[Server] PlayDeath_Server_Implementation 실행: 캐릭터 '%s'"), *this->GetName());
-
     if (UWorld* World = GetWorld())
     {
-        UE_LOG(LogTemp, Log, TEXT("[%s] World 가져오기 성공."), *this->GetName());
-
-        // 2. [서버] 게임모드 가져오기 및 캐스팅 시도
         ANS_GameModeBase* BaseGameMode = Cast<ANS_GameModeBase>(UGameplayStatics::GetGameMode(World));
         if (BaseGameMode)
         {
-            UE_LOG(LogTemp, Log, TEXT("[%s] GameMode('%s') 가져오기 및 캐스팅 성공."), *this->GetName(), *BaseGameMode->GetName());
-
-            // 3. [서버] GameMode의 사망 처리 함수 호출
-            UE_LOG(LogTemp, Log, TEXT("[%s] GameMode에게 OnPlayerCharacterDied를 호출하여 사망 처리를 위임합니다."), *this->GetName());
             BaseGameMode->OnPlayerCharacterDied(this);
 
-            // --- 아래 로직은 GameMode의 OnPlayerCharacterDied 와 중복될 수 있습니다 ---
-            // 4. [서버] 캐릭터가 직접 PlayerState 상태 변경 시도
             if (AController* OwningController = GetController())
             {
                 if (ANS_MainGamePlayerState* PS = Cast<ANS_MainGamePlayerState>(OwningController->PlayerState))
                 {
-                    // 이 로그는 이미 존재했지만, 구분을 위해 컨텍스트를 추가했습니다.
-                    UE_LOG(LogTemp, Warning, TEXT("[%s] 캐릭터가 직접 PlayerState('%s')의 bIsAlive를 false로 설정합니다. (GameMode 처리와 중복될 수 있음)"), *this->GetName(), *PS->GetPlayerName());
-                    PS->bIsAlive = false;
-                }
-                else
-                {
-                    UE_LOG(LogTemp, Error, TEXT("[%s] 컨트롤러는 있으나 PlayerState를 가져오거나 ANS_MainGamePlayerState로 캐스팅하는데 실패했습니다."), *this->GetName());
+                    PS->bIsAlive = false; 
+                    UE_LOG(LogTemp, Warning, TEXT("Player %s PlayerState set to Dead."), *PS->GetPlayerName());
                 }
             }
-            else
-            {
-                UE_LOG(LogTemp, Error, TEXT("[%s] 캐릭터의 Controller를 가져오는 데 실패했습니다."), *this->GetName());
-            }
-        }
-        else
-        {
-            UE_LOG(LogTemp, Error, TEXT("[%s] GameMode를 가져오거나 ANS_GameModeBase로 캐스팅하는데 실패했습니다!"), *this->GetName());
         }
     }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("[%s] GetWorld()를 실패했습니다!"), *this->GetName());
-    }
-
-    // 5. [서버] 멀티캐스트 RPC 호출 로그
-    UE_LOG(LogTemp, Log, TEXT("[%s] 모든 클라이언트에 죽음 이펙트를 동기화하기 위해 PlayDeath_Multicast를 호출합니다."), *this->GetName());
     PlayDeath_Multicast();
 }
+
 void ANS_PlayerCharacterBase::PlayDeath_Multicast_Implementation()
 {
     // 캐릭터가 죽었으면 IsDead변수를 true로 변경해서 애니메이션 몽타주가 1번만 재생되도록 구현했음

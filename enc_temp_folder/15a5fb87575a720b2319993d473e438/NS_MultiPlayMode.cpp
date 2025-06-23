@@ -93,6 +93,7 @@ void ANS_MultiPlayMode::OnPlayerCharacterDied_Implementation(ANS_PlayerCharacter
         if (ANS_MainGamePlayerState* PS = Controller->GetPlayerState<ANS_MainGamePlayerState>())
         {
             PS->bIsAlive = false;
+            UE_LOG(LogTemp, Warning, TEXT("!!! [GameMode] PlayerState->bIsAlive 를 false로 설정 완료. 클라이언트에서 OnRep 함수가 실행될 것입니다."));
         }
     }
 }
