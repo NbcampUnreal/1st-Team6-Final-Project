@@ -4,16 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "BehaviorTree/Decorators/BTDecorator_BlackboardBase.h"
-#include "NS_BTDecorator_CheckLookPlayer.generated.h"
+#include "NS_BTDecorator_AttackAgain.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class TEAMLUNATIC_NOSIGNAL_API UNS_BTDecorator_CheckLookPlayer : public UBTDecorator_BlackboardBase
+class TEAMLUNATIC_NOSIGNAL_API UNS_BTDecorator_AttackAgain : public UBTDecorator_BlackboardBase
 {
 	GENERATED_BODY()
 public:
-	UNS_BTDecorator_CheckLookPlayer();
+	UNS_BTDecorator_AttackAgain();
 	virtual bool CalculateRawConditionValue(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) const override;
 };
