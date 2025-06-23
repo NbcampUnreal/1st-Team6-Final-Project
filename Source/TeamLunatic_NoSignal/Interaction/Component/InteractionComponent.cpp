@@ -215,6 +215,7 @@ void UInteractionComponent::BeginInteract()
 			return;
 		}
 	}
+	
 	// 대상 감지 시도
 	PerformInteractionCheck();
 

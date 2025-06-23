@@ -376,6 +376,8 @@ void UInventoryComponent::AddNewItem(UNS_InventoryBaseItem* Item, const int32 Am
 	UE_LOG(LogTemp, Warning, TEXT("[Inventory] Added %s"), *NewItem->GetName());
 	UE_LOG(LogTemp, Warning, TEXT("[Inventory] NewItem OwingInventory: %s"), *GetNameSafe(NewItem->OwingInventory));
 
+	// 아래 코드 제거 또는 주석 처리 - Pickup.cpp에서 처리하므로 중복 방지
+	/*
 	AActor* OwnerActor = GetOwner();
 	if (OwnerActor)
 	{
@@ -393,6 +395,7 @@ void UInventoryComponent::AddNewItem(UNS_InventoryBaseItem* Item, const int32 Am
 			}
 		}
 	}
+	*/
 }
 
 void UInventoryComponent::CleanUpZeroQuantityItems()

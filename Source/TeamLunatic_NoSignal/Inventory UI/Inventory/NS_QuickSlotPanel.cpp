@@ -121,4 +121,3 @@ void UNS_QuickSlotPanel::OnQuickSlotDataUpdated()
     }
 }
 
-
