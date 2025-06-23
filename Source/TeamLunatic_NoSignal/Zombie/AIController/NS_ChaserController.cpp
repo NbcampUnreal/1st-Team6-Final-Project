@@ -291,7 +291,7 @@ void ANS_ChaserController::ApplyDamageToTarget()
         {
             UGameplayStatics::ApplyDamage(PlayerCharacter, 10.0f, this, GetPawn(), nullptr);
 
-            PlayerCharacter->ActivateHallucinationEffect(3.0f); // 3초간 환각
+            // PlayerCharacter->ActivateHallucinationEffect(3.0f); // 3초간 환각
         }
 
     }

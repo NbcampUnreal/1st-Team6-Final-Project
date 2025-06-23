@@ -16,10 +16,12 @@ struct FNS_ItemDataStruct;
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UNS_QuickSlotSlotWidget : public UUserWidget
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 	
 public:
     virtual void NativeConstruct() override;
+
+    void NativeTick(const FGeometry& MyGeometry, float InDeltaTime);
 
     void SetAssignedItem(const FNS_ItemDataStruct* ItemData, int32 Quantity);
     void SetSlotIndex(int32 Index);
@@ -30,6 +32,8 @@ public:
 
     UPROPERTY(meta = (BindWidgetOptional))
     UTextBlock* AmountText;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+    UTextBlock* AmmoText;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
     class UNS_QuickSlotKey* QuickSlotKey;

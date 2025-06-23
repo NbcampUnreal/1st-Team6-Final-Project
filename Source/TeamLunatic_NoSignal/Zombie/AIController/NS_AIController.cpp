@@ -11,6 +11,7 @@
 #include "BehaviorTree/BehaviorTree.h"
 #include "Zombie/NS_ZombieBase.h"
 #include "BrainComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Zombie/Enum/EZombieType.h"
 
 ANS_AIController::ANS_AIController() : MaxSeenDistance(1000.f)
@@ -33,6 +34,25 @@ ANS_AIController::ANS_AIController() : MaxSeenDistance(1000.f)
 void ANS_AIController::BeginPlay()
 {
 	Super::BeginPlay();
+	SetTargetPoint();
+}
+
+void ANS_AIController::SetTargetPoint()
+{
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), TargetClass, TargetActors);
+	if (TargetActors.Num() > 0)
+	{
+		for (AActor* Target : TargetActors)
+		{
+			TargetLocations.Push(Target->GetActorLocation());
+		}
+	}
+	if (TargetLocations.Num() > 0)
+	{
+		int RandomIndex = FMath::RandRange(0, TargetActors.Num() - 1);
+		FVector Location = TargetLocations[RandomIndex];
+		GetBlackboardComponent()->SetValueAsVector("TargetLocation", Location);
+	}
 }
 
 void ANS_AIController::OnPossess(APawn* PossessedPawn)
@@ -125,7 +145,6 @@ void ANS_AIController::HandleSightStimulus()
 	}
 }
 
-
 void ANS_AIController::HandleHearingStimulus(FVector Location)
 {
 	const FVector NewHeardLocation = Location;
@@ -190,7 +209,6 @@ AActor* ANS_AIController::GetClosestSightTarget()
 	return nullptr;
 }
 
-
 void ANS_AIController::SetDisableAttackTimer()
 {
 	BlackboardComp->SetValueAsBool("bCanAttackAgain", false);
@@ -201,7 +219,6 @@ void ANS_AIController::SetEnableAttackTimer()
 	BlackboardComp->SetValueAsBool("bCanAttackAgain", true);
 }
 
-
 void ANS_AIController::InitializeAttackRange(APawn* PossesedPawn)
 {
 	ANS_ZombieBase* Zombie = Cast<ANS_ZombieBase>(PossesedPawn);
@@ -211,7 +228,7 @@ void ANS_AIController::InitializeAttackRange(APawn* PossesedPawn)
 	switch (Type)
 	{
 	case EZombieType::BASIC:
-		AttackRange=400.f;
+		AttackRange=300.f;
 		BlackboardComp->SetValueAsFloat("AttackRange", AttackRange);
 		break;
 	case EZombieType::RUNNER:

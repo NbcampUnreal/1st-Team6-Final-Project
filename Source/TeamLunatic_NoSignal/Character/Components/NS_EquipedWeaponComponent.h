@@ -57,9 +57,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UnequipWeapon();
 	
+	// 무기 해제 함수 (서버 RPC)
 	UFUNCTION(Server, Reliable)
 	void Server_UnequipWeapon();
 
+	// 무기 해제 함수 (멀티캐스트)
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_UnequipWeapon();
 

@@ -29,8 +29,10 @@ public:
 	UPROPERTY()
 	TArray<ANS_ZombieBase*> AllZombiesInLevel; // 레벨의 모든 좀비 배열
 	FTimerHandle ActivationUpdateTimerHandle; // 업데이트 타이머 핸들
-
+	UFUNCTION(Server, Reliable)
 	void PerformActivationUpdate(); // 실제 활성화/비활성화 로직 함수
 
 	void AppendSpawnZombie(ANS_ZombieBase* Zombie); // 좀비 스폰 함수
 };
+
+

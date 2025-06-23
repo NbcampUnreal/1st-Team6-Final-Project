@@ -209,9 +209,31 @@ void UInteractionComponent::BeginInteract()
 {
 	if (const ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(GetOwner()))
 	{
+		// IsPickUp 플래그가 true이면 상호작용 안되도록 === 그러니까 한번 인터렉션동안은 아이템 1개만 줍을 수 있음
 		if (PlayerCharacter->IsPickUp)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Already picking up item"));
+			// 안전장치로 IsPickUp이 true인 상태로 2초가 지나면 자동으로 false로 변경
+			ANS_PlayerCharacterBase* MutablePlayerCharacter = const_cast<ANS_PlayerCharacterBase*>(PlayerCharacter);
+			if (MutablePlayerCharacter)
+			{
+				// 이미 타이머가 설정되어 있는지 확인
+				static FTimerHandle SafetyTimerHandle;
+				if (!GetWorld()->GetTimerManager().IsTimerActive(SafetyTimerHandle))
+				{
+					GetWorld()->GetTimerManager().SetTimer(
+						SafetyTimerHandle,
+						FTimerDelegate::CreateLambda([MutablePlayerCharacter]() {
+							if (MutablePlayerCharacter->IsPickUp)
+							{
+								MutablePlayerCharacter->IsPickUp = false;
+							}
+						}),
+						2.0f,
+						false
+					);
+				}
+			}
+			
 			return;
 		}
 	}
