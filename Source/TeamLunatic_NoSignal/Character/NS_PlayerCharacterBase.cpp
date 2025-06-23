@@ -883,9 +883,10 @@ void ANS_PlayerCharacterBase::Multicast_UseQuickSlotByIndex_Implementation(int32
                 }
             }
         }
+        return; // 아이템이 없으면 여기서 함수 종료
     }
 
-    // 아이템 데이터 확인
+    // 아이템 데이터 확인 - 여기서 Item은 null이 아님이 보장됨
     const FNS_ItemDataStruct* ItemData = Item->GetItemData();
     if (!ItemData) 
     {
