@@ -16,11 +16,13 @@
 #include "Sound/SoundCue.h"
 #include "PhysicsEngine/PhysicalAnimationComponent.h"
 #include "NiagaraFunctionLibrary.h"
+#include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "Components/SphereComponent.h"
 
 ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), CurrentState(EZombieState::IDLE),
                                    BaseDamage(20.f),PatrolSpeed(20.f), ChaseSpeed(100.f),AccelerationSpeed(200.f),
-ZombieType(EZombieType::BASIC), bIsDead(false), bIsGotHit(false), SafeBones({"clavicle_r","clavicle_l","upperarm_r","upperarm_r","lowerarm_r","lowerarm_r","neck_01","head","spine_02","spine_03"})
+                                   ZombieType(EZombieType::BASIC), bIsDead(false), bIsGotHit(false), SafeBones({"clavicle_r","clavicle_l","upperarm_r","upperarm_r","lowerarm_r","lowerarm_r","neck_01","head","spine_02","spine_03"})
 {
 	PrimaryActorTick.bCanEverTick = true;
 	bUseControllerRotationYaw = false;
@@ -38,11 +40,17 @@ ZombieType(EZombieType::BASIC), bIsDead(false), bIsGotHit(false), SafeBones({"cl
 	GetMesh()->SetRelativeRotation(FRotator(0.f,-90.f,0.f));
 
 	
-	SphereComp = CreateDefaultSubobject<USphereComponent>("AttackRagne");
-	SphereComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	SphereComp->SetupAttachment(GetMesh());
-	SphereComp->OnComponentBeginOverlap.AddDynamic(this,&ANS_ZombieBase::OnOverlapSphere);
-	SphereComp->SetGenerateOverlapEvents(true);
+	R_SphereComp = CreateDefaultSubobject<USphereComponent>("RightAttack");
+	R_SphereComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	R_SphereComp->SetupAttachment(GetMesh(), FName("attack_r"));
+	R_SphereComp->OnComponentBeginOverlap.AddDynamic(this,&ANS_ZombieBase::OnOverlapSphere);
+	R_SphereComp->SetGenerateOverlapEvents(true);
+	
+	L_SphereComp = CreateDefaultSubobject<USphereComponent>("LeftAttack");
+	L_SphereComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	L_SphereComp->SetupAttachment(GetMesh(), FName("attack_l"));
+	L_SphereComp->OnComponentBeginOverlap.AddDynamic(this,&ANS_ZombieBase::OnOverlapSphere);
+	L_SphereComp->SetGenerateOverlapEvents(true);
 
 	// bIsActive의 초기값은 false로 설정해서 처음부터 캐릭터가 활성화 거리 밖에있으면 안보이도록 설정
 	bIsActive = false;
@@ -170,13 +178,18 @@ void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 				// BrainComponent가 있으면 로직 재개
 				if (AIController->GetBrainComponent())
 				{
-					AIController->GetBrainComponent()->ResumeLogic("Activation");
+					AIController->GetBrainComponent()->ResumeLogic("ReActivation");
 					UE_LOG(LogTemp, Warning, TEXT("Zombie %s: AIController brain logic resumed."), *GetName());
 				}
-				
+				TArray<UActorComponent*> ControllerComponents;
+				AIController->GetComponents(ControllerComponents);
+				for (UActorComponent* Component : ControllerComponents)
+				{
+					Component->SetComponentTickEnabled(true);
+				}
 				// 비헤이비어 트리 실행 (필요한 경우)
 				ANS_AIController* NSAIController = Cast<ANS_AIController>(AIController);
-				if (NSAIController && NSAIController->BehaviorTreeAsset)
+				if (NSAIController && NSAIController->UseBlackboard(NSAIController->BehaviorTreeAsset->BlackboardAsset, NSAIController->BlackboardComp))
 				{
 					NSAIController->RunBehaviorTree(NSAIController->BehaviorTreeAsset);
 					UE_LOG(LogTemp, Warning, TEXT("Zombie %s: Behavior tree restarted."), *GetName());
