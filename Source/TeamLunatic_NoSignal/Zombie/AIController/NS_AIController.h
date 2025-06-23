@@ -65,7 +65,7 @@ public:
 	void PauseBT();
 	void ResumeBT();
 	
-	void HandleSightStimulus();
+	// void HandleSightStimulus();
 	void HandleHearingStimulus(FVector Location);
 	void HandleDamageStimulus(AActor* Attacker);
 	void CalculateHeardRotation(FVector HeardLocation);

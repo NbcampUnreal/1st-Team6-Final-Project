@@ -38,6 +38,15 @@ void UNS_Service_CalculateDistance::TickNode(UBehaviorTreeComponent& OwnerComp, 
 					{
 						BlackboardComponent->SetValueAsBool("bIsAttackable", false);
 					}
+					
+					FVector DirectionToTarget = (TargetActor->GetActorLocation() - Pawn->GetActorLocation()).GetSafeNormal();
+					FVector ForwardVector = Pawn->GetActorForwardVector();
+
+					float DotProduct = FVector::DotProduct(ForwardVector, DirectionToTarget);
+					float AngleDegrees = FMath::Acos(DotProduct) * (180.f / PI);
+					
+					float AcceptableAngle = 10.f;
+					BlackboardComponent->SetValueAsBool("bIsLookAt", AngleDegrees <= AcceptableAngle);
 				}
 			}
 		}

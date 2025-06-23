@@ -49,8 +49,11 @@ void ANS_GameModeBase::BeginPlay()
 		}
 	}
 
-	// 좀비 스폰 타이머 설정
-	GetWorldTimerManager().SetTimer(ZombieSpawnTimer, this, &ANS_GameModeBase::CheckAndSpawnZombies, 1.0f, true);
+	// 좀비 스폰 타이머 설정 - 이 부분은 자식 클래스에서 설정하도록 주석 처리
+	// GetWorldTimerManager().SetTimer(ZombieSpawnTimer, this, &ANS_GameModeBase::CheckAndSpawnZombies, 1.0f, true);
+	
+	UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] BeginPlay 완료. 좀비 스포너 수: %d, 기존 좀비 수: %d"), 
+		ZombieSpawnPoints.Num(), CurrentZombieCount);
 }
 
 // 플레이어 위치 반환

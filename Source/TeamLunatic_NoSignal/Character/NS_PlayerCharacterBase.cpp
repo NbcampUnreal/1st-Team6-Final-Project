@@ -18,6 +18,7 @@
 #include "Kismet/GameplayStatics.h"
 #include <Net/UnrealNetwork.h>
 #include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
+#include "Character/NS_PlayerController.h"
 
 ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
 {

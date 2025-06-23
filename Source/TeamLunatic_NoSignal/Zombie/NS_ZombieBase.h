@@ -6,6 +6,8 @@
 #include "GameFramework/Character.h"
 #include "NS_ZombieBase.generated.h"
 
+class USphereComponent;
+class UBoxComponent;
 class ADecalActor;
 class UNiagaraComponent;
 class UNiagaraSystem;
@@ -14,7 +16,6 @@ class ANS_AIController;
 enum class EZombieAttackType : uint8;
 enum class EZombieType : uint8;
 enum class EZombieState : uint8;
-class USphereComponent;
 
 
 UCLASS()
@@ -129,7 +130,9 @@ public:
 
 	//공격 컴포넌트
 	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Sound")
-	USphereComponent* SphereComp;
+	USphereComponent* R_SphereComp;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Sound")
+	USphereComponent* L_SphereComp;
 	
 	//공격 관련
 	UFUNCTION(Server, Reliable)
@@ -149,7 +152,8 @@ public:
 	FORCEINLINE const EZombieAttackType GetZombieAttackType() {return CurrentAttackType;}
 	FORCEINLINE const EZombieState GetState() const {return CurrentState;};
 	FORCEINLINE const EZombieType GetType() const {return ZombieType;}
-	FORCEINLINE USphereComponent* GetSphereComp() const {return SphereComp;}
+	FORCEINLINE USphereComponent* GetR_SphereComponent() const {return R_SphereComp;}
+	FORCEINLINE USphereComponent* GetL_SphereComponent() const {return L_SphereComp;}
 };
 
 
