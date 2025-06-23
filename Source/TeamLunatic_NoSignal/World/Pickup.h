@@ -67,6 +67,8 @@ public:
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 
-	void TryAssignToHUD();
+
 #endif
+	void TryAssignToHUD();
+
 };
