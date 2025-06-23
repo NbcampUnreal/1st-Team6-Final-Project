@@ -68,6 +68,8 @@ public:
 	void OnUpdateSessionStatusResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character Data")
+	TArray<TSubclassOf<APawn>> AvailableCharacterClasses;
 
 	UPROPERTY(EditAnywhere, Category = "Level")
 	TSoftObjectPtr<UWorld> WaitingRoom;

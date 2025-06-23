@@ -94,10 +94,17 @@ void ANS_MultiPlayMode::SpawnAllPlayers()
     UWorld* World = GetWorld();
     if (!World) return;
 
+    UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance());
+    if (!GI)
+    {
+        UE_LOG(LogTemp, Error, TEXT("[SpawnAllPlayers] UNS_GameInstance를 찾을 수 없습니다!"));
+        return;
+    }
+
     TArray<AActor*> PlayerStarts;
     UGameplayStatics::GetAllActorsOfClass(World, APlayerStart::StaticClass(), PlayerStarts);
 
-    int32 Index = 0;
+    int32 SpawnPointIndex = 0; 
     for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
     {
         APlayerController* PC = It->Get();
@@ -110,35 +117,40 @@ void ANS_MultiPlayMode::SpawnAllPlayers()
 
         if (ANS_MainGamePlayerState* PS = Cast<ANS_MainGamePlayerState>(PC->PlayerState))
         {
-            if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+            int32 PlayerCharacterIndex = PS->PlayerIndex;
+            TSubclassOf<APawn> PawnClass = nullptr;
+
+            if (GI->AvailableCharacterClasses.IsValidIndex(PlayerCharacterIndex))
             {
-                const FNS_PlayerData* Data = GI->PlayerDataMap.Find(PS->GetPlayerId());
-                if (!Data) continue;
+                PawnClass = GI->AvailableCharacterClasses[PlayerCharacterIndex];
+            }
+            else
+            {
+                UE_LOG(LogTemp, Error, TEXT("[SpawnAllPlayers] GameInstance의 AvailableCharacterClasses 배열에 유효하지 않은 인덱스(%d)입니다. 배열 크기: %d"), PlayerCharacterIndex, GI->AvailableCharacterClasses.Num());
+                continue;
+            }
 
-                FStringAssetReference Ref(Data->CharacterModelPath);
-                UClass* PawnClass = Cast<UClass>(StaticLoadObject(UClass::StaticClass(), nullptr, *Ref.ToString()));
-                if (!PawnClass)
-                {
-                    UE_LOG(LogTemp, Error, TEXT("[SpawnAllPlayers] PawnClass 로드 실패: %s"), *Ref.ToString());
-                    continue;
-                }
+            if (!PawnClass)
+            {
+                UE_LOG(LogTemp, Error, TEXT("[SpawnAllPlayers] 인덱스 %d에 해당하는 PawnClass가 Null입니다."), PlayerCharacterIndex);
+                continue;
+            }
 
-                FVector SpawnLoc = PlayerStarts.IsValidIndex(Index) ? PlayerStarts[Index]->GetActorLocation() : FVector::ZeroVector;
-                FRotator SpawnRot = PlayerStarts.IsValidIndex(Index) ? PlayerStarts[Index]->GetActorRotation() : FRotator::ZeroRotator;
+            FVector SpawnLoc = PlayerStarts.IsValidIndex(SpawnPointIndex) ? PlayerStarts[SpawnPointIndex]->GetActorLocation() : FVector::ZeroVector;
+            FRotator SpawnRot = PlayerStarts.IsValidIndex(SpawnPointIndex) ? PlayerStarts[SpawnPointIndex]->GetActorRotation() : FRotator::ZeroRotator;
 
-                APawn* NewPawn = World->SpawnActor<APawn>(PawnClass, SpawnLoc, SpawnRot);
-                if (NewPawn)
-                {
-                    PC->Possess(NewPawn);
-                    UE_LOG(LogTemp, Warning, TEXT("[SpawnAllPlayers] %s → %s 로 Possess됨"), *PC->GetName(), *NewPawn->GetName());
-                }
-                else
-                {
-                    UE_LOG(LogTemp, Error, TEXT("[SpawnAllPlayers] Pawn 스폰 실패"));
-                }
+            APawn* NewPawn = World->SpawnActor<APawn>(PawnClass, SpawnLoc, SpawnRot);
+            if (NewPawn)
+            {
+                PC->Possess(NewPawn);
+                UE_LOG(LogTemp, Warning, TEXT("[SpawnAllPlayers] %s → %s 로 Possess됨 (인덱스 기반 스폰)"), *PC->GetName(), *NewPawn->GetName());
+            }
+            else
+            {
+                UE_LOG(LogTemp, Error, TEXT("[SpawnAllPlayers] Pawn 스폰 실패"));
             }
         }
 
-        Index++;
+        SpawnPointIndex++;
     }
 }
