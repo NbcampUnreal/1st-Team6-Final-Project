@@ -59,7 +59,10 @@ void ANS_SinglePlayMode::PostLogin(APlayerController* NewPlayer)
 
 void ANS_SinglePlayMode::OnPlayerCharacterDied_Implementation(ANS_PlayerCharacterBase* DeadCharacter)
 {
-	if (bIsGameOver || !DeadCharacter) return;
+	if (bIsGameOver || !DeadCharacter)
+	{
+		return;
+	}
 
 	if (DeadCharacter->IsPlayerControlled())
 	{
@@ -67,7 +70,12 @@ void ANS_SinglePlayMode::OnPlayerCharacterDied_Implementation(ANS_PlayerCharacte
 		{
 			if (ANS_MainGamePlayerState* PS = Controller->GetPlayerState<ANS_MainGamePlayerState>())
 			{
-				PS->bIsAlive = false; 
+				PS->bIsAlive = false;
+
+				if (GetNetMode() == NM_Standalone)
+				{
+					PS->OnRep_IsAlive();
+				}
 			}
 		}
 
