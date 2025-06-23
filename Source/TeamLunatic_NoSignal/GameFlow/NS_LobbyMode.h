@@ -17,8 +17,5 @@ public:
     void CheckAllPlayersReady();
 
 protected:
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Lobby")
-    TArray<TSubclassOf<APawn>> LobbyCharacterClasses;
-
     AActor* FindSpawnPointByIndex(int32 Index);
 };
