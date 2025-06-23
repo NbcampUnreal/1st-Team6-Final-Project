@@ -166,21 +166,27 @@ void ANS_GameModeBase::SpawnZombieAtPoint(AANS_ZombieSpawner* SpawnSpawner)
 	TSubclassOf<ANS_ZombieBase> ZombieToSpawn = nullptr;
 	int32 RandNum = FMath::RandRange(1, 100); 
 
-	if (RandNum <= 60 && BasicZombieClass) 
+	FString ZombieTypeName = TEXT("알 수 없음");
+	
+	if (RandNum <= 60 && BasicZombieClass) // 60% 로 기본 좀비 생성
 	{
 		ZombieToSpawn = BasicZombieClass;
+		ZombieTypeName = TEXT("기본 좀비");
 	}
-	else if (RandNum <= 95 && FatZombieClass) 
+	else if (RandNum <= 95 && FatZombieClass) // 35% 로 뚱 좀비 생성
 	{
 		ZombieToSpawn = FatZombieClass;
+		ZombieTypeName = TEXT("뚱 좀비");
 	}
 	else if (RandNum <= 100 && RunnerZombieClass) 
 	{
-		ZombieToSpawn = RunnerZombieClass;
+		ZombieToSpawn = RunnerZombieClass; // 5% 로 여자 좀비 생성
+		ZombieTypeName = TEXT("러너 좀비");
 	}
 
 	if (!ZombieToSpawn)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("스폰할 좀비 클래스가 없습니다. 랜덤 값: %d"), RandNum);
 		return; 
 	}
 
@@ -202,6 +208,8 @@ void ANS_GameModeBase::SpawnZombieAtPoint(AANS_ZombieSpawner* SpawnSpawner)
 	
 	if (Zombie)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("[좀비 스폰 성공] ID: %s, 현재 좀비 수: %d"), *Zombie->GetName(), CurrentZombieCount + 1);
+		
 		Zombie->OnDestroyed.AddDynamic(this, &ANS_GameModeBase::OnZombieDestroyed); 
 		++CurrentZombieCount; 
 
@@ -209,6 +217,32 @@ void ANS_GameModeBase::SpawnZombieAtPoint(AANS_ZombieSpawner* SpawnSpawner)
 		{
 			ZombieActivationManagerCasted->AppendSpawnZombie(Zombie);
 		}
+	}
+	else
+	{
+		// 플레이어 위치 가져오기
+		FVector PlayerLocation = GetPlayerLocation();
+		float DistanceToPlayer = FVector::Dist(PlayerLocation, SpawnLocation);
+		
+		// 스폰 실패 원인 분석
+		FString FailReason;
+		if (DistanceToPlayer < MinSpawnDistance)
+		{
+			FailReason = FString::Printf(TEXT("플레이어와 너무 가까움 (거리: %.1f, 최소 거리: %.1f)"), 
+				DistanceToPlayer, MinSpawnDistance);
+		}
+		else if (DistanceToPlayer > MaxSpawnDistance)
+		{
+			FailReason = FString::Printf(TEXT("플레이어와 너무 멀리 떨어짐 (거리: %.1f, 최대 거리: %.1f)"), 
+				DistanceToPlayer, MaxSpawnDistance);
+		}
+		else
+		{
+			FailReason = TEXT("충돌 또는 기타 이유");
+		}
+		
+		UE_LOG(LogTemp, Error, TEXT("[좀비 스폰 실패] 위치: X=%.1f Y=%.1f Z=%.1f, 플레이어와의 거리: %.1f, 원인: %s"), 
+			SpawnLocation.X, SpawnLocation.Y, SpawnLocation.Z, DistanceToPlayer, *FailReason);
 	}
 }
 
