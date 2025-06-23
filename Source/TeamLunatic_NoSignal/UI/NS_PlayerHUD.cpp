@@ -340,9 +340,9 @@ void UNS_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
     }
       
         PrvFinalIdx = CurFinalIdx;
-    }
-   // UE_LOG(LogTemp, Warning, TEXT("UNS_PlayerHUD ::NativeTick3"));
+        // UE_LOG(LogTemp, Warning, TEXT("UNS_PlayerHUD ::NativeTick3"));
 }
+
 
 void UNS_PlayerHUD::DeleteCompasItem(APickup* DeleteItem)
 {
