@@ -2,6 +2,7 @@
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFlow/NS_GameModeBase.h"
+#include "GameFlow/NS_GameState.h"
 #include "Character/NS_PlayerController.h"
 #include "Character/NS_PlayerCharacterBase.h"
 
@@ -119,12 +120,38 @@ void ANS_ChaserController::RequestPlayerLocation()
     if (Location.IsNearlyZero())
     {
         UE_LOG(LogTemp, Warning, TEXT("플레이어 위치가 ZeroVector로 반환됨"));
-    }
-    else
-    {
-        UE_LOG(LogTemp, Log, TEXT("플레이어 위치 갱신됨: %s"), *Location.ToString());
+
+        // 살아있는 플레이어가 아무도 없다면 재요청 불필요
+        if (ANS_GameState* GS = GetWorld()->GetGameState<ANS_GameState>())
+        {
+            int32 AliveCount = 0;
+            for (APlayerState* PS : GS->PlayerArray)
+            {
+                if (ANS_MainGamePlayerState* MPS = Cast<ANS_MainGamePlayerState>(PS))
+                {
+                    if (MPS->bIsAlive)
+                    {
+                        AliveCount++;
+                        break;
+                    }
+                }
+            }
+
+            if (AliveCount == 0)
+            {
+                UE_LOG(LogTemp, Warning, TEXT("모든 플레이어가 사망하여 위치 요청 중지"));
+                return;
+            }
+        }
+
+        // 0.5초 뒤 재요청
+        FTimerHandle RetryHandle;
+        GetWorld()->GetTimerManager().SetTimer(RetryHandle, this, &ANS_ChaserController::RequestPlayerLocation, 0.5f, false);
+        return;
     }
 
+    // 유효한 위치면 블랙보드에 저장
+    UE_LOG(LogTemp, Log, TEXT("플레이어 위치 갱신됨: %s"), *Location.ToString());
     BlackboardComp->SetValueAsVector(TEXT("TargetLocation"), Location);
 }
 
@@ -253,9 +280,19 @@ void ANS_ChaserController::ApplyDamageToTarget()
 {
     if (!DamageTarget) return;
 
-    // 플레이어인지 체크
-    if (!DamageTarget->IsA(ANS_PlayerCharacterBase::StaticClass())) return;
+    if (ANS_PlayerCharacterBase* PlayerChar = Cast<ANS_PlayerCharacterBase>(DamageTarget))
+    {
+        // 데미지 적용
+        UGameplayStatics::ApplyDamage(PlayerChar, 10.0f, this, GetPawn(), nullptr);
 
-    UGameplayStatics::ApplyDamage(DamageTarget, 10.0f, this, GetPawn(), nullptr);
+        // 환각 효과 발동
+        if (ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(DamageTarget))
+        {
+            UGameplayStatics::ApplyDamage(PlayerCharacter, 10.0f, this, GetPawn(), nullptr);
+
+            // PlayerCharacter->ActivateHallucinationEffect(3.0f); // 3초간 환각
+        }
+
+    }
 }
 

@@ -45,7 +45,7 @@ void ANS_ZombieActivationManager::Tick(float DeltaTime)
     // PerformActivationUpdate가 타이머로 호출되므로 여기서는 직접적인 로직 없음
 }
 
-void ANS_ZombieActivationManager::PerformActivationUpdate()
+void ANS_ZombieActivationManager::PerformActivationUpdate_Implementation()
 {
     if (!HasAuthority()) return; // 서버에서만 실행
 
@@ -82,7 +82,7 @@ void ANS_ZombieActivationManager::PerformActivationUpdate()
         {
             if (!Zombie->bIsActive) // 현재 비활성 상태인데 활성화되어야 한다면
             {
-                Zombie->SetActive(true); // 이 줄이 OnRep_IsActive를 트리거합니다.
+                Zombie->SetActive_Multicast(true); // 이 줄이 OnRep_IsActive를 트리거합니다.
                 // 서버에서는 AI 관련 로직 즉시 활성화
                 Zombie->SetActorTickEnabled(true); 
                 if (AAIController* AIController = Cast<AAIController>(Zombie->GetController()))
@@ -96,7 +96,7 @@ void ANS_ZombieActivationManager::PerformActivationUpdate()
         {
             if (Zombie->bIsActive) // 현재 활성 상태인데 비활성화되어야 한다면
             {
-                Zombie->SetActive(false); // 이 줄이 OnRep_IsActive를 트리거합니다.
+                Zombie->SetActive_Multicast(false); // 이 줄이 OnRep_IsActive를 트리거합니다.
                 // 서버에서는 AI 관련 로직 즉시 비활성화
                 Zombie->SetActorTickEnabled(false);
                 if (AAIController* AIController = Cast<AAIController>(Zombie->GetController()))

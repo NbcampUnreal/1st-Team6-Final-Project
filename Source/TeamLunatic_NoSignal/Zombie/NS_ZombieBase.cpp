@@ -52,8 +52,7 @@ void ANS_ZombieBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SetActive(false);
-	
+	SetActive_Multicast(false);
 	SetState(CurrentState);
 	GetMesh()->GetAnimInstance()->RootMotionMode = ERootMotionMode::RootMotionFromEverything;
 	InitializePhysics();
@@ -112,9 +111,10 @@ void ANS_ZombieBase::OnOverlapSphere(UPrimitiveComponent* OverlappedComp, AActor
 	}
 }
 
-void ANS_ZombieBase::SetActive(bool NewIsActive) // 매개변수 이름을 NewIsActive로 변경하여 혼동 방지
+
+void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 {
-	bIsActive = NewIsActive;
+	bIsActive = setActive;
 	UE_LOG(LogTemp, Warning, TEXT("Zombie %s SetActive Called. Current bIsActive: %s"), *GetName(), bIsActive ? TEXT("True") : TEXT("False"));
 	
 	if (bIsActive) // 활성화 상태로 전환 (true)
@@ -264,7 +264,7 @@ float ANS_ZombieBase::TakeDamage(float DamageAmount, struct FDamageEvent const& 
 		}
 		GetWorldTimerManager().SetTimer(HitTimer, this, &ANS_ZombieBase::ResetHit, .5f,false);
 		Multicast_SpawnEffect(Bone, Point->HitInfo.Location, HitRotation);
-		ApplyPhysics(Bone, HitDirection * 3000.f);
+		ApplyPhysics(Bone, HitDirection * 20000.f);
 	}
 	
 	CurrentHealth = FMath::Clamp(CurrentHealth - DamageAmount, 0.f, MaxHealth);
@@ -286,7 +286,7 @@ void ANS_ZombieBase::ResetHit()
 	}
 }
 
-void ANS_ZombieBase::ApplyPhysics(FName Bone, FVector Impulse)
+void ANS_ZombieBase::ApplyPhysics_Implementation(FName Bone, FVector Impulse)
 {
 	if (SafeBones.Contains(Bone))
 	{
@@ -464,6 +464,8 @@ void ANS_ZombieBase::OnStateChanged(EZombieState State)
 		break;
 	case EZombieState::FROZEN:
 		OnFrozenState();
+		break;
+	case EZombieState::HEARTING:
 		break;
 	default:
 		break;

@@ -44,11 +44,36 @@ FVector ANS_MultiPlayMode::GetPlayerLocation_Implementation() const
     {
         if (APawn* Target = GS->TrackingTarget)
         {
-            return Target->GetActorLocation();
+            if (AController* Controller = Target->GetController())
+            {
+                if (ANS_MainGamePlayerState* PS = Controller->GetPlayerState<ANS_MainGamePlayerState>())
+                {
+                    if (PS->bIsAlive)
+                    {
+                        return Target->GetActorLocation();
+                    }
+                }
+            }
+        }
+
+        for (APlayerState* PS : GS->PlayerArray)
+        {
+            if (ANS_MainGamePlayerState* MPS = Cast<ANS_MainGamePlayerState>(PS))
+            {
+                if (MPS->bIsAlive)
+                {
+                    if (APawn* AlivePawn = MPS->GetPawn())
+                    {
+                        return AlivePawn->GetActorLocation();
+                    }
+                }
+            }
         }
     }
+
     return FVector::ZeroVector;
 }
+
 
 void ANS_MultiPlayMode::OnPlayerCharacterDied_Implementation(ANS_PlayerCharacterBase* DeadCharacter)
 {

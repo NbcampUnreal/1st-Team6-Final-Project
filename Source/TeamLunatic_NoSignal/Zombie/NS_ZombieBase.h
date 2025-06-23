@@ -68,17 +68,21 @@ public:
 	bool bIsActive; // 기본적으로 비활성화 상태로 시작
 
 	// bIsActive가 리플리케이트될 때 호출될 함수
-	UFUNCTION()
-	void SetActive(bool setActive);
+	UFUNCTION(NetMulticast, Reliable)
+	void SetActive_Multicast(bool setActive);
 	
 	//피격관련
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+	
 	UFUNCTION(NetMulticast, reliable)
 	void Die_Multicast();
+	
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly, Category = "State")
 	UAnimMontage* KnockBackMontage;
+	
 	UFUNCTION(NetMulticast, reliable)
 	void Multicast_PlayMontage(UAnimMontage* MontageToPlay);
+	
 	FTimerHandle HitTimer;
 	void ResetHit();
 	
@@ -88,6 +92,7 @@ public:
 	
 	// Physics관련
 	void InitializePhysics();
+	UFUNCTION(NetMulticast, Unreliable)
 	void ApplyPhysics(FName Bone, FVector Impulse);
 	void ResetPhysics(FName Bone);
 	UPROPERTY()

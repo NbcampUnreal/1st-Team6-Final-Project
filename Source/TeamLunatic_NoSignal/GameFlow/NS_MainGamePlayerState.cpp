@@ -43,13 +43,10 @@ void ANS_MainGamePlayerState::OnRep_IsAlive()
 {
     if (!bIsAlive)
     {
-        UE_LOG(LogTemp, Warning, TEXT("[PlayerState] OnRep_IsAlive: 사망 상태 감지. UI 표시 시도."));
-
         if (APlayerController* PC = GetPlayerController())
         {
             if (PC->IsLocalController())
             {
-                UE_LOG(LogTemp, Warning, TEXT("PC는 로컬 컨트롤러입니다."));
 
                 if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(PC->GetGameInstance()))
                 {
@@ -70,14 +67,6 @@ void ANS_MainGamePlayerState::OnRep_IsAlive()
                     }
                 }
             }
-            else
-            {
-                UE_LOG(LogTemp, Error, TEXT("PC는 로컬 컨트롤러가 아님"));
-            }
-        }
-        else
-        {
-            UE_LOG(LogTemp, Error, TEXT("GetPlayerController() 실패"));
         }
     }
 }

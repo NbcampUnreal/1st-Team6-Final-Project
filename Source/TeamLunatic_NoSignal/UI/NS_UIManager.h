@@ -49,6 +49,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void HideGameOverWidget(UWorld* World);
 
+	UFUNCTION(BlueprintCallable)
+	void ShowHitEffectWidget(UWorld* World);
+
+
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	bool ShowGameMsgWidget(FString& GameMsg, UWorld* World);
 	UFUNCTION(BlueprintCallable, Category = "UI")
@@ -65,11 +69,13 @@ public:
 	void LoadingScreen(UWorld* World);
 	void CloseLoadingUI();
 
-	FOnLoadingFinished OnLoadingFinished;
+	void CompleteLoadingProcess();
 
+	FOnLoadingFinished OnLoadingFinished;
+	//bool bLoading = false;
 	UFUNCTION(BlueprintCallable)
 	bool ShowSpectatorWidget(UWorld* World);
-\
+
 protected:
 	UPROPERTY()
 	UNS_InGameMenu* InGameMenuWidget;
@@ -96,11 +102,14 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UNS_LoadingScreen> NS_LoadingScreenClass;
 
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UUserWidget> HitEffectWidgetClass;
+
 	UPROPERTY()
 	UNS_SpectatorWidgetClass* SpectatorWidget;
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UNS_SpectatorWidgetClass> SpectatorWidgetClass;
 private:
-
+	
 };

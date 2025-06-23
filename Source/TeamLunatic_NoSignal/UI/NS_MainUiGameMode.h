@@ -13,5 +13,6 @@ UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_MainUiGameMode : public AGameMode
 {
 	GENERATED_BODY()
-	
+public:
+	ANS_MainUiGameMode(const FObjectInitializer& ObjectInitializer);
 };
