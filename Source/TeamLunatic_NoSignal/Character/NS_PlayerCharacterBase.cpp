@@ -545,8 +545,23 @@ void ANS_PlayerCharacterBase::StopSprint_Server_Implementation(const FInputActio
 
 void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputActionValue& Value)
 {
-    if (GetCharacterMovement()->IsFalling()) { return; } // 낙하 중에는 아이템 줍기 불가
-    if (IsPickUp) { return; } // 이미 아이템 줍기 중이면 무시
+    // 낙하 중에는 아이템 줍기 불가
+    if (GetCharacterMovement()->IsFalling()) { return; }
+    
+    // 이미 아이템 줍기 중이면 무시
+    if (IsPickUp) { return; }
+    
+    // 재장전 중이면 무시
+    if (IsReload) { return; }
+    
+    // 무기 교체 애니메이션 중이면 무시
+    if (IsChangeAnim) { return; }
+    
+    // 공격 중이면 무시
+    if (EquipedWeaponComp && EquipedWeaponComp->IsAttack) { return; }
+    
+    // 투척 중이면 무시
+    if (IsThrow) { return; }
 
     if (UInteractionComponent* InteractComp = FindComponentByClass<UInteractionComponent>())
     {
@@ -557,6 +572,24 @@ void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputAct
             UE_LOG(LogTemp, Warning, TEXT("상호작용 대상 없음"));
             return;
         }
+        
+        // 상호작용 시작 전에 IsPickUp 플래그를 true로 설정
+        IsPickUp = true;
+        
+        // 안전장치: 2초 후에 강제로 IsPickUp 플래그를 리셋
+        FTimerHandle SafetyTimerHandle;
+        GetWorldTimerManager().SetTimer(
+            SafetyTimerHandle,
+            FTimerDelegate::CreateLambda([this]() { 
+                if (IsPickUp)
+                {
+                    IsPickUp = false;
+                    UE_LOG(LogTemp, Warning, TEXT("안전장치: IsPickUp 플래그 강제 리셋 (IsPickUp = false)"));
+                }
+            }),
+            2.0f,
+            false
+        );
         
         // 상호작용 실행 (Pickup 클래스의 Interact 함수 호출)
         IInteractionInterface::Execute_Interact(CurrentTarget.GetObject(), this);

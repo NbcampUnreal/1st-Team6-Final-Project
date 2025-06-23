@@ -181,13 +181,6 @@ public:
 	// 던질 때 기준이 되는 소켓 이름 == 캐릭터 블루프린트에서 설정해주면 됨
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Throw")
 	FName ThrowSocketName;
-
-	// 한번만 던져지도록 실행하는 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
-	bool bHasThrown = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
-	bool IsThrow = false;
 	////////////////////////////////////////병투척 변수 끝!///////////////////////////////////////////////
 
 
@@ -279,7 +272,13 @@ public:
 	bool IsChangeAnim = false;
 	// 캐릭터가 죽었는지 확인 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
-	bool IsDead = false; // 캐릭터가 죽었는지 여부를 나타내는 변수 추가
+	bool IsDead = false;
+	// 한번만 던져지도록 실행하는 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool bHasThrown = false;
+	// 병 던질 수 있는지 확인 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	bool IsThrow = false;
 	//////////////////////////////////////////////////////////////////////////////////////
 
 
