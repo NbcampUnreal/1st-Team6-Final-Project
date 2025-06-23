@@ -12,6 +12,11 @@ void UNS_CompassElement::NativeConstruct()
 }
 float UNS_CompassElement::GetSizeBoxWideth()
 {
+	//if (!IsValid( TextSizeBox) )
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("TextSizeBox nullPtr"));
+	//	return 0;
+	//}
 	float Width = TextSizeBox->GetDesiredSize().X;
 	return Width;
 }

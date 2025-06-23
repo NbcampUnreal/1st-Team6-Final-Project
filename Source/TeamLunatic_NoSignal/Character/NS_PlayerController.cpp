@@ -2,6 +2,8 @@
 #include "GameFlow/NS_GameInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "UI/NS_UIManager.h"
+#include "UI/NS_Msg_GameOver.h" 
+#include "Blueprint/UserWidget.h" 
 #include "Inventory UI/NS_InventoryHUD.h"
 
 ANS_PlayerController::ANS_PlayerController()
@@ -9,6 +11,8 @@ ANS_PlayerController::ANS_PlayerController()
     bShowMouseCursor = false; // false로 시작 (InGameMenu에서는 true로 전환)
     bEnableClickEvents = true;
     bEnableMouseOverEvents = true;
+
+
 }
 
 void ANS_PlayerController::BeginPlay()
@@ -20,12 +24,26 @@ void ANS_PlayerController::BeginPlay()
 
     if (!IsLocalController()) return; // 서버일 경우 바로 반환해서 UI 안 띄움
 
-    if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
+
+    if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
-        if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
+      //GI->GetUIManager()->CompleteLoadingProcess();
+      //  GI->GetUIManager()->OnLoadingFinished.BindLambda([GI]()
+      //  {
+      //     UE_LOG(LogTemp, Warning, TEXT("NS_PlayerController CloseLoadingUI "));
+      //     GI->GetUIManager()->CloseLoadingUI();
+      //     GI->GetUIManager()->ShowPlayerHUDWidget(GI->GetWorld());
+      //  });//로딩스크린 위젯 띄워서  로딩바 몇초 움직이고 OpenLevel()하는 방식.
+
+
+
+
+        FTimerHandle DelayHandle;
+        GetWorld()->GetTimerManager().SetTimer(DelayHandle, [this, GI]()
         {
-            UIManager->ShowPlayerHUDWidget(GetWorld());
-        }
+            // asybc loading screen PlugIn 활용할때 사용하는 로직.
+            GI->GetUIManager()->ShowPlayerHUDWidget(GI->GetWorld());
+        }, 1.f, false);
     }
 }
 
@@ -88,7 +106,6 @@ void ANS_PlayerController::TestGameOver()
     {
         if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
         {
-            FString Msg = TEXT("TEST!! HELLOW!~~~~");
             UIManager->ShowGameOverWidget(GetWorld());
         }
     }
@@ -112,3 +129,55 @@ void ANS_PlayerController::PlayTracked_Implementation()
 
 }
 
+void ANS_PlayerController::HandleGameOver(bool bPlayerSurvived)
+{
+    UE_LOG(LogTemp, Warning, TEXT(">> HandleGameOver 진입 (bPlayerSurvived: %s)"), bPlayerSurvived ? TEXT("true") : TEXT("false"));
+
+    SetIgnoreMoveInput(true);
+    SetIgnoreLookInput(true);
+    bShowMouseCursor = true;
+
+    FInputModeUIOnly InputMode;
+    InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+    SetInputMode(InputMode);
+
+    if (GetWorld()->GetNumPlayerControllers() == 1)
+    {
+        UE_LOG(LogTemp, Warning, TEXT(">> 싱글플레이 - 글로벌 시간 정지"));
+        UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 0.f);
+    }
+
+    if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
+    {
+        if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
+        {
+            UE_LOG(LogTemp, Warning, TEXT(">> UIManager 유효. 위젯 표시 요청"));
+            UIManager->ShowGameOverWidget(GetWorld());
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT(">> UIManager is nullptr"));
+        }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT(">> GameInstance 캐스팅 실패"));
+    }
+}
+
+void ANS_PlayerController::Client_ShowGameOverUI_Implementation()
+{
+    UE_LOG(LogTemp, Error, TEXT("!!! URGENT: 오래된 RPC 경로(PlayerController::Client_ShowGameOverUI)가 호출되었습니다! GameMode의 OnPlayerCharacterDied 함수가 PlayerState의 bIsAlive 변수만 수정하도록 변경되었는지 확인하세요!"));
+}
+
+
+void ANS_PlayerController::Client_ShowHitEffect_Implementation()
+{
+    if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
+    {
+        if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
+        {
+            UIManager->ShowHitEffectWidget(GetWorld());
+        }
+    }
+}
