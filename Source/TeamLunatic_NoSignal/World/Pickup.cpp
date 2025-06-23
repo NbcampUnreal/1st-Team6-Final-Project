@@ -8,6 +8,9 @@
 #include "Item/NS_BaseMagazine.h"
 #include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFlow/NS_GameInstance.h"
+#include "UI/NS_UIManager.h"
+#include "UI/NS_PlayerHUD.h"
 
 APickup::APickup()
 {
@@ -28,6 +31,18 @@ void APickup::BeginPlay()
 	if (HasAuthority())
 	{
 		InitializePickup(UNS_InventoryBaseItem::StaticClass(), ItemQuantity);
+
+		if (DesiredItemID == FName("Memo"))
+		{
+			FTimerHandle DelayHandle;
+			GetWorldTimerManager().SetTimer(
+				DelayHandle,
+				this,
+				&APickup::TryAssignToHUD,
+				0.2f,
+				false
+			);
+		}
 	}
 	else
 	{
@@ -157,6 +172,48 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 			// 인벤토리에 아이템 추가
 			const FItemAddResult AddResult = PlayerInventory->HandleAddItem(ItemReference);
 
+			//인벤토리 아이템을 확인하고, 다음 타겟으로 변경하는 코드
+			//쪽지 5개를 표시하는 과정에서 하나를 얻으면 지우기.
+			if (AddResult.OperationResult == EItemAddResult::TAR_AllItemAdded || AddResult.OperationResult == EItemAddResult::TAR_PartialAmountItemAdded)
+			{
+				UNS_PlayerHUD* PlayerHUD = nullptr;
+				if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+				{
+					if (UNS_UIManager* UIManager = GI->GetUIManager())
+					{
+						PlayerHUD = UIManager->GetPlayerHUDWidget();
+					}
+				}
+
+				if (PlayerHUD)
+				{
+					if (ItemReference->ItemDataRowName == FName("Memo"))
+					{
+						TArray<AActor*> FoundPickups;
+						UGameplayStatics::GetAllActorsOfClass(GetWorld(), APickup::StaticClass(), FoundPickups);
+
+						for (AActor* PickupActor : FoundPickups)
+						{
+							APickup* QuestPickup = Cast<APickup>(PickupActor);
+							if (!QuestPickup || !QuestPickup->GetItemData()) continue;
+
+							FName ItemID = QuestPickup->GetItemData()->ItemDataRowName;
+
+							const TArray<FName> TargetNoteIDs = {
+								FName("One"), FName("Two"), FName("Three"), FName("Four"), FName("Five")
+							};
+
+							if (TargetNoteIDs.Contains(ItemID))
+							{
+								PlayerHUD->SetYeddaItem(QuestPickup);
+							}
+						}
+					}
+
+					PlayerHUD->DeleteCompasItem(this);
+				}
+			}
+
 			// 아이템 추가 성공 시 장비 아이템인 경우 자동 퀵슬롯 할당 처리
 			if (AddResult.ActualAmountAdded > 0 &&
 				ItemReference->ItemType == EItemType::Equipment &&
@@ -265,6 +322,32 @@ void APickup::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent
 			}
 		}
 	}
+}
+void APickup::TryAssignToHUD()
+{
+	if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+	{
+		if (UNS_UIManager* UIManager = GI->GetUIManager())
+		{
+			if (UNS_PlayerHUD* PlayerHUD = UIManager->GetPlayerHUDWidget())
+			{
+				PlayerHUD->SetYeddaItem(this);
+				return;
+			}
+		}
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("APickup::TryAssignToHUD "));
+
+	// HUD가 아직 생성되지 않았을 경우 재시도
+	FTimerHandle RetryHandle;
+	GetWorldTimerManager().SetTimer(
+		RetryHandle,
+		this,
+		&APickup::TryAssignToHUD,
+		0.2f,
+		false
+	);
 }
 #endif
 
