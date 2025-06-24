@@ -157,7 +157,15 @@ void ANS_ItemSpawnManager::SpawnRandomItemAt(const FTransform& SpawnTransform)
     {
         SpawnedPickup->ItemDataTable = this->ItemDataTable;
         SpawnedPickup->DesiredItemID = SelectedItemID;
-        SpawnedPickup->ItemQuantity = 1;
+
+        if (SelectedItemID == "9mm" || SelectedItemID == "5.56mm")
+        {
+            SpawnedPickup->ItemQuantity = 10;
+        }
+        else
+        {
+            SpawnedPickup->ItemQuantity = 1;
+        }
 
         SpawnedPickup->InitializePickup(UNS_InventoryBaseItem::StaticClass(), 1);
     }
