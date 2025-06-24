@@ -14,6 +14,7 @@ ANS_Chaser::ANS_Chaser()
 	MaxHealth = 100.0f;
 	CurrentHealth = 100.0f;
 	bEnableAutoDamageTest = false;
+	bIsActive = true;
 }
 
 void ANS_Chaser::BeginPlay()

@@ -2,10 +2,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Zombie/NS_ZombieBase.h"
 #include "NS_Chaser.generated.h"
 
 UCLASS()
-class TEAMLUNATIC_NOSIGNAL_API ANS_Chaser : public ACharacter
+class TEAMLUNATIC_NOSIGNAL_API ANS_Chaser : public ANS_ZombieBase
 {
 	GENERATED_BODY()
 
@@ -16,11 +17,11 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Status")
-	float MaxHealth;
+	//UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Status")
+	//float MaxHealth;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status")
-	float CurrentHealth;
+	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status")
+	//float CurrentHealth;
 
 	// 에디터에서 자동 데미지 테스트를 켜고 끌 수 있는 변수
 	UPROPERTY(EditAnywhere, Category = "Debug")
@@ -28,6 +29,7 @@ protected:
 
 	// 10초 뒤 복구를 처리할 함수
 	void RecoverFromKneel();
+
 
 private:
 	// 타이머들을 제어하기 위한 핸들
