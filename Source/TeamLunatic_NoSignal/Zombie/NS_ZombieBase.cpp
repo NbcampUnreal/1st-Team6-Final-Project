@@ -360,6 +360,9 @@ void ANS_ZombieBase::OnChaseState()
 
 void ANS_ZombieBase::OnAttackState()
 {
+	// 공격 상태에서는 기존 사운드 타이머 취소
+	GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
+	
 	TargetSpeed = 400.f;
 }
 
@@ -408,12 +411,18 @@ void ANS_ZombieBase::ScheduleSound(USoundCue* SoundCue)
 		float RandomTime = FMath::FRandRange(5.f,8.f);
 		GetWorldTimerManager().SetTimer(AmbientSoundTimer,[this, SoundCue]()
 		{
-			float PlayPercent = 0.5f;
-			float ActualPercent = FMath::FRandRange(0.0f, 1.0f);
-			if (PlayPercent > ActualPercent)
+			// 좀비가 공격 상태가 아닐 때만 사운드 재생
+			if (CurrentState != EZombieState::ATTACK)
 			{
-				Server_PlaySound(SoundCue);
+				float PlayPercent = 0.5f;
+				float ActualPercent = FMath::FRandRange(0.0f, 1.0f);
+				if (PlayPercent > ActualPercent)
+				{
+					Server_PlaySound(SoundCue);
+				}
 			}
+			
+			// 다음 사운드 스케줄링은 상태와 관계없이 계속 진행
 			ScheduleSound(SoundCue);
 		}, RandomTime, false);
 	}
@@ -481,8 +490,13 @@ void ANS_ZombieBase::SetState(EZombieState NewState)
 
 void ANS_ZombieBase::OnStateChanged(EZombieState State)
 {
-	if (State ==EZombieState::DEAD)
+	if (State == EZombieState::DEAD)
 	{
+		GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
+	}
+	else if (State == EZombieState::ATTACK)
+	{
+		// 공격 상태에서는 사운드 타이머 취소
 		GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
 	}
 	
