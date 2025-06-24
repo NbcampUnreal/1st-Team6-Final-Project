@@ -12,4 +12,5 @@ void UNS_AnimNotify_ZombieEAttack::Notify(USkeletalMeshComponent* MeshComp, UAni
 	if (!Zombie) return;
 
 	Zombie->GetR_SphereComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	Zombie->GetR_SphereComponent()->SetGenerateOverlapEvents(true);
 }

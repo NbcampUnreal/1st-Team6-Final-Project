@@ -23,6 +23,7 @@ public:
 
 	void DeleteCompasItem(APickup* DeleteItem);
 
+    void SetTipText(const FText& NewText);
 
     UPROPERTY(meta = (BindWidget))
     class UNS_QuickSlotPanel* NS_QuickSlotPanel;
@@ -59,6 +60,8 @@ protected:
     UPROPERTY(meta = (BindWidget))
     class UScrollBox* ScrollBox_Compass;
     TArray<class UNS_CompassElement*> CompassTextArray;//UTextBlock UNS_CompassElement
+    UPROPERTY(meta = (BindWidget))
+    class UEditableTextBox* TipText;
 
 private:
     FTimerHandle UpdatePlayerStausHandle;
@@ -68,10 +71,11 @@ private:
     bool testcheck = false;
     int32 PrvFinalIdx = 0;
   
-    float CurrentCompassOffset = 0.f;
+    // 각 나침반 눈금의 시작 위치(픽셀 오프셋)를 저장할 배열
+    TArray<float> CompassElementOffsets;
 
-    UPROPERTY(EditAnywhere, Category = "Compass", meta = (AllowPrivateAccess = "true"))
-    float CompassInterpSpeed = 10.0f;
+    // 각 나침반 눈금의 너비(픽셀)를 저장할 배열
+    TArray<float> CompassElementWidths;
 
     UPROPERTY()
     class ANS_PlayerCharacterBase* CachedPlayerCharacter = nullptr;

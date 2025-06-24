@@ -3,6 +3,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFlow/NS_GameModeBase.h"
 #include "GameFlow/NS_GameState.h"
+#include "Zombie/NS_ZombieBase.h" 
+#include "Zombie/Enum/EZombieState.h"
 #include "Character/NS_PlayerController.h"
 #include "Character/NS_PlayerCharacterBase.h"
 
@@ -200,6 +202,11 @@ void ANS_ChaserController::SetChaseTarget(AActor* Target, float Duration)
 
     if (BlackboardComp->GetValueAsBool(TEXT("IsCooldownWait"))) return;
 
+    if (ANS_ZombieBase* ChaserPawn = Cast<ANS_ZombieBase>(GetPawn()))
+    {
+        ChaserPawn->SetState(EZombieState::CHACING);
+    }
+
     BlackboardComp->SetValueAsBool(TEXT("IsChasingEvent"), true);
     BlackboardComp->SetValueAsObject(TEXT("TargetActor"), Target);
     BlackboardComp->ClearValue(TEXT("TargetLocation")); // 좌표 기반 추적 중단
@@ -231,6 +238,11 @@ void ANS_ChaserController::SetChaseTarget(AActor* Target, float Duration)
 void ANS_ChaserController::ResetChase()
 {
     if (!BlackboardComp) return;
+
+    if (ANS_ZombieBase* ChaserPawn = Cast<ANS_ZombieBase>(GetPawn()))
+    {
+        ChaserPawn->SetState(EZombieState::IDLE);
+    }
 
     BlackboardComp->SetValueAsBool(TEXT("IsChasingEvent"), false);
     BlackboardComp->ClearValue(TEXT("TargetActor"));

@@ -255,7 +255,7 @@ void ANS_AIController::InitializeAttackRange(APawn* PossesedPawn)
 		BlackboardComp->SetValueAsFloat("AttackRange", AttackRange);
 		break;
 	case EZombieType::FAT:
-		AttackRange=200.f;
+		AttackRange=300.f;
 		BlackboardComp->SetValueAsFloat("AttackRange", AttackRange);
 		break;
 	default:

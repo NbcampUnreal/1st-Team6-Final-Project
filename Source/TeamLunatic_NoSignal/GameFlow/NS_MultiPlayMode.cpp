@@ -311,6 +311,10 @@ void ANS_MultiPlayMode::CleanupDistantZombies()
     
     int32 DestroyedCount = 0;
     
+    // 거리별 좀비 수 초기화
+    ZombiesInCloseRange = 0;
+    ZombiesInMidRange = 0;
+    
     // 각 좀비의 거리 확인 및 제거
     for (AActor* ZombieActor : AllZombies)
     {
@@ -325,6 +329,16 @@ void ANS_MultiPlayMode::CleanupDistantZombies()
         {
             float Distance = FVector::Dist(PlayerLoc, ZombieActor->GetActorLocation());
             MinDistance = FMath::Min(MinDistance, Distance);
+        }
+        
+        // 거리에 따라 카운트
+        if (MinDistance <= 4000.0f)
+        {
+            ZombiesInCloseRange++;
+        }
+        else if (MinDistance <= 8000.0f)
+        {
+            ZombiesInMidRange++;
         }
         
         // 거리 디버깅
@@ -343,10 +357,19 @@ void ANS_MultiPlayMode::CleanupDistantZombies()
         }
     }
     
+    // 제거된 좀비 수 업데이트
+    ZombiesRemoved += DestroyedCount;
+    
+    // 디버그 로그 출력
+    UE_LOG(LogTemp, Warning, TEXT("[멀티 좀비 디버그] 총 좀비 수: %d"), AllZombies.Num());
+    UE_LOG(LogTemp, Warning, TEXT("[멀티 좀비 디버그] 4000 이내 좀비: %d"), ZombiesInCloseRange);
+    UE_LOG(LogTemp, Warning, TEXT("[멀티 좀비 디버그] 4000-8000 사이 좀비: %d"), ZombiesInMidRange);
+    UE_LOG(LogTemp, Warning, TEXT("[멀티 좀비 디버그] 8000 초과 좀비: %d"), AllZombies.Num() - ZombiesInCloseRange - ZombiesInMidRange);
+    
     // 제거된 좀비가 있으면 로그 출력
     if (DestroyedCount > 0)
     {
-        UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] %d개의 멀리 있는 좀비 제거됨"), DestroyedCount);
+        UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] %d개의 멀리 있는 좀비 제거됨 (총 %d개 제거됨)"), DestroyedCount, ZombiesRemoved);
     }
     else
     {

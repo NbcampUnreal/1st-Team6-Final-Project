@@ -45,7 +45,7 @@ void UNS_Service_CalculateDistance::TickNode(UBehaviorTreeComponent& OwnerComp, 
 					float DotProduct = FVector::DotProduct(ForwardVector, DirectionToTarget);
 					float AngleDegrees = FMath::Acos(DotProduct) * (180.f / PI);
 					
-					float AcceptableAngle = 10.f;
+					float AcceptableAngle = 20.f;
 					BlackboardComponent->SetValueAsBool("bIsLookAt", AngleDegrees <= AcceptableAngle);
 				}
 			}
