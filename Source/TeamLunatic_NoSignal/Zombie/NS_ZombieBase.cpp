@@ -125,7 +125,6 @@ void ANS_ZombieBase::OnOverlapSphere(UPrimitiveComponent* OverlappedComp, AActor
 void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 {
 	bIsActive = setActive;
-	UE_LOG(LogTemp, Warning, TEXT("Zombie %s SetActive Called. Current bIsActive: %s"), *GetName(), bIsActive ? TEXT("True") : TEXT("False"));
 	
 	if (bIsActive) // 활성화 상태로 전환 (true)
 	{
@@ -168,7 +167,6 @@ void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 				if (AIController)
 				{
 					AIController->Possess(this);
-					UE_LOG(LogTemp, Warning, TEXT("Zombie %s: New AIController created and possessed."), *GetName());
 				}
 			}
 			
@@ -181,7 +179,6 @@ void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 				if (AIController->GetBrainComponent())
 				{
 					AIController->GetBrainComponent()->ResumeLogic("ReActivation");
-					UE_LOG(LogTemp, Warning, TEXT("Zombie %s: AIController brain logic resumed."), *GetName());
 				}
 				TArray<UActorComponent*> ControllerComponents;
 				AIController->GetComponents(ControllerComponents);
@@ -194,11 +191,9 @@ void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 				if (NSAIController && NSAIController->UseBlackboard(NSAIController->BehaviorTreeAsset->BlackboardAsset, NSAIController->BlackboardComp))
 				{
 					NSAIController->RunBehaviorTree(NSAIController->BehaviorTreeAsset);
-					UE_LOG(LogTemp, Warning, TEXT("Zombie %s: Behavior tree restarted."), *GetName());
 				}
 			}
 		}
-		UE_LOG(LogTemp, Warning, TEXT("Zombie %s is now fully ACTIVE."), *GetName());
 	}
 	else // 비활성화 상태로 전환 (false)
 	{
@@ -245,10 +240,8 @@ void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 					Component->SetComponentTickEnabled(false);
 				}
 				
-				UE_LOG(LogTemp, Warning, TEXT("Zombie %s AIController tick disabled on server."), *GetName());
 			}
 		}
-		UE_LOG(LogTemp, Warning, TEXT("Zombie %s is now fully INACTIVE."), *GetName());
 	}
 }
 
