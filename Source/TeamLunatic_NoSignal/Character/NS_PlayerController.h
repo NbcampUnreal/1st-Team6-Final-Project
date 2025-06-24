@@ -22,6 +22,10 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_ShowHitEffect();
 
+
+	UFUNCTION(Client, Reliable)
+	void Client_UpdateTipText(const FText& Message);
+
 protected:
 	virtual void BeginPlay() override;
 	void SetupInputComponent();

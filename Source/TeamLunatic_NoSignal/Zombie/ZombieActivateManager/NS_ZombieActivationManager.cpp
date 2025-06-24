@@ -3,6 +3,7 @@
 #include "Character/NS_PlayerCharacterBase.h" 
 #include "Zombie/NS_ZombieBase.h" // 이 경로가 정확해야 합니다.
 #include "AIController.h"
+#include "Zombie/Zombies/NS_Chaser.h" 
 
 ANS_ZombieActivationManager::ANS_ZombieActivationManager()
 {
@@ -47,7 +48,7 @@ void ANS_ZombieActivationManager::Tick(float DeltaTime)
 
 void ANS_ZombieActivationManager::PerformActivationUpdate_Implementation()
 {
-    if (!HasAuthority()) return; // 서버에서만 실행
+    if (!HasAuthority()) return; 
 
     TArray<AActor*> Players;
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), ANS_PlayerCharacterBase::StaticClass(), Players);
@@ -61,19 +62,26 @@ void ANS_ZombieActivationManager::PerformActivationUpdate_Implementation()
             continue;
         }
 
-        bool bShouldBeActive = false;
-        FVector ZombieLocation = Zombie->GetActorLocation();
+        bool bShouldBeActive = false; 
 
-        for (AActor* PlayerActor : Players)
+        if (Cast<ANS_Chaser>(Zombie))
         {
-            ANS_PlayerCharacterBase* PlayerChar = Cast<ANS_PlayerCharacterBase>(PlayerActor);
-            if (IsValid(PlayerChar) && !PlayerChar->IsDead)
+            bShouldBeActive = true;
+        }
+        else
+        {
+            FVector ZombieLocation = Zombie->GetActorLocation();
+            for (AActor* PlayerActor : Players)
             {
-                float DistanceSq = FVector::DistSquared(ZombieLocation, PlayerChar->GetActorLocation());
-                if (DistanceSq <= FMath::Square(ActivationDistance))
+                ANS_PlayerCharacterBase* PlayerChar = Cast<ANS_PlayerCharacterBase>(PlayerActor);
+                if (IsValid(PlayerChar) && !PlayerChar->IsDead)
                 {
-                    bShouldBeActive = true;
-                    break; 
+                    float DistanceSq = FVector::DistSquared(ZombieLocation, PlayerChar->GetActorLocation());
+                    if (DistanceSq <= FMath::Square(ActivationDistance))
+                    {
+                        bShouldBeActive = true;
+                        break;
+                    }
                 }
             }
         }
@@ -82,13 +90,11 @@ void ANS_ZombieActivationManager::PerformActivationUpdate_Implementation()
         {
             if (!Zombie->bIsActive) // 현재 비활성 상태인데 활성화되어야 한다면
             {
-                Zombie->SetActive_Multicast(true); // 이 줄이 OnRep_IsActive를 트리거합니다.
-                // 서버에서는 AI 관련 로직 즉시 활성화
-                Zombie->SetActorTickEnabled(true); 
+                Zombie->SetActive_Multicast(true);
+                Zombie->SetActorTickEnabled(true);
                 if (AAIController* AIController = Cast<AAIController>(Zombie->GetController()))
                 {
                     AIController->SetActorTickEnabled(true);
-                    // AIController->ResumeBehaviorTree(); // 필요한 경우
                 }
             }
         }
@@ -96,13 +102,11 @@ void ANS_ZombieActivationManager::PerformActivationUpdate_Implementation()
         {
             if (Zombie->bIsActive) // 현재 활성 상태인데 비활성화되어야 한다면
             {
-                Zombie->SetActive_Multicast(false); // 이 줄이 OnRep_IsActive를 트리거합니다.
-                // 서버에서는 AI 관련 로직 즉시 비활성화
+                Zombie->SetActive_Multicast(false);
                 Zombie->SetActorTickEnabled(false);
                 if (AAIController* AIController = Cast<AAIController>(Zombie->GetController()))
                 {
                     AIController->SetActorTickEnabled(false);
-                    // AIController->PauseBehaviorTree(); // 필요한 경우
                 }
             }
         }
@@ -113,3 +117,5 @@ void ANS_ZombieActivationManager::AppendSpawnZombie(ANS_ZombieBase* Zombie)
 {
     AllZombiesInLevel.Add(Zombie);
 }
+
+

@@ -3,6 +3,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "UI/NS_UIManager.h"
 #include "UI/NS_Msg_GameOver.h" 
+#include "UI/NS_PlayerHUD.h"
 #include "Blueprint/UserWidget.h" 
 #include "Inventory UI/NS_InventoryHUD.h"
 
@@ -172,6 +173,20 @@ void ANS_PlayerController::Client_ShowHitEffect_Implementation()
         if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
         {
             UIManager->ShowHitEffectWidget(GetWorld());
+        }
+    }
+}
+
+void ANS_PlayerController::Client_UpdateTipText_Implementation(const FText& Message)
+{
+    if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+    {
+        if (UNS_UIManager* UIManager = GI->GetUIManager())
+        {
+            if (UNS_PlayerHUD* PlayerHUD = UIManager->GetPlayerHUDWidget())
+            {
+                PlayerHUD->SetTipText(Message);
+            }
         }
     }
 }

@@ -17,6 +17,8 @@ ANS_RunnerZombie::ANS_RunnerZombie()
 	}
 	MaxHealth = 70.f;
 	BaseDamage = 10.f;
+	
+	GetCharacterMovement()->bOrientRotationToMovement = true;
 }
 
 void ANS_RunnerZombie::OnChaseState()

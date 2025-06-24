@@ -4,6 +4,7 @@
 #include "UI/NS_PlayerHUD.h"
 #include "UI/NS_CircleProgressBar.h"
 #include "Components/Image.h"
+#include "Components/EditableTextBox.h"
 #include "Components/ScrollBox.h"
 #include "Components/TextBlock.h"
 #include "Components/ProgressBar.h"
@@ -235,5 +236,13 @@ void UNS_PlayerHUD::DeleteCompasItem(APickup* DeleteItem)
     if (YeddaItemArray.Contains(DeleteItem))
     {
         YeddaItemArray.Remove(DeleteItem);
+    }
+}
+
+void UNS_PlayerHUD::SetTipText(const FText& NewText)
+{
+    if (IsValid(TipText))
+    {
+        TipText->SetText(NewText);
     }
 }
