@@ -28,6 +28,15 @@ void APickup::BeginPlay()
 {
 	Super::BeginPlay();
 
+	FString LogMessage = FString::Printf(
+		TEXT("Pickup BeginPlay -> 이름: [ %s ], 월드 위치: [ %s ]"),
+		*GetName(), 
+		*GetActorLocation().ToString() 
+	);
+
+	UE_LOG(LogTemp, Log, TEXT("%s"), *LogMessage);
+
+
 	if (HasAuthority())
 	{
 		InitializePickup(UNS_InventoryBaseItem::StaticClass(), ItemQuantity);
@@ -205,6 +214,17 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 
 							if (TargetNoteIDs.Contains(ItemID))
 							{
+								// ===================== [ 로그 추가 시작 ] =====================
+								// 해당 쪽지의 이름과 현재 월드 위치를 로그로 출력
+								FString LogMessage = FString::Printf(
+									TEXT("퀘스트 쪽지 발견 -> 이름: [ %s ], 월드 위치: [ %s ]"),
+									*ItemID.ToString(),
+									*QuestPickup->GetActorLocation().ToString()
+								);
+								UE_LOG(LogTemp, Log, TEXT("%s"), *LogMessage);
+								// ===================== [  로그 추가 끝  ] =====================
+
+								// HUD의 나침반에 추적 대상으로 추가
 								PlayerHUD->SetYeddaItem(QuestPickup);
 							}
 						}
