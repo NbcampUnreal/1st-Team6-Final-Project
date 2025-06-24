@@ -38,6 +38,7 @@ void UNS_InventoryBaseItem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	DOREPLIFETIME(UNS_InventoryBaseItem, NumericData);
 	DOREPLIFETIME(UNS_InventoryBaseItem, AssetData);
 	DOREPLIFETIME(UNS_InventoryBaseItem, TextData);
+	DOREPLIFETIME(UNS_InventoryBaseItem, CurrentAmmo);
 }
 // 현재 아이템을 복제해 반환
 UNS_InventoryBaseItem* UNS_InventoryBaseItem::CreateItemCopy()
@@ -46,8 +47,8 @@ UNS_InventoryBaseItem* UNS_InventoryBaseItem::CreateItemCopy()
 	UObject* OuterObject = OwingInventory ? Cast<UObject>(OwingInventory) : GetOuter();
 	if (!OuterObject)
 	{
-		UE_LOG(LogTemp, Error, TEXT("[CreateItemCopy] 유효한 Outer 없음. 아이템 복제 실패."));
-		return nullptr;
+		OuterObject = GetTransientPackage();
+		UE_LOG(LogTemp, Warning, TEXT("[CreateItemCopy] 유효한 Outer가 없어 GetTransientPackage()를 사용합니다. RowName: %s"), *ItemDataRowName.ToString());
 	}
 
 	// NewObject로 복제 생성
@@ -67,6 +68,7 @@ UNS_InventoryBaseItem* UNS_InventoryBaseItem::CreateItemCopy()
 	ItemCopy->TextData = this->TextData;
 	ItemCopy->NumericData = this->NumericData;
 	ItemCopy->AssetData = this->AssetData;
+	ItemCopy->CurrentAmmo = this->CurrentAmmo;
 	ItemCopy->ConsumableItemAssetData = this->ConsumableItemAssetData;
 	ItemCopy->ItemsDataTable = this->ItemsDataTable;
 	ItemCopy->bisCopy = true;
@@ -163,9 +165,15 @@ void UNS_InventoryBaseItem::UseConsumableItem(ANS_PlayerCharacterBase* Character
 	}
 
 	// 무게까지 포함한 수량 감소
-	const int32 Removed = OwingInventory->RemoveAmountOfItem(this, 1);
-
-	UE_LOG(LogTemp, Warning, TEXT("[UseConsumableItem] %s 사용됨. 제거된 수량: %d"), *ItemData.ItemTextData.ItemName.ToString(), Removed);
+	if (OwingInventory)
+	{
+		const int32 Removed = OwingInventory->RemoveAmountOfItem(this, 1);
+		UE_LOG(LogTemp, Warning, TEXT("[UseConsumableItem] %s 사용됨. 제거된 수량: %d"), *ItemData.ItemTextData.ItemName.ToString(), Removed);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("[UseConsumableItem] OwingInventory가 null입니다. 아이템 제거 실패"));
+	}
 }
 
 // 네트워크에서 UObject 복제를 허용

@@ -16,11 +16,14 @@
 #include "Sound/SoundCue.h"
 #include "PhysicsEngine/PhysicalAnimationComponent.h"
 #include "NiagaraFunctionLibrary.h"
+#include "AssetTypeActions/AssetDefinition_SoundBase.h"
+#include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "Components/SphereComponent.h"
 
 ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), CurrentState(EZombieState::IDLE),
                                    BaseDamage(20.f),PatrolSpeed(20.f), ChaseSpeed(100.f),AccelerationSpeed(200.f),
-ZombieType(EZombieType::BASIC), bIsDead(false), bIsGotHit(false), SafeBones({"clavicle_r","clavicle_l","upperarm_r","upperarm_r","lowerarm_r","lowerarm_r","neck_01","head","spine_02","spine_03"})
+                                   ZombieType(EZombieType::BASIC), bIsDead(false), bIsGotHit(false), SafeBones({"clavicle_r","clavicle_l","upperarm_r","upperarm_r","lowerarm_r","lowerarm_r","neck_01","head","spine_02","spine_03"})
 {
 	PrimaryActorTick.bCanEverTick = true;
 	bUseControllerRotationYaw = false;
@@ -38,11 +41,17 @@ ZombieType(EZombieType::BASIC), bIsDead(false), bIsGotHit(false), SafeBones({"cl
 	GetMesh()->SetRelativeRotation(FRotator(0.f,-90.f,0.f));
 
 	
-	SphereComp = CreateDefaultSubobject<USphereComponent>("AttackRagne");
-	SphereComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	SphereComp->SetupAttachment(GetMesh());
-	SphereComp->OnComponentBeginOverlap.AddDynamic(this,&ANS_ZombieBase::OnOverlapSphere);
-	SphereComp->SetGenerateOverlapEvents(true);
+	R_SphereComp = CreateDefaultSubobject<USphereComponent>("RightAttack");
+	R_SphereComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	R_SphereComp->SetupAttachment(GetMesh(), FName("attack_r"));
+	R_SphereComp->OnComponentBeginOverlap.AddDynamic(this,&ANS_ZombieBase::OnOverlapSphere);
+	R_SphereComp->SetGenerateOverlapEvents(true);
+	
+	L_SphereComp = CreateDefaultSubobject<USphereComponent>("LeftAttack");
+	L_SphereComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	L_SphereComp->SetupAttachment(GetMesh(), FName("attack_l"));
+	L_SphereComp->OnComponentBeginOverlap.AddDynamic(this,&ANS_ZombieBase::OnOverlapSphere);
+	L_SphereComp->SetGenerateOverlapEvents(true);
 
 	// bIsActive의 초기값은 false로 설정해서 처음부터 캐릭터가 활성화 거리 밖에있으면 안보이도록 설정
 	bIsActive = false;
@@ -52,8 +61,7 @@ void ANS_ZombieBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SetActive(false);
-	
+	SetActive_Multicast(false);
 	SetState(CurrentState);
 	GetMesh()->GetAnimInstance()->RootMotionMode = ERootMotionMode::RootMotionFromEverything;
 	InitializePhysics();
@@ -112,9 +120,9 @@ void ANS_ZombieBase::OnOverlapSphere(UPrimitiveComponent* OverlappedComp, AActor
 	}
 }
 
-void ANS_ZombieBase::SetActive(bool NewIsActive) // 매개변수 이름을 NewIsActive로 변경하여 혼동 방지
+void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 {
-	bIsActive = NewIsActive;
+	bIsActive = setActive;
 	UE_LOG(LogTemp, Warning, TEXT("Zombie %s SetActive Called. Current bIsActive: %s"), *GetName(), bIsActive ? TEXT("True") : TEXT("False"));
 	
 	if (bIsActive) // 활성화 상태로 전환 (true)
@@ -170,13 +178,18 @@ void ANS_ZombieBase::SetActive(bool NewIsActive) // 매개변수 이름을 NewIs
 				// BrainComponent가 있으면 로직 재개
 				if (AIController->GetBrainComponent())
 				{
-					AIController->GetBrainComponent()->ResumeLogic("Activation");
+					AIController->GetBrainComponent()->ResumeLogic("ReActivation");
 					UE_LOG(LogTemp, Warning, TEXT("Zombie %s: AIController brain logic resumed."), *GetName());
 				}
-				
+				TArray<UActorComponent*> ControllerComponents;
+				AIController->GetComponents(ControllerComponents);
+				for (UActorComponent* Component : ControllerComponents)
+				{
+					Component->SetComponentTickEnabled(true);
+				}
 				// 비헤이비어 트리 실행 (필요한 경우)
 				ANS_AIController* NSAIController = Cast<ANS_AIController>(AIController);
-				if (NSAIController && NSAIController->BehaviorTreeAsset)
+				if (NSAIController && NSAIController->UseBlackboard(NSAIController->BehaviorTreeAsset->BlackboardAsset, NSAIController->BlackboardComp))
 				{
 					NSAIController->RunBehaviorTree(NSAIController->BehaviorTreeAsset);
 					UE_LOG(LogTemp, Warning, TEXT("Zombie %s: Behavior tree restarted."), *GetName());
@@ -187,6 +200,7 @@ void ANS_ZombieBase::SetActive(bool NewIsActive) // 매개변수 이름을 NewIs
 	}
 	else // 비활성화 상태로 전환 (false)
 	{
+		GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
 		SetActorHiddenInGame(true); // 액터를 숨김
 		GetMesh()->SetVisibility(false, true); // 좀비 메쉬를 숨김 (자식 컴포넌트 포함)
 		SetActorEnableCollision(false); // 충돌을 비활성화함 (다른 액터가 통과 가능)
@@ -264,7 +278,7 @@ float ANS_ZombieBase::TakeDamage(float DamageAmount, struct FDamageEvent const& 
 		}
 		GetWorldTimerManager().SetTimer(HitTimer, this, &ANS_ZombieBase::ResetHit, .5f,false);
 		Multicast_SpawnEffect(Bone, Point->HitInfo.Location, HitRotation);
-		ApplyPhysics(Bone, HitDirection * 3000.f);
+		ApplyPhysics(Bone, HitDirection * 20000.f);
 	}
 	
 	CurrentHealth = FMath::Clamp(CurrentHealth - DamageAmount, 0.f, MaxHealth);
@@ -286,7 +300,7 @@ void ANS_ZombieBase::ResetHit()
 	}
 }
 
-void ANS_ZombieBase::ApplyPhysics(FName Bone, FVector Impulse)
+void ANS_ZombieBase::ApplyPhysics_Implementation(FName Bone, FVector Impulse)
 {
 	if (SafeBones.Contains(Bone))
 	{
@@ -325,11 +339,13 @@ void ANS_ZombieBase::ResetPhysics(FName Bone)
 
 void ANS_ZombieBase::OnIdleState()
 {
+	// ScheduleSound(IdleSound);
 	TargetSpeed = 0.f;
 }
 
 void ANS_ZombieBase::OnPatrolState()
 {
+	// ScheduleSound(IdleSound);
 	TargetSpeed = 70.f;
 }
 
@@ -340,6 +356,7 @@ void ANS_ZombieBase::OnDetectState()
 
 void ANS_ZombieBase::OnChaseState()
 {
+	// ScheduleSound(ChaseSound);
 	TargetSpeed = 600.f;
 }
 
@@ -350,9 +367,11 @@ void ANS_ZombieBase::OnAttackState()
 
 void ANS_ZombieBase::OnDeadState()
 {
+	
 	if (bIsDead) return;
 	if (HasAuthority())
 	{
+		Server_PlaySound(DeathSound);
 		bIsDead = true;
 		Die_Multicast();
 	}
@@ -380,6 +399,19 @@ void ANS_ZombieBase::Multicast_PlaySound_Implementation(USoundCue* Sound)
 	if (Sound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, Sound, GetMesh()->GetSocketLocation("headsocket"));
+	}
+}
+
+void ANS_ZombieBase::ScheduleSound(USoundCue* SoundCue)
+{
+	if (SoundCue)
+	{
+		float RandomTime = FMath::FRandRange(3.f,6.f);
+		GetWorldTimerManager().SetTimer(AmbientSoundTimer,[this, SoundCue]()
+		{
+			Server_PlaySound(SoundCue);
+			ScheduleSound(SoundCue);
+		}, RandomTime, false);
 	}
 }
 
@@ -441,6 +473,8 @@ void ANS_ZombieBase::SetState(EZombieState NewState)
 
 void ANS_ZombieBase::OnStateChanged(EZombieState State)
 {
+	GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
+	
 	switch (State)
 	{
 	case EZombieState::IDLE:
@@ -464,6 +498,8 @@ void ANS_ZombieBase::OnStateChanged(EZombieState State)
 		break;
 	case EZombieState::FROZEN:
 		OnFrozenState();
+		break;
+	case EZombieState::HEARTING:
 		break;
 	default:
 		break;

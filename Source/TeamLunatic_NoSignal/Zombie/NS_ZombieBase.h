@@ -6,6 +6,8 @@
 #include "GameFramework/Character.h"
 #include "NS_ZombieBase.generated.h"
 
+class USphereComponent;
+class UBoxComponent;
 class ADecalActor;
 class UNiagaraComponent;
 class UNiagaraSystem;
@@ -14,7 +16,6 @@ class ANS_AIController;
 enum class EZombieAttackType : uint8;
 enum class EZombieType : uint8;
 enum class EZombieState : uint8;
-class USphereComponent;
 
 
 UCLASS()
@@ -68,26 +69,30 @@ public:
 	bool bIsActive; // 기본적으로 비활성화 상태로 시작
 
 	// bIsActive가 리플리케이트될 때 호출될 함수
-	UFUNCTION()
-	void SetActive(bool setActive);
+	UFUNCTION(NetMulticast, Reliable)
+	void SetActive_Multicast(bool setActive);
 	
 	//피격관련
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+	
 	UFUNCTION(NetMulticast, reliable)
 	void Die_Multicast();
+	
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly, Category = "State")
 	UAnimMontage* KnockBackMontage;
+	
 	UFUNCTION(NetMulticast, reliable)
 	void Multicast_PlayMontage(UAnimMontage* MontageToPlay);
+	
 	FTimerHandle HitTimer;
 	void ResetHit();
-	
-public:
+
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	// Physics관련
 	void InitializePhysics();
+	UFUNCTION(NetMulticast, Unreliable)
 	void ApplyPhysics(FName Bone, FVector Impulse);
 	void ResetPhysics(FName Bone);
 	UPROPERTY()
@@ -111,20 +116,16 @@ public:
 	virtual void OnAttackState();
 	void OnDeadState();
 	virtual void OnFrozenState();
-	
-	//사운드 관련
-	UFUNCTION(Server, Reliable)
-	void Server_PlaySound(USoundCue* Sound);
-	UFUNCTION(NetMulticast, Unreliable)
-	void Multicast_PlaySound(USoundCue* Sound);
 
 	//이펙트
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multicast_SpawnEffect(FName Bone,FVector Location, FRotator Rotation);
 
 	//공격 컴포넌트
-	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Sound")
-	USphereComponent* SphereComp;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Attack")
+	USphereComponent* R_SphereComp;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Attack")
+	USphereComponent* L_SphereComp;
 	
 	//공격 관련
 	UFUNCTION(Server, Reliable)
@@ -139,12 +140,30 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GotHit")
 	TArray<UAnimMontage*> HitMontages;
+
+	//사운드 관련
+	UFUNCTION(Server, Reliable)
+	void Server_PlaySound(USoundCue* Sound);
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multicast_PlaySound(USoundCue* Sound);
+	UFUNCTION()
+	void ScheduleSound(USoundCue* SoundCue);
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	USoundCue* IdleSound;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	USoundCue* ChaseSound;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	USoundCue* DeathSound;
+	
+	FTimerHandle AmbientSoundTimer;
+
 	
 	//Get함수
 	FORCEINLINE const EZombieAttackType GetZombieAttackType() {return CurrentAttackType;}
 	FORCEINLINE const EZombieState GetState() const {return CurrentState;};
 	FORCEINLINE const EZombieType GetType() const {return ZombieType;}
-	FORCEINLINE USphereComponent* GetSphereComp() const {return SphereComp;}
+	FORCEINLINE USphereComponent* GetR_SphereComponent() const {return R_SphereComp;}
+	FORCEINLINE USphereComponent* GetL_SphereComponent() const {return L_SphereComp;}
 };
 
 

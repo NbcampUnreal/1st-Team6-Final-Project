@@ -25,6 +25,10 @@ public:
     UFUNCTION(BlueprintCallable)
     void SetChaseTarget(AActor* Target, float Duration = 60.0f);
 
+    // 추적 종료 및 쿨다운 시작 
+    void ResetChase();
+
+
 protected:
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;
@@ -33,8 +37,6 @@ protected:
     UFUNCTION()
     void OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
 
-    // 추적 종료 및 쿨다운 시작 
-    void ResetChase();
    
     // 지속 데미지 루프 시작 / 정지 / 실행 
     void StartDamageLoop(AActor* Target);

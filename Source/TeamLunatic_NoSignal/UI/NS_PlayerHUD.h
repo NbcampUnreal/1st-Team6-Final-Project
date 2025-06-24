@@ -7,6 +7,8 @@
 #include "NS_PlayerHUD.generated.h"
 
 class UNS_CompassElement;
+class APickup;
+
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UNS_PlayerHUD : public UUserWidget
 {
@@ -15,11 +17,11 @@ public:
     virtual void NativeConstruct() override;
     void ShowWidget();
     void HideWidget();
-    void SetYeddaItem(class ANS_BaseItem* YeddaItem);
+    void SetYeddaItem(APickup* YeddaItem);
 
     void NativeTick(const FGeometry& MyGeometry, float InDeltaTime);
 
-	void DeleteCompasItem(ANS_BaseItem* DeleteItem);
+	void DeleteCompasItem(APickup* DeleteItem);
 
 
     UPROPERTY(meta = (BindWidget))
@@ -61,11 +63,15 @@ protected:
 private:
     FTimerHandle UpdatePlayerStausHandle;
     APlayerController* PlayerController;
-    TArray<ANS_BaseItem*> YeddaItemArray;
+    TArray<APickup*> YeddaItemArray;
 
     bool testcheck = false;
     int32 PrvFinalIdx = 0;
   
+    float CurrentCompassOffset = 0.f;
+
+    UPROPERTY(EditAnywhere, Category = "Compass", meta = (AllowPrivateAccess = "true"))
+    float CompassInterpSpeed = 10.0f;
 
     UPROPERTY()
     class ANS_PlayerCharacterBase* CachedPlayerCharacter = nullptr;

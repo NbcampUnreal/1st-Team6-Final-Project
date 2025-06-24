@@ -11,6 +11,8 @@
 #include "BehaviorTree/BehaviorTree.h"
 #include "Zombie/NS_ZombieBase.h"
 #include "BrainComponent.h"
+#include "Character/NS_PlayerCharacterBase.h"
+#include "Kismet/GameplayStatics.h"
 #include "Zombie/Enum/EZombieType.h"
 
 ANS_AIController::ANS_AIController() : MaxSeenDistance(1000.f)
@@ -33,6 +35,25 @@ ANS_AIController::ANS_AIController() : MaxSeenDistance(1000.f)
 void ANS_AIController::BeginPlay()
 {
 	Super::BeginPlay();
+	SetTargetPoint();
+}
+
+void ANS_AIController::SetTargetPoint()
+{
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), TargetClass, TargetActors);
+	if (TargetActors.Num() > 0)
+	{
+		for (AActor* Target : TargetActors)
+		{
+			TargetLocations.Push(Target->GetActorLocation());
+		}
+	}
+	if (TargetLocations.Num() > 0)
+	{
+		int RandomIndex = FMath::RandRange(0, TargetActors.Num() - 1);
+		FVector Location = TargetLocations[RandomIndex];
+		GetBlackboardComponent()->SetValueAsVector("TargetLocation", Location);
+	}
 }
 
 void ANS_AIController::OnPossess(APawn* PossessedPawn)
@@ -66,7 +87,28 @@ void ANS_AIController::OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
 	FString SenseType = Stimulus.Type.Name.ToString();
 	if (SenseType == "Default__AISense_Sight")
 	{
-		HandleSightStimulus();
+		if (Stimulus.WasSuccessfullySensed())
+		{
+			if (Actor->IsA(ANS_ZombieBase::StaticClass())) return;
+			
+			ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(Actor);
+			if (PlayerCharacter)
+			{
+				BlackboardComp->SetValueAsObject("TargetActor", Actor);
+				BlackboardComp->SetValueAsVector("LastKnownLocation", Actor->GetActorLocation());
+
+				LastSeenTarget = PlayerCharacter;
+			}
+		}
+		else
+		{
+			if (LastSeenTarget == Actor)
+			{
+				BlackboardComp->SetValueAsVector("LastKnownLocation", LastSeenTarget->GetActorLocation());
+				BlackboardComp->ClearValue("TargetActor");
+				LastSeenTarget = nullptr;
+			}
+		}
 	}
 	else if (SenseType == "Default__AISense_Hearing")
 	{
@@ -94,37 +136,33 @@ void ANS_AIController::ResumeBT()
 	}
 }
 
-void ANS_AIController::HandleSightStimulus()
-{
-	AActor* Actor = GetClosestSightTarget();
-
-	if (Actor)
-	{
-		LastSeenTarget = Actor;
-		BlackboardComp->SetValueAsObject("TargetActor", Actor);
-	}
-	else if (LastSeenTarget)
-	{
-		// 거리 검사
-		FVector AILocation = GetPawn()->GetActorLocation();
-		float Distance = FVector::DistSquared(LastSeenTarget->GetActorLocation(), AILocation);
-
-		if (Distance < FMath::Square(MaxSeenDistance))
-		{
-			BlackboardComp->SetValueAsObject("TargetActor", LastSeenTarget);
-		}
-		else
-		{
-			LastSeenTarget = nullptr;
-			BlackboardComp->ClearValue("TargetActor");
-		}
-	}
-	else
-	{
-		BlackboardComp->ClearValue("TargetActor");
-	}
-}
-
+// void ANS_AIController::HandleSightStimulus()
+// {
+// 	AActor* Actor = GetClosestSightTarget();
+//
+// 	if (Actor)
+// 	{
+// 		// 플레이어를 현재 시야에서 감지 중
+// 		LastSeenTarget = Actor;
+//
+// 		// 타겟 및 현재 위치 저장
+// 		BlackboardComp->SetValueAsObject("TargetActor", Actor);
+// 		BlackboardComp->SetValueAsVector("LastKnownLocation", Actor->GetActorLocation());
+// 	}
+// 	else if (LastSeenTarget)
+// 	{
+// 		// 감지를 잃었음 → 마지막 본 위치 저장 후 타겟 제거
+// 		BlackboardComp->SetValueAsVector("LastKnownLocation", LastSeenTarget->GetActorLocation());
+// 		
+// 		LastSeenTarget = nullptr;
+// 		BlackboardComp->ClearValue("TargetActor");
+// 	}
+// 	else
+// 	{
+// 		// 더 이상 추적 대상이 없음
+// 		BlackboardComp->ClearValue("TargetActor");
+// 	}
+// }
 
 void ANS_AIController::HandleHearingStimulus(FVector Location)
 {
@@ -190,7 +228,6 @@ AActor* ANS_AIController::GetClosestSightTarget()
 	return nullptr;
 }
 
-
 void ANS_AIController::SetDisableAttackTimer()
 {
 	BlackboardComp->SetValueAsBool("bCanAttackAgain", false);
@@ -201,7 +238,6 @@ void ANS_AIController::SetEnableAttackTimer()
 	BlackboardComp->SetValueAsBool("bCanAttackAgain", true);
 }
 
-
 void ANS_AIController::InitializeAttackRange(APawn* PossesedPawn)
 {
 	ANS_ZombieBase* Zombie = Cast<ANS_ZombieBase>(PossesedPawn);
@@ -211,7 +247,7 @@ void ANS_AIController::InitializeAttackRange(APawn* PossesedPawn)
 	switch (Type)
 	{
 	case EZombieType::BASIC:
-		AttackRange=400.f;
+		AttackRange=300.f;
 		BlackboardComp->SetValueAsFloat("AttackRange", AttackRange);
 		break;
 	case EZombieType::RUNNER:

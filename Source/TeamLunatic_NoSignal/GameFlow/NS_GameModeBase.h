@@ -10,10 +10,9 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_GameModeBase : public AGameModeBase
 {
     GENERATED_BODY()
 
-protected:
+public:
     virtual void BeginPlay() override;
 	
-public:
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Common")
     FVector GetPlayerLocation() const; 
     virtual FVector GetPlayerLocation_Implementation() const; 
@@ -22,14 +21,19 @@ public:
     void OnPlayerCharacterDied(class ANS_PlayerCharacterBase* DeadCharacter);
     virtual void OnPlayerCharacterDied_Implementation(class ANS_PlayerCharacterBase* DeadCharacter) PURE_VIRTUAL(ANS_GameModeBase::OnPlayerCharacterDied, );
     
-    // 타이머로 10초마다 현재 좀비를 체크해서 좀비를 스폰하는 함수
-    void CheckAndSpawnZombies();
+    // 타이머로 1초마다 현재 좀비를 체크해서 좀비를 스폰하는 함수
+    virtual void CheckAndSpawnZombies();
 
     // 전체 좀비에서 줄어든 만큼 좀비 스폰 함수
     // 스포너에서 좀비를 스폰합니다. 스포너의 스케일을 활용하여 위치를 결정
-    void SpawnZombieAtPoint(AANS_ZombieSpawner* SpawnPoint); 
-
+    virtual void SpawnZombieAtPoint(AANS_ZombieSpawner* SpawnPoint);
     // 좀비 사망시 콜백
+
+    FTimerHandle DelayedSpawnerSearchTimer;
+
+    UFUNCTION()
+    void SearchForSpawnersDelayed();
+    
     UFUNCTION()
     void OnZombieDestroyed(AActor* DestroyedActor);
 
