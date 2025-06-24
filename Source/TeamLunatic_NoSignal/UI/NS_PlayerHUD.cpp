@@ -139,7 +139,10 @@ void UNS_PlayerHUD::SetYeddaItem(APickup* YeddaItem)
 {
     if (!CachedPlayerCharacter || !YeddaItem || !ScrollBox_Compass) return;
 
-	YeddaItemArray.Add(YeddaItem);
+    if (!YeddaItemArray.Contains(YeddaItem))
+    {
+        YeddaItemArray.Add(YeddaItem);
+    }
 }
 
 void UNS_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
