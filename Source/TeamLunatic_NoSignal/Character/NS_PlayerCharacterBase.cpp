@@ -636,27 +636,33 @@ void ANS_PlayerCharacterBase::PlayDeath_Server_Implementation()
         ANS_GameModeBase* BaseGameMode = Cast<ANS_GameModeBase>(UGameplayStatics::GetGameMode(World));
         if (BaseGameMode)
         {
+            UE_LOG(LogTemp, Log, TEXT("[%s] GameMode('%s') 가져오기 및 캐스팅 성공."), *this->GetName(), *BaseGameMode->GetName());
+
             BaseGameMode->OnPlayerCharacterDied(this);
 
             if (AController* OwningController = GetController())
             {
                 if (ANS_MainGamePlayerState* PS = Cast<ANS_MainGamePlayerState>(OwningController->PlayerState))
                 {
-                    PS->bIsAlive = false; 
-                    UE_LOG(LogTemp, Warning, TEXT("Player %s PlayerState set to Dead."), *PS->GetPlayerName());
+                    PS->bIsAlive = false;
                 }
+
             }
+
         }
+
     }
+
     PlayDeath_Multicast();
 }
+
 
 void ANS_PlayerCharacterBase::PlayDeath_Multicast_Implementation()
 {
     // 캐릭터가 죽었으면 IsDead변수를 true로 변경해서 애니메이션 몽타주가 1번만 재생되도록 구현했음
     IsDead = true;
     
-    // 컨트롤러에서 분리시키고
+    //// 컨트롤러에서 분리시키고
     DetachFromControllerPendingDestroy(); 
 
     // 무브먼트 없애고

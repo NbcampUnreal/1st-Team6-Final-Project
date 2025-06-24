@@ -84,9 +84,6 @@ protected:
 	UNS_PlayerHUD* NS_PlayerHUDWidget;
 	UNS_LoadingScreen* NS_LoadingScreen;
 
-
-
-
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UNS_BaseMainMenu> InGameMenuWidgetClass;
 
