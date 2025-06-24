@@ -38,6 +38,7 @@ void UNS_InventoryBaseItem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	DOREPLIFETIME(UNS_InventoryBaseItem, NumericData);
 	DOREPLIFETIME(UNS_InventoryBaseItem, AssetData);
 	DOREPLIFETIME(UNS_InventoryBaseItem, TextData);
+	DOREPLIFETIME(UNS_InventoryBaseItem, CurrentAmmo);
 }
 // 현재 아이템을 복제해 반환
 UNS_InventoryBaseItem* UNS_InventoryBaseItem::CreateItemCopy()
@@ -67,6 +68,7 @@ UNS_InventoryBaseItem* UNS_InventoryBaseItem::CreateItemCopy()
 	ItemCopy->TextData = this->TextData;
 	ItemCopy->NumericData = this->NumericData;
 	ItemCopy->AssetData = this->AssetData;
+	ItemCopy->CurrentAmmo = this->CurrentAmmo;
 	ItemCopy->ConsumableItemAssetData = this->ConsumableItemAssetData;
 	ItemCopy->ItemsDataTable = this->ItemsDataTable;
 	ItemCopy->bisCopy = true;
