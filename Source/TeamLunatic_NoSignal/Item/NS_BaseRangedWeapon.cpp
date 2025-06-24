@@ -35,6 +35,7 @@ void ANS_BaseRangedWeapon::BeginPlay()
 	{
 		MaxAmmo = ItemData->WeaponData.MaxAmmo;
 		AmmoType = ItemData->WeaponData.AmmoType;
+		CurrentAmmo = ItemData->CurrentAmmo;
 	}
 
 	InstanceInteractableData.Quantity = 1;
