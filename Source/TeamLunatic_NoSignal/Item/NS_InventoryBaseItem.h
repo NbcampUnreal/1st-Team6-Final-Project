@@ -77,6 +77,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "ItemData", Replicated)
 	FConsumAbleItemAssetData ConsumableItemAssetData;
 
+	UPROPERTY(EditAnywhere, Category = "ItemData", Replicated)
+	int32 CurrentAmmo = 0;
+
 	UPROPERTY(VisibleAnywhere, Category = "ItemData", meta = (UIMin = 1, UIMax = 100), Replicated)
 	int32 Quantity;
 

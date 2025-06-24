@@ -44,6 +44,9 @@ public:
 	int32 CurrentAmmo;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Ammo")
+	int32 CachedAmmoForDrop = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Ammo")
 	int32 MaxAmmo;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Ammo")
@@ -52,5 +55,10 @@ public:
 	FORCEINLINE int32 GetMaxAmmo() const { return MaxAmmo; }
 	FORCEINLINE int32 GetCurrentAmmo() const { return CurrentAmmo; }
 
+	// 드롭 전 탄약을 무기 내부에 저장
+	void PrepareForDrop();
 	void Reload(int32 AmmoToAdd);
+	UFUNCTION(BlueprintCallable, Category = "Weapon|Ammo")
+	void UpdateAmmoToInventory();
 };
+
