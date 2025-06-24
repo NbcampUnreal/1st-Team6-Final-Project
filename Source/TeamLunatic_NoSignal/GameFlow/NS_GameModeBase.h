@@ -28,6 +28,12 @@ public:
     // 스포너에서 좀비를 스폰합니다. 스포너의 스케일을 활용하여 위치를 결정
     virtual void SpawnZombieAtPoint(AANS_ZombieSpawner* SpawnPoint);
     // 좀비 사망시 콜백
+
+    FTimerHandle DelayedSpawnerSearchTimer;
+
+    UFUNCTION()
+    void SearchForSpawnersDelayed();
+    
     UFUNCTION()
     void OnZombieDestroyed(AActor* DestroyedActor);
 
