@@ -10,6 +10,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFlow/NS_GameInstance.h"
 #include "UI/NS_UIManager.h"
+#include "Character/NS_PlayerController.h"
 #include "UI/NS_PlayerHUD.h"
 
 APickup::APickup()
@@ -197,6 +198,8 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 				{
 					if (UNS_UIManager* UIManager = GI->GetUIManager())
 					{
+						// 참고: 이 로직은 서버에서 실행되므로, 여기서 가져오는 HUD는 서버에 존재하는 플레이어(리스닝 서버의 경우)의 것입니다.
+						// 멀티플레이어 환경에서는 각 클라이언트의 HUD를 직접 가져올 수 없습니다.
 						PlayerHUD = UIManager->GetPlayerHUDWidget();
 					}
 				}
@@ -235,6 +238,18 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 								PlayerHUD->SetYeddaItem(QuestPickup);
 							}
 						}
+
+						// ===================== [ 3단계 내용 추가 시작 ] =====================
+						// 아이템을 주운 플레이어의 컨트롤러를 가져옵니다.
+						if (ANS_PlayerController* PC = Cast<ANS_PlayerController>(Taker->GetController()))
+						{
+							// 표시할 메시지를 FText 형식으로 만듭니다.
+							const FText TipMessage = FText::FromString(TEXT("메모를 읽고 단서를 찾아라."));
+
+							// 해당 플레이어의 클라이언트로 RPC를 호출하여 팁을 갱신합니다.
+							PC->Client_UpdateTipText(TipMessage);
+						}
+						// ===================== [ 3단계 내용 추가 끝 ] =====================
 					}
 
 					PlayerHUD->DeleteCompasItem(this);
@@ -323,7 +338,6 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 		}
 	}
 }
-
 void APickup::Server_TakePickup_Implementation(AActor* InteractingActor)
 {
 	if (ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(InteractingActor))
