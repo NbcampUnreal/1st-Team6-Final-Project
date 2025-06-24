@@ -7,6 +7,7 @@
 #include "Character/NS_PlayerCharacterBase.h"
 #include "GameFramework/PlayerStart.h"
 #include "Zombie/NS_ZombieBase.h"
+#include "Algo/RandomShuffle.h" // RandomShuffle 함수를 위한 헤더 추가
 
 ANS_MultiPlayMode::ANS_MultiPlayMode()
 {
@@ -213,95 +214,165 @@ void ANS_MultiPlayMode::CheckAndSpawnZombies()
         return;
     }
     
-    // 랜덤한 플레이어 위치 가져오기
-    FVector RandomPlayerLocation = GetRandomPlayerLocation();
-    if (RandomPlayerLocation.IsZero())
+    // 살아있는 플레이어 위치 수집
+    TArray<FVector> PlayerLocations;
+    if (const ANS_GameState* GS = GetGameState<ANS_GameState>())
     {
-        // 유효한 플레이어 위치가 없으면 기본 로직 사용
+        for (APlayerState* PS : GS->PlayerArray)
+        {
+            if (ANS_MainGamePlayerState* MPS = Cast<ANS_MainGamePlayerState>(PS))
+            {
+                if (MPS->bIsAlive)
+                {
+                    if (APawn* AlivePawn = MPS->GetPawn())
+                    {
+                        PlayerLocations.Add(AlivePawn->GetActorLocation());
+                    }
+                }
+            }
+        }
+    }
+    
+    // 살아있는 플레이어가 없으면 기본 로직 사용
+    if (PlayerLocations.Num() <= 0)
+    {
         Super::CheckAndSpawnZombies();
         return;
     }
     
-    // 현재 좀비 위치 확인
-    TArray<AActor*> ExistingZombies;
-    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ANS_ZombieBase::StaticClass(), ExistingZombies);
-    
-    // 각 스포너에 좀비가 있는지 확인하는 맵
-    TMap<AANS_ZombieSpawner*, bool> SpawnerHasZombie;
-    
-    // 각 좀비의 가장 가까운 스포너 찾기
-    for (AActor* ZombieActor : ExistingZombies)
+    // 각 플레이어 주변에 좀비 스폰 (최대 플레이어 수만큼)
+    int32 SpawnedCount = 0;
+    for (const FVector& PlayerLocation : PlayerLocations)
     {
-        ANS_ZombieBase* Zombie = Cast<ANS_ZombieBase>(ZombieActor);
-        if (!Zombie) continue;
-        
-        FVector ZombieLocation = Zombie->GetActorLocation();
-        float ClosestDistance = MAX_FLT;
-        AANS_ZombieSpawner* ClosestSpawner = nullptr;
-        
-        for (AANS_ZombieSpawner* Spawner : ZombieSpawnPoints)
+        // 최대 스폰 수에 도달했는지 확인
+        if (SpawnedCount >= Missing)
         {
-            if (!IsValid(Spawner)) continue;
-            
-            float Distance = FVector::Dist(ZombieLocation, Spawner->GetActorLocation());
-            if (Distance < ClosestDistance)
+            break;
+        }
+        
+        // 해당 플레이어 주변의 적합한 스포너 찾기
+        TArray<AANS_ZombieSpawner*> SuitableSpawners = FindSuitableSpawners(PlayerLocation);
+        
+        // 적합한 스포너가 없으면 다음 플레이어로
+        if (SuitableSpawners.Num() <= 0)
+        {
+            continue;
+        }
+        
+        // 스포너 목록 무작위 섞기
+        Algo::RandomShuffle(SuitableSpawners);
+        
+        // 해당 플레이어 주변에 1마리 스폰
+        SpawnZombieAtPoint(SuitableSpawners[0]);
+        SpawnedCount++;
+    }
+}
+
+// 플레이어로부터 너무 멀리 있는 좀비 제거 함수 (멀티플레이 버전)
+void ANS_MultiPlayMode::CleanupDistantZombies()
+{
+    // 함수 호출 확인 로그
+    UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] CleanupDistantZombies 함수 호출됨"));
+    
+    // 살아있는 플레이어 위치 수집
+    TArray<FVector> PlayerLocations;
+    if (const ANS_GameState* GS = GetGameState<ANS_GameState>())
+    {
+        for (APlayerState* PS : GS->PlayerArray)
+        {
+            if (ANS_MainGamePlayerState* MPS = Cast<ANS_MainGamePlayerState>(PS))
             {
-                ClosestDistance = Distance;
-                ClosestSpawner = Spawner;
+                if (MPS->bIsAlive)
+                {
+                    if (APawn* AlivePawn = MPS->GetPawn())
+                    {
+                        PlayerLocations.Add(AlivePawn->GetActorLocation());
+                    }
+                }
             }
         }
-        
-        if (ClosestSpawner && ClosestDistance < 500.0f)
-        {
-            SpawnerHasZombie.Add(ClosestSpawner, true);
-        }
     }
     
-    // 선택된 플레이어 주변의 적합한 스포너 찾기
-    TArray<AANS_ZombieSpawner*> SuitableSpawners;
+    UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 살아있는 플레이어 수: %d"), PlayerLocations.Num());
     
-    for (AANS_ZombieSpawner* Spawner : ZombieSpawnPoints)
+    // 살아있는 플레이어가 없으면 기본 로직 사용
+    if (PlayerLocations.Num() <= 0)
     {
-        if (!IsValid(Spawner) || !Spawner->bIsEnabled)
-        {
-            continue;
-        }
-        
-        if (SpawnerHasZombie.Contains(Spawner) && SpawnerHasZombie[Spawner])
-        {
-            continue;
-        }
-        
-        FVector SpawnerLocation = Spawner->GetActorLocation();
-        float DistanceToPlayer = FVector::Dist(RandomPlayerLocation, SpawnerLocation);
-        
-        if (DistanceToPlayer >= MinSpawnDistance && DistanceToPlayer <= MaxSpawnDistance)
-        {
-            SuitableSpawners.Add(Spawner);
-        }
-    }
-    
-    // 적합한 스포너가 없으면 종료
-    if (SuitableSpawners.Num() <= 0)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 선택된 플레이어 주변에 적합한 스포너가 없습니다. 플레이어 위치: X=%.1f Y=%.1f Z=%.1f"), 
-            RandomPlayerLocation.X, RandomPlayerLocation.Y, RandomPlayerLocation.Z);
+        UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 살아있는 플레이어가 없어 기본 로직 사용"));
+        Super::CleanupDistantZombies();
         return;
     }
     
-    // 스포너 목록 무작위 섞기
-    for (int32 i = 0; i < SuitableSpawners.Num() - 1; ++i)
+    // 현재 레벨의 모든 좀비 찾기
+    TArray<AActor*> AllZombies;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ANS_ZombieBase::StaticClass(), AllZombies);
+    
+    UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 현재 좀비 수: %d"), AllZombies.Num());
+    
+    int32 DestroyedCount = 0;
+    
+    // 거리별 좀비 수 초기화
+    ZombiesInCloseRange = 0;
+    ZombiesInMidRange = 0;
+    
+    // 각 좀비의 거리 확인 및 제거
+    for (AActor* ZombieActor : AllZombies)
     {
-        int32 SwapIndex = FMath::RandRange(i, SuitableSpawners.Num() - 1);
-        if (i != SwapIndex)
+        if (!IsValid(ZombieActor))
         {
-            SuitableSpawners.Swap(i, SwapIndex);
+            continue;
+        }
+        
+        // 모든 플레이어와의 최소 거리 계산
+        float MinDistance = MAX_FLT;
+        for (const FVector& PlayerLoc : PlayerLocations)
+        {
+            float Distance = FVector::Dist(PlayerLoc, ZombieActor->GetActorLocation());
+            MinDistance = FMath::Min(MinDistance, Distance);
+        }
+        
+        // 거리에 따라 카운트
+        if (MinDistance <= 4000.0f)
+        {
+            ZombiesInCloseRange++;
+        }
+        else if (MinDistance <= 8000.0f)
+        {
+            ZombiesInMidRange++;
+        }
+        
+        // 거리 디버깅
+        if (MinDistance > ZombieDestroyDistance * 0.9f)  // 90% 이상 거리에 있는 좀비 로그
+        {
+            UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 좀비 거리: %.2f (제거 거리: %.2f)"), MinDistance, ZombieDestroyDistance);
+        }
+        
+        // 모든 플레이어로부터 설정된 거리보다 멀리 있으면 제거
+        if (MinDistance > ZombieDestroyDistance)
+        {
+            // 좀비 제거 (OnZombieDestroyed 이벤트가 자동으로 호출됨)
+            UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 좀비 제거: 거리 %.2f"), MinDistance);
+            ZombieActor->Destroy();
+            DestroyedCount++;
         }
     }
     
-    // 1초당 1마리만 스폰
-    SpawnZombieAtPoint(SuitableSpawners[0]);
+    // 제거된 좀비 수 업데이트
+    ZombiesRemoved += DestroyedCount;
     
-    UE_LOG(LogTemp, Verbose, TEXT("[MultiPlayMode] 랜덤 플레이어 주변에 좀비 스폰 시도. 플레이어 위치: X=%.1f Y=%.1f Z=%.1f, 적합한 스포너 수: %d"), 
-        RandomPlayerLocation.X, RandomPlayerLocation.Y, RandomPlayerLocation.Z, SuitableSpawners.Num());
+    // 디버그 로그 출력
+    UE_LOG(LogTemp, Warning, TEXT("[멀티 좀비 디버그] 총 좀비 수: %d"), AllZombies.Num());
+    UE_LOG(LogTemp, Warning, TEXT("[멀티 좀비 디버그] 4000 이내 좀비: %d"), ZombiesInCloseRange);
+    UE_LOG(LogTemp, Warning, TEXT("[멀티 좀비 디버그] 4000-8000 사이 좀비: %d"), ZombiesInMidRange);
+    UE_LOG(LogTemp, Warning, TEXT("[멀티 좀비 디버그] 8000 초과 좀비: %d"), AllZombies.Num() - ZombiesInCloseRange - ZombiesInMidRange);
+    
+    // 제거된 좀비가 있으면 로그 출력
+    if (DestroyedCount > 0)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] %d개의 멀리 있는 좀비 제거됨 (총 %d개 제거됨)"), DestroyedCount, ZombiesRemoved);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Display, TEXT("[MultiPlayMode] 제거할 좀비가 없음"));
+    }
 }

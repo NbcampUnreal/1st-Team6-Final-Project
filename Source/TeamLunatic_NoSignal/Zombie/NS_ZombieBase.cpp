@@ -16,6 +16,9 @@
 #include "Sound/SoundCue.h"
 #include "PhysicsEngine/PhysicalAnimationComponent.h"
 #include "NiagaraFunctionLibrary.h"
+#if WITH_EDITOR 
+#include "AssetTypeActions/AssetDefinition_SoundBase.h"
+#endif 
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
 
@@ -241,7 +244,7 @@ void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 				
 			}
 		}
-
+		UE_LOG(LogTemp, Warning, TEXT("Zombie %s is now fully INACTIVE."), *GetName());
 	}
 }
 

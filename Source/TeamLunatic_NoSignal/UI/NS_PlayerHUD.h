@@ -68,6 +68,11 @@ private:
     bool testcheck = false;
     int32 PrvFinalIdx = 0;
   
+    // 각 나침반 눈금의 시작 위치(픽셀 오프셋)를 저장할 배열
+    TArray<float> CompassElementOffsets;
+
+    // 각 나침반 눈금의 너비(픽셀)를 저장할 배열
+    TArray<float> CompassElementWidths;
 
     UPROPERTY()
     class ANS_PlayerCharacterBase* CachedPlayerCharacter = nullptr;
