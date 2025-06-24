@@ -11,8 +11,8 @@ ANS_Chaser::ANS_Chaser()
 	PrimaryActorTick.bCanEverTick = true;
 
 	// 기본값 초기화
-	MaxHealth = 100.0f;
-	CurrentHealth = 100.0f;
+	MaxHealth = 1000.0f;
+	CurrentHealth = 1000.0f;
 	bEnableAutoDamageTest = false;
 	bIsActive = true;
 }
