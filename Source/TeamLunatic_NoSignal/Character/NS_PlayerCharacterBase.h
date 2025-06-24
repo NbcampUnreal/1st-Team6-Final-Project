@@ -21,6 +21,7 @@ class ANS_BaseWeapon;
 class UNS_EquipedWeaponComponent;
 class UNS_QuickSlotPanel;
 class UNS_QuickSlotComponent;
+class UNS_PlayerController;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
@@ -313,6 +314,8 @@ public:
 	UInputAction* ToggleMenuAction;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputFlashlightAction;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* InputOpenMapAction;
 	//퀵슬롯 바인딩
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputQuickSlot1;
@@ -324,6 +327,7 @@ public:
 	UInputAction* InputQuickSlot4;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputQuickSlot5;
+	
 	
 
 	// 캐릭터 EnhancedInput을 없앴다가 다시 부착하는는 함수 IMC를 지워웠다가 다시 장착하게해서 AnimNotify로 발차기 공격동안 IMC없앰
@@ -413,4 +417,15 @@ public:
 	// Yaw 리셋 관련 함수
 	void UpdateYawReset(float DeltaTime);
 	// ======================== Turn In Place 끝! =================================
+
+	//환각 관련
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PostProcess")
+	UMaterialInterface* HallucinationMaterial;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PostProcess")
+	UMaterialInstanceDynamic* HallucinationMID;
+
+
+	// 환각효과 켜기
+	void ActivateHallucinationEffect(float Duration);
 };

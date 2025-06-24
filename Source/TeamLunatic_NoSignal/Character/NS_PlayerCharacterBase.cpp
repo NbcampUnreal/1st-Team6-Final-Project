@@ -5,6 +5,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Inventory/InventoryComponent.h"
 #include "Item/NS_InventoryBaseItem.h"
+#include "Character/NS_PlayerController.h"
 #include "Components/NS_EquipedWeaponComponent.h"
 #include "Character/Components/NS_StatusComponent.h"
 #include "Item/NS_BaseRangedWeapon.h"
@@ -17,6 +18,7 @@
 #include "Kismet/GameplayStatics.h"
 #include <Net/UnrealNetwork.h>
 #include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
+#include "Character/NS_PlayerController.h"
 
 ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
 {
@@ -372,7 +374,7 @@ float ANS_PlayerCharacterBase::TakeDamage(
     {
         return 0.f;
     }
-    
+
     float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
     if (!HasAuthority() || ActualDamage <= 0.f)
         return ActualDamage;
@@ -380,23 +382,33 @@ float ANS_PlayerCharacterBase::TakeDamage(
     // 캐릭터 체력 감소
     StatusComp->AddHealthGauge(-ActualDamage);
 
+    if (AController* PC = GetController())
+    {
+        if (ANS_PlayerController* NS_PC = Cast<ANS_PlayerController>(PC))
+        {
+            NS_PC->Client_ShowHitEffect();
+        }
+    }
+
+
+
     IsHit = true;
-    
+
     // IsHit 타이머핸들 람다로 0.5초간 실행
     FTimerHandle ResetHitTime;
     GetWorldTimerManager().SetTimer(
         ResetHitTime,
         [this]()
+    {
+        // 캐릭터가 있다면 IsHit을 false로 설정
+        if (IsValid(this)) //
         {
-            // 캐릭터가 있다면 IsHit을 false로 설정
-            if (IsValid(this)) //
-            {
-                IsHit = false; //
-            }
-        },
+            IsHit = false; //
+        }
+    },
         0.5f,
         false
-        );
+    );
 
     // 캐릭터 체력이 0이면 죽음 애니메이션 실행
     if (StatusComp->Health <= 0.f)
@@ -624,27 +636,33 @@ void ANS_PlayerCharacterBase::PlayDeath_Server_Implementation()
         ANS_GameModeBase* BaseGameMode = Cast<ANS_GameModeBase>(UGameplayStatics::GetGameMode(World));
         if (BaseGameMode)
         {
+            UE_LOG(LogTemp, Log, TEXT("[%s] GameMode('%s') 가져오기 및 캐스팅 성공."), *this->GetName(), *BaseGameMode->GetName());
+
             BaseGameMode->OnPlayerCharacterDied(this);
 
             if (AController* OwningController = GetController())
             {
                 if (ANS_MainGamePlayerState* PS = Cast<ANS_MainGamePlayerState>(OwningController->PlayerState))
                 {
-                    PS->bIsAlive = false; 
-                    UE_LOG(LogTemp, Warning, TEXT("Player %s PlayerState set to Dead."), *PS->GetPlayerName());
+                    PS->bIsAlive = false;
                 }
+
             }
+
         }
+
     }
+
     PlayDeath_Multicast();
 }
+
 
 void ANS_PlayerCharacterBase::PlayDeath_Multicast_Implementation()
 {
     // 캐릭터가 죽었으면 IsDead변수를 true로 변경해서 애니메이션 몽타주가 1번만 재생되도록 구현했음
     IsDead = true;
     
-    // 컨트롤러에서 분리시키고
+    //// 컨트롤러에서 분리시키고
     DetachFromControllerPendingDestroy(); 
 
     // 무브먼트 없애고
@@ -1272,3 +1290,17 @@ void ANS_PlayerCharacterBase::UpdateYawReset(float DeltaTime)
     UpdateAim_Server(CamYaw, CamPitch);
 }
 
+void ANS_PlayerCharacterBase::ActivateHallucinationEffect(float Duration)
+{
+    if (CameraComp && HallucinationMID)
+    {
+        CameraComp->AddOrUpdateBlendable(HallucinationMID, 1.f); // 활성화
+
+        // 일정 시간 뒤 자동 비활성화
+        FTimerHandle TimerHandle;
+        GetWorldTimerManager().SetTimer(TimerHandle, [this]()
+        {
+            CameraComp->AddOrUpdateBlendable(HallucinationMID, 0.f); // 비활성화
+        }, Duration, false);
+    }
+}
