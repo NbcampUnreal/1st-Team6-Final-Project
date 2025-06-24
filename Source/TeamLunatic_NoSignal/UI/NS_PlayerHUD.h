@@ -68,6 +68,10 @@ private:
     bool testcheck = false;
     int32 PrvFinalIdx = 0;
   
+    float CurrentCompassOffset = 0.f;
+
+    UPROPERTY(EditAnywhere, Category = "Compass", meta = (AllowPrivateAccess = "true"))
+    float CompassInterpSpeed = 10.0f;
 
     UPROPERTY()
     class ANS_PlayerCharacterBase* CachedPlayerCharacter = nullptr;

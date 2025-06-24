@@ -28,6 +28,15 @@ void APickup::BeginPlay()
 {
 	Super::BeginPlay();
 
+	FString LogMessage = FString::Printf(
+		TEXT("Pickup BeginPlay -> 이름: [ %s ], 월드 위치: [ %s ]"),
+		*GetName(), 
+		*GetActorLocation().ToString() 
+	);
+
+	UE_LOG(LogTemp, Log, TEXT("%s"), *LogMessage);
+
+
 	if (HasAuthority())
 	{
 		InitializePickup(UNS_InventoryBaseItem::StaticClass(), ItemQuantity);
@@ -56,6 +65,10 @@ void APickup::InitializePickup(const TSubclassOf<UNS_InventoryBaseItem> BaseClas
 	{
 		const FNS_ItemDataStruct* ItemData = ItemDataTable->FindRow<FNS_ItemDataStruct>(DesiredItemID, DesiredItemID.ToString());
 
+		UE_LOG(LogTemp, Warning, TEXT("[PickupInit] 아이템: %s | AmmoType: %d"),
+			*ItemData->ItemDataRowName.ToString(),
+			static_cast<uint8>(ItemData->WeaponData.AmmoType));
+
 		ReplicatedItemData = *ItemData;
 		ReplicatedItemData.Quantity = InQuantity > 0 ? InQuantity : 1;
 		OnRep_ReplicatedItemData();
@@ -68,6 +81,7 @@ void APickup::InitializePickup(const TSubclassOf<UNS_InventoryBaseItem> BaseClas
 		ItemReference->NumericData = ItemData->ItemNumericData;
 		ItemReference->AssetData = ItemData->ItemAssetData;
 		ItemReference->ItemDataRowName = ItemData->ItemDataRowName;
+		ItemReference->CurrentAmmo = ItemData->CurrentAmmo;
 
 		InQuantity <= 0 ? ItemReference->SetQuantity(1) : ItemReference->SetQuantity(InQuantity);
 
@@ -91,6 +105,7 @@ void APickup::InitializeDrop(UNS_InventoryBaseItem* ItemToDrop, const int32 InQu
 	ReplicatedItemData.WeaponData = ItemToDrop->WeaponData;
 	ReplicatedItemData.WeaponType = ItemToDrop->WeaponType;
 	ReplicatedItemData.ItemType = ItemToDrop->ItemType;
+	ReplicatedItemData.CurrentAmmo = ItemToDrop->CurrentAmmo;
 
 	UpdateInteractableData();
 }
@@ -110,6 +125,7 @@ void APickup::OnRep_ReplicatedItemData()
 	ItemReference->WeaponData = ReplicatedItemData.WeaponData;
 	ItemReference->WeaponType = ReplicatedItemData.WeaponType;
 	ItemReference->ItemType = ReplicatedItemData.ItemType;
+	ItemReference->CurrentAmmo = ReplicatedItemData.CurrentAmmo;
 
 	PickupMesh->SetStaticMesh(ReplicatedItemData.ItemAssetData.StaticMesh);
 	ItemReference->SetQuantity(ReplicatedItemData.Quantity);
@@ -205,6 +221,17 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 
 							if (TargetNoteIDs.Contains(ItemID))
 							{
+								// ===================== [ 로그 추가 시작 ] =====================
+								// 해당 쪽지의 이름과 현재 월드 위치를 로그로 출력
+								FString LogMessage = FString::Printf(
+									TEXT("퀘스트 쪽지 발견 -> 이름: [ %s ], 월드 위치: [ %s ]"),
+									*ItemID.ToString(),
+									*QuestPickup->GetActorLocation().ToString()
+								);
+								UE_LOG(LogTemp, Log, TEXT("%s"), *LogMessage);
+								// ===================== [  로그 추가 끝  ] =====================
+
+								// HUD의 나침반에 추적 대상으로 추가
 								PlayerHUD->SetYeddaItem(QuestPickup);
 							}
 						}

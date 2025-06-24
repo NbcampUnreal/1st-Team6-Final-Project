@@ -49,10 +49,6 @@ void UNS_QuickSlotSlotWidget::NativeTick(const FGeometry& MyGeometry, float InDe
             // UI 갱신
             AmmoText->SetText(FText::FromString(FString::Printf(TEXT("%d / %d"), CurrentAmmo, MaxAmmo)));
             AmmoText->SetVisibility(ESlateVisibility::Visible);
-            UE_LOG(LogTemp, Warning, TEXT("[QuickSlot %d] ItemInSlot: %s, EquippedItem: %s"),
-                SlotIndex,
-                *GetNameSafe(ItemInSlot),
-                *GetNameSafe(EquippedItem));
         }
     }
     else

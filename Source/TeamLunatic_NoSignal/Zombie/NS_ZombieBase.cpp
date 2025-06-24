@@ -16,6 +16,7 @@
 #include "Sound/SoundCue.h"
 #include "PhysicsEngine/PhysicalAnimationComponent.h"
 #include "NiagaraFunctionLibrary.h"
+#include "AssetTypeActions/AssetDefinition_SoundBase.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Components/SphereComponent.h"
@@ -119,11 +120,9 @@ void ANS_ZombieBase::OnOverlapSphere(UPrimitiveComponent* OverlappedComp, AActor
 	}
 }
 
-
 void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 {
 	bIsActive = setActive;
-	UE_LOG(LogTemp, Warning, TEXT("Zombie %s SetActive Called. Current bIsActive: %s"), *GetName(), bIsActive ? TEXT("True") : TEXT("False"));
 	
 	if (bIsActive) // 활성화 상태로 전환 (true)
 	{
@@ -166,7 +165,6 @@ void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 				if (AIController)
 				{
 					AIController->Possess(this);
-					UE_LOG(LogTemp, Warning, TEXT("Zombie %s: New AIController created and possessed."), *GetName());
 				}
 			}
 			
@@ -179,7 +177,6 @@ void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 				if (AIController->GetBrainComponent())
 				{
 					AIController->GetBrainComponent()->ResumeLogic("ReActivation");
-					UE_LOG(LogTemp, Warning, TEXT("Zombie %s: AIController brain logic resumed."), *GetName());
 				}
 				TArray<UActorComponent*> ControllerComponents;
 				AIController->GetComponents(ControllerComponents);
@@ -192,14 +189,13 @@ void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 				if (NSAIController && NSAIController->UseBlackboard(NSAIController->BehaviorTreeAsset->BlackboardAsset, NSAIController->BlackboardComp))
 				{
 					NSAIController->RunBehaviorTree(NSAIController->BehaviorTreeAsset);
-					UE_LOG(LogTemp, Warning, TEXT("Zombie %s: Behavior tree restarted."), *GetName());
 				}
 			}
 		}
-		UE_LOG(LogTemp, Warning, TEXT("Zombie %s is now fully ACTIVE."), *GetName());
 	}
 	else // 비활성화 상태로 전환 (false)
 	{
+		GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
 		SetActorHiddenInGame(true); // 액터를 숨김
 		GetMesh()->SetVisibility(false, true); // 좀비 메쉬를 숨김 (자식 컴포넌트 포함)
 		SetActorEnableCollision(false); // 충돌을 비활성화함 (다른 액터가 통과 가능)
@@ -242,10 +238,8 @@ void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 					Component->SetComponentTickEnabled(false);
 				}
 				
-				UE_LOG(LogTemp, Warning, TEXT("Zombie %s AIController tick disabled on server."), *GetName());
 			}
 		}
-		UE_LOG(LogTemp, Warning, TEXT("Zombie %s is now fully INACTIVE."), *GetName());
 	}
 }
 
@@ -338,11 +332,13 @@ void ANS_ZombieBase::ResetPhysics(FName Bone)
 
 void ANS_ZombieBase::OnIdleState()
 {
+	// ScheduleSound(IdleSound);
 	TargetSpeed = 0.f;
 }
 
 void ANS_ZombieBase::OnPatrolState()
 {
+	// ScheduleSound(IdleSound);
 	TargetSpeed = 70.f;
 }
 
@@ -353,6 +349,7 @@ void ANS_ZombieBase::OnDetectState()
 
 void ANS_ZombieBase::OnChaseState()
 {
+	// ScheduleSound(ChaseSound);
 	TargetSpeed = 600.f;
 }
 
@@ -363,9 +360,11 @@ void ANS_ZombieBase::OnAttackState()
 
 void ANS_ZombieBase::OnDeadState()
 {
+	
 	if (bIsDead) return;
 	if (HasAuthority())
 	{
+		Server_PlaySound(DeathSound);
 		bIsDead = true;
 		Die_Multicast();
 	}
@@ -393,6 +392,19 @@ void ANS_ZombieBase::Multicast_PlaySound_Implementation(USoundCue* Sound)
 	if (Sound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, Sound, GetMesh()->GetSocketLocation("headsocket"));
+	}
+}
+
+void ANS_ZombieBase::ScheduleSound(USoundCue* SoundCue)
+{
+	if (SoundCue)
+	{
+		float RandomTime = FMath::FRandRange(3.f,6.f);
+		GetWorldTimerManager().SetTimer(AmbientSoundTimer,[this, SoundCue]()
+		{
+			Server_PlaySound(SoundCue);
+			ScheduleSound(SoundCue);
+		}, RandomTime, false);
 	}
 }
 
@@ -454,6 +466,8 @@ void ANS_ZombieBase::SetState(EZombieState NewState)
 
 void ANS_ZombieBase::OnStateChanged(EZombieState State)
 {
+	GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
+	
 	switch (State)
 	{
 	case EZombieState::IDLE:

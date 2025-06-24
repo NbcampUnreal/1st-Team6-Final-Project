@@ -188,4 +188,7 @@ public:
 	/** 현재 수량 - 드롭/픽업 시 동기화용 */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	int32 Quantity = 1;
+	/** 무기 현재 탄약 수 */
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	int32 CurrentAmmo = 0;
 };
