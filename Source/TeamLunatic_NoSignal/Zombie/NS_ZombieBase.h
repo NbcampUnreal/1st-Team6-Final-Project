@@ -86,8 +86,7 @@ public:
 	
 	FTimerHandle HitTimer;
 	void ResetHit();
-	
-public:
+
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
@@ -117,21 +116,15 @@ public:
 	virtual void OnAttackState();
 	void OnDeadState();
 	virtual void OnFrozenState();
-	
-	//사운드 관련
-	UFUNCTION(Server, Reliable)
-	void Server_PlaySound(USoundCue* Sound);
-	UFUNCTION(NetMulticast, Unreliable)
-	void Multicast_PlaySound(USoundCue* Sound);
 
 	//이펙트
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multicast_SpawnEffect(FName Bone,FVector Location, FRotator Rotation);
 
 	//공격 컴포넌트
-	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Sound")
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Attack")
 	USphereComponent* R_SphereComp;
-	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Sound")
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Attack")
 	USphereComponent* L_SphereComp;
 	
 	//공격 관련
@@ -147,6 +140,23 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GotHit")
 	TArray<UAnimMontage*> HitMontages;
+
+	//사운드 관련
+	UFUNCTION(Server, Reliable)
+	void Server_PlaySound(USoundCue* Sound);
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multicast_PlaySound(USoundCue* Sound);
+	UFUNCTION()
+	void ScheduleSound(USoundCue* SoundCue);
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	USoundCue* IdleSound;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	USoundCue* ChaseSound;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	USoundCue* DeathSound;
+	
+	FTimerHandle AmbientSoundTimer;
+
 	
 	//Get함수
 	FORCEINLINE const EZombieAttackType GetZombieAttackType() {return CurrentAttackType;}
