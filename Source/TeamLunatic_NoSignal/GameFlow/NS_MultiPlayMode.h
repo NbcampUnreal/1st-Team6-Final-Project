@@ -37,4 +37,7 @@ protected:
     
     // 랜덤한 살아있는 플레이어의 위치를 반환하는 함수
     FVector GetRandomPlayerLocation() const;
+
+    // 멀티플레이용 적합한 스포너 찾기 함수 (다른 플레이어 위치 고려)
+    TArray<AANS_ZombieSpawner*> FindSuitableSpawnersForMultiplay(const FVector& CurrentPlayerLocation, const TArray<FVector>& AllPlayerLocations);
 };
