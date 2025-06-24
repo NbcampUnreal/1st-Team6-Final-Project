@@ -71,6 +71,14 @@ void UNS_EquipedWeaponComponent::ServerEquipWeapon_Implementation(TSubclassOf<AN
 
 void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf<ANS_BaseWeapon> WeaponClass, UNS_InventoryBaseItem* SourceItem)
 {
+    if (CurrentWeapon && GetOwnerRole() == ROLE_Authority)
+    {
+        if (auto* OldRangedWeapon = Cast<ANS_BaseRangedWeapon>(CurrentWeapon))
+        {
+            UE_LOG(LogTemp, Warning, TEXT("[Equip] 기존 무기 탄약 저장: %d"), OldRangedWeapon->CurrentAmmo);
+            OldRangedWeapon->UpdateAmmoToInventory();
+        }
+    }
     // 기존 무기 제거
     if (OwnerCharacter)
     {
@@ -142,6 +150,14 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
     else if (auto Ranged = Cast<ANS_BaseRangedWeapon>(NewWpn))
     {
         UE_LOG(LogTemp, Warning, TEXT("[MulticastEquipWeapon] 원거리 무기 장착"));
+        //원거리 무기 총알 타입 설정
+        if (SourceItem)
+        {
+            Ranged->WeaponData = SourceItem->WeaponData;
+            Ranged->CurrentAmmo = SourceItem->CurrentAmmo; 
+            UE_LOG(LogTemp, Warning, TEXT("[Equip] 탄약 복사: %d → %d"), SourceItem->CurrentAmmo, Ranged->CurrentAmmo);
+        }
+
         // 플레이어한테만 보이는 메쉬를 팔에 부착
         // RangedWeaponMeshComp가 유효한지 확인
         if (Ranged->RangedWeaponMeshComp)
@@ -203,6 +219,16 @@ void UNS_EquipedWeaponComponent::Multicast_UnequipWeapon_Implementation()
     {
         UE_LOG(LogTemp, Warning, TEXT("[Unequip] 캐릭터 또는 무기 없음"));
         return;
+    }
+
+    if (GetOwnerRole() == ROLE_Authority)
+    {
+        if (auto* RangedWeapon = Cast<ANS_BaseRangedWeapon>(CurrentWeapon))
+        {
+            UE_LOG(LogTemp, Warning, TEXT("[Unequip] 현재 무기 탄약: %d"), RangedWeapon->CurrentAmmo);
+
+            RangedWeapon->UpdateAmmoToInventory();
+        }
     }
 
     // 장착 중인 무기 파괴
@@ -272,8 +298,12 @@ void UNS_EquipedWeaponComponent::Multicast_Reload_Implementation()
                 Item, *Item->GetName(), Item->GetQuantity());
 
             // 탄약 아이템인지 확인
-            if (Item->ItemType == EItemType::Equipment && Item->WeaponType == EWeaponType::Ammo)
+            if (Item->ItemType == EItemType::Equipment && Item->WeaponType == EWeaponType::Ammo &&
+                Item->WeaponData.AmmoType == RangedWeapon->WeaponData.AmmoType)
             {
+                UE_LOG(LogTemp, Warning, TEXT("[Reload] 무기 AmmoType: %d, 아이템 AmmoType: %d"),
+                    static_cast<int32>(RangedWeapon->WeaponData.AmmoType),
+                    static_cast<int32>(Item->WeaponData.AmmoType));
                 const int32 AmmoAvailable = Item->GetQuantity();
                 const int32 AmmoToLoad = FMath::Min(NeededAmmo, AmmoAvailable);
 

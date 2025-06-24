@@ -16,6 +16,7 @@
 #include "Sound/SoundCue.h"
 #include "PhysicsEngine/PhysicalAnimationComponent.h"
 #include "NiagaraFunctionLibrary.h"
+#include "AssetTypeActions/AssetDefinition_SoundBase.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Components/SphereComponent.h"
@@ -119,7 +120,6 @@ void ANS_ZombieBase::OnOverlapSphere(UPrimitiveComponent* OverlappedComp, AActor
 	}
 }
 
-
 void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 {
 	bIsActive = setActive;
@@ -200,6 +200,7 @@ void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 	}
 	else // 비활성화 상태로 전환 (false)
 	{
+		GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
 		SetActorHiddenInGame(true); // 액터를 숨김
 		GetMesh()->SetVisibility(false, true); // 좀비 메쉬를 숨김 (자식 컴포넌트 포함)
 		SetActorEnableCollision(false); // 충돌을 비활성화함 (다른 액터가 통과 가능)
@@ -338,11 +339,13 @@ void ANS_ZombieBase::ResetPhysics(FName Bone)
 
 void ANS_ZombieBase::OnIdleState()
 {
+	// ScheduleSound(IdleSound);
 	TargetSpeed = 0.f;
 }
 
 void ANS_ZombieBase::OnPatrolState()
 {
+	// ScheduleSound(IdleSound);
 	TargetSpeed = 70.f;
 }
 
@@ -353,6 +356,7 @@ void ANS_ZombieBase::OnDetectState()
 
 void ANS_ZombieBase::OnChaseState()
 {
+	// ScheduleSound(ChaseSound);
 	TargetSpeed = 600.f;
 }
 
@@ -363,9 +367,11 @@ void ANS_ZombieBase::OnAttackState()
 
 void ANS_ZombieBase::OnDeadState()
 {
+	
 	if (bIsDead) return;
 	if (HasAuthority())
 	{
+		Server_PlaySound(DeathSound);
 		bIsDead = true;
 		Die_Multicast();
 	}
@@ -393,6 +399,19 @@ void ANS_ZombieBase::Multicast_PlaySound_Implementation(USoundCue* Sound)
 	if (Sound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, Sound, GetMesh()->GetSocketLocation("headsocket"));
+	}
+}
+
+void ANS_ZombieBase::ScheduleSound(USoundCue* SoundCue)
+{
+	if (SoundCue)
+	{
+		float RandomTime = FMath::FRandRange(3.f,6.f);
+		GetWorldTimerManager().SetTimer(AmbientSoundTimer,[this, SoundCue]()
+		{
+			Server_PlaySound(SoundCue);
+			ScheduleSound(SoundCue);
+		}, RandomTime, false);
 	}
 }
 
@@ -454,6 +473,8 @@ void ANS_ZombieBase::SetState(EZombieState NewState)
 
 void ANS_ZombieBase::OnStateChanged(EZombieState State)
 {
+	GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
+	
 	switch (State)
 	{
 	case EZombieState::IDLE:
