@@ -68,10 +68,11 @@ private:
     bool testcheck = false;
     int32 PrvFinalIdx = 0;
   
-    float CurrentCompassOffset = 0.f;
+    // 각 나침반 눈금의 시작 위치(픽셀 오프셋)를 저장할 배열
+    TArray<float> CompassElementOffsets;
 
-    UPROPERTY(EditAnywhere, Category = "Compass", meta = (AllowPrivateAccess = "true"))
-    float CompassInterpSpeed = 10.0f;
+    // 각 나침반 눈금의 너비(픽셀)를 저장할 배열
+    TArray<float> CompassElementWidths;
 
     UPROPERTY()
     class ANS_PlayerCharacterBase* CachedPlayerCharacter = nullptr;

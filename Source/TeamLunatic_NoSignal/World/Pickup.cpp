@@ -352,6 +352,7 @@ void APickup::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent
 }
 
 #endif
+
 void APickup::TryAssignToHUD()
 {
 	if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
@@ -361,22 +362,29 @@ void APickup::TryAssignToHUD()
 			if (UNS_PlayerHUD* PlayerHUD = UIManager->GetPlayerHUDWidget())
 			{
 				PlayerHUD->SetYeddaItem(this);
+
 				return;
 			}
 		}
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("APickup::TryAssignToHUD "));
+	AssignToHUDRetryCount++;
 
-	// HUD가 아직 생성되지 않았을 경우 재시도
-	FTimerHandle RetryHandle;
-	GetWorldTimerManager().SetTimer(
-		RetryHandle,
-		this,
-		&APickup::TryAssignToHUD,
-		0.2f,
-		false
-	);
+	if (AssignToHUDRetryCount < 20)
+	{
+		FTimerHandle RetryHandle;
+		GetWorldTimerManager().SetTimer(
+			RetryHandle,
+			this,
+			&APickup::TryAssignToHUD,
+			0.2f,
+			false
+		);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Pickup '%s': HUD 할당을 위한 재시도 횟수를 초과했습니다."), *GetName());
+	}
 }
 void APickup::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
