@@ -7,18 +7,14 @@
 UNS_BTDecorator_CheckLookPlayer::UNS_BTDecorator_CheckLookPlayer()
 {
 	NodeName = "CheckLookPlayer";
+	bNotifyTick = true;
 }
 
 bool UNS_BTDecorator_CheckLookPlayer::CalculateRawConditionValue(UBehaviorTreeComponent& OwnerComp,
 	uint8* NodeMemory) const
 {
 	UBlackboardComponent* BlackboardComponent = OwnerComp.GetBlackboardComponent();
-	if (BlackboardComponent)
-	{
-		return BlackboardComponent->GetValueAsBool(BlackboardKey.SelectedKeyName);
-	}
-	else
-	{
-		return false;
-	}
+	if (!BlackboardComponent) return false;
+	
+	return BlackboardComponent->GetValueAsBool(BlackboardKey.SelectedKeyName);
 }
