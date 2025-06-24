@@ -27,6 +27,10 @@ public:
     // 게임 오버 상태 플래그
     UPROPERTY(BlueprintReadWrite, Category = "Game State")
     bool bIsGameOver = false;
+
+    // 제거된 좀비 수 카운터 (멀티플레이 모드 전용)
+    UPROPERTY()
+    int32 ZombiesRemoved = 0;
     
 protected:
     virtual void BeginPlay() override;

@@ -17,14 +17,6 @@ void ANS_GameModeBase::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 게임모드 초기화 시작 - %s"), *GetName());
-	
-	// 좀비 클래스 확인
-	UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 클래스 확인: Basic=%s, Fat=%s, Runner=%s"),
-		BasicZombieClass ? TEXT("설정됨") : TEXT("NULL"),
-		FatZombieClass ? TEXT("설정됨") : TEXT("NULL"),
-		RunnerZombieClass ? TEXT("설정됨") : TEXT("NULL"));
-	
 	// 좀비 스포너 찾기
 	TArray<AActor*> FoundActors;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AANS_ZombieSpawner::StaticClass(), FoundActors); 
@@ -66,6 +58,13 @@ void ANS_GameModeBase::BeginPlay()
 	// 좀비 정리 타이머 설정 (5초마다 실행)
 	GetWorldTimerManager().SetTimer(ZombieCleanupTimer, this, &ANS_GameModeBase::CleanupDistantZombies, 5.0f, true);
 	UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 정리 타이머 설정 완료 (5초마다 실행)"));
+	
+	// 좀비 디버그 타이머 설정 (1초마다 실행)
+	GetWorldTimerManager().SetTimer(ZombieDebugTimerHandle, this, &ANS_GameModeBase::DebugZombieDistances, 1.0f, true);
+	UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 디버그 타이머 설정 완료 (1초마다 실행)"));
+	
+	// 제거된 좀비 카운터 초기화
+	ZombiesRemoved = 0;
 }
 
 void ANS_GameModeBase::SearchForSpawnersDelayed()
@@ -404,13 +403,66 @@ void ANS_GameModeBase::CleanupDistantZombies()
         }
     }
     
+    // 제거된 좀비 수 업데이트
+    ZombiesRemoved += DestroyedCount;
+    
     // 제거된 좀비가 있으면 로그 출력
     if (DestroyedCount > 0)
     {
-        UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] %d개의 멀리 있는 좀비 제거됨"), DestroyedCount);
+        UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] %d개의 멀리 있는 좀비 제거됨 (총 %d개 제거됨)"), DestroyedCount, ZombiesRemoved);
     }
     else
     {
         UE_LOG(LogTemp, Display, TEXT("[GameModeBase] 제거할 좀비가 없음"));
     }
+}
+
+// 좀비 거리 디버그 함수
+void ANS_GameModeBase::DebugZombieDistances()
+{
+    // 플레이어 위치 가져오기
+    FVector PlayerLocation = GetPlayerLocation();
+    
+    // 플레이어 위치가 유효하지 않으면 종료
+    if (PlayerLocation.IsZero())
+    {
+        return;
+    }
+    
+    // 현재 레벨의 모든 좀비 찾기
+    TArray<AActor*> AllZombies;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ANS_ZombieBase::StaticClass(), AllZombies);
+    
+    // 거리별 좀비 수 초기화
+    ZombiesInCloseRange = 0;
+    ZombiesInMidRange = 0;
+    
+    // 각 좀비의 거리 확인
+    for (AActor* ZombieActor : AllZombies)
+    {
+        if (!IsValid(ZombieActor))
+        {
+            continue;
+        }
+        
+        // 플레이어와의 거리 계산
+        float Distance = FVector::Dist(PlayerLocation, ZombieActor->GetActorLocation());
+        
+        // 거리에 따라 카운트
+        if (Distance <= 4000.0f)
+        {
+            ZombiesInCloseRange++;
+        }
+        else if (Distance <= 8000.0f)
+        {
+            ZombiesInMidRange++;
+        }
+    }
+    
+    // 디버그 로그 출력
+    UE_LOG(LogTemp, Warning, TEXT("[좀비 디버그] 총 좀비 수: %d"), AllZombies.Num());
+    UE_LOG(LogTemp, Warning, TEXT("[좀비 디버그] 4000 이내 좀비: %d"), ZombiesInCloseRange);
+    UE_LOG(LogTemp, Warning, TEXT("[좀비 디버그] 4000-8000 사이 좀비: %d"), ZombiesInMidRange);
+    UE_LOG(LogTemp, Warning, TEXT("[좀비 디버그] 8000 초과 좀비: %d"), AllZombies.Num() - ZombiesInCloseRange - ZombiesInMidRange);
+    UE_LOG(LogTemp, Warning, TEXT("[좀비 디버그] 누적 제거된 좀비: %d"), ZombiesRemoved);
 }

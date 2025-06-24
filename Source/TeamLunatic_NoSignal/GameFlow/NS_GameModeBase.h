@@ -95,4 +95,16 @@ protected:
     // 좀비 제거 거리 (이 거리보다 멀리 있는 좀비는 제거됨)
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie Spawning")
     float ZombieDestroyDistance = 8001.0f;
+
+    // 좀비 거리 디버그 함수
+    UFUNCTION()
+    void DebugZombieDistances();
+
+    // 디버그 타이머 핸들
+    FTimerHandle ZombieDebugTimerHandle;
+
+    // 디버그 카운터
+    int32 ZombiesInCloseRange = 0;    // 4000 이내
+    int32 ZombiesInMidRange = 0;      // 4000-8000 사이
+    int32 ZombiesRemoved = 0;         // 제거된 좀비 수
 };
