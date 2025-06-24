@@ -330,6 +330,8 @@ void APickup::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent
 		}
 	}
 }
+
+#endif
 void APickup::TryAssignToHUD()
 {
 	if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
@@ -356,8 +358,6 @@ void APickup::TryAssignToHUD()
 		false
 	);
 }
-#endif
-
 void APickup::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);

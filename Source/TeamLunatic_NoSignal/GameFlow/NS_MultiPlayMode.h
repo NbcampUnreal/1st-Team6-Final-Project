@@ -17,8 +17,15 @@ public:
     virtual FVector GetPlayerLocation_Implementation() const override;
     virtual void OnPlayerCharacterDied_Implementation(ANS_PlayerCharacterBase* DeadCharacter) override;
     void SpawnAllPlayers();
+    
+    // 좀비 스폰 체크 함수 오버라이드
+    virtual void CheckAndSpawnZombies() override;
+    
 protected:
     virtual void BeginPlay() override;
     UPROPERTY()
     bool bIsGameOver = false;
+    
+    // 랜덤한 살아있는 플레이어의 위치를 반환하는 함수
+    FVector GetRandomPlayerLocation() const;
 };

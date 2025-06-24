@@ -40,7 +40,7 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_TakePickup(AActor* InteractingActor);
 
-	UPROPERTY(VisibleAnywhere, Category = "Pickup | Components")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Pickup | Components")
 	UStaticMeshComponent* PickupMesh;
 
 	UPROPERTY(EditInstanceOnly, Category = "Pickup | ItemInitialization")
@@ -67,6 +67,8 @@ public:
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 
-	void TryAssignToHUD();
+
 #endif
+	void TryAssignToHUD();
+
 };

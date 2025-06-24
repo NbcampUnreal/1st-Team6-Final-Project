@@ -11,5 +11,5 @@ void UNS_AnimNotify_ZombieEAttack::Notify(USkeletalMeshComponent* MeshComp, UAni
 	ANS_ZombieBase* Zombie = Cast<ANS_ZombieBase>(MeshComp->GetOwner());
 	if (!Zombie) return;
 
-	Zombie->SphereComp->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	Zombie->GetR_SphereComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 }
