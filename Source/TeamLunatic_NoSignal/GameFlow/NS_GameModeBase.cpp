@@ -465,9 +465,9 @@ void ANS_GameModeBase::DebugZombieDistances()
     }
     
     // 디버그 로그 출력
-    UE_LOG(LogTemp, Warning, TEXT("[좀비 디버그] 총 좀비 수: %d"), AllZombies.Num());
+   /* UE_LOG(LogTemp, Warning, TEXT("[좀비 디버그] 총 좀비 수: %d"), AllZombies.Num());
     UE_LOG(LogTemp, Warning, TEXT("[좀비 디버그] 4000 이내 좀비: %d"), ZombiesInCloseRange);
     UE_LOG(LogTemp, Warning, TEXT("[좀비 디버그] 4000-8000 사이 좀비: %d"), ZombiesInMidRange);
     UE_LOG(LogTemp, Warning, TEXT("[좀비 디버그] 8000 초과 좀비: %d"), AllZombies.Num() - ZombiesInCloseRange - ZombiesInMidRange);
-    UE_LOG(LogTemp, Warning, TEXT("[좀비 디버그] 누적 제거된 좀비: %d"), ZombiesRemoved);
+    UE_LOG(LogTemp, Warning, TEXT("[좀비 디버그] 누적 제거된 좀비: %d"), ZombiesRemoved);*/
 }
