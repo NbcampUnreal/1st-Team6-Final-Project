@@ -14,7 +14,18 @@ ANS_Chaser::ANS_Chaser()
 	MaxHealth = 1000.0f;
 	CurrentHealth = 1000.0f;
 	bEnableAutoDamageTest = false;
+	
+	// 체이서 좀비는 항상 활성화 상태로 시작
 	bIsActive = true;
+	
+	// 체이서 좀비는 항상 보이도록 설정
+	SetActorHiddenInGame(false);
+	
+	// 네비게이션 인보커 활성화 (항상 네비게이션 메시 생성)
+	if (NavigationInvoker)
+	{
+		NavigationInvoker->SetAutoActivate(true);
+	}
 }
 
 void ANS_Chaser::BeginPlay()
@@ -22,10 +33,16 @@ void ANS_Chaser::BeginPlay()
 	Super::BeginPlay();
 	CurrentHealth = MaxHealth;
 
+	// 체이서 좀비는 항상 활성화 상태 유지
+	SetActive_Multicast(true);
+	
 	if (bEnableAutoDamageTest)
 	{
 		GetWorld()->GetTimerManager().SetTimer(AutoDamageTimerHandle, this, &ANS_Chaser::ApplyAutoDamage, 1.0f, true, 1.0f);
 	}
+	
+	// 체이서 좀비 활성화 로그
+	UE_LOG(LogTemp, Warning, TEXT("체이서 좀비 활성화: %s"), *GetName());
 }
 
 void ANS_Chaser::Tick(float DeltaTime)
@@ -94,4 +111,18 @@ void ANS_Chaser::RecoverFromKneel()
 	{
 		GetWorld()->GetTimerManager().SetTimer(AutoDamageTimerHandle, this, &ANS_Chaser::ApplyAutoDamage, 1.0f, true, 1.0f);
 	}
+}
+
+// SetActive_Multicast 함수를 오버라이드하여 체이서 좀비는 항상 활성화 상태 유지
+void ANS_Chaser::SetActive_Multicast_Implementation(bool setActive)
+{
+	// 체이서 좀비는 항상 활성화 상태 유지 (비활성화 시도 무시)
+	if (!setActive)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("체이서 좀비 비활성화 시도 무시: %s"), *GetName());
+		setActive = true;
+	}
+	
+	// 부모 클래스의 함수 호출 (항상 true로 전달)
+	Super::SetActive_Multicast_Implementation(true);
 }
