@@ -150,6 +150,13 @@ void UNS_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
     Super::NativeTick(MyGeometry, InDeltaTime);
 
+    // Geometry 안전성 검사 (크래시 방지)
+    const FGeometry& CompassGeo = ScrollBox_Compass->GetCachedGeometry();
+    if (!CompassGeo.IsUnderLocation(FVector2D::ZeroVector) || CompassGeo.GetLocalSize().X <= 0.f)
+    {
+        return;
+    }
+    
     if (!testcheck || !GetOwningPlayer() || !CachedPlayerCharacter || !ScrollBox_Compass || CompassTextArray.Num() < 72)
     {
         return;
