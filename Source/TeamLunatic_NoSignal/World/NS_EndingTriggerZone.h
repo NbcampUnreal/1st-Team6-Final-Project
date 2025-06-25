@@ -20,6 +20,13 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_EndingTriggerZone : public AActor
 public:
     ANS_EndingTriggerZone();
 
+    virtual void Tick(float DeltaTime) override;
+
+    float RotationUpdateInterval = 0.2f; // 0.2초마다 갱신
+    float TimeSinceLastUpdate = 0.f;
+    float MaxVisibleDistance = 1000.f; // 너무 멀면 회전 안 함
+    bool bPreviouslyVisible = true;
+
     UPROPERTY(VisibleAnywhere, Category = "UI")
     class UWidgetComponent* EndingStatusWidget;
 
