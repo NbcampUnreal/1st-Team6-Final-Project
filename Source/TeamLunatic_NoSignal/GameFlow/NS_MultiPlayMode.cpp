@@ -12,11 +12,39 @@
 ANS_MultiPlayMode::ANS_MultiPlayMode()
 {
     UE_LOG(LogTemp, Warning, TEXT("MultiPlayMode Set !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!."));
+    
+    // 멀티플레이 모드에서는 기본 설정 유지 (BeginPlay에서 플레이어 수에 따라 조정)
+    ZombieSpawnInterval = 3.0f;
 }
 
 void ANS_MultiPlayMode::BeginPlay()
 {
-    // 부모 클래스의 BeginPlay 호출 (좀비 스포너 초기화 등)
+    // 부모 클래스의 BeginPlay 호출 전에 플레이어 수 계산
+    if (const ANS_GameState* GS = GetGameState<ANS_GameState>())
+    {
+        PlayerCount = 0;
+        for (APlayerState* PS : GS->PlayerArray)
+        {
+            if (ANS_MainGamePlayerState* MPS = Cast<ANS_MainGamePlayerState>(PS))
+            {
+                if (MPS->bIsAlive)
+                {
+                    PlayerCount++;
+                }
+            }
+        }
+        
+        // 최소 1명 이상으로 설정
+        PlayerCount = FMath::Max(1, PlayerCount);
+        
+        // 플레이어 수에 따라 한 번에 스폰할 좀비 수 설정
+        ZombiesPerSpawn = PlayerCount;
+        
+        UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 플레이어 수: %d, 한 번에 스폰할 좀비 수: %d"), 
+            PlayerCount, ZombiesPerSpawn);
+    }
+    
+    // 부모 클래스의 BeginPlay 호출 (여기서 MaxZombieCount가 설정됨)
     ANS_GameModeBase::BeginPlay();
     
     // 기존 MultiPlayMode의 BeginPlay 로직
@@ -244,25 +272,21 @@ void ANS_MultiPlayMode::CheckAndSpawnZombies()
         return;
     }
     
-    UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 좀비 스폰 시작: 현재 좀비 %d/%d, 살아있는 플레이어 %d명"),
-        CurrentZombieCount, MaxZombieCount, PlayerLocations.Num());
+    // 한 번에 스폰할 좀비 수 계산 (최대 Missing까지)
+    int32 SpawnCount = FMath::Min(ZombiesPerSpawn, Missing);
     
-    // 각 플레이어 주변에 좀비 스폰 (최대 플레이어 수만큼)
+    UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 좀비 스폰 시작: 현재 좀비 %d/%d, 살아있는 플레이어 %d명, 스폰 예정 좀비 %d마리"),
+        CurrentZombieCount, MaxZombieCount, PlayerLocations.Num(), SpawnCount);
+    
+    // 각 플레이어 주변에 좀비 스폰 (계산된 수만큼)
     int32 SpawnedCount = 0;
-    for (int32 i = 0; i < PlayerLocations.Num(); i++)
+    int32 PlayerIndex = 0;
+    
+    // 모든 플레이어를 순회하면서 좀비 스폰 시도
+    while (SpawnedCount < SpawnCount && PlayerIndex < PlayerLocations.Num())
     {
-        const FVector& CurrentPlayerLocation = PlayerLocations[i];
-        FString PlayerName = PlayerNames.IsValidIndex(i) ? PlayerNames[i] : FString::Printf(TEXT("Player %d"), i);
-        
-        // 최대 스폰 수에 도달했는지 확인
-        if (SpawnedCount >= Missing)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 최대 스폰 수(%d)에 도달하여 %s 주변 스폰 건너뜀"),
-                Missing, *PlayerName);
-            break;
-        }
-        
-        UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] %s 주변 좀비 스폰 시도 중..."), *PlayerName);
+        const FVector& CurrentPlayerLocation = PlayerLocations[PlayerIndex];
+        FString PlayerName = PlayerNames.IsValidIndex(PlayerIndex) ? PlayerNames[PlayerIndex] : FString::Printf(TEXT("Player %d"), PlayerIndex);
         
         // 해당 플레이어 주변의 적합한 스포너 찾기
         TArray<AANS_ZombieSpawner*> SuitableSpawners = FindSuitableSpawnersForMultiplay(CurrentPlayerLocation, PlayerLocations);
@@ -271,13 +295,14 @@ void ANS_MultiPlayMode::CheckAndSpawnZombies()
         if (SuitableSpawners.Num() <= 0)
         {
             UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] %s 주변에 적합한 스포너가 없음"), *PlayerName);
+            PlayerIndex = (PlayerIndex + 1) % PlayerLocations.Num(); // 다음 플레이어로 순환
             continue;
         }
         
         // 스포너 목록 무작위 섞기
         Algo::RandomShuffle(SuitableSpawners);
         
-        // 해당 플레이어 주변에 1마리 스폰
+        // 해당 플레이어 주변에 좀비 스폰
         AANS_ZombieSpawner* SelectedSpawner = SuitableSpawners[0];
         FVector SpawnerLocation = SelectedSpawner->GetActorLocation();
         float DistanceToPlayer = FVector::Dist(CurrentPlayerLocation, SpawnerLocation);
@@ -289,7 +314,10 @@ void ANS_MultiPlayMode::CheckAndSpawnZombies()
         SpawnedCount++;
         
         UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] %s 주변에 좀비 스폰 성공 (%d/%d)"),
-            *PlayerName, SpawnedCount, Missing);
+            *PlayerName, SpawnedCount, SpawnCount);
+        
+        // 다음 플레이어로 순환 (공평하게 분배)
+        PlayerIndex = (PlayerIndex + 1) % PlayerLocations.Num();
     }
     
     UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 좀비 스폰 완료: %d마리 스폰됨, 현재 좀비 %d/%d"),

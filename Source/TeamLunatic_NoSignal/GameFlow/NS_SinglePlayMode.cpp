@@ -13,6 +13,9 @@ ANS_SinglePlayMode::ANS_SinglePlayMode()
 {
 	DefaultPawnClass = nullptr;
 	PlayerControllerClass = ANS_PlayerController::StaticClass();
+	// 싱글플레이 모드에서는 플레이어 수를 1로 설정
+	PlayerCount = 1;
+	ZombiesPerSpawn = 1;
 }
 
 
@@ -92,6 +95,14 @@ FVector ANS_SinglePlayMode::GetPlayerLocation_Implementation() const
 
 void ANS_SinglePlayMode::BeginPlay()
 {
+	Super::BeginPlay();
+	
+	// 싱글플레이 모드 설정
+	if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+	{
+		GI->SetGameModeType(EGameModeType::SinglePlayMode);
+	}
+
 	// 부모 클래스의 BeginPlay 호출 (좀비 스포너 초기화 등)
 	ANS_GameModeBase::BeginPlay();
 	

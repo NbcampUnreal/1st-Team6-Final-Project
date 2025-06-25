@@ -63,7 +63,11 @@ public:
 	EZombieAttackType CurrentAttackType;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Replicated, Category = "State")
 	bool bIsGotHit;
-
+	
+	// Invoker 컴포넌트
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+	class UNavigationInvokerComponent* NavigationInvoker;
+	
 	// 이 좀비가 활성화 되었는지 확인 변수
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "Activation")
 	bool bIsActive; // 기본적으로 비활성화 상태로 시작
@@ -74,20 +78,17 @@ public:
 	
 	//피격관련
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
-	
 	UFUNCTION(NetMulticast, reliable)
 	void Die_Multicast();
-	
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly, Category = "State")
 	UAnimMontage* KnockBackMontage;
-	
 	UFUNCTION(NetMulticast, reliable)
 	void Multicast_PlayMontage(UAnimMontage* MontageToPlay);
-	
 	FTimerHandle HitTimer;
 	void ResetHit();
-
-	virtual void Tick(float DeltaTime) override;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hit")
+	USoundCue* HitSound;
+	//Replicate
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	// Physics관련
@@ -156,7 +157,6 @@ public:
 	USoundCue* DeathSound;
 	
 	FTimerHandle AmbientSoundTimer;
-
 	
 	//Get함수
 	FORCEINLINE const EZombieAttackType GetZombieAttackType() {return CurrentAttackType;}

@@ -13,7 +13,7 @@ void UNS_LoadingScreen::NativeConstruct()
 }
 void UNS_LoadingScreen::FakeUpdateProgress()
 {
-	FakeProgressMax = 15.f; // 15초 동안 로딩이 진행된다고 가정
+	FakeProgressMax = 3.0f; // 15초 동안 로딩이 진행된다고 가정
 	TWeakObjectPtr<UNS_LoadingScreen> SafeThis = this;
 	float ElapsedTime = 0.f;
 	float PrevTime = GetWorld()->GetTimeSeconds();

@@ -23,25 +23,24 @@ public:
     void OnPlayerCharacterDied(class ANS_PlayerCharacterBase* DeadCharacter);
     virtual void OnPlayerCharacterDied_Implementation(class ANS_PlayerCharacterBase* DeadCharacter) PURE_VIRTUAL(ANS_GameModeBase::OnPlayerCharacterDied, );
 protected:
-    // 타이머로 1초마다 현재 좀비를 체크해서 좀비를 스폰하는 함수
+    // 타이머로 주기적으로 현재 좀비를 체크해서 좀비를 스폰하는 함수
     virtual void CheckAndSpawnZombies();
 
     // 전체 좀비에서 줄어든 만큼 좀비 스폰 함수
-    // 스포너에서 좀비를 스폰합니다. 스포너의 스케일을 활용하여 위치를 결정
     virtual void SpawnZombieAtPoint(AANS_ZombieSpawner* SpawnPoint);
 
     // 플레이어로부터 너무 멀리 있는 좀비 제거 함수
     UFUNCTION()
     virtual void CleanupDistantZombies();
-    
-    // 좀비 사망시 콜백
-    FTimerHandle DelayedSpawnerSearchTimer;
 
-    UFUNCTION()
-    void SearchForSpawnersDelayed();
+
+    // 좀비 스폰 간격
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie Spawning")
+    float ZombieSpawnInterval = 3.0f;
     
-    UFUNCTION()
-    void OnZombieDestroyed(AActor* DestroyedActor);
+    // 한 번에 스폰할 좀비 수
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie Spawning")
+    int32 ZombiesPerSpawn = 1;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie")
     // 현재 좀비 수
@@ -49,7 +48,11 @@ protected:
 
     // 최대 좀비 수
     UPROPERTY(EditAnywhere, Category = "Zombie")
-    int32 MaxZombieCount = 150;
+    int32 MaxZombieCount = 40;
+    
+    // 플레이어 수
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie Spawning")
+    int32 PlayerCount = 1;
     
     UPROPERTY(EditDefaultsOnly, Category = "Zombie")
     TSubclassOf<class ANS_BasicZombie> BasicZombieClass;
@@ -67,12 +70,37 @@ protected:
     // 좀비 스폰 타이머 핸들
     FTimerHandle ZombieSpawnTimer;
 
-    // -- 스폰 거리 관련 변수 --
+    // 스폰 거리 관련 변수 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie Spawning")
     float MinSpawnDistance = 4000.0f; // 플레이어로부터 좀비가 스폰될 수 있는 최소 거리
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie Spawning")
     float MaxSpawnDistance = 8000.0f; // 플레이어로부터 좀비가 스폰될 수 있는 최대 거리;
+
+    // 타이머 핸들
+    FTimerHandle ZombieCleanupTimer;
+
+    // 좀비 사망시 콜백
+    FTimerHandle DelayedSpawnerSearchTimer;
+    
+    // 디버그 타이머 핸들
+    FTimerHandle ZombieDebugTimerHandle;
+    
+    // 좀비 제거 거리
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie Spawning")
+    float ZombieDestroyDistance = 8001.0f;
+
+    // 디버그 카운터
+    int32 ZombiesInCloseRange = 0;    // 4000 이내
+    int32 ZombiesInMidRange = 0;      // 4000-8000 사이
+    int32 ZombiesRemoved = 0;         // 제거된 좀비 수
+    
+
+    UFUNCTION()
+    void SearchForSpawnersDelayed();
+    
+    UFUNCTION()
+    void OnZombieDestroyed(AActor* DestroyedActor);
 
     // 적합한 스포너 찾기
     TArray<AANS_ZombieSpawner*> FindSuitableSpawners(const FVector& PlayerLocation);
@@ -88,23 +116,8 @@ protected:
     
     // 스폰된 좀비 등록 함수
     void RegisterSpawnedZombie(ANS_ZombieBase* Zombie);
-
-    // 타이머 핸들
-    FTimerHandle ZombieCleanupTimer;
     
-    // 좀비 제거 거리 (이 거리보다 멀리 있는 좀비는 제거됨)
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie Spawning")
-    float ZombieDestroyDistance = 8001.0f;
-
     // 좀비 거리 디버그 함수
     UFUNCTION()
     void DebugZombieDistances();
-
-    // 디버그 타이머 핸들
-    FTimerHandle ZombieDebugTimerHandle;
-
-    // 디버그 카운터
-    int32 ZombiesInCloseRange = 0;    // 4000 이내
-    int32 ZombiesInMidRange = 0;      // 4000-8000 사이
-    int32 ZombiesRemoved = 0;         // 제거된 좀비 수
 };

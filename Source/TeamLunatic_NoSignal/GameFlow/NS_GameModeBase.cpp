@@ -49,8 +49,14 @@ void ANS_GameModeBase::BeginPlay()
 		}
 	}
 
+	// 플레이어 수에 따라 최대 좀비 수 조정
+	MaxZombieCount = 40 * PlayerCount;
+	UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 플레이어 수(%d)에 따라 최대 좀비 수를 %d로 설정"), 
+		PlayerCount, MaxZombieCount);
+
 	// 좀비 스폰 타이머 설정
-	GetWorldTimerManager().SetTimer(ZombieSpawnTimer, this, &ANS_GameModeBase::CheckAndSpawnZombies, 1.0f, true);
+	GetWorldTimerManager().SetTimer(ZombieSpawnTimer, this, &ANS_GameModeBase::CheckAndSpawnZombies, ZombieSpawnInterval, true);
+	UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 스폰 타이머 설정 완료 (%.1f초 간격)"), ZombieSpawnInterval);
 	
 	// 지연된 스포너 검색 타이머 설정 (3초 후 실행)
 	GetWorldTimerManager().SetTimer(DelayedSpawnerSearchTimer, this, &ANS_GameModeBase::SearchForSpawnersDelayed, 3.0f, false);
@@ -118,44 +124,55 @@ FVector ANS_GameModeBase::GetPlayerLocation_Implementation() const
 // 좀비 스폰 여부 확인 및 스폰
 void ANS_GameModeBase::CheckAndSpawnZombies()
 {
-    // 현재 좀비 수 확인
-    int32 Missing = MaxZombieCount - CurrentZombieCount;
-    
-    // 최대 좀비 수에 도달했으면 스폰하지 않음
-    if (Missing <= 0)
-    {
-        return;
-    }
-    
-    // 스포너가 없으면 종료
-    if (ZombieSpawnPoints.Num() == 0)
-    {
-        static int32 LogCounter = 0;
-        if (LogCounter++ % 30 == 0)  // 30번에 한 번만 로그 출력
-        {
-            UE_LOG(LogTemp, Warning, TEXT("[GameMode] 등록된 스포너가 없습니다. 스폰 불가능"));
-            SearchForSpawnersDelayed();
-        }
-        return;
-    }
-    
-    // 플레이어 위치 확인
-    FVector PlayerLocation = GetPlayerLocation();
-    
-    // 적합한 스포너 찾기
-    TArray<AANS_ZombieSpawner*> SuitableSpawners = FindSuitableSpawners(PlayerLocation);
-    
-    // 적합한 스포너가 없으면 종료
-    if (SuitableSpawners.Num() <= 0)
-    {
-        return;
-    }
-    
-    // 스포너 목록 무작위 섞기
-    Algo::RandomShuffle(SuitableSpawners);
-    
-    // 1초당 1마리 스폰 제한
-    SpawnZombieAtPoint(SuitableSpawners[0]);
+	// 현재 좀비 수 확인
+	int32 Missing = MaxZombieCount - CurrentZombieCount;
+	
+	// 최대 좀비 수에 도달했으면 스폰하지 않음
+	if (Missing <= 0)
+	{
+		return;
+	}
+	
+	// 스포너가 없으면 종료
+	if (ZombieSpawnPoints.Num() == 0)
+	{
+		static int32 LogCounter = 0;
+		if (LogCounter++ % 30 == 0)  // 30번에 한 번만 로그 출력
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[GameMode] 등록된 스포너가 없습니다. 스폰 불가능"));
+			SearchForSpawnersDelayed();
+		}
+		return;
+	}
+	
+	// 플레이어 위치 확인
+	FVector PlayerLocation = GetPlayerLocation();
+	
+	// 적합한 스포너 찾기
+	TArray<AANS_ZombieSpawner*> SuitableSpawners = FindSuitableSpawners(PlayerLocation);
+	
+	// 적합한 스포너가 없으면 종료
+	if (SuitableSpawners.Num() <= 0)
+	{
+		return;
+	}
+	
+	// 스포너 목록 무작위 섞기
+	Algo::RandomShuffle(SuitableSpawners);
+	
+	// 한 번에 스폰할 좀비 수 계산 (최대 Missing까지)
+	int32 SpawnCount = FMath::Min(ZombiesPerSpawn, Missing);
+	
+	// 계산된 수만큼 좀비 스폰
+	for (int32 i = 0; i < SpawnCount; i++)
+	{
+		// 적합한 스포너가 부족하면 순환
+		int32 SpawnerIndex = i % SuitableSpawners.Num();
+		SpawnZombieAtPoint(SuitableSpawners[SpawnerIndex]);
+	}
+	
+	UE_LOG(LogTemp, Verbose, TEXT("[GameMode] %d마리 좀비 스폰 완료, 현재 좀비 %d/%d"), 
+		SpawnCount, CurrentZombieCount, MaxZombieCount);
 }
 
 // 적합한 스포너 찾기
@@ -438,18 +455,15 @@ void ANS_GameModeBase::DebugZombieDistances()
     ZombiesInMidRange = 0;
     
     // 각 좀비의 거리 확인
-    for (AActor* ZombieActor : AllZombies)
+    for (const AActor* ZombieActor : AllZombies)
     {
         if (!IsValid(ZombieActor))
         {
             continue;
         }
         
-        // 플레이어와의 거리 계산
-        float Distance = FVector::Dist(PlayerLocation, ZombieActor->GetActorLocation());
-        
-        // 거리에 따라 카운트
-        if (Distance <= 4000.0f)
+        // 플레이어와의 거리 계산 및 거리에 따라 카운트
+        if (const float Distance = FVector::Dist(PlayerLocation, ZombieActor->GetActorLocation()); Distance <= 4000.0f)
         {
             ZombiesInCloseRange++;
         }

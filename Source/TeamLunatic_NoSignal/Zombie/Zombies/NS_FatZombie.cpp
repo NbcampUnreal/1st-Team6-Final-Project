@@ -21,11 +21,11 @@ ANS_FatZombie::ANS_FatZombie()
 
 void ANS_FatZombie::OnChaseState()
 {
-	TargetSpeed = 350.f;
+	GetCharacterMovement()->MaxWalkSpeed = 300.f;
 }
 
 void ANS_FatZombie::OnAttackState()
 {
-	TargetSpeed = 140.f;
+	GetCharacterMovement()->MaxWalkSpeed = 140.f;
 }
 

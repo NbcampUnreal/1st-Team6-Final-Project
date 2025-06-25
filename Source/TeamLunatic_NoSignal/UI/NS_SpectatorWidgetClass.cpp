@@ -4,7 +4,6 @@
 #include "Components/TextBlock.h"
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerState.h"
-#include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerController.h"
 
 void UNS_SpectatorWidgetClass::NativeConstruct()
@@ -19,88 +18,95 @@ void UNS_SpectatorWidgetClass::NativeConstruct()
 
 	if (QuitButton)
 		QuitButton->OnClicked.AddDynamic(this, &UNS_SpectatorWidgetClass::OnQuitClicked);
+
+	UpdateAndSpectateFirstPlayer();
+}
+
+void UNS_SpectatorWidgetClass::UpdateAlivePlayers()
+{
+	AlivePlayerStates.Empty();
+
+	AGameStateBase* GS = GetWorld() ? GetWorld()->GetGameState() : nullptr;
+	if (!GS) return;
+
+	for (APlayerState* PS : GS->PlayerArray)
+	{
+		if (IsValid(PS) && !PS->IsOnlyASpectator() && IsValid(PS->GetPawn()))
+		{
+			AlivePlayerStates.Add(PS);
+		}
+	}
 }
 
 void UNS_SpectatorWidgetClass::OnLeftClicked()
 {
-	UWorld* World = GetWorld();
-	if (!World) return;
+	UpdateAlivePlayers(); 
+	if (AlivePlayerStates.Num() == 0) return;
 
-	AGameStateBase* GS = World->GetGameState();
-	if (!GS) return;
-
-	TArray<APlayerState*> AlivePlayers = GS->PlayerArray;
-	AlivePlayers.RemoveAll([](APlayerState* PS) {
-		return PS->IsOnlyASpectator() || !PS->GetPawn();
-	});
-
-	if (AlivePlayers.Num() == 0) return;
-
-	CurrentIndex = (CurrentIndex - 1 + AlivePlayers.Num()) % AlivePlayers.Num();
+	CurrentIndex = (CurrentIndex - 1 + AlivePlayerStates.Num()) % AlivePlayerStates.Num();
 	SpectatePlayerAtIndex(CurrentIndex);
 }
 
 void UNS_SpectatorWidgetClass::OnRightClicked()
 {
-	UWorld* World = GetWorld();
-	if (!World) return;
+	UpdateAlivePlayers(); 
+	if (AlivePlayerStates.Num() == 0) return;
 
-	AGameStateBase* GS = World->GetGameState();
-	if (!GS) return;
-
-	TArray<APlayerState*> AlivePlayers = GS->PlayerArray;
-	AlivePlayers.RemoveAll([](APlayerState* PS) {
-		return PS->IsOnlyASpectator() || !PS->GetPawn();
-	});
-
-	if (AlivePlayers.Num() == 0) return;
-
-	CurrentIndex = (CurrentIndex + 1) % AlivePlayers.Num();
+	CurrentIndex = (CurrentIndex + 1) % AlivePlayerStates.Num();
 	SpectatePlayerAtIndex(CurrentIndex);
 }
 
 void UNS_SpectatorWidgetClass::SpectatePlayerAtIndex(int32 Index)
 {
-	UWorld* World = GetWorld();
-	if (!World) return;
+	if (!AlivePlayerStates.IsValidIndex(Index)) return;
 
-	AGameStateBase* GS = World->GetGameState();
-	if (!GS) return;
+	APlayerController* PC = GetOwningPlayer();
+	APlayerState* TargetState = AlivePlayerStates[Index];
 
-	TArray<APlayerState*> AlivePlayers = GS->PlayerArray;
-	AlivePlayers.RemoveAll([](APlayerState* PS) {
-		return PS->IsOnlyASpectator() || !PS->GetPawn();
-	});
+	if (!PC || !TargetState) return;
 
-	if (!AlivePlayers.IsValidIndex(Index)) return;
-
-	APlayerController* PC = UGameplayStatics::GetPlayerController(World, 0);
-	APlayerState* TargetState = AlivePlayers[Index];
 	APawn* TargetPawn = TargetState->GetPawn();
-
-	if (!PC || !TargetPawn) return;
+	if (!TargetPawn)
+	{
+		UpdateAndSpectateFirstPlayer();
+		return;
+	}
 
 	PC->SetViewTargetWithBlend(TargetPawn, 0.3f);
 
 	if (PlayerName)
 	{
-		if (const ANS_PlayerState* PS = Cast<ANS_PlayerState>(TargetState))
+		if (const ANS_PlayerState* NS_PS = Cast<ANS_PlayerState>(TargetState))
 		{
-			const FString Label = FString::Printf(TEXT("Player %d"), PS->PlayerIndex + 1);
+			const FString Label = FString::Printf(TEXT("Player %d"), NS_PS->PlayerIndex + 1);
 			PlayerName->SetText(FText::FromString(Label));
 		}
 		else
 		{
-			PlayerName->SetText(FText::FromString(TEXT("Unknown")));
+			PlayerName->SetText(FText::FromString(TargetState->GetPlayerName()));
 		}
 	}
 }
 
+void UNS_SpectatorWidgetClass::UpdateAndSpectateFirstPlayer()
+{
+	UpdateAlivePlayers();
+	if (AlivePlayerStates.Num() > 0)
+	{
+		CurrentIndex = 0;
+		SpectatePlayerAtIndex(CurrentIndex);
+	}
+	else
+	{
+		if (PlayerName) PlayerName->SetText(FText::FromString(TEXT("No players to spectate")));
+	}
+}
+
+
 void UNS_SpectatorWidgetClass::OnQuitClicked()
 {
-	if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+	if (APlayerController* PC = GetOwningPlayer())
 	{
 		PC->ClientTravel("/Game/Maps/MainTitle", ETravelType::TRAVEL_Absolute);
 	}
 }
-
