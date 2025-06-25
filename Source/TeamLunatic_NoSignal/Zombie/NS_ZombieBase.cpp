@@ -285,6 +285,8 @@ float ANS_ZombieBase::TakeDamage(float DamageAmount, struct FDamageEvent const& 
 		if (AICon)
 		{
 			AICon->GetBlackboardComponent()->SetValueAsBool("bGetHit", true);
+			AICon->GetBlackboardComponent()->SetValueAsBool("bIsAttacking", false);
+			AICon->GetBlackboardComponent()->SetValueAsBool("bAttackAgain", true);
 		}
 		GetWorldTimerManager().SetTimer(HitTimer, this, &ANS_ZombieBase::ResetHit, .5f,false);
 		Multicast_SpawnEffect(Bone, Point->HitInfo.Location, HitRotation);
