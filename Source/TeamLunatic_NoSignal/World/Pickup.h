@@ -67,6 +67,12 @@ public:
 
 	int32 AssignToHUDRetryCount = 0;
 
+	UFUNCTION(NetMulticast,Reliable)
+	void Multicast_AddMarkerToAll(const TArray<APickup*>& QuestItems);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_RemoveMarkerFromAll();
+
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 

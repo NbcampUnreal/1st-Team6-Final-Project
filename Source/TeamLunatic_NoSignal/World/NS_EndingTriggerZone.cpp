@@ -16,7 +16,7 @@
 
 ANS_EndingTriggerZone::ANS_EndingTriggerZone()
 {
-    PrimaryActorTick.bCanEverTick = false;
+    PrimaryActorTick.bCanEverTick = true;
 
     TriggerBox = CreateDefaultSubobject<UBoxComponent>(TEXT("TriggerBox"));
     RootComponent = TriggerBox;
@@ -34,9 +34,69 @@ ANS_EndingTriggerZone::ANS_EndingTriggerZone()
     EndingStatusWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("EndingStatusWidget"));
     EndingStatusWidget->SetupAttachment(RootComponent);
     EndingStatusWidget->SetWidgetSpace(EWidgetSpace::World);
-    EndingStatusWidget->SetVisibility(false); 
+    EndingStatusWidget->SetVisibility(true);
+    EndingStatusWidget->SetDrawAtDesiredSize(true);     // 위젯 크기 자동
+    EndingStatusWidget->SetPivot(FVector2D(0.5f, 0.5f)); // 중심 기준
+    EndingStatusWidget->SetTwoSided(true);              // 후면에서도 보이게
 
     bReplicates = true;
+}
+
+void ANS_EndingTriggerZone::Tick(float DeltaTime)
+{
+    Super::Tick(DeltaTime);
+
+    // 서버에선 회전 처리 안 함
+    if (GetNetMode() == NM_DedicatedServer) return;
+
+    // 위젯 유효성 확인
+    if (!EndingStatusWidget) return;
+
+    // 시간 간격 체크
+    TimeSinceLastUpdate += DeltaTime;
+    if (TimeSinceLastUpdate < RotationUpdateInterval) return;
+    TimeSinceLastUpdate = 0.f;
+
+    // 카메라 위치 획득
+    APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+    if (!IsValid(PC) || !PC->IsLocalController()) return;
+
+    APlayerCameraManager* CamManager = PC->PlayerCameraManager;
+    if (!CamManager) return;
+
+    FVector CamLocation = CamManager->GetCameraLocation();
+    FVector WidgetLocation = EndingStatusWidget->GetComponentLocation();
+
+    float DistanceSq = FVector::DistSquared(CamLocation, WidgetLocation);
+    const bool bShouldBeVisible = DistanceSq <= FMath::Square(MaxVisibleDistance);
+
+    // 바뀐 경우에만 SetVisibility 호출
+    if (bShouldBeVisible != bPreviouslyVisible)
+    {
+        EndingStatusWidget->SetVisibility(bShouldBeVisible);
+        bPreviouslyVisible = bShouldBeVisible;
+
+        UE_LOG(LogTemp, Verbose, TEXT("EndingWidget %s"),
+            bShouldBeVisible ? TEXT("표시됨") : TEXT("숨김"));
+    }
+
+    // 회전은 UI가 보일 때만 적용
+    if (bShouldBeVisible)
+    {
+        // LookAt 방향 계산
+        FVector DirectionToCamera = CamLocation - WidgetLocation;
+
+        // Pitch, Roll 제거 → Yaw만 유지
+        FRotator LookAtRotation = FRotationMatrix::MakeFromX(DirectionToCamera).Rotator();
+        FRotator OnlyYawRotation = FRotator(0.f, LookAtRotation.Yaw, 0.f);
+
+        // 현재 회전과 큰 차이가 있을 때만 적용 (불필요한 호출 방지)
+        FRotator CurrentRotation = EndingStatusWidget->GetComponentRotation();
+        if (!CurrentRotation.Equals(OnlyYawRotation, 1.0f)) // 오차 허용값 1도
+        {
+            EndingStatusWidget->SetWorldRotation(OnlyYawRotation);
+        }
+    }
 }
 
 void ANS_EndingTriggerZone::BeginPlay()
