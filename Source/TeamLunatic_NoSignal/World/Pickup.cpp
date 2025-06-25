@@ -10,6 +10,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFlow/NS_GameInstance.h"
 #include "UI/NS_UIManager.h"
+#include "Character/NS_PlayerController.h"
 #include "UI/NS_PlayerHUD.h"
 
 APickup::APickup()
@@ -221,7 +222,6 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 
 							if (TargetNoteIDs.Contains(ItemID))
 							{
-								// ===================== [ 로그 추가 시작 ] =====================
 								// 해당 쪽지의 이름과 현재 월드 위치를 로그로 출력
 								FString LogMessage = FString::Printf(
 									TEXT("퀘스트 쪽지 발견 -> 이름: [ %s ], 월드 위치: [ %s ]"),
@@ -229,11 +229,15 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 									*QuestPickup->GetActorLocation().ToString()
 								);
 								UE_LOG(LogTemp, Log, TEXT("%s"), *LogMessage);
-								// ===================== [  로그 추가 끝  ] =====================
 
 								// HUD의 나침반에 추적 대상으로 추가
 								PlayerHUD->SetYeddaItem(QuestPickup);
 							}
+						}
+						if (ANS_PlayerController* PC = Cast<ANS_PlayerController>(Taker->GetController()))
+						{
+							const FText TipMessage = FText::FromString(TEXT("메모를 읽고 단서를 찾아라."));
+							PC->Client_UpdateTipText(TipMessage);
 						}
 					}
 
@@ -323,7 +327,6 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 		}
 	}
 }
-
 void APickup::Server_TakePickup_Implementation(AActor* InteractingActor)
 {
 	if (ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(InteractingActor))
@@ -352,6 +355,7 @@ void APickup::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent
 }
 
 #endif
+
 void APickup::TryAssignToHUD()
 {
 	if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
@@ -361,22 +365,29 @@ void APickup::TryAssignToHUD()
 			if (UNS_PlayerHUD* PlayerHUD = UIManager->GetPlayerHUDWidget())
 			{
 				PlayerHUD->SetYeddaItem(this);
+
 				return;
 			}
 		}
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("APickup::TryAssignToHUD "));
+	AssignToHUDRetryCount++;
 
-	// HUD가 아직 생성되지 않았을 경우 재시도
-	FTimerHandle RetryHandle;
-	GetWorldTimerManager().SetTimer(
-		RetryHandle,
-		this,
-		&APickup::TryAssignToHUD,
-		0.2f,
-		false
-	);
+	if (AssignToHUDRetryCount < 20)
+	{
+		FTimerHandle RetryHandle;
+		GetWorldTimerManager().SetTimer(
+			RetryHandle,
+			this,
+			&APickup::TryAssignToHUD,
+			0.2f,
+			false
+		);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Pickup '%s': HUD 할당을 위한 재시도 횟수를 초과했습니다."), *GetName());
+	}
 }
 void APickup::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {

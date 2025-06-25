@@ -16,10 +16,12 @@
 #include "Sound/SoundCue.h"
 #include "PhysicsEngine/PhysicalAnimationComponent.h"
 #include "NiagaraFunctionLibrary.h"
+#if WITH_EDITOR 
 #include "AssetTypeActions/AssetDefinition_SoundBase.h"
+#endif 
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
-#include "Components/SphereComponent.h"
+
 
 ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), CurrentState(EZombieState::IDLE),
                                    BaseDamage(20.f),PatrolSpeed(20.f), ChaseSpeed(100.f),AccelerationSpeed(200.f),
@@ -33,7 +35,7 @@ ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), C
 	GetCharacterMovement()->MaxWalkSpeed = 300.f;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->bUseRVOAvoidance = true;
-	GetCharacterMovement()->AvoidanceConsiderationRadius = 100.f;
+	GetCharacterMovement()->AvoidanceConsiderationRadius = 10.f;
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 72.0f, 0.0f);
 
 	
@@ -45,13 +47,13 @@ ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), C
 	R_SphereComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	R_SphereComp->SetupAttachment(GetMesh(), FName("attack_r"));
 	R_SphereComp->OnComponentBeginOverlap.AddDynamic(this,&ANS_ZombieBase::OnOverlapSphere);
-	R_SphereComp->SetGenerateOverlapEvents(true);
+	R_SphereComp->SetGenerateOverlapEvents(false);
 	
 	L_SphereComp = CreateDefaultSubobject<USphereComponent>("LeftAttack");
 	L_SphereComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	L_SphereComp->SetupAttachment(GetMesh(), FName("attack_l"));
 	L_SphereComp->OnComponentBeginOverlap.AddDynamic(this,&ANS_ZombieBase::OnOverlapSphere);
-	L_SphereComp->SetGenerateOverlapEvents(true);
+	L_SphereComp->SetGenerateOverlapEvents(false);
 
 	// bIsActive의 초기값은 false로 설정해서 처음부터 캐릭터가 활성화 거리 밖에있으면 안보이도록 설정
 	bIsActive = false;
@@ -63,7 +65,9 @@ void ANS_ZombieBase::BeginPlay()
 
 	SetActive_Multicast(false);
 	SetState(CurrentState);
+	
 	GetMesh()->GetAnimInstance()->RootMotionMode = ERootMotionMode::RootMotionFromEverything;
+	
 	InitializePhysics();
 	
 	if (!Controller)
@@ -240,6 +244,7 @@ void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 				
 			}
 		}
+		UE_LOG(LogTemp, Warning, TEXT("Zombie %s is now fully INACTIVE."), *GetName());
 	}
 }
 
@@ -332,13 +337,13 @@ void ANS_ZombieBase::ResetPhysics(FName Bone)
 
 void ANS_ZombieBase::OnIdleState()
 {
-	// ScheduleSound(IdleSound);
+	ScheduleSound(IdleSound);
 	TargetSpeed = 0.f;
 }
 
 void ANS_ZombieBase::OnPatrolState()
 {
-	// ScheduleSound(IdleSound);
+	ScheduleSound(IdleSound);
 	TargetSpeed = 70.f;
 }
 
@@ -349,18 +354,17 @@ void ANS_ZombieBase::OnDetectState()
 
 void ANS_ZombieBase::OnChaseState()
 {
-	// ScheduleSound(ChaseSound);
-	TargetSpeed = 600.f;
+	ScheduleSound(ChaseSound);
+	TargetSpeed = 400.f;
 }
 
 void ANS_ZombieBase::OnAttackState()
 {
-	TargetSpeed = 600.f;
+	TargetSpeed = 400.f;
 }
 
 void ANS_ZombieBase::OnDeadState()
 {
-	
 	if (bIsDead) return;
 	if (HasAuthority())
 	{
@@ -368,6 +372,8 @@ void ANS_ZombieBase::OnDeadState()
 		bIsDead = true;
 		Die_Multicast();
 	}
+	R_SphereComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	L_SphereComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void ANS_ZombieBase::OnFrozenState()
@@ -399,10 +405,15 @@ void ANS_ZombieBase::ScheduleSound(USoundCue* SoundCue)
 {
 	if (SoundCue)
 	{
-		float RandomTime = FMath::FRandRange(3.f,6.f);
+		float RandomTime = FMath::FRandRange(5.f,8.f);
 		GetWorldTimerManager().SetTimer(AmbientSoundTimer,[this, SoundCue]()
 		{
-			Server_PlaySound(SoundCue);
+			float PlayPercent = 0.5f;
+			float ActualPercent = FMath::FRandRange(0.0f, 1.0f);
+			if (PlayPercent > ActualPercent)
+			{
+				Server_PlaySound(SoundCue);
+			}
 			ScheduleSound(SoundCue);
 		}, RandomTime, false);
 	}
@@ -453,6 +464,10 @@ void ANS_ZombieBase::InitializePhysics()
 
 void ANS_ZombieBase::SetState(EZombieState NewState)
 {
+	if (CurrentState == NewState) return;
+
+	CurrentState = NewState;
+	OnStateChanged(CurrentState);
 	if (HasAuthority())
 	{
 		CurrentState = NewState;
@@ -466,7 +481,10 @@ void ANS_ZombieBase::SetState(EZombieState NewState)
 
 void ANS_ZombieBase::OnStateChanged(EZombieState State)
 {
-	GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
+	if (State ==EZombieState::DEAD)
+	{
+		GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
+	}
 	
 	switch (State)
 	{
@@ -535,12 +553,16 @@ void ANS_ZombieBase::SetAttackType(EZombieAttackType NewAttackType)
 
 void ANS_ZombieBase::Server_SetState_Implementation(EZombieState NewState)
 {
+	if (CurrentState == NewState) return;
+
 	CurrentState = NewState;
 	OnStateChanged(CurrentState);
 }
 
 void ANS_ZombieBase::Server_SetAttackType_Implementation(EZombieAttackType NewAttackType)
 {
+	if (CurrentAttackType == NewAttackType) return;
+	
 	CurrentAttackType = NewAttackType;
 	SetAttackType(CurrentAttackType);
 }

@@ -4,6 +4,7 @@
 #include "UI/NS_PlayerHUD.h"
 #include "UI/NS_CircleProgressBar.h"
 #include "Components/Image.h"
+#include "Components/EditableTextBox.h"
 #include "Components/ScrollBox.h"
 #include "Components/TextBlock.h"
 #include "Components/ProgressBar.h"
@@ -139,50 +140,65 @@ void UNS_PlayerHUD::SetYeddaItem(APickup* YeddaItem)
 {
     if (!CachedPlayerCharacter || !YeddaItem || !ScrollBox_Compass) return;
 
-	YeddaItemArray.Add(YeddaItem);
+    if (!YeddaItemArray.Contains(YeddaItem))
+    {
+        YeddaItemArray.Add(YeddaItem);
+    }
 }
 
 void UNS_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
     Super::NativeTick(MyGeometry, InDeltaTime);
 
-    // 필수 컴포넌트들이 유효하지 않거나, 나침반 위젯 배열이 완전히 준비되지 않았다면 즉시 함수를 종료
     if (!testcheck || !GetOwningPlayer() || !CachedPlayerCharacter || !ScrollBox_Compass || CompassTextArray.Num() < 72)
     {
         return;
     }
-    // 위젯의 크기 정보가 유효하지 않은 첫 프레임 등에서 발생하는 오류를 방지.
-    if (CompassTextArray[0]->GetCachedGeometry().GetLocalSize().X <= 0.f)
-    {
-        return;
-    }
-    // =====================================================================================
-
 
     const float PlayerYaw = FRotator::NormalizeAxis(GetOwningPlayer()->GetControlRotation().Yaw);
     const float AngleGap = 15.f;
 
-    //스크롤 위치를 계산.
-    const float WidthPerElement = CompassTextArray[0]->GetCachedGeometry().GetLocalSize().X;
-    const float PixelPerDegree = WidthPerElement / AngleGap;
+    const float YawForScrolling = FMath::Fmod(PlayerYaw + 360.f, 360.f);
+    const int32 CurrentIndex = FMath::FloorToInt(YawForScrolling / AngleGap);
+    const float InterpFraction = FMath::Fmod(YawForScrolling / AngleGap, 1.f);
+    const int32 FinalIndex = CurrentIndex + 24;
 
-    const float YawForOffset = FMath::Fmod(PlayerYaw + 360.f, 360.f);
+    if (!CompassTextArray.IsValidIndex(FinalIndex) || !CompassTextArray.IsValidIndex(FinalIndex + 1))
+    {
+        return;
+    }
 
-    // 중앙 섹션 기준으로 Yaw만큼 이동한 위치를 목표로 설정.
+    if (!IsValid(CompassTextArray[FinalIndex]) || !IsValid(CompassTextArray[FinalIndex + 1]))
+    {
+        return;
+    }
+
+    float BaseOffset = 0.f;
+    for (int32 i = 0; i < FinalIndex; ++i)
+    {
+
+        if (IsValid(CompassTextArray[i]))
+        {
+            BaseOffset += CompassTextArray[i]->GetCachedGeometry().GetLocalSize().X;
+        }
+    }
+
+    const float WidthA = CompassTextArray[FinalIndex]->GetCachedGeometry().GetLocalSize().X;
+    const float WidthB = CompassTextArray[FinalIndex + 1]->GetCachedGeometry().GetLocalSize().X;
+    const float InterpolatedOffset = ((WidthA / 2.f) + (WidthB / 2.f)) * InterpFraction;
+
     const float ViewWidth = ScrollBox_Compass->GetCachedGeometry().GetLocalSize().X;
-    const float TargetOffset = (24 * WidthPerElement) + (YawForOffset * PixelPerDegree) - (ViewWidth / 2.f) + (WidthPerElement / 2.f);
+    float TargetOffset = BaseOffset + InterpolatedOffset - (ViewWidth / 2.f) + (WidthA / 2.f);
 
-    // 현재 스크롤 위치에서 목표 위치로 부드럽게 이동.
-    CurrentCompassOffset = FMath::FInterpTo(CurrentCompassOffset, TargetOffset, InDeltaTime, CompassInterpSpeed);
-    ScrollBox_Compass->SetScrollOffset(CurrentCompassOffset);
-
+    ScrollBox_Compass->SetScrollOffset(TargetOffset);
 
     TArray<int32> HighlightIndices;
     const FVector PlayerLoc = CachedPlayerCharacter->GetActorLocation();
 
     for (APickup* YeddaItem : YeddaItemArray)
     {
-        if (!YeddaItem) continue;
+        if (!IsValid(YeddaItem)) continue; 
+
         const FVector ToItem = (YeddaItem->GetActorLocation() - PlayerLoc).GetSafeNormal2D();
         const float ItemWorldYaw = FMath::RadiansToDegrees(FMath::Atan2(ToItem.Y, ToItem.X));
 
@@ -195,28 +211,38 @@ void UNS_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
     for (int32 i = 0; i < CompassTextArray.Num(); ++i)
     {
-        if (UNS_CompassElement* Elem = CompassTextArray[i])
+        if (UNS_CompassElement* Elem = CompassTextArray.IsValidIndex(i) ? CompassTextArray[i] : nullptr; IsValid(Elem))
         {
             bool bHighlight = HighlightIndices.Contains(i);
-            Elem->TextDir->SetColorAndOpacity(FSlateColor(bHighlight ? FLinearColor::Red : FLinearColor::White));
-            if (Elem->Image_Arrow)
+
+            // TextDir 포인터가 유효한지 확인
+            if (IsValid(Elem->TextDir))
+            {
+                Elem->TextDir->SetColorAndOpacity(FSlateColor(bHighlight ? FLinearColor::Red : FLinearColor::White));
+            }
+
+            // Image_Arrow 포인터가 유효한지 확인
+            if (IsValid(Elem->Image_Arrow))
             {
                 Elem->Image_Arrow->SetVisibility(bHighlight ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
             }
         }
     }
-}
-void UNS_PlayerHUD::DeleteCompasItem(APickup* DeleteItem)
-{
-	if (!DeleteItem || !CachedPlayerCharacter) return;
-	if (YeddaItemArray.Contains(DeleteItem))
-	{
-		YeddaItemArray.Remove(DeleteItem);
-		//UE_LOG(LogTemp, Warning, TEXT(" DeleteItem: %s"), *DeleteItem->GetName());
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT(" DeleteItem not found: %s"), *DeleteItem->GetName());
-	}
+
 }
 
+void UNS_PlayerHUD::DeleteCompasItem(APickup* DeleteItem)
+{
+    if (YeddaItemArray.Contains(DeleteItem))
+    {
+        YeddaItemArray.Remove(DeleteItem);
+    }
+}
+
+void UNS_PlayerHUD::SetTipText(const FText& NewText)
+{
+    if (IsValid(TipText))
+    {
+        TipText->SetText(NewText);
+    }
+}
