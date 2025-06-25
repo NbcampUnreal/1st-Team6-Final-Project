@@ -183,7 +183,7 @@ void UNS_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
     float BaseOffset = 0.f;
     for (int32 i = 0; i < FinalIndex; ++i)
     {
-
+    
         if (IsValid(CompassTextArray[i]))
         {
             BaseOffset += CompassTextArray[i]->GetCachedGeometry().GetLocalSize().X;

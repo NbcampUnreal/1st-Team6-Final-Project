@@ -78,19 +78,17 @@ public:
 	
 	//피격관련
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
-	
 	UFUNCTION(NetMulticast, reliable)
 	void Die_Multicast();
-	
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly, Category = "State")
 	UAnimMontage* KnockBackMontage;
-	
 	UFUNCTION(NetMulticast, reliable)
 	void Multicast_PlayMontage(UAnimMontage* MontageToPlay);
-	
 	FTimerHandle HitTimer;
 	void ResetHit();
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hit")
+	USoundCue* HitSound;
+	//Replicate
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	// Physics관련
@@ -159,7 +157,6 @@ public:
 	USoundCue* DeathSound;
 	
 	FTimerHandle AmbientSoundTimer;
-
 	
 	//Get함수
 	FORCEINLINE const EZombieAttackType GetZombieAttackType() {return CurrentAttackType;}
