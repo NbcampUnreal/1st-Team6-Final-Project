@@ -21,4 +21,8 @@ public:
     void SavePlayerData();
     // 복제 항목 등록 
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+    UFUNCTION(NetMulticast, Reliable)
+    void Multicast_UpdateAllTipTexts(const FText& Message);
+
 };

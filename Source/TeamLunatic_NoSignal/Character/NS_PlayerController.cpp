@@ -177,7 +177,7 @@ void ANS_PlayerController::Client_ShowHitEffect_Implementation()
     }
 }
 
-void ANS_PlayerController::Client_UpdateTipText_Implementation(const FText& Message)
+void ANS_PlayerController::UpdateTipHUD(const FText& Message)
 {
     if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
