@@ -50,6 +50,10 @@ void UNS_GameInstance::Init()
 		{
 			MyServerPort = FCString::Atoi(*PortStr);
 			UE_LOG(LogTemp, Warning, TEXT("[GameInstance] 커맨드라인에서 포트 추출: %d"), MyServerPort);
+			
+			
+			GetWorld()->GetTimerManager().SetTimer(HeartbeatTimerHandle, this, &UNS_GameInstance::SendHeartbeat, 10.0f, true);
+			UE_LOG(LogTemp, Warning, TEXT("[GameInstance] 데디케이트 서버 하트비트를 시작합니다."));
 		}
 		else
 		{
@@ -116,7 +120,7 @@ void UNS_GameInstance::OnCreateSessionResponse(FHttpRequestPtr Request, FHttpRes
 	UE_LOG(LogTemp, Log, TEXT("[OnCreateSessionResponse] 접속 주소: %s"), *Address);
 
 	// 10초마다 heartbeat 보낸다.
-	GetWorld()->GetTimerManager().SetTimer(HeartbeatTimerHandle, this, &UNS_GameInstance::SendHeartbeat, 10.0f, true);
+	//GetWorld()->GetTimerManager().SetTimer(HeartbeatTimerHandle, this, &UNS_GameInstance::SendHeartbeat, 10.0f, true);
 
 	if (UWorld* World = GetWorld())
 	{

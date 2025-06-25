@@ -2,6 +2,7 @@
 #include "Engine/DataTable.h"
 #include "Item/NS_ItemDataStruct.h"
 #include "Item/NS_BaseWeapon.h"
+#include "GameFlow/NS_GameState.h"
 #include "Item/NS_InventoryBaseItem.h"
 #include "Inventory/InventoryComponent.h"
 #include "Character/NS_PlayerCharacterBase.h"
@@ -175,151 +176,135 @@ void APickup::Interact_Implementation(AActor* InteractingActor)
 
 void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 {
-	if (!HasAuthority()) return;
+	if (!HasAuthority()) return; 
 
 	if (!IsPendingKillPending())
 	{
 		if (!ItemReference || !IsValid(ItemReference))
 		{
-			UE_LOG(LogTemp, Error, TEXT("[TakePickup] ItemReference is null or invalid. GC로 수거되었을 가능성 있음."));
 			return;
 		}
 		if (UInventoryComponent* PlayerInventory = Taker->GetInventory())
 		{
-			// 인벤토리에 아이템 추가
+			// 인벤토리에 아이템 추가 시도
 			const FItemAddResult AddResult = PlayerInventory->HandleAddItem(ItemReference);
 
-			//인벤토리 아이템을 확인하고, 다음 타겟으로 변경하는 코드
-			//쪽지 5개를 표시하는 과정에서 하나를 얻으면 지우기.
+			// 아이템이 성공적으로 (전부 또는 부분적으로) 추가되었다면
 			if (AddResult.OperationResult == EItemAddResult::TAR_AllItemAdded || AddResult.OperationResult == EItemAddResult::TAR_PartialAmountItemAdded)
 			{
-				UNS_PlayerHUD* PlayerHUD = nullptr;
-				if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+				// "Memo" 아이템을 주웠을 경우의 처리
+				if (ItemReference->ItemDataRowName == FName("Memo"))
 				{
-					if (UNS_UIManager* UIManager = GI->GetUIManager())
+					// 월드에 있는 모든 퀘스트 쪽지를 찾기.
+					TArray<AActor*> FoundPickups;
+					UGameplayStatics::GetAllActorsOfClass(GetWorld(), APickup::StaticClass(), FoundPickups);
+
+					TArray<APickup*> QuestPickupsToShow;
+					const TArray<FName> TargetNoteIDs = { FName("One"), FName("Two"), FName("Three"), FName("Four"), FName("Five") };
+
+					for (AActor* PickupActor : FoundPickups)
 					{
-						PlayerHUD = UIManager->GetPlayerHUDWidget();
+						APickup* QuestPickup = Cast<APickup>(PickupActor);
+						if (QuestPickup && QuestPickup->GetItemData() && TargetNoteIDs.Contains(QuestPickup->GetItemData()->ItemDataRowName))
+						{
+							QuestPickupsToShow.Add(QuestPickup);
+						}
+					}
+
+					// 모든 클라이언트에게 보내 마커를 추가하도록 명령
+					if (QuestPickupsToShow.Num() > 0)
+					{
+						Multicast_AddMarkerToAll(QuestPickupsToShow);
+					}
+
+					// 팁 메시지를 수정
+					if (ANS_GameState* GS = GetWorld()->GetGameState<ANS_GameState>())
+					{
+						const FText TipMessage = FText::FromString(TEXT("메모를 읽고 단서를 찾아라."));
+						GS->Multicast_UpdateAllTipTexts(TipMessage);
 					}
 				}
 
-				if (PlayerHUD)
+				// 모든 플레이어의 HUD에서 제거하라고 명령
+				Multicast_RemoveMarkerFromAll();
+
+				// 아이템 추가 성공 시 장비 아이템인 경우 자동 퀵슬롯 할당 처리
+				if (AddResult.ActualAmountAdded > 0 &&
+					ItemReference->ItemType == EItemType::Equipment &&
+					ItemReference->WeaponType != EWeaponType::Ammo)
 				{
-					if (ItemReference->ItemDataRowName == FName("Memo"))
+					// 퀵슬롯 컴포넌트 확인
+					if (UNS_QuickSlotComponent* QuickSlotComp = Taker->GetQuickSlotComponent())
 					{
-						TArray<AActor*> FoundPickups;
-						UGameplayStatics::GetAllActorsOfClass(GetWorld(), APickup::StaticClass(), FoundPickups);
+						// 인벤토리에 추가된 아이템 찾기
+						UNS_InventoryBaseItem* AddedItem = nullptr;
 
-						for (AActor* PickupActor : FoundPickups)
+						// 인벤토리에서 같은 ItemDataRowName을 가진 아이템 찾기
+						for (UNS_InventoryBaseItem* Item : PlayerInventory->GetInventoryContents())
 						{
-							APickup* QuestPickup = Cast<APickup>(PickupActor);
-							if (!QuestPickup || !QuestPickup->GetItemData()) continue;
-
-							FName ItemID = QuestPickup->GetItemData()->ItemDataRowName;
-
-							const TArray<FName> TargetNoteIDs = {
-								FName("One"), FName("Two"), FName("Three"), FName("Four"), FName("Five")
-							};
-
-							if (TargetNoteIDs.Contains(ItemID))
+							if (Item && Item->ItemDataRowName == ItemReference->ItemDataRowName)
 							{
-								// 해당 쪽지의 이름과 현재 월드 위치를 로그로 출력
-								FString LogMessage = FString::Printf(
-									TEXT("퀘스트 쪽지 발견 -> 이름: [ %s ], 월드 위치: [ %s ]"),
-									*ItemID.ToString(),
-									*QuestPickup->GetActorLocation().ToString()
-								);
-								UE_LOG(LogTemp, Log, TEXT("%s"), *LogMessage);
-
-								// HUD의 나침반에 추적 대상으로 추가
-								PlayerHUD->SetYeddaItem(QuestPickup);
+								AddedItem = Item;
+								break;
 							}
 						}
-						if (ANS_PlayerController* PC = Cast<ANS_PlayerController>(Taker->GetController()))
+
+						if (AddedItem)
 						{
-							const FText TipMessage = FText::FromString(TEXT("메모를 읽고 단서를 찾아라."));
-							PC->Client_UpdateTipText(TipMessage);
-						}
-					}
+							// 현재 선택된 퀵슬롯 인덱스 가져오기
+							int32 CurrentSlotIndex = Taker->GetCurrentQuickSlotIndex();
+							bool bAssignedToCurrentSlot = false;
 
-					PlayerHUD->DeleteCompasItem(this);
-				}
-			}
-
-			// 아이템 추가 성공 시 장비 아이템인 경우 자동 퀵슬롯 할당 처리
-			if (AddResult.ActualAmountAdded > 0 &&
-				ItemReference->ItemType == EItemType::Equipment &&
-				ItemReference->WeaponType != EWeaponType::Ammo)
-			{
-				// 퀵슬롯 컴포넌트 확인
-				if (UNS_QuickSlotComponent* QuickSlotComp = Taker->GetQuickSlotComponent())
-				{
-					// 인벤토리에 추가된 아이템 찾기
-					UNS_InventoryBaseItem* AddedItem = nullptr;
-
-					// 인벤토리에서 같은 ItemDataRowName을 가진 아이템 찾기
-					for (UNS_InventoryBaseItem* Item : PlayerInventory->GetInventoryContents())
-					{
-						if (Item && Item->ItemDataRowName == ItemReference->ItemDataRowName)
-						{
-							AddedItem = Item;
-							break;
-						}
-					}
-
-					if (AddedItem)
-					{
-						// 현재 선택된 퀵슬롯 인덱스 가져오기
-						int32 CurrentSlotIndex = Taker->GetCurrentQuickSlotIndex();
-						bool bAssignedToCurrentSlot = false;
-
-						// 아이템이 이미 퀵슬롯에 할당되어 있는지 확인
-						if (!QuickSlotComp->IsItemAlreadyAssigned(AddedItem))
-						{
-							int32 AssignedSlot = -1;
-
-							// 현재 선택된 슬롯이 비어있으면 해당 슬롯에 할당
-							if (!QuickSlotComp->GetItemInSlot(CurrentSlotIndex))
+							// 아이템이 이미 퀵슬롯에 할당되어 있는지 확인
+							if (!QuickSlotComp->IsItemAlreadyAssigned(AddedItem))
 							{
-								QuickSlotComp->AssignToSlot(CurrentSlotIndex, AddedItem);
-								AssignedSlot = CurrentSlotIndex;
-								bAssignedToCurrentSlot = true;
-							}
-							else
-							{
-								// 현재 선택된 슬롯이 이미 차있으면 첫 번째 빈 슬롯에 할당
-								for (int32 i = 0; i < QuickSlotComp->GetMaxSlots(); i++)
+								int32 AssignedSlot = -1;
+
+								// 현재 선택된 슬롯이 비어있으면 해당 슬롯에 할당
+								if (!QuickSlotComp->GetItemInSlot(CurrentSlotIndex))
 								{
-									if (!QuickSlotComp->GetItemInSlot(i))
+									QuickSlotComp->AssignToSlot(CurrentSlotIndex, AddedItem);
+									AssignedSlot = CurrentSlotIndex;
+									bAssignedToCurrentSlot = true;
+								}
+								else
+								{
+									// 현재 선택된 슬롯이 이미 차있으면 첫 번째 빈 슬롯에 할당
+									for (int32 i = 0; i < QuickSlotComp->GetMaxSlots(); i++)
 									{
-										QuickSlotComp->AssignToSlot(i, AddedItem);
-										AssignedSlot = i;
-										UE_LOG(LogTemp, Warning, TEXT("TakePickup: 빈 퀵슬롯 %d번에 아이템 할당: %s"),
-											AssignedSlot + 1, *AddedItem->GetName());
-										break;
+										if (!QuickSlotComp->GetItemInSlot(i))
+										{
+											QuickSlotComp->AssignToSlot(i, AddedItem);
+											AssignedSlot = i;
+											UE_LOG(LogTemp, Warning, TEXT("TakePickup: 빈 퀵슬롯 %d번에 아이템 할당: %s"),
+												AssignedSlot + 1, *AddedItem->GetName());
+											break;
+										}
+									}
+
+									// 모든 슬롯이 차있는 경우 첫 번째 슬롯에 강제 할당
+									if (AssignedSlot == -1)
+									{
+										QuickSlotComp->AssignToSlot(0, AddedItem);
+										AssignedSlot = 0;
 									}
 								}
 
-								// 모든 슬롯이 차있는 경우 첫 번째 슬롯에 강제 할당
-								if (AssignedSlot == -1)
+								// 첫 번째 아이템을 획득한 경우에만 현재 퀵슬롯 인덱스 설정
+								if (QuickSlotComp->GetTotalAssignedItems() == 1)
 								{
-									QuickSlotComp->AssignToSlot(0, AddedItem);
-									AssignedSlot = 0;
+									Taker->CurrentQuickSlotIndex = AssignedSlot;
 								}
-							}
-
-							// 첫 번째 아이템을 획득한 경우에만 현재 퀵슬롯 인덱스 설정
-							if (QuickSlotComp->GetTotalAssignedItems() == 1)
-							{
-								Taker->CurrentQuickSlotIndex = AssignedSlot;
 							}
 						}
 					}
 				}
+
+				// 아이템 획득 애니메이션 시작
+				Taker->IsPickUp = true;
 			}
 
-			// 아이템 획득 애니메이션 시작
-			Taker->IsPickUp = true;
-
+			// 전부 추가 성공 시에만 액터 파괴
 			if (AddResult.OperationResult == EItemAddResult::TAR_AllItemAdded)
 			{
 				Destroy();
@@ -327,6 +312,7 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 		}
 	}
 }
+
 void APickup::Server_TakePickup_Implementation(AActor* InteractingActor)
 {
 	if (ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(InteractingActor))
@@ -393,4 +379,40 @@ void APickup::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(APickup, ReplicatedItemData);
+}
+
+void APickup::Multicast_AddMarkerToAll_Implementation(const TArray<APickup*>& QuestItems)
+{
+	// 이 코드는 모든 클라이언트에서 실행됩니다.
+	if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+	{
+		if (UNS_UIManager* UIManager = GI->GetUIManager())
+		{
+			if (UNS_PlayerHUD* PlayerHUD = UIManager->GetPlayerHUDWidget())
+			{
+				for (APickup* Item : QuestItems)
+				{
+					if (Item)
+					{
+						PlayerHUD->SetYeddaItem(Item);
+					}
+				}
+			}
+		}
+	}
+}
+
+void APickup::Multicast_RemoveMarkerFromAll_Implementation()
+{
+	// 이 코드는 모든 클라이언트에서 실행됩니다.
+	if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+	{
+		if (UNS_UIManager* UIManager = GI->GetUIManager())
+		{
+			if (UNS_PlayerHUD* PlayerHUD = UIManager->GetPlayerHUDWidget())
+			{
+				PlayerHUD->DeleteCompasItem(this);
+			}
+		}
+	}
 }

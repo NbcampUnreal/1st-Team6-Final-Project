@@ -22,9 +22,8 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_ShowHitEffect();
 
+	void UpdateTipHUD(const FText& Message);
 
-	UFUNCTION(Client, Reliable)
-	void Client_UpdateTipText(const FText& Message);
 
 protected:
 	virtual void BeginPlay() override;
