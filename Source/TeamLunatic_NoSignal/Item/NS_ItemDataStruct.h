@@ -22,6 +22,16 @@ enum class EItemType : uint8
 	EndingTrigger UMETA(DisplayName = "엔딩조건")
 };
 
+UENUM()
+enum class EEndingType : uint8
+{
+	None UMETA(DisplayName = "관련없음"),
+	Ending_TypeA UMETA(DisplayName = "엔딩아이템_A"),
+	Ending_TypeB UMETA(DisplayName = "엔딩아이템_B"),
+	Ending_TypeC UMETA(DisplayName = "엔딩아이템_C"),
+	Ending_TypeD UMETA(DisplayName = "엔딩아이템_D")
+};
+
 USTRUCT()
 struct FItemTextData
 {
@@ -152,6 +162,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponType")
 	EWeaponType  WeaponType;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "EndingType")
+	EEndingType EndingType;
 
 	UPROPERTY(EditAnywhere)
 	FItemTextData ItemTextData;
