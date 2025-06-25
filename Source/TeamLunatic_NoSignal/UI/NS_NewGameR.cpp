@@ -68,16 +68,6 @@ void UNS_NewGameR::NativeConstruct()
     Super::NativeConstruct();
 
 	StartGameButton->OnClicked.AddDynamic(this, &UNS_NewGameR::OnStartGameClicked);
-
-  // UGameplayStatics::DeleteGameInSlot("SaveGameMetaData", 0);
-
-    //UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance());
-    //if (GI)
-    //    GI->SetGameModeType(EGameModeType::SingleplayMode);
-    
-    //UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance());
-    //if (GI)
-    //    GI->SetGameModeType(EGameModeType::MultiplayMode);
 }
 
 FString UNS_NewGameR::GetSaveSlotName() const
@@ -101,39 +91,7 @@ void UNS_NewGameR::HideConfirmationMenu()
 void UNS_NewGameR::StartGame()
 {
     const FString SlotName = GetSaveSlotName();
-    FString SelectedLevelName = TEXT("/Game/Maps/MainWorld");////TEXT("/Game/Maps/MainWorld");//TEXT("/Game/SurvivalGameKitV2/Maps/Showcase");//TEXT("/Game/Maps/MainWorld");
-
-    FPlayerSaveData PlayerData;
-    PlayerData.PlayerName = SlotName;
-    PlayerData.Health = 100.f;
-    PlayerData.SavePosition = FVector(0, 0, 300);
-
-    FLevelSaveData LevelData;
-    LevelData.LevelName = SelectedLevelName;
-    LevelData.TempClearKeyItemPosition = FVector(100, 200, 300);
-
-    NS_SaveLoadHelper::SaveGame(SlotName, PlayerData, LevelData);
-
-
-
-    //if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
-    //{
-    //    GI->SetCurrentSaveSlot(SlotName);
-
-    //    FString TargetLevelPath =  SelectedLevelName;
-
-    //  //  GI->GetUIManager()->LoadingScreen(GetWorld());
-
-    //    FTimerHandle TravelTimerHandle;
-    //    GetWorld()->GetTimerManager().SetTimer(TravelTimerHandle, [this, TargetLevelPath]()
-    //        {
-    //            GetWorld()->ServerTravel(TargetLevelPath, true, false);
-
-    //        }, 0.1f, false);
-    //    //GetWorld()->ServerTravel(TargetLevelPath, /*bAbsolute=*/true, /*bShouldSkipGameNotify=*/false);
-    //}
-   
-    
+    FString SelectedLevelName = TEXT("/Game/Maps/MainWorld");
 
     FString GameModePath = TEXT("Game=/Game/GameFlowBP/BP_NS_SinglePlayMode.BP_NS_SinglePlayMode_C");
     if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
@@ -141,24 +99,6 @@ void UNS_NewGameR::StartGame()
         UAsyncLoadingScreenLibrary::SetEnableLoadingScreen(true);
         UGameplayStatics::OpenLevel(GI->GetWorld(), FName(*SelectedLevelName), true, GameModePath);
     }
-
-    //if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
-    //{
-    //    GI->SetCurrentSaveSlot(SlotName);
-
-    //    FString GameModePath = TEXT("Game=/Game/GameFlowBP/BP_NS_SinglePlayMode.BP_NS_SinglePlayMode_C");
-
-    //    UE_LOG(LogTemp, Warning, TEXT("NS_NewGameR  LoadingScreen"));
-
-    //    GI->GetUIManager()->LoadingScreen(GetWorld());
-
-    //    GI->GetUIManager()->OnLoadingFinished.BindLambda([SelectedLevelName, GameModePath, GI]()
-    //    {
-    //        UGameplayStatics::OpenLevel(GI->GetWorld(), FName(*SelectedLevelName), true, GameModePath);
-
-    //        UE_LOG(LogTemp, Warning, TEXT("NS_NewGameR  OpenLevel "));
-    //    });
-    //}
 }
 
 
