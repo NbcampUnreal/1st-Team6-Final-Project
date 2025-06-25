@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "Interaction/InteractionInterface.h"
 #include "Net/UnrealNetwork.h"
+#include "UI/NS_PlayerHUD.h"
 #include "Item/NS_ItemDataStruct.h"
 #include "Pickup.generated.h"
 
@@ -72,6 +73,9 @@ public:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_RemoveMarkerFromAll();
+
+	UFUNCTION()
+	void OnHUDReady(UNS_PlayerHUD* PlayerHUD);
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;

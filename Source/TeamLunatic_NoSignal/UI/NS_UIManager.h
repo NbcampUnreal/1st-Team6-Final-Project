@@ -17,6 +17,7 @@ class UNS_SpectatorWidgetClass;
 class UNS_GameInstanceClass;
 
 DECLARE_DELEGATE(FOnLoadingFinished);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerHUDReady, UNS_PlayerHUD*, PlayerHUD);
 
 UCLASS(Blueprintable)
 class TEAMLUNATIC_NOSIGNAL_API UNS_UIManager : public UObject
@@ -76,6 +77,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool ShowSpectatorWidget(UWorld* World);
 
+	UPROPERTY(BlueprintAssignable, Category = "UI Events")
+	FOnPlayerHUDReady OnPlayerHUDReady;
+
+	// 외부에서 생성된 PlayerHUD를 UIManager에 등록하는 함수
+	void SetPlayerHUDWidget(UNS_PlayerHUD* InHUD);
+
 protected:
 	UPROPERTY()
 	UNS_InGameMenu* InGameMenuWidget;
@@ -107,6 +114,8 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UNS_SpectatorWidgetClass> SpectatorWidgetClass;
+
+
 private:
-	
+
 };
