@@ -23,8 +23,7 @@ protected:
     UPROPERTY(meta = (BindWidget))
     UNS_MenuButtonWidget* BP_WidgetToggleButton_NewGame;
 
-    UPROPERTY(meta = (BindWidget))
-    UNS_MenuButtonWidget* BP_WidgetToggleButton_LoadGame;
+
 
     UPROPERTY(meta = (BindWidget))
     UNS_MenuButtonWidget* BP_WidgetToggleButton_MainMenu;

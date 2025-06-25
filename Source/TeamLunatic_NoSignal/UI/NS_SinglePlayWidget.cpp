@@ -12,9 +12,7 @@ void UNS_SinglePlayWidget::NativeConstruct()
     Super::NativeConstruct();
     if (BP_WidgetToggleButton_NewGame)
         BP_WidgetToggleButton_NewGame->RootButton->OnClicked.AddUniqueDynamic(this, &UNS_SinglePlayWidget::OnNewGameClicked);
-
-    if (BP_WidgetToggleButton_LoadGame)
-        BP_WidgetToggleButton_LoadGame->RootButton->OnClicked.AddUniqueDynamic(this, &UNS_SinglePlayWidget::OnLoadGameClicked);
+    
 
     if (BP_WidgetToggleButton_MainMenu)
         BP_WidgetToggleButton_MainMenu->RootButton->OnClicked.AddUniqueDynamic(this, &UNS_SinglePlayWidget::OnMainMenuClicked);
