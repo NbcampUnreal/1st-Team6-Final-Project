@@ -21,7 +21,7 @@ APickup::APickup()
 	SetReplicatingMovement(true);
 
 	PickupMesh = CreateDefaultSubobject<UStaticMeshComponent>("PickupMesh");
-	PickupMesh->SetSimulatePhysics(true);
+	PickupMesh->SetSimulatePhysics(false);
 	SetRootComponent(PickupMesh);
 }
 
