@@ -31,9 +31,7 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* WarningSubtitleText;
-
-	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* WarningTitleText;
+	
 	
 	//UPROPERTY(meta = (BindWidget))
 	//class USizeBox* SizeBox;
