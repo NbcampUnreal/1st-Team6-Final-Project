@@ -16,9 +16,12 @@
 #include "Sound/SoundCue.h"
 #include "PhysicsEngine/PhysicalAnimationComponent.h"
 #include "NiagaraFunctionLibrary.h"
+#include "NavigationInvokerComponent.h"
 #if WITH_EDITOR 
 #include "AssetTypeActions/AssetDefinition_SoundBase.h"
 #endif 
+#include "NavigationSystem.h"
+#include "AI/NavigationSystemBase.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
 
@@ -27,17 +30,28 @@ ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), C
                                    BaseDamage(20.f),PatrolSpeed(20.f), ChaseSpeed(100.f),AccelerationSpeed(200.f),
                                    ZombieType(EZombieType::BASIC), bIsDead(false), bIsGotHit(false), SafeBones({"clavicle_r","clavicle_l","upperarm_r","upperarm_r","lowerarm_r","lowerarm_r","neck_01","head","spine_02","spine_03"})
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 	bUseControllerRotationYaw = false;
 
 	PhysicsComponent = CreateDefaultSubobject<UPhysicalAnimationComponent>(FName("PhysicsComponent"));
+	NavigationInvoker = CreateDefaultSubobject<UNavigationInvokerComponent>(TEXT("NavigationInvoker"));
+
+	NavigationInvoker->SetGenerationRadii(1000.f, 1500.f);
+	NavigationInvoker->SetAutoActivate(false);
 	
 	GetCharacterMovement()->MaxWalkSpeed = 300.f;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->bUseRVOAvoidance = true;
 	GetCharacterMovement()->AvoidanceConsiderationRadius = 10.f;
-	GetCharacterMovement()->RotationRate = FRotator(0.0f, 72.0f, 0.0f);
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, 144.0f, 0.0f);
 
+	GetCharacterMovement()->MaxAcceleration = 350.f;         // 최대 가속도
+	GetCharacterMovement()->BrakingDecelerationWalking = 200.f; // 감속도
+	GetCharacterMovement()->GroundFriction = 3.0f;           // 지면 마찰력
+	GetCharacterMovement()->Mass = 100.0f;                   // 질량 (높을수록 관성이 커짐)
+
+	GetCharacterMovement()->bUseSeparateBrakingFriction = true;
+	GetCharacterMovement()->BrakingFriction = 1.0f;
 	
 	GetMesh()->SetRelativeLocation(FVector(0.f,0.f,-90.f));
 	GetMesh()->SetRelativeRotation(FRotator(0.f,-90.f,0.f));
@@ -101,17 +115,6 @@ void ANS_ZombieBase::Multicast_PlayMontage_Implementation(UAnimMontage* MontageT
 	}
 }
 
-void ANS_ZombieBase::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-	float CurrentSpeed = GetCharacterMovement()->MaxWalkSpeed;
-	if (!FMath::IsNearlyEqual(CurrentSpeed, TargetSpeed, 1.f)) // 1.f 오차 범위
-	{
-		float NewSpeed = FMath::FInterpTo(CurrentSpeed, TargetSpeed, DeltaTime, 2.f);
-		GetCharacterMovement()->MaxWalkSpeed = NewSpeed;
-	}
-}
 
 void ANS_ZombieBase::OnOverlapSphere(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
                                      UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -130,6 +133,10 @@ void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 	
 	if (bIsActive) // 활성화 상태로 전환 (true)
 	{
+		if (NavigationInvoker)
+		{
+			NavigationInvoker->Activate(true);
+		}
 		SetActorHiddenInGame(false); // 액터를 숨기지 않고 보이게 함
 		GetMesh()->SetVisibility(true, true); // 좀비 메쉬를 보이게 함 (자식 컴포넌트 포함)
 		SetActorEnableCollision(true); // 충돌을 활성화함 (다른 액터와 상호작용 가능)
@@ -199,6 +206,11 @@ void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 	}
 	else // 비활성화 상태로 전환 (false)
 	{
+		if (NavigationInvoker)
+		{
+		NavigationInvoker->Activate(false);
+	    }
+		
 		GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
 		SetActorHiddenInGame(true); // 액터를 숨김
 		GetMesh()->SetVisibility(false, true); // 좀비 메쉬를 숨김 (자식 컴포넌트 포함)
@@ -273,6 +285,8 @@ float ANS_ZombieBase::TakeDamage(float DamageAmount, struct FDamageEvent const& 
 		if (AICon)
 		{
 			AICon->GetBlackboardComponent()->SetValueAsBool("bGetHit", true);
+			AICon->GetBlackboardComponent()->SetValueAsBool("bIsAttacking", false);
+			AICon->GetBlackboardComponent()->SetValueAsBool("bAttackAgain", true);
 		}
 		GetWorldTimerManager().SetTimer(HitTimer, this, &ANS_ZombieBase::ResetHit, .5f,false);
 		Multicast_SpawnEffect(Bone, Point->HitInfo.Location, HitRotation);
@@ -338,13 +352,13 @@ void ANS_ZombieBase::ResetPhysics(FName Bone)
 void ANS_ZombieBase::OnIdleState()
 {
 	ScheduleSound(IdleSound);
-	TargetSpeed = 0.f;
+	GetCharacterMovement()->MaxWalkSpeed = 0.f;
 }
 
 void ANS_ZombieBase::OnPatrolState()
 {
 	ScheduleSound(IdleSound);
-	TargetSpeed = 70.f;
+	GetCharacterMovement()->MaxWalkSpeed = 70.f;
 }
 
 void ANS_ZombieBase::OnDetectState()
@@ -355,12 +369,13 @@ void ANS_ZombieBase::OnDetectState()
 void ANS_ZombieBase::OnChaseState()
 {
 	ScheduleSound(ChaseSound);
-	TargetSpeed = 400.f;
+	GetCharacterMovement()->MaxWalkSpeed =400.f;
 }
 
 void ANS_ZombieBase::OnAttackState()
 {
-	TargetSpeed = 400.f;
+	GetCharacterMovement()->MaxWalkSpeed = 400.f;
+	GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
 }
 
 void ANS_ZombieBase::OnDeadState()

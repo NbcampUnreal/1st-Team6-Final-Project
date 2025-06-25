@@ -59,14 +59,19 @@ protected:
 
     UPROPERTY(meta = (BindWidget))
     class UScrollBox* ScrollBox_Compass;
-    TArray<class UNS_CompassElement*> CompassTextArray;//UTextBlock UNS_CompassElement
+    
+    UPROPERTY()
+    TArray<TObjectPtr<class UNS_CompassElement>> CompassTextArray;
+    
     UPROPERTY(meta = (BindWidget))
     class UEditableTextBox* TipText;
 
 private:
     FTimerHandle UpdatePlayerStausHandle;
     APlayerController* PlayerController;
-    TArray<APickup*> YeddaItemArray;
+
+    UPROPERTY()
+    TArray<TObjectPtr<class APickup>> YeddaItemArray;
 
     bool testcheck = false;
     int32 PrvFinalIdx = 0;

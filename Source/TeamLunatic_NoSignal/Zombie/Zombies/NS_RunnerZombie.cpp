@@ -23,7 +23,7 @@ ANS_RunnerZombie::ANS_RunnerZombie()
 
 void ANS_RunnerZombie::OnChaseState()
 {
-	TargetSpeed = 550.f;
+	GetCharacterMovement()->MaxWalkSpeed = 550.f;
 }
 
 

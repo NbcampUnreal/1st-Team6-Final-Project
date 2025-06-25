@@ -5,6 +5,7 @@
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
 #include "Kismet/GameplayStatics.h"
+#include "AsyncLoadingScreenLibrary.h"
 #include "GameFlow/NS_GameInstance.h"
 
 void UNS_ServerListingR::NativeConstruct()
@@ -25,7 +26,8 @@ void UNS_ServerListingR::OnJoinButtonClicked()
         {
             if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
             {
-                GI->ShowWait(); // 참가 누르면 웨잇 UI 띄우기
+                GI->ShowWait(); 
+                UAsyncLoadingScreenLibrary::SetEnableLoadingScreen(false);
             }
 
             UE_LOG(LogTemp, Log, TEXT("[JoinButton] Connecting to %s"), *CustomAddress);
