@@ -265,7 +265,7 @@ float ANS_ZombieBase::TakeDamage(float DamageAmount, struct FDamageEvent const& 
 {
 	if (CurrentHealth<=0 || !HasAuthority()) return 0.f;
 	float ActualDamage = DamageAmount;
-	
+
 	if (DamageEvent.GetTypeID() == FPointDamageEvent::ClassID)
 	{
 		const FPointDamageEvent* Point = static_cast<const FPointDamageEvent*>(&DamageEvent);
@@ -277,29 +277,32 @@ float ANS_ZombieBase::TakeDamage(float DamageAmount, struct FDamageEvent const& 
 		FVector Up = FVector::UpVector;
 		FRotator HitRotation = FRotationMatrix::MakeFromXZ(HitDirection,Up).Rotator();
 		
-		if (Bone == "head")
+		if (Bone == "head" || Bone == "neck")
 		{
 			ActualDamage*= 10.f;
 		}
-		ANS_AIController* AICon = Cast<ANS_AIController>(GetController());
-		if (AICon)
+		CurrentHealth = FMath::Clamp(CurrentHealth - ActualDamage, 0.f, MaxHealth);
+	
+		if (CurrentHealth > 0.f)
 		{
-			AICon->GetBlackboardComponent()->SetValueAsBool("bGetHit", true);
-			AICon->GetBlackboardComponent()->SetValueAsBool("bIsAttacking", false);
-			AICon->GetBlackboardComponent()->SetValueAsBool("bAttackAgain", true);
+			ANS_AIController* AICon = Cast<ANS_AIController>(GetController());
+			if (AICon)
+			{
+				AICon->GetBlackboardComponent()->SetValueAsBool("bGetHit", true);
+				AICon->GetBlackboardComponent()->SetValueAsBool("bIsAttacking", false);
+				AICon->GetBlackboardComponent()->SetValueAsBool("bAttackAgain", true);
+			}
+			GetWorldTimerManager().SetTimer(HitTimer, this, &ANS_ZombieBase::ResetHit, .5f,false);
+			Multicast_PlaySound(HitSound);
+			Multicast_SpawnEffect(Bone, Point->HitInfo.Location, HitRotation);
+			ApplyPhysics(Bone, HitDirection * 20000.f);
 		}
-		GetWorldTimerManager().SetTimer(HitTimer, this, &ANS_ZombieBase::ResetHit, .5f,false);
-		Multicast_SpawnEffect(Bone, Point->HitInfo.Location, HitRotation);
-		ApplyPhysics(Bone, HitDirection * 20000.f);
+		if (CurrentHealth <= 0)
+		{
+			GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
+			SetState(EZombieState::DEAD);
+		}
 	}
-	
-	CurrentHealth = FMath::Clamp(CurrentHealth - DamageAmount, 0.f, MaxHealth);
-	
-	if (CurrentHealth <= 0)
-	{
-		SetState(EZombieState::DEAD);
-	}
-
 	return ActualDamage;
 }
 
@@ -387,8 +390,7 @@ void ANS_ZombieBase::OnDeadState()
 		bIsDead = true;
 		Die_Multicast();
 	}
-	R_SphereComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	L_SphereComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
 }
 
 void ANS_ZombieBase::OnFrozenState()
@@ -436,6 +438,9 @@ void ANS_ZombieBase::ScheduleSound(USoundCue* SoundCue)
 
 void ANS_ZombieBase::Die_Multicast_Implementation()
 {
+	R_SphereComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	L_SphereComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
 	DetachFromControllerPendingDestroy();
 	GetCharacterMovement()->DisableMovement();
 	
@@ -480,9 +485,7 @@ void ANS_ZombieBase::InitializePhysics()
 void ANS_ZombieBase::SetState(EZombieState NewState)
 {
 	if (CurrentState == NewState) return;
-
-	CurrentState = NewState;
-	OnStateChanged(CurrentState);
+	
 	if (HasAuthority())
 	{
 		CurrentState = NewState;
