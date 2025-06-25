@@ -44,12 +44,14 @@ protected:
 
     void CheckGroupEndingCondition();
 
-    void UpdateWidgetStatus(int32 NumPlayers, int32 NumItems);
+    void UpdateWidgetStatus(int32 NumPlayers, int32 TotalPlayers, int32 NumItems);
 
     void UpdateEndingCountdownUI();
 
     void EndingConditionSatisfied();
-
+    UFUNCTION()
+    void OnRep_CachedTotalPlayerCount();
+    void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
     UFUNCTION(NetMulticast, Reliable)
     void Multicast_ShowEndingResultList(const TArray<FString>& SuccessList, const TArray<FString>& FailList);
 
@@ -67,4 +69,7 @@ protected:
     TArray<ANS_PlayerCharacterBase*> OverlappingPlayers;
 
     float EndingCountdown = 0.f;
+
+    UPROPERTY(ReplicatedUsing = OnRep_CachedTotalPlayerCount)
+    int32 CachedTotalPlayerCount;
 };
