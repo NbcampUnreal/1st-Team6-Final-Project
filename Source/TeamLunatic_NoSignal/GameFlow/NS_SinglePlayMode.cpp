@@ -96,20 +96,18 @@ FVector ANS_SinglePlayMode::GetPlayerLocation_Implementation() const
 void ANS_SinglePlayMode::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	// 싱글플레이 모드 설정
 	if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
 	{
 		GI->SetGameModeType(EGameModeType::SinglePlayMode);
 	}
 
-	// 부모 클래스의 BeginPlay 호출 (좀비 스포너 초기화 등)
-	ANS_GameModeBase::BeginPlay();
-	
 	// 좀비 스폰 타이머 설정
 	GetWorldTimerManager().ClearTimer(ZombieSpawnTimer);
 	GetWorldTimerManager().SetTimer(ZombieSpawnTimer, this, &ANS_SinglePlayMode::CheckAndSpawnZombies, 1.0f, true);
 }
+
 
 void ANS_SinglePlayMode::CheckAndSpawnZombies()
 {

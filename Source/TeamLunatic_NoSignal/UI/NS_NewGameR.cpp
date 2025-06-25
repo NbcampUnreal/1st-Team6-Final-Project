@@ -70,10 +70,6 @@ void UNS_NewGameR::NativeConstruct()
 	StartGameButton->OnClicked.AddDynamic(this, &UNS_NewGameR::OnStartGameClicked);
 }
 
-FString UNS_NewGameR::GetSaveSlotName() const
-{
-    return EditableTextBox_SaveName ? EditableTextBox_SaveName->GetText().ToString() : TEXT("DefaultSlot");
-}
 
 void UNS_NewGameR::ShowConfirmationMenu()
 {
@@ -99,6 +95,23 @@ void UNS_NewGameR::StartGame()
         UAsyncLoadingScreenLibrary::SetEnableLoadingScreen(true);
         UGameplayStatics::OpenLevel(GI->GetWorld(), FName(*SelectedLevelName), true, GameModePath);
     }
+}
+
+
+FString UNS_NewGameR::GetSaveSlotName() const
+{
+    // 여기에 세이브 슬롯 이름을 반환하는 로직을 구현합니다.
+    // 예를 들어, 다른 클래스에서 구현된 방식을 참고하면:
+    
+    // 1. 에디터블 텍스트 박스에서 이름을 가져오는 방식
+    // return SaveNameEntryBox ? SaveNameEntryBox->GetText().ToString() : TEXT("DefaultSlot");
+    
+    // 2. 고정된 이름을 사용하는 방식
+    return TEXT("NewGameSlot");
+    
+    // 3. 현재 시간을 포함한 이름을 생성하는 방식
+    // FDateTime Now = FDateTime::Now();
+    // return FString::Printf(TEXT("NewGame_%s"), *Now.ToString());
 }
 
 

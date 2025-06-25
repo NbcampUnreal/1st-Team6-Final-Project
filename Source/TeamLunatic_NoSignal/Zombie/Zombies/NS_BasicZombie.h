@@ -16,4 +16,7 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_BasicZombie : public ANS_ZombieBase
 
 public:
     ANS_BasicZombie();
+
+protected:
+
 };

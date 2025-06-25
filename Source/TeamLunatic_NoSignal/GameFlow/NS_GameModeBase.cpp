@@ -5,6 +5,7 @@
 #include "Zombie/Zombies/NS_BasicZombie.h"
 #include "Zombie/Zombies/NS_FatZombie.h"
 #include "Zombie/Zombies/NS_RunnerZombie.h"
+#include "Zombie/Zombies/NS_Chaser.h"
 #include "GameFramework/Actor.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
@@ -372,24 +373,16 @@ void ANS_GameModeBase::OnZombieDestroyed(AActor* DestroyedActor)
 // 플레이어로부터 너무 멀리 있는 좀비 제거 함수
 void ANS_GameModeBase::CleanupDistantZombies()
 {
-    // 함수 호출 확인 로그
-    UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] CleanupDistantZombies 함수 호출됨"));
-    
     // 플레이어 위치 가져오기
     FVector PlayerLocation = GetPlayerLocation();
-    
-    // 플레이어 위치가 유효하지 않으면 종료
     if (PlayerLocation.IsZero())
     {
-        UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 플레이어 위치가 유효하지 않음"));
-        return;
+        return; // 유효한 플레이어 위치가 없으면 종료
     }
     
-    // 현재 레벨의 모든 좀비 찾기
+    // 모든 좀비 찾기
     TArray<AActor*> AllZombies;
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), ANS_ZombieBase::StaticClass(), AllZombies);
-    
-    UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 현재 좀비 수: %d"), AllZombies.Num());
     
     int32 DestroyedCount = 0;
     
@@ -397,6 +390,12 @@ void ANS_GameModeBase::CleanupDistantZombies()
     for (AActor* ZombieActor : AllZombies)
     {
         if (!IsValid(ZombieActor))
+        {
+            continue;
+        }
+        
+        // 체이서 좀비는 제거하지 않음
+        if (Cast<ANS_Chaser>(ZombieActor))
         {
             continue;
         }
@@ -420,17 +419,9 @@ void ANS_GameModeBase::CleanupDistantZombies()
         }
     }
     
-    // 제거된 좀비 수 업데이트
-    ZombiesRemoved += DestroyedCount;
-    
-    // 제거된 좀비가 있으면 로그 출력
     if (DestroyedCount > 0)
     {
-        UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] %d개의 멀리 있는 좀비 제거됨 (총 %d개 제거됨)"), DestroyedCount, ZombiesRemoved);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Display, TEXT("[GameModeBase] 제거할 좀비가 없음"));
+        UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 거리가 먼 좀비 %d마리 제거됨"), DestroyedCount);
     }
 }
 
