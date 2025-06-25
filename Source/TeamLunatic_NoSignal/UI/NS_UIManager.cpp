@@ -72,32 +72,35 @@ UNS_QuickSlotPanel* UNS_UIManager::GetQuickSlotPanel()
         return NS_PlayerHUDWidget->NS_QuickSlotPanel;
     return nullptr;
 }
-bool UNS_UIManager::ShowPlayerHUDWidget( UWorld* World)
-{
-    if (!World || World->IsNetMode(NM_DedicatedServer)) 
-    {
-        return false;
-    }
 
-    APlayerController* PC = World->GetFirstPlayerController();
-    if (!NS_PlayerHUDWidget || NS_PlayerHUDWidget && !NS_PlayerHUDWidget->IsInViewport())
-    {
-        if (NS_PlayerHUDWidgetClass)
-            NS_PlayerHUDWidget = CreateWidget<UNS_PlayerHUD>(PC, NS_PlayerHUDWidgetClass);
-        else
-        {
-            UE_LOG(LogTemp, Warning, TEXT("ERROR!!! EMPTY NS_PlayerHUDWidgetClass!!!!!"));
-            return false;
-        }
-        NS_PlayerHUDWidget->AddToViewport();
-    }
-    if (NS_PlayerHUDWidget)
-    {
-        NS_PlayerHUDWidget->ShowWidget();
-        return true;
-    }
-    return false;
-}
+//bool UNS_UIManager::ShowPlayerHUDWidget( UWorld* World)
+//{
+//    if (!World || World->IsNetMode(NM_DedicatedServer)) 
+//    {
+//        return false;
+//    }
+//
+//    APlayerController* PC = World->GetFirstPlayerController();
+//    if (!NS_PlayerHUDWidget || NS_PlayerHUDWidget && !NS_PlayerHUDWidget->IsInViewport())
+//    {
+//        if (NS_PlayerHUDWidgetClass)
+//            NS_PlayerHUDWidget = CreateWidget<UNS_PlayerHUD>(PC, NS_PlayerHUDWidgetClass);
+//        else
+//        {
+//            UE_LOG(LogTemp, Warning, TEXT("ERROR!!! EMPTY NS_PlayerHUDWidgetClass!!!!!"));
+//            return false;
+//        }
+//        NS_PlayerHUDWidget->AddToViewport();
+//    }
+//    if (NS_PlayerHUDWidget)
+//    {
+//        NS_PlayerHUDWidget->ShowWidget();
+//        return true;
+//    }
+//    return false;
+//}
+
+
 void UNS_UIManager::HidePlayerHUDWidget(UWorld* World)
 {
     if (NS_PlayerHUDWidget && NS_PlayerHUDWidget->IsInViewport())
@@ -324,4 +327,30 @@ void UNS_UIManager::ShowHitEffectWidget(UWorld* World)
             }, 0.5f, false);
         }
     }
+}
+
+// 새 함수 추가
+void UNS_UIManager::SetPlayerHUDWidget(UNS_PlayerHUD* InHUD)
+{
+    // 이미 등록되어 있다면 아무것도 하지 않음
+    if (NS_PlayerHUDWidget) return;
+
+    if (InHUD)
+    {
+        NS_PlayerHUDWidget = InHUD;
+        // HUD가 성공적으로 등록되었음을 모두에게 알립니다 (이벤트 방송)
+        OnPlayerHUDReady.Broadcast(NS_PlayerHUDWidget);
+        UE_LOG(LogTemp, Log, TEXT("PlayerHUD가 UIManager에 등록되고, OnPlayerHUDReady 이벤트가 방송되었습니다."));
+    }
+}
+
+// 기존 함수 수정 (이제 생성 로직이 필요 없음)
+bool UNS_UIManager::ShowPlayerHUDWidget(UWorld* World)
+{
+    if (NS_PlayerHUDWidget)
+    {
+        NS_PlayerHUDWidget->ShowWidget();
+        return true;
+    }
+    return false;
 }
