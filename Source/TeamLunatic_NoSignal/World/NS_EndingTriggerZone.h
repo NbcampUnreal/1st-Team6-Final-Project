@@ -24,7 +24,7 @@ public:
 
     float RotationUpdateInterval = 0.2f; // 0.2초마다 갱신
     float TimeSinceLastUpdate = 0.f;
-    float MaxVisibleDistance = 1000.f; // 너무 멀면 회전 안 함
+    float MaxVisibleDistance = 2000.f; // 너무 멀면 회전 안 함
     bool bPreviouslyVisible = true;
 
     UPROPERTY(VisibleAnywhere, Category = "UI")

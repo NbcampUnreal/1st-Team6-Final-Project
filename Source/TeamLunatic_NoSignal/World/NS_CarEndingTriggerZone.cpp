@@ -257,9 +257,6 @@ void ANS_CarEndingTriggerZone::UpdateWidgetStatus(int32 NumPlayers, int32 TotalP
     {
         StatusUI->EndingUpdateStatus(NumPlayers, TotalPlayers, NumItems);
     }
-
-    // 트리거 안에 아무도 없으면 숨김
-    EndingStatusWidget->SetVisibility(NumPlayers > 0);
 }
 
 void ANS_CarEndingTriggerZone::UpdateEndingCountdownUI()
