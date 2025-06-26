@@ -1,5 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+// NS_PlayerHUD.cpp
 
 #include "UI/NS_PlayerHUD.h"
 #include "UI/NS_CircleProgressBar.h"
@@ -11,7 +10,6 @@
 #include "Components/ProgressBar.h"
 #include "Components/SizeBox.h"
 #include "UI/NS_UIManager.h"
-//#include "SlateBrush.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Character/Components/NS_StatusComponent.h"
 #include "UI/NS_CircleProgressBar.h"
@@ -131,8 +129,6 @@ void UNS_PlayerHUD::ShowWidget()
         if (!SafeThis->GetWorld()) return;
         if (!SafeThis->CachedPlayerCharacter || !SafeThis->CachedPlayerCharacter->StatusComp) return;
 
-       // SafeThis->WBP_StatusProgressbar_Health->UpdatePercent(SafeThis->CachedPlayerCharacter->StatusComp->Health * 0.01f);
-       // SafeThis->WBP_StatusProgressbar_Stamina->UpdatePercent(SafeThis->CachedPlayerCharacter->StatusComp->Stamina * 0.01f);
         SafeThis->ProgressBar_Stamina->SetPercent(SafeThis->CachedPlayerCharacter->StatusComp->Stamina * 0.01f);
         SafeThis->ProgressBar_Health->SetPercent(SafeThis->CachedPlayerCharacter->StatusComp->Health * 0.01f);
     }),
@@ -148,12 +144,7 @@ void UNS_PlayerHUD::HideWidget()
 
 void UNS_PlayerHUD::SetYeddaItem(APickup* YeddaItem)
 {
-    if (!CachedPlayerCharacter || !YeddaItem || !ScrollBox_Compass) return;
-
-    if (!YeddaItemArray.Contains(YeddaItem))
-    {
-        YeddaItemArray.Add(YeddaItem);
-    }
+    UE_LOG(LogTemp, Warning, TEXT("SetYeddaItem called, but marker logic is removed."));
 }
 
 void UNS_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -166,7 +157,7 @@ void UNS_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
     {
         return;
     }
-    
+
     if (!testcheck || !GetOwningPlayer() || !CachedPlayerCharacter || !ScrollBox_Compass || CompassTextArray.Num() < 72)
     {
         return;
@@ -193,7 +184,7 @@ void UNS_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
     float BaseOffset = 0.f;
     for (int32 i = 0; i < FinalIndex; ++i)
     {
-    
+
         if (IsValid(CompassTextArray[i]))
         {
             BaseOffset += CompassTextArray[i]->GetCachedGeometry().GetLocalSize().X;
@@ -209,28 +200,12 @@ void UNS_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
     ScrollBox_Compass->SetScrollOffset(TargetOffset);
 
-    TArray<int32> HighlightIndices;
-    const FVector PlayerLoc = CachedPlayerCharacter->GetActorLocation();
-
-    for (APickup* YeddaItem : YeddaItemArray)
-    {
-        if (!IsValid(YeddaItem)) continue; 
-
-        const FVector ToItem = (YeddaItem->GetActorLocation() - PlayerLoc).GetSafeNormal2D();
-        const float ItemWorldYaw = FMath::RadiansToDegrees(FMath::Atan2(ToItem.Y, ToItem.X));
-
-        int32 Index = FMath::RoundToInt(FMath::Fmod(ItemWorldYaw + 360.f, 360.f) / AngleGap) % 24;
-
-        HighlightIndices.Add(Index);
-        HighlightIndices.Add(Index + 24);
-        HighlightIndices.Add(Index + 48);
-    }
-
     for (int32 i = 0; i < CompassTextArray.Num(); ++i)
     {
         if (UNS_CompassElement* Elem = CompassTextArray.IsValidIndex(i) ? CompassTextArray[i] : nullptr; IsValid(Elem))
         {
-            bool bHighlight = HighlightIndices.Contains(i);
+            bool bHighlight = false; // 항상 false로 설정하여 마커 하이라이트 기능을 비활성화
+            // bool bHighlight = HighlightIndices.Contains(i); // 이전 로직
 
             // TextDir 포인터가 유효한지 확인
             if (IsValid(Elem->TextDir))
@@ -245,15 +220,11 @@ void UNS_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
             }
         }
     }
-
 }
 
 void UNS_PlayerHUD::DeleteCompasItem(APickup* DeleteItem)
 {
-    if (YeddaItemArray.Contains(DeleteItem))
-    {
-        YeddaItemArray.Remove(DeleteItem);
-    }
+    return;
 }
 
 void UNS_PlayerHUD::SetTipText(const FText& NewText)

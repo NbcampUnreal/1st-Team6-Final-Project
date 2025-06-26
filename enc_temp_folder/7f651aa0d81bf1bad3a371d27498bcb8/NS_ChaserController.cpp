@@ -7,9 +7,8 @@
 #include "Zombie/Enum/EZombieState.h"
 #include "Character/NS_PlayerController.h"
 #include "Character/NS_PlayerCharacterBase.h"
-#include "Navigation/PathFollowingComponent.h"
-#include "Components/CapsuleComponent.h" 
-#include "NavigationSystem.h" 
+#include "NavigationSystem.h" // UNavigationSystemV1을 위해 추가
+
 ANS_ChaserController::ANS_ChaserController()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -105,22 +104,8 @@ void ANS_ChaserController::Tick(float DeltaTime)
 	else if (BlackboardComp->IsVectorValueSet(TEXT("TargetLocation")))
 	{
 		FVector Location = BlackboardComp->GetValueAsVector(TEXT("TargetLocation"));
-
-		// MoveToLocation 호출 결과를 확인하는 로그를 추가합니다.
-		EPathFollowingRequestResult::Type MoveResult = MoveToLocation(Location, 50.f, true);
-
-		if (MoveResult == EPathFollowingRequestResult::Failed)
-		{
-			UE_LOG(LogTemp, Error, TEXT("[ChaserController] MoveToLocation FAILED! Target Location: %s. Reason: Path not found."), *Location.ToString());
-		}
-		else if (MoveResult == EPathFollowingRequestResult::AlreadyAtGoal)
-		{
-			UE_LOG(LogTemp, Log, TEXT("[ChaserController] MoveToLocation SUCCESS. Already at goal location: %s."), *Location.ToString());
-		}
-		else
-		{
-			UE_LOG(LogTemp, Log, TEXT("[ChaserController] MoveToLocation SUCCESS. Moving to %s."), *Location.ToString());
-		}
+		MoveToLocation(Location, 50.f, true);
+		// UE_LOG(LogTemp, Verbose, TEXT("[ChaserController] Tick: Moving to TargetLocation %s"), *Location.ToString());
 	}
 }
 
@@ -334,88 +319,43 @@ void ANS_ChaserController::WarpToPlayerLocation()
 	if (!GameMode)
 	{
 		UE_LOG(LogTemp, Error, TEXT("[ChaserController] WarpToPlayerLocation: GameMode casting failed. Aborting warp."));
-		RequestPlayerLocation(); // 폴백
+		RequestPlayerLocation(); // Fallback to normal location request
 		return;
 	}
 
 	FVector PlayerLocation = GameMode->GetPlayerLocation();
+	FVector ZombieLocation = GetPawn()->GetActorLocation();
 
-	APawn* ControlledPawn = GetPawn();
-	if (!ControlledPawn)
-	{
-		UE_LOG(LogTemp, Error, TEXT("[ChaserController] WarpToPlayerLocation: Controlled Pawn is null. Cannot calculate warp location."));
-		RequestPlayerLocation(); // 폴백
-		return;
-	}
-
-	FVector ZombieLocation = ControlledPawn->GetActorLocation();
-
+	// 플레이어 위치가 유효한지 확인
 	if (PlayerLocation.IsNearlyZero())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[ChaserController] WarpToPlayerLocation: Player location is ZeroVector. Aborting warp."));
-		RequestPlayerLocation(); // 폴백
+		RequestPlayerLocation(); // Fallback
 		return;
 	}
 
-	// 워프 위치 계산: 플레이어 위치를 중심으로 원 둘레에서 랜덤 지점을 찾습니다.
-	float Radius = WarpDistance;
-	float RandomAngleRad = FMath::RandRange(0.0f, 2.0f * PI);
+	FVector DirectionToPlayer = (PlayerLocation - ZombieLocation).GetSafeNormal();
+	FVector WarpTargetLocation = PlayerLocation - (DirectionToPlayer * WarpDistance);
 
-	FVector2D CirclePoint(FMath::Cos(RandomAngleRad) * Radius, FMath::Sin(RandomAngleRad) * Radius);
+	UE_LOG(LogTemp, Log, TEXT("[ChaserController] Calculated raw warp location: %s (Player: %s, Zombie: %s)"), *WarpTargetLocation.ToString(), *PlayerLocation.ToString(), *ZombieLocation.ToString());
 
-	FVector RawWarpLocation = PlayerLocation + FVector(CirclePoint.X, CirclePoint.Y, 0.0f);
+	FNavLocation NavLoc;
+	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
 
-	UE_LOG(LogTemp, Log, TEXT("[ChaserController] Calculated raw warp location on a circle: %s (Player: %s)"), *RawWarpLocation.ToString(), *PlayerLocation.ToString());
-
-	// **수정된 로직: 천장 감지만 수행**
-	FHitResult HitResult;
-	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(ControlledPawn);
-
-	UCapsuleComponent* CapsuleComp = ControlledPawn->FindComponentByClass<UCapsuleComponent>();
-	float HalfHeight = CapsuleComp ? CapsuleComp->GetScaledCapsuleHalfHeight() : 90.0f;
-
-	// 1. 지면을 찾기 위해 위에서 아래로 트레이스
-	FVector GroundTraceStart = RawWarpLocation + FVector::UpVector * 500.0f;
-	FVector GroundTraceEnd = RawWarpLocation - FVector::UpVector * 500.0f;
-
-	if (!GetWorld()->LineTraceSingleByChannel(HitResult, GroundTraceStart, GroundTraceEnd, ECC_Visibility, Params))
+	if (NavSys && NavSys->ProjectPointToNavigation(WarpTargetLocation, NavLoc))
 	{
-		// 지면을 찾지 못하면 워프 실패 (이 로직은 유지)
-		UE_LOG(LogTemp, Warning, TEXT("[ChaserController] WARP FAILED! No ground found below the raw location %s. Retrying..."), *RawWarpLocation.ToString());
-		GetWorld()->GetTimerManager().SetTimer(CooldownTimerHandle, this, &ANS_ChaserController::WarpToPlayerLocation, 1.0f, false);
-		return;
+		// NavMesh 위 유효한 위치로 워프
+		GetPawn()->SetActorLocation(NavLoc.Location);
+		UE_LOG(LogTemp, Warning, TEXT("[ChaserController] WARP SUCCESS! New location: %s"), *NavLoc.Location.ToString());
+		RequestPlayerLocation(); // 워프 후 다시 이동 목표 설정
 	}
-
-	FVector CorrectedWarpLocation = HitResult.Location;
-
-	// 2. 천장을 확인하기 위해 아래에서 위로 트레이스 (캐릭터 높이만큼)
-	FVector CeilingTraceStart = CorrectedWarpLocation;
-	FVector CeilingTraceEnd = CorrectedWarpLocation + FVector::UpVector * (HalfHeight * 2.0f + 10.0f);
-
-	if (GetWorld()->LineTraceSingleByChannel(HitResult, CeilingTraceStart, CeilingTraceEnd, ECC_Visibility, Params))
+	else
 	{
-		// 천장이 감지되면 워프 실패
-		UE_LOG(LogTemp, Warning, TEXT("[ChaserController] WARP FAILED! Ceiling detected at %s. Retrying..."), *CorrectedWarpLocation.ToString());
-		GetWorld()->GetTimerManager().SetTimer(CooldownTimerHandle, this, &ANS_ChaserController::WarpToPlayerLocation, 1.0f, false);
-		return;
+		UE_LOG(LogTemp, Warning, TEXT("[ChaserController] WARP FAILED! Could not find a valid location on NavMesh near %s."), *WarpTargetLocation.ToString());
+		RequestPlayerLocation(); // 워프 실패 시 기존 방식으로 계속 시도
 	}
-
-	// **장애물 검사 (Sphere Trace) 로직은 이 부분에서 완전히 제거됩니다.**
-
-	// 모든 검사를 통과했으므로 NavMesh 유무와 관계없이 워프를 강행합니다.
-	ControlledPawn->SetActorLocation(CorrectedWarpLocation);
-	UE_LOG(LogTemp, Warning, TEXT("[ChaserController] WARP SUCCESS! Final location: %s (Manually verified)"), *CorrectedWarpLocation.ToString());
-
-	// 워프 후 플레이어 위치로 이동 명령을 내립니다.
-	BlackboardComp->SetValueAsVector(TEXT("TargetLocation"), PlayerLocation);
-	BlackboardComp->SetValueAsBool(TEXT("IsChasingEvent"), false);
-	BlackboardComp->ClearValue(TEXT("TargetActor"));
-
-	MoveToLocation(PlayerLocation, 50.f, true);
-
-	UE_LOG(LogTemp, Log, TEXT("[ChaserController] Initiating movement to player's location after successful warp."));
 }
+
 
 void ANS_ChaserController::StartDamageLoop(AActor* Target)
 {

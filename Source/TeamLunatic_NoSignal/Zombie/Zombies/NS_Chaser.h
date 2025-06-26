@@ -17,6 +17,8 @@ public:
 	// 체이서 좀비는 항상 활성화 상태 유지하기 위해 오버라이드
 	virtual void SetActive_Multicast_Implementation(bool setActive) override;
 
+	virtual void Tick(float DeltaTime) override;
+
 protected:
 	virtual void BeginPlay() override;
 	
@@ -37,6 +39,4 @@ private:
 	// 주기적으로 데미지를 입히는 함수
 	void ApplyAutoDamage();
 
-public:
-	virtual void Tick(float DeltaTime) override;
 };

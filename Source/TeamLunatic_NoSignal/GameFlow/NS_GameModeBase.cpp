@@ -44,7 +44,7 @@ void ANS_GameModeBase::BeginPlay()
         }
     }
     
-    UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 스포너 수: %d"), ZombieSpawnPoints.Num());
+    //UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 스포너 수: %d"), ZombieSpawnPoints.Num());
     
     // 현재 레벨의 좀비 액터 찾기
     TArray<AActor*> ExistingZombies;
@@ -63,24 +63,24 @@ void ANS_GameModeBase::BeginPlay()
 
     // 플레이어 수에 따라 최대 좀비 수 조정
     MaxZombieCount = 40 * PlayerCount;
-    UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 플레이어 수(%d)에 따라 최대 좀비 수를 %d로 설정"), 
-        PlayerCount, MaxZombieCount);
+    //UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 플레이어 수(%d)에 따라 최대 좀비 수를 %d로 설정"), 
+    //    PlayerCount, MaxZombieCount);
 
     // 좀비 스폰 타이머 설정 - 3초마다 스폰
     GetWorldTimerManager().SetTimer(ZombieSpawnTimer, this, &ANS_GameModeBase::CheckAndSpawnZombies, ZombieSpawnInterval, true);
-    UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 스폰 타이머 설정 완료 (%.1f초 간격, 한 번에 %d마리)"), 
-        ZombieSpawnInterval, ZombiesPerSpawn);
+    //UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 스폰 타이머 설정 완료 (%.1f초 간격, 한 번에 %d마리)"), 
+    //    ZombieSpawnInterval, ZombiesPerSpawn);
     
     // 지연된 스포너 검색 타이머 설정 (3초 후 실행)
     GetWorldTimerManager().SetTimer(DelayedSpawnerSearchTimer, this, &ANS_GameModeBase::SearchForSpawnersDelayed, 3.0f, false);
 
     // 좀비 정리 타이머 설정 (5초마다 실행)
     GetWorldTimerManager().SetTimer(ZombieCleanupTimer, this, &ANS_GameModeBase::CleanupDistantZombies, 5.0f, true);
-    UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 정리 타이머 설정 완료 (5초마다 실행)"));
+    //UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 정리 타이머 설정 완료 (5초마다 실행)"));
     
     // 좀비 디버그 타이머 설정 (1초마다 실행)
     GetWorldTimerManager().SetTimer(ZombieDebugTimerHandle, this, &ANS_GameModeBase::DebugZombieDistances, 1.0f, true);
-    UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 디버그 타이머 설정 완료 (1초마다 실행)"));
+    //UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 디버그 타이머 설정 완료 (1초마다 실행)"));
     
     // 제거된 좀비 카운터 초기화
     ZombiesRemoved = 0;
@@ -119,8 +119,8 @@ void ANS_GameModeBase::SearchForSpawnersDelayed()
 		}
 	}
 	
-	UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 지연 검색으로 %d개의 새 스포너 추가됨, 총 스포너 수: %d"), 
-		NewSpawnersAdded, ZombieSpawnPoints.Num());
+	//UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 지연 검색으로 %d개의 새 스포너 추가됨, 총 스포너 수: %d"), 
+		//NewSpawnersAdded, ZombieSpawnPoints.Num());
 }
 
 // 플레이어 위치 반환
@@ -152,7 +152,7 @@ void ANS_GameModeBase::CheckAndSpawnZombies()
 		static int32 LogCounter = 0;
 		if (LogCounter++ % 30 == 0)  // 30번에 한 번만 로그 출력
 		{
-			UE_LOG(LogTemp, Warning, TEXT("[GameMode] 등록된 스포너가 없습니다. 스폰 불가능"));
+			//UE_LOG(LogTemp, Warning, TEXT("[GameMode] 등록된 스포너가 없습니다. 스폰 불가능"));
 			SearchForSpawnersDelayed();
 		}
 		return;
@@ -184,8 +184,8 @@ void ANS_GameModeBase::CheckAndSpawnZombies()
 		SpawnZombieAtPoint(SuitableSpawners[SpawnerIndex]);
 	}
 	
-	UE_LOG(LogTemp, Verbose, TEXT("[GameMode] %d마리 좀비 스폰 완료, 현재 좀비 %d/%d"), 
-		SpawnCount, CurrentZombieCount, MaxZombieCount);
+	//UE_LOG(LogTemp, Verbose, TEXT("[GameMode] %d마리 좀비 스폰 완료, 현재 좀비 %d/%d"), 
+		//SpawnCount, CurrentZombieCount, MaxZombieCount);
 }
 
 // 적합한 스포너 찾기
@@ -418,14 +418,14 @@ void ANS_GameModeBase::CleanupDistantZombies()
         // 거리 디버깅
         if (Distance > ZombieDestroyDistance * 0.9f)  // 90% 이상 거리에 있는 좀비 로그
         {
-            UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 거리: %.2f (제거 거리: %.2f)"), Distance, ZombieDestroyDistance);
+            //UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 거리: %.2f (제거 거리: %.2f)"), Distance, ZombieDestroyDistance);
         }
         
         // 설정된 거리보다 멀리 있으면 제거
         if (Distance > ZombieDestroyDistance)
         {
             // 좀비 제거 (OnZombieDestroyed 이벤트가 자동으로 호출됨)
-            UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 제거: 거리 %.2f"), Distance);
+            //UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 제거: 거리 %.2f"), Distance);
             ZombieActor->Destroy();
             DestroyedCount++;
         }
@@ -433,7 +433,7 @@ void ANS_GameModeBase::CleanupDistantZombies()
     
     if (DestroyedCount > 0)
     {
-        UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 거리가 먼 좀비 %d마리 제거됨"), DestroyedCount);
+        //UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 거리가 먼 좀비 %d마리 제거됨"), DestroyedCount);
     }
 }
 

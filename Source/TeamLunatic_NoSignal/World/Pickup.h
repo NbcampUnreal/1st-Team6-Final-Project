@@ -65,23 +65,8 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-
-	int32 AssignToHUDRetryCount = 0;
-
-	UFUNCTION(NetMulticast,Reliable)
-	void Multicast_AddMarkerToAll(const TArray<APickup*>& QuestItems);
-
-	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_RemoveMarkerFromAll();
-
-	UFUNCTION()
-	void OnHUDReady(UNS_PlayerHUD* PlayerHUD);
-
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
-
-
 #endif
-	void TryAssignToHUD();
 
 };
