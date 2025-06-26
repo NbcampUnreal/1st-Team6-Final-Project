@@ -27,9 +27,6 @@ public:
     UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
     UBorder* Backround;
 
-    UPROPERTY(meta = (BindWidget), BlueprintReadWrite) //, BlueprintReadOnly / BlueprintReadWrite
-    UTextBlock* Subtitle;
-
     UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
     UTextBlock* Title;
 
@@ -44,9 +41,6 @@ public:
 
     UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
     USpacer* SelectMapSpacer;
-
-    UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-    UEditableTextBox* EditableTextBox_MaxPlayers;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
     UButton* CreateServerButton;

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Character.h"
 #include "Zombie/NS_ZombieBase.h"
+#include "NavigationInvokerComponent.h"  // 네비게이션 인보커 컴포넌트 헤더 추가
 #include "NS_Chaser.generated.h"
 
 UCLASS()
@@ -14,14 +14,12 @@ public:
 	ANS_Chaser();
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
+	// 체이서 좀비는 항상 활성화 상태 유지하기 위해 오버라이드
+	virtual void SetActive_Multicast_Implementation(bool setActive) override;
+
 protected:
 	virtual void BeginPlay() override;
-
-	//UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Status")
-	//float MaxHealth;
-
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status")
-	//float CurrentHealth;
+	
 
 	// 에디터에서 자동 데미지 테스트를 켜고 끌 수 있는 변수
 	UPROPERTY(EditAnywhere, Category = "Debug")

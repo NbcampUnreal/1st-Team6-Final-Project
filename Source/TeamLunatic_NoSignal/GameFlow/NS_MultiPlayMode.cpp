@@ -13,7 +13,7 @@ ANS_MultiPlayMode::ANS_MultiPlayMode()
 {
     UE_LOG(LogTemp, Warning, TEXT("MultiPlayMode Set !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!."));
     
-    // 멀티플레이 모드에서는 기본 설정 유지 (BeginPlay에서 플레이어 수에 따라 조정)
+    // 멀티플레이 모드에서는 3초마다 스폰하도록 설정
     ZombieSpawnInterval = 3.0f;
 }
 
@@ -37,8 +37,8 @@ void ANS_MultiPlayMode::BeginPlay()
         // 최소 1명 이상으로 설정
         PlayerCount = FMath::Max(1, PlayerCount);
         
-        // 플레이어 수에 따라 한 번에 스폰할 좀비 수 설정
-        ZombiesPerSpawn = PlayerCount;
+        // 플레이어 수에 따라 한 번에 스폰할 좀비 수 설정 (플레이어 수 × 1)
+        ZombiesPerSpawn = PlayerCount * 1;
         
         UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 플레이어 수: %d, 한 번에 스폰할 좀비 수: %d"), 
             PlayerCount, ZombiesPerSpawn);
@@ -71,9 +71,10 @@ void ANS_MultiPlayMode::BeginPlay()
     
     // 좀비 스폰 타이머 설정 (기존 타이머 제거 후 새로 설정)
     GetWorldTimerManager().ClearTimer(ZombieSpawnTimer);
-    GetWorldTimerManager().SetTimer(ZombieSpawnTimer, this, &ANS_MultiPlayMode::CheckAndSpawnZombies, 1.0f, true);
+    GetWorldTimerManager().SetTimer(ZombieSpawnTimer, this, &ANS_MultiPlayMode::CheckAndSpawnZombies, ZombieSpawnInterval, true);
     
-    UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 좀비 스폰 타이머 설정 완료"));
+    UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 좀비 스폰 타이머 설정 완료 (%.1f초마다 %d마리)"), 
+        ZombieSpawnInterval, ZombiesPerSpawn);
 }
 
 FVector ANS_MultiPlayMode::GetPlayerLocation_Implementation() const
