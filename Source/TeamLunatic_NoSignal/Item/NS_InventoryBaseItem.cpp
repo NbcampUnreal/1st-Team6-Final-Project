@@ -135,7 +135,7 @@ void UNS_InventoryBaseItem::OnUseItem(ANS_PlayerCharacterBase* Character)
 	case EItemType::Consumable:
 	case EItemType::Medical:
 	case EItemType::Utility: // 소모품 처리
-		UseConsumableItem(Character, *ItemData);
+		UseConsumableItem_Server(Character, ItemDataRowName);
 		break;
 	default:
 		UE_LOG(LogTemp, Warning, TEXT("[OnUseItem] 사용 처리되지 않은 아이템 타입입니다: %d"), (uint8)ItemData->ItemType);
@@ -143,32 +143,59 @@ void UNS_InventoryBaseItem::OnUseItem(ANS_PlayerCharacterBase* Character)
 	}
 }
 
-void UNS_InventoryBaseItem::UseConsumableItem(ANS_PlayerCharacterBase* Character, const FNS_ItemDataStruct& ItemData)
+void UNS_InventoryBaseItem::UseConsumableItem_Server_Implementation(ANS_PlayerCharacterBase* Character, FName InItemDatatRowName)
+{
+	UseConsumableItem_Multicast(Character, InItemDatatRowName);
+	UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("[UseConsumableItem] 찾음.")), true, true, FLinearColor(255, 0, 0, 255), 30.f);
+}
+
+void UNS_InventoryBaseItem::UseConsumableItem_Multicast_Implementation(ANS_PlayerCharacterBase* Character, FName InItemDataRowName)
 {
 	if (!Character) return;
 
-	// 상태 회복 처리
-	if (auto* State = Character->StatusComp)
+	if (!ItemsDataTable)
 	{
-		State->AddHealthGauge(ItemData.ItemStates.HealAmount);
-		State->AddStamina(ItemData.ItemStates.StaminaRecovery);
+		if (const UWorld* World = GetWorld())
+		{
+			if (const UNS_GameInstance* GI = Cast<UNS_GameInstance>(World->GetGameInstance()))
+			{
+				ItemsDataTable = GI->GlobalItemDataTable;
+			}
+		}
+	}
+
+	const FNS_ItemDataStruct* ItemData = ItemsDataTable->FindRow<FNS_ItemDataStruct>(InItemDataRowName, TEXT(""));
+
+	// 상태 회복 처리
+	if (UNS_StatusComponent* State = Character->StatusComp)
+	{
+		State->AddHealthGauge(ItemData->ItemStates.HealAmount);
+		State->AddStamina(ItemData->ItemStates.StaminaRecovery);
 
 		UE_LOG(LogTemp, Log, TEXT("[UseConsumableItem] 체력 +%.1f, 스태미나 +%.1f"),
-			ItemData.ItemStates.HealAmount,
-			ItemData.ItemStates.StaminaRecovery
+			ItemData->ItemStates.HealAmount,
+			ItemData->ItemStates.StaminaRecovery
 		);
 	}
 
-	if (ItemData.ConsumableItemAssetData.UseSound)
+	if (ItemData->ConsumableItemAssetData.UseSound)
 	{
-		UGameplayStatics::PlaySound2D(this, ItemData.ConsumableItemAssetData.UseSound);
+		if (Character)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[UseConsumableItem] '%s' 찾음."), *ItemData->ConsumableItemAssetData.UseSound->GetName());
+			Character->PlaySoundOnCharacter_Multicast(ItemData->ConsumableItemAssetData.UseSound);
+			UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("[UseConsumableItem] '%s' 찾음."), *ItemData->ConsumableItemAssetData.UseSound->GetName()), true, true, FLinearColor(255, 0, 0, 255), 30.f);
+		}
 	}
 
 	// 무게까지 포함한 수량 감소
 	if (OwingInventory)
 	{
 		const int32 Removed = OwingInventory->RemoveAmountOfItem(this, 1);
-		UE_LOG(LogTemp, Warning, TEXT("[UseConsumableItem] %s 사용됨. 제거된 수량: %d"), *ItemData.ItemTextData.ItemName.ToString(), Removed);
+		if (Removed > 0)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[UseConsumableItem] '%s' 사용됨. 제거된 수량: %d"), *ItemData->ItemTextData.ItemName.ToString(), Removed);
+		}
 	}
 	else
 	{
@@ -181,6 +208,7 @@ bool UNS_InventoryBaseItem::IsSupportedForNetworking() const
 {
 	return true;
 }
+
 
 void UNS_InventoryBaseItem::SetOwningActor(AActor* NewOwner)
 {
