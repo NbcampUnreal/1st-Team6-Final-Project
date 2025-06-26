@@ -432,4 +432,29 @@ void UInventoryComponent::CleanUpZeroQuantityItems()
 	}
 }
 
+// 해당 무기 유형에 맞는 탄약이 인벤토리에 존재하는지 확인하는 함수
+bool UInventoryComponent::HasAmmoForWeapon(EAmmoType WeaponAmmoType) const
+{
+	// 인벤토리에 있는 모든 아이템을 조회
+	for (const auto& Item : InventoryContents)
+	{
+		// 아이템이 유효하고,
+		// 아이템 타입이 '장비'이며,
+		// 무기 타입이 Ammo이고, 
+		// 아이템의 탄약 타입이 무기가 요구하는 탄약 타입과 일치하고,
+		// 수량이 1개 이상인 경우
+		if (Item &&
+			Item->ItemType == EItemType::Equipment &&
+			Item->WeaponType == EWeaponType::Ammo &&
+			Item->WeaponData.AmmoType == WeaponAmmoType &&
+			Item->Quantity > 0)
+		{
+			// 조건에 맞는 탄약을 찾았으므로 true 반환
+			return true;
+		}
+	}
+	// 조건을 만족하는 탄약을 찾지 못했으므로 false 반환
+	return false;
+}
+
 

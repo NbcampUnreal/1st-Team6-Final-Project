@@ -75,6 +75,9 @@ public:
 
 	void BroadcastInventoryUpdate();
 	void CleanUpZeroQuantityItems();
+	
+	UFUNCTION(BlueprintCallable, Category = "Inventory|Ammo")
+	bool HasAmmoForWeapon(EAmmoType WeaponAmmoType) const;
 
 	UInventoryComponent();
 	virtual void InitializeComponent() override;

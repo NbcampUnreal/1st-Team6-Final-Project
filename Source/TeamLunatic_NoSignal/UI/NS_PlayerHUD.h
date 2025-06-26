@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// NS_PlayerHUD.h
 
 #pragma once
 
@@ -12,31 +12,25 @@ class APickup;
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UNS_PlayerHUD : public UUserWidget
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 public:
     virtual void NativeConstruct() override;
     void ShowWidget();
     void HideWidget();
-    void SetYeddaItem(APickup* YeddaItem);
-
+    void SetYeddaItem(APickup* YeddaItem); 
     void NativeTick(const FGeometry& MyGeometry, float InDeltaTime);
-
-	void DeleteCompasItem(APickup* DeleteItem);
-
+    void DeleteCompasItem(APickup* DeleteItem);
     void SetTipText(const FText& NewText);
 
     UPROPERTY(meta = (BindWidget))
     class UNS_QuickSlotPanel* NS_QuickSlotPanel;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "TEST")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TEST")
     int32 TEST_CNT;
-
-    //UPROPERTY(EditDefaultsOnly, Category = "UI")
-    //UNS_CompassElement* NS_CompassElement;
 
     UPROPERTY(EditDefaultsOnly, Category = "UI")
     TSubclassOf<UNS_CompassElement> NS_CompassElementClass;
-    /// Script / UMGEditor.WidgetBlueprint'/Game/SurvivalGameKitV2/Blueprints/Widgets/WBP_CompassElement.WBP_CompassElement'
+
 protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
     TArray<UTexture2D*> TextureArray;
@@ -59,10 +53,10 @@ protected:
 
     UPROPERTY(meta = (BindWidget))
     class UScrollBox* ScrollBox_Compass;
-    
+
     UPROPERTY()
     TArray<TObjectPtr<class UNS_CompassElement>> CompassTextArray;
-    
+
     UPROPERTY(meta = (BindWidget))
     class UEditableTextBox* TipText;
 
@@ -70,21 +64,15 @@ private:
     FTimerHandle UpdatePlayerStausHandle;
     APlayerController* PlayerController;
 
-    UPROPERTY()
-    TArray<TObjectPtr<class APickup>> YeddaItemArray;
-
     bool testcheck = false;
     int32 PrvFinalIdx = 0;
-  
-    // 각 나침반 눈금의 시작 위치(픽셀 오프셋)를 저장할 배열
-    TArray<float> CompassElementOffsets;
 
-    // 각 나침반 눈금의 너비(픽셀)를 저장할 배열
+    TArray<float> CompassElementOffsets;
     TArray<float> CompassElementWidths;
 
     UPROPERTY()
     class ANS_PlayerCharacterBase* CachedPlayerCharacter = nullptr;
 
     UPROPERTY()
-    int32 LastHighlightedIndex = -1; // 마지막으로 강조한 인덱스 캐싱
+    int32 LastHighlightedIndex = -1;
 };
