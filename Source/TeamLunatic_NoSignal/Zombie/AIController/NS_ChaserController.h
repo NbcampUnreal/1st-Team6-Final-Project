@@ -70,4 +70,9 @@ protected:
     FTimerHandle DamageTimerHandle;
     AActor* DamageTarget = nullptr;
     bool bIsDealingDamage = false;
+
+    UPROPERTY(EditDefaultsOnly, Category = "AI | Warp")
+    float WarpDistance = 3000.0f; 
+
+    void WarpToPlayerLocation();
 };

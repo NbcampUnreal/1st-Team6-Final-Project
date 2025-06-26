@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "UI/NS_PlayerHUD.h"
 #include "GameFramework/PlayerController.h"
 #include "NS_PlayerController.generated.h"
 
@@ -41,5 +42,11 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Chase")
 	USoundBase* ChaseStartSoundCue;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UNS_PlayerHUD> PlayerHUDClass;
+
+	UPROPERTY()
+	TObjectPtr<UNS_PlayerHUD> PlayerHUDWidget;
 
 };

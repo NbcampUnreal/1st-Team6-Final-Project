@@ -26,6 +26,8 @@ ANS_Chaser::ANS_Chaser()
 	{
 		NavigationInvoker->SetAutoActivate(true);
 	}
+
+	NavigationInvoker->SetGenerationRadii(4000.f, 4000.f);
 }
 
 void ANS_Chaser::BeginPlay()
