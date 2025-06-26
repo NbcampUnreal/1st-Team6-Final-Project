@@ -44,8 +44,6 @@ protected:
     UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
     UBorder* Backround;
 
-    UPROPERTY(meta = (BindWidget), BlueprintReadWrite)//, BlueprintReadOnly / BlueprintReadWrite
-    UTextBlock* Subtitle;
 
     UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
     UTextBlock * Title;

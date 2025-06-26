@@ -14,64 +14,76 @@
 #include "GameFramework/Character.h"
 
 
+ANS_GameModeBase::ANS_GameModeBase()
+{
+    // 기본 설정
+    PlayerCount = 1;
+    ZombiesPerSpawn = 2;  // 한 번에 2마리씩 스폰
+    ZombieSpawnInterval = 3.0f;  // 3초마다 스폰
+    MinSpawnDistance = 4000.0f;
+    MaxSpawnDistance = 8000.0f;
+    ZombieDestroyDistance = 8001.0f;
+}
+
 void ANS_GameModeBase::BeginPlay()
 {
-	Super::BeginPlay();
-	
-	// 좀비 스포너 찾기
-	TArray<AActor*> FoundActors;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AANS_ZombieSpawner::StaticClass(), FoundActors); 
-	
-	ZombieSpawnPoints.Empty(); 
-	
-	// 모든 스포너 추가
-	for (AActor* Actor : FoundActors)
-	{
-		if (AANS_ZombieSpawner* Spawner = Cast<AANS_ZombieSpawner>(Actor))
-		{
-			ZombieSpawnPoints.Add(Spawner);
-		}
-	}
-	
-	UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 스포너 수: %d"), ZombieSpawnPoints.Num());
-	
-	// 현재 레벨의 좀비 액터 찾기
-	TArray<AActor*> ExistingZombies;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ANS_ZombieBase::StaticClass(), ExistingZombies);
+    Super::BeginPlay();
+    
+    // 좀비 스포너 찾기
+    TArray<AActor*> FoundActors;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), AANS_ZombieSpawner::StaticClass(), FoundActors); 
+    
+    ZombieSpawnPoints.Empty(); 
+    
+    // 모든 스포너 추가
+    for (AActor* Actor : FoundActors)
+    {
+        if (AANS_ZombieSpawner* Spawner = Cast<AANS_ZombieSpawner>(Actor))
+        {
+            ZombieSpawnPoints.Add(Spawner);
+        }
+    }
+    
+    UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 스포너 수: %d"), ZombieSpawnPoints.Num());
+    
+    // 현재 레벨의 좀비 액터 찾기
+    TArray<AActor*> ExistingZombies;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ANS_ZombieBase::StaticClass(), ExistingZombies);
 
-	CurrentZombieCount = ExistingZombies.Num();
-	
-	// 기존 좀비 파괴 이벤트 바인딩
-	for (AActor* Z : ExistingZombies)
-	{
-		if (IsValid(Z))
-		{
-			Z->OnDestroyed.AddDynamic(this, &ANS_GameModeBase::OnZombieDestroyed);
-		}
-	}
+    CurrentZombieCount = ExistingZombies.Num();
+    
+    // 기존 좀비 파괴 이벤트 바인딩
+    for (AActor* Z : ExistingZombies)
+    {
+        if (IsValid(Z))
+        {
+            Z->OnDestroyed.AddDynamic(this, &ANS_GameModeBase::OnZombieDestroyed);
+        }
+    }
 
-	// 플레이어 수에 따라 최대 좀비 수 조정
-	MaxZombieCount = 40 * PlayerCount;
-	UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 플레이어 수(%d)에 따라 최대 좀비 수를 %d로 설정"), 
-		PlayerCount, MaxZombieCount);
+    // 플레이어 수에 따라 최대 좀비 수 조정
+    MaxZombieCount = 40 * PlayerCount;
+    UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 플레이어 수(%d)에 따라 최대 좀비 수를 %d로 설정"), 
+        PlayerCount, MaxZombieCount);
 
-	// 좀비 스폰 타이머 설정
-	GetWorldTimerManager().SetTimer(ZombieSpawnTimer, this, &ANS_GameModeBase::CheckAndSpawnZombies, ZombieSpawnInterval, true);
-	UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 스폰 타이머 설정 완료 (%.1f초 간격)"), ZombieSpawnInterval);
-	
-	// 지연된 스포너 검색 타이머 설정 (3초 후 실행)
-	GetWorldTimerManager().SetTimer(DelayedSpawnerSearchTimer, this, &ANS_GameModeBase::SearchForSpawnersDelayed, 3.0f, false);
+    // 좀비 스폰 타이머 설정 - 3초마다 스폰
+    GetWorldTimerManager().SetTimer(ZombieSpawnTimer, this, &ANS_GameModeBase::CheckAndSpawnZombies, ZombieSpawnInterval, true);
+    UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 스폰 타이머 설정 완료 (%.1f초 간격, 한 번에 %d마리)"), 
+        ZombieSpawnInterval, ZombiesPerSpawn);
+    
+    // 지연된 스포너 검색 타이머 설정 (3초 후 실행)
+    GetWorldTimerManager().SetTimer(DelayedSpawnerSearchTimer, this, &ANS_GameModeBase::SearchForSpawnersDelayed, 3.0f, false);
 
-	// 좀비 정리 타이머 설정 (5초마다 실행)
-	GetWorldTimerManager().SetTimer(ZombieCleanupTimer, this, &ANS_GameModeBase::CleanupDistantZombies, 5.0f, true);
-	UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 정리 타이머 설정 완료 (5초마다 실행)"));
-	
-	// 좀비 디버그 타이머 설정 (1초마다 실행)
-	GetWorldTimerManager().SetTimer(ZombieDebugTimerHandle, this, &ANS_GameModeBase::DebugZombieDistances, 1.0f, true);
-	UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 디버그 타이머 설정 완료 (1초마다 실행)"));
-	
-	// 제거된 좀비 카운터 초기화
-	ZombiesRemoved = 0;
+    // 좀비 정리 타이머 설정 (5초마다 실행)
+    GetWorldTimerManager().SetTimer(ZombieCleanupTimer, this, &ANS_GameModeBase::CleanupDistantZombies, 5.0f, true);
+    UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 정리 타이머 설정 완료 (5초마다 실행)"));
+    
+    // 좀비 디버그 타이머 설정 (1초마다 실행)
+    GetWorldTimerManager().SetTimer(ZombieDebugTimerHandle, this, &ANS_GameModeBase::DebugZombieDistances, 1.0f, true);
+    UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 디버그 타이머 설정 완료 (1초마다 실행)"));
+    
+    // 제거된 좀비 카운터 초기화
+    ZombiesRemoved = 0;
 }
 
 void ANS_GameModeBase::SearchForSpawnersDelayed()
