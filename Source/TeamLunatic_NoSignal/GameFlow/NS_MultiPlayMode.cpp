@@ -4,6 +4,7 @@
 #include "NS_GameInstance.h"
 #include "NS_MainGamePlayerState.h"
 #include "NS_GameState.h"
+#include "Zombie/Zombies/NS_Chaser.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "GameFramework/PlayerStart.h"
 #include "Zombie/NS_ZombieBase.h"
@@ -376,6 +377,12 @@ void ANS_MultiPlayMode::CleanupDistantZombies()
     for (AActor* ZombieActor : AllZombies)
     {
         if (!IsValid(ZombieActor))
+        {
+            continue;
+        }
+        
+        // 체이서 좀비는 제거하지 않음
+        if (Cast<ANS_Chaser>(ZombieActor))
         {
             continue;
         }
