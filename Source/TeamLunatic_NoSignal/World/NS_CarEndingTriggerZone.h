@@ -23,7 +23,7 @@ public:
 
     float RotationUpdateInterval = 0.2f; // 0.2초마다 갱신
     float TimeSinceLastUpdate = 0.f;
-    float MaxVisibleDistance = 1000.f; // 너무 멀면 회전 안 함
+    float MaxVisibleDistance = 2000.f; // 너무 멀면 회전 안 함
     bool bPreviouslyVisible = true;
 
     UPROPERTY(VisibleAnywhere, Category = "UI")
@@ -44,12 +44,14 @@ protected:
 
     void CheckGroupEndingCondition();
 
-    void UpdateWidgetStatus(int32 NumPlayers, int32 NumItems);
+    void UpdateWidgetStatus(int32 NumPlayers, int32 TotalPlayers, int32 NumItems);
 
     void UpdateEndingCountdownUI();
 
     void EndingConditionSatisfied();
-
+    UFUNCTION()
+    void OnRep_CachedTotalPlayerCount();
+    void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
     UFUNCTION(NetMulticast, Reliable)
     void Multicast_ShowEndingResultList(const TArray<FString>& SuccessList, const TArray<FString>& FailList);
 
@@ -67,4 +69,7 @@ protected:
     TArray<ANS_PlayerCharacterBase*> OverlappingPlayers;
 
     float EndingCountdown = 0.f;
+
+    UPROPERTY(ReplicatedUsing = OnRep_CachedTotalPlayerCount)
+    int32 CachedTotalPlayerCount;
 };
