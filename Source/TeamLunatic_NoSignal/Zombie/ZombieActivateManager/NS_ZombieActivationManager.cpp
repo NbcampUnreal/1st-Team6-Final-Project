@@ -18,19 +18,30 @@ void ANS_ZombieActivationManager::BeginPlay()
 
     if (HasAuthority()) 
     {
-        // === 변경된 부분 시작 ===
-        TArray<AActor*> FoundActors; // AActor* 타입의 임시 배열 선언
+        // 레벨의 모든 좀비 찾기
+        TArray<AActor*> FoundActors;
         UGameplayStatics::GetAllActorsOfClass(GetWorld(), ANS_ZombieBase::StaticClass(), FoundActors);
 
-        // FoundActors에 있는 각 액터를 ANS_ZombieBase*로 캐스팅하여 AllZombiesInLevel에 추가
+        // 체이서 좀비 찾기 및 즉시 활성화
         for (AActor* Actor : FoundActors)
         {
-            if (ANS_ZombieBase* Zombie = Cast<ANS_ZombieBase>(Actor))
+            ANS_ZombieBase* Zombie = Cast<ANS_ZombieBase>(Actor);
+            if (!Zombie) continue;
+            
+            AllZombiesInLevel.Add(Zombie);
+            
+            // 체이서 좀비는 즉시 활성화
+            if (Cast<ANS_Chaser>(Zombie))
             {
-                AllZombiesInLevel.Add(Zombie);
+                UE_LOG(LogTemp, Warning, TEXT("체이서 좀비 발견 및 활성화: %s"), *Zombie->GetName());
+                Zombie->SetActive_Multicast(true);
+                Zombie->SetActorTickEnabled(true);
+                if (AAIController* AIController = Cast<AAIController>(Zombie->GetController()))
+                {
+                    AIController->SetActorTickEnabled(true);
+                }
             }
         }
-        // === 변경된 부분 끝 ===
         
         GetWorldTimerManager().SetTimer(ActivationUpdateTimerHandle, this, &ANS_ZombieActivationManager::PerformActivationUpdate, UpdateInterval, true);
     }
@@ -62,26 +73,36 @@ void ANS_ZombieActivationManager::PerformActivationUpdate_Implementation()
             continue;
         }
 
-        bool bShouldBeActive = false; 
-
+        // 체이서 좀비는 항상 활성화 상태 유지
         if (Cast<ANS_Chaser>(Zombie))
         {
-            bShouldBeActive = true;
-        }
-        else
-        {
-            FVector ZombieLocation = Zombie->GetActorLocation();
-            for (AActor* PlayerActor : Players)
+            if (!Zombie->bIsActive)
             {
-                ANS_PlayerCharacterBase* PlayerChar = Cast<ANS_PlayerCharacterBase>(PlayerActor);
-                if (IsValid(PlayerChar) && !PlayerChar->IsDead)
+                UE_LOG(LogTemp, Warning, TEXT("체이서 좀비 재활성화: %s"), *Zombie->GetName());
+                Zombie->SetActive_Multicast(true);
+                Zombie->SetActorTickEnabled(true);
+                if (AAIController* AIController = Cast<AAIController>(Zombie->GetController()))
                 {
-                    float DistanceSq = FVector::DistSquared(ZombieLocation, PlayerChar->GetActorLocation());
-                    if (DistanceSq <= FMath::Square(ActivationDistance))
-                    {
-                        bShouldBeActive = true;
-                        break;
-                    }
+                    AIController->SetActorTickEnabled(true);
+                }
+            }
+            continue; // 체이서 좀비는 추가 처리 필요 없음
+        }
+
+        // 일반 좀비 활성화 로직
+        bool bShouldBeActive = false;
+        FVector ZombieLocation = Zombie->GetActorLocation();
+        
+        for (AActor* PlayerActor : Players)
+        {
+            ANS_PlayerCharacterBase* PlayerChar = Cast<ANS_PlayerCharacterBase>(PlayerActor);
+            if (IsValid(PlayerChar) && !PlayerChar->IsDead)
+            {
+                float DistanceSq = FVector::DistSquared(ZombieLocation, PlayerChar->GetActorLocation());
+                if (DistanceSq <= FMath::Square(ActivationDistance))
+                {
+                    bShouldBeActive = true;
+                    break;
                 }
             }
         }

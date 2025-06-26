@@ -47,6 +47,40 @@ void ANS_CarEndingTriggerZone::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 
+    // 서버에서만 플레이어 수 추적
+    if (HasAuthority())
+    {
+        int32 CurrentPlayerCount = 0;
+
+        for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+        {
+            APlayerController* PC = It->Get();
+            if (PC && PC->GetPawn())  // Pawn 있는 경우만 카운트
+            {
+                ++CurrentPlayerCount;
+            }
+        }
+
+        // 변화가 있을 때만 갱신
+        if (CachedTotalPlayerCount != CurrentPlayerCount)
+        {
+            CachedTotalPlayerCount = CurrentPlayerCount;
+            UE_LOG(LogTemp, Warning, TEXT("실시간 전체 플레이어 수 변경 감지: %d"), CachedTotalPlayerCount);
+
+            // UI 갱신
+            int32 NumPlayersInZone = 0;
+            for (AActor* Player : OverlappingPlayers)
+            {
+                if (IsValid(Player))
+                {
+                    NumPlayersInZone++;
+                }
+            }
+
+            UpdateWidgetStatus(NumPlayersInZone, CachedTotalPlayerCount, 0);
+        }
+    }
+
     // 서버에선 회전 처리 안 함
     if (GetNetMode() == NM_DedicatedServer) return;
 
@@ -105,7 +139,6 @@ void ANS_CarEndingTriggerZone::Tick(float DeltaTime)
 void ANS_CarEndingTriggerZone::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 void ANS_CarEndingTriggerZone::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -128,9 +161,12 @@ void ANS_CarEndingTriggerZone::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 
 void ANS_CarEndingTriggerZone::CheckGroupEndingCondition()
 {
+    // 전체 참여 플레이어 수 계산
+    int32 TotalPlayerCount = CachedTotalPlayerCount;
     int32 NumPlayersInZone = 0;
     bool bHasPetrolTank = false;
     bool bHasCarKey = false;
+
 
     for (ANS_PlayerCharacterBase* Player : OverlappingPlayers)
     {
@@ -170,7 +206,7 @@ void ANS_CarEndingTriggerZone::CheckGroupEndingCondition()
     if (bHasPetrolTank) NumCollectedItems++;
     if (bHasCarKey) NumCollectedItems++;
 
-    UpdateWidgetStatus(NumPlayersInZone, NumCollectedItems);
+    UpdateWidgetStatus(NumPlayersInZone, TotalPlayerCount, NumCollectedItems);
 
     const bool bGroupConditionMet = bHasPetrolTank && bHasCarKey;
 
@@ -209,7 +245,7 @@ void ANS_CarEndingTriggerZone::CheckGroupEndingCondition()
     }
 }
 
-void ANS_CarEndingTriggerZone::UpdateWidgetStatus(int32 NumPlayers, int32 NumItems)
+void ANS_CarEndingTriggerZone::UpdateWidgetStatus(int32 NumPlayers, int32 TotalPlayers, int32 NumItems)
 {
     if (!EndingStatusWidget) return;
 
@@ -219,11 +255,8 @@ void ANS_CarEndingTriggerZone::UpdateWidgetStatus(int32 NumPlayers, int32 NumIte
     UNS_EndingStatusUI* StatusUI = Cast<UNS_EndingStatusUI>(Widget);
     if (StatusUI)
     {
-        StatusUI->EndingUpdateStatus(NumPlayers, NumItems);
+        StatusUI->EndingUpdateStatus(NumPlayers, TotalPlayers, NumItems);
     }
-
-    // 트리거 안에 아무도 없으면 숨김
-    EndingStatusWidget->SetVisibility(NumPlayers > 0);
 }
 
 void ANS_CarEndingTriggerZone::UpdateEndingCountdownUI()
@@ -325,11 +358,34 @@ void ANS_CarEndingTriggerZone::Multicast_TriggerEnding_Implementation(bool bGrou
                 FailNames.Add(PlayerName);
             }
         }
-        Multicast_ShowEndingResultList(SuccessNames, FailNames);
-
         UE_LOG(LogTemp, Warning, TEXT("Player %s: %s"),
             *Player->GetName(), bSuccess ? TEXT("탈출 성공") : TEXT("탈출 실패"));
     }
+    Multicast_ShowEndingResultList(SuccessNames, FailNames);
+}
+
+void ANS_CarEndingTriggerZone::OnRep_CachedTotalPlayerCount()
+{
+    UE_LOG(LogTemp, Warning, TEXT("클라이언트에서 CachedTotalPlayerCount 복제됨: %d"), CachedTotalPlayerCount);
+
+    // 트리거 안에 중첩된 플레이어 수 다시 계산
+    int32 NumPlayersInZone = 0;
+    for (AActor* Player : OverlappingPlayers)
+    {
+        if (IsValid(Player))
+        {
+            NumPlayersInZone++;
+        }
+    }
+
+    UpdateWidgetStatus(NumPlayersInZone, CachedTotalPlayerCount, 0);
+}
+
+void ANS_CarEndingTriggerZone::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+    DOREPLIFETIME(ANS_CarEndingTriggerZone, CachedTotalPlayerCount);
 }
 
 

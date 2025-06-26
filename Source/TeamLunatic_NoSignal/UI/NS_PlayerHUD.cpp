@@ -6,9 +6,11 @@
 #include "Components/Image.h"
 #include "Components/EditableTextBox.h"
 #include "Components/ScrollBox.h"
+#include "GameFlow/NS_GameInstance.h"
 #include "Components/TextBlock.h"
 #include "Components/ProgressBar.h"
 #include "Components/SizeBox.h"
+#include "UI/NS_UIManager.h"
 //#include "SlateBrush.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Character/Components/NS_StatusComponent.h"
@@ -26,6 +28,14 @@ const float EnlargedWidth = BaseWidth * 1.2f;
 void UNS_PlayerHUD::NativeConstruct()
 {
     Super::NativeConstruct();
+
+    if (UNS_GameInstance* GI = GetGameInstance<UNS_GameInstance>())
+    {
+        if (UNS_UIManager* UIManager = GI->GetUIManager())
+        {
+            UIManager->SetPlayerHUDWidget(this);
+        }
+    }
 
     ScrollBox_Compass->ClearChildren();
     CompassTextArray.Empty();
@@ -152,7 +162,7 @@ void UNS_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
     // Geometry 안전성 검사 (크래시 방지)
     const FGeometry& CompassGeo = ScrollBox_Compass->GetCachedGeometry();
-    if (!CompassGeo.IsUnderLocation(FVector2D::ZeroVector) || CompassGeo.GetLocalSize().X <= 0.f)
+    if (CompassGeo.GetLocalSize().X <= 0.f)
     {
         return;
     }
@@ -183,7 +193,7 @@ void UNS_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
     float BaseOffset = 0.f;
     for (int32 i = 0; i < FinalIndex; ++i)
     {
-
+    
         if (IsValid(CompassTextArray[i]))
         {
             BaseOffset += CompassTextArray[i]->GetCachedGeometry().GetLocalSize().X;

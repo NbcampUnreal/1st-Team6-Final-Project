@@ -32,16 +32,8 @@ public:
 protected:
     virtual void NativeConstruct() override;
 
-
-    UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-    UComboBoxString* ComboBoxString_mapName;
-    
-
     UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
     UButton* StartGameButton;
-
-    UPROPERTY(meta = (BindWidget),BlueprintReadWrite)
-    UEditableTextBox* EditableTextBox_SaveName;
 
   //  UPROPERTY(meta = (BindWidget),BlueprintReadWrite) //EditAnywhere
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite,Category= "PopUp")

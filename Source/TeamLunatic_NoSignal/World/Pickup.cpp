@@ -39,6 +39,19 @@ void APickup::BeginPlay()
 	UE_LOG(LogTemp, Log, TEXT("%s"), *LogMessage);
 
 
+
+	if (HasAuthority() && DesiredItemID == FName("Memo"))
+	{
+		if (UNS_GameInstance* GI = GetGameInstance<UNS_GameInstance>())
+		{
+			if (UNS_UIManager* UIManager = GI->GetUIManager())
+			{
+				UIManager->OnPlayerHUDReady.AddDynamic(this, &APickup::OnHUDReady);
+				UE_LOG(LogTemp, Log, TEXT("Pickup '%s'이 HUD 준비 완료 이벤트를 구독합니다."), *GetName());
+			}
+		}
+	}
+
 	if (HasAuthority())
 	{
 		InitializePickup(UNS_InventoryBaseItem::StaticClass(), ItemQuantity);
@@ -412,6 +425,22 @@ void APickup::Multicast_RemoveMarkerFromAll_Implementation()
 			if (UNS_PlayerHUD* PlayerHUD = UIManager->GetPlayerHUDWidget())
 			{
 				PlayerHUD->DeleteCompasItem(this);
+			}
+		}
+	}
+}
+
+void APickup::OnHUDReady(UNS_PlayerHUD* PlayerHUD)
+{
+	if (IsValid(PlayerHUD))
+	{
+		PlayerHUD->SetYeddaItem(this);
+
+		if (UNS_GameInstance* GI = GetGameInstance<UNS_GameInstance>())
+		{
+			if (UNS_UIManager* UIManager = GI->GetUIManager())
+			{
+				UIManager->OnPlayerHUDReady.RemoveDynamic(this, &APickup::OnHUDReady);
 			}
 		}
 	}
