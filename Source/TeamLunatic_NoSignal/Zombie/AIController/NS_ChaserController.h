@@ -37,7 +37,7 @@ protected:
     UFUNCTION()
     void OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
 
-   
+
     // 지속 데미지 루프 시작 / 정지 / 실행 
     void StartDamageLoop(AActor* Target);
     void StopDamageLoop();
@@ -70,9 +70,4 @@ protected:
     FTimerHandle DamageTimerHandle;
     AActor* DamageTarget = nullptr;
     bool bIsDealingDamage = false;
-
-    UPROPERTY(EditDefaultsOnly, Category = "AI | Warp")
-    float WarpDistance = 3000.0f; 
-
-    void WarpToPlayerLocation();
 };
