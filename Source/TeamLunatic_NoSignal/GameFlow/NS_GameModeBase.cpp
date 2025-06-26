@@ -63,24 +63,18 @@ void ANS_GameModeBase::BeginPlay()
 
     // 플레이어 수에 따라 최대 좀비 수 조정
     MaxZombieCount = 40 * PlayerCount;
-    UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 플레이어 수(%d)에 따라 최대 좀비 수를 %d로 설정"), 
-        PlayerCount, MaxZombieCount);
 
     // 좀비 스폰 타이머 설정 - 3초마다 스폰
     GetWorldTimerManager().SetTimer(ZombieSpawnTimer, this, &ANS_GameModeBase::CheckAndSpawnZombies, ZombieSpawnInterval, true);
-    UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 스폰 타이머 설정 완료 (%.1f초 간격, 한 번에 %d마리)"), 
-        ZombieSpawnInterval, ZombiesPerSpawn);
     
     // 지연된 스포너 검색 타이머 설정 (3초 후 실행)
     GetWorldTimerManager().SetTimer(DelayedSpawnerSearchTimer, this, &ANS_GameModeBase::SearchForSpawnersDelayed, 3.0f, false);
 
     // 좀비 정리 타이머 설정 (5초마다 실행)
     GetWorldTimerManager().SetTimer(ZombieCleanupTimer, this, &ANS_GameModeBase::CleanupDistantZombies, 5.0f, true);
-    UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 정리 타이머 설정 완료 (5초마다 실행)"));
     
     // 좀비 디버그 타이머 설정 (1초마다 실행)
     GetWorldTimerManager().SetTimer(ZombieDebugTimerHandle, this, &ANS_GameModeBase::DebugZombieDistances, 1.0f, true);
-    UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 디버그 타이머 설정 완료 (1초마다 실행)"));
     
     // 제거된 좀비 카운터 초기화
     ZombiesRemoved = 0;
