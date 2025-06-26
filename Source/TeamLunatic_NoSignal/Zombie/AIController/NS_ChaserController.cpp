@@ -8,8 +8,8 @@
 #include "Character/NS_PlayerController.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Navigation/PathFollowingComponent.h"
-#include "Components/CapsuleComponent.h" 
-#include "NavigationSystem.h" 
+#include "Components/CapsuleComponent.h" 
+#include "NavigationSystem.h" 
 ANS_ChaserController::ANS_ChaserController()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -19,8 +19,6 @@ ANS_ChaserController::ANS_ChaserController()
 
 	SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("SightConfig"));
 	HearingConfig = CreateDefaultSubobject<UAISenseConfig_Hearing>(TEXT("HearingConfig"));
-
-
 
 	// 시야 설정
 	SightConfig->SightRadius = 600.f;
@@ -81,7 +79,8 @@ void ANS_ChaserController::Tick(float DeltaTime)
 
 	if (bIsChasing && Target)
 	{
-		MoveToActor(Target, 50.f, true);
+		// MoveToActor 호출 시 NavMesh 위에 목적지를 투영하도록 설정 (MoveToLocation과 동일한 파라미터)
+		MoveToActor(Target, 50.f, true, true, true);
 		// UE_LOG(LogTemp, Verbose, TEXT("[ChaserController] Tick: Chasing Target. Moving to %s"), *Target->GetName());
 
 		const float Distance = FVector::Dist(Target->GetActorLocation(), GetPawn()->GetActorLocation());
@@ -106,20 +105,28 @@ void ANS_ChaserController::Tick(float DeltaTime)
 	{
 		FVector Location = BlackboardComp->GetValueAsVector(TEXT("TargetLocation"));
 
-		// MoveToLocation 호출 결과를 확인하는 로그를 추가합니다.
-		EPathFollowingRequestResult::Type MoveResult = MoveToLocation(Location, 50.f, true);
+		// bProjectDestinationToNavigation=true, bAllowPartialPaths=true로 설정
+		EPathFollowingRequestResult::Type MoveResult = MoveToLocation(Location, 50.f, true, true, true, false, UNavigationQueryFilter::StaticClass(), true);
 
-		if (MoveResult == EPathFollowingRequestResult::Failed)
+		// MoveToLocation 호출 결과에 따라 상세 로그 출력
+		switch (MoveResult)
 		{
+		case EPathFollowingRequestResult::RequestSuccessful:
+			// UE_LOG(LogTemp, Log, TEXT("[ChaserController] MoveToLocation: Request successful, moving to %s."), *Location.ToString());
+			break;
+		case EPathFollowingRequestResult::AlreadyAtGoal:
+			UE_LOG(LogTemp, Warning, TEXT("[ChaserController] MoveToLocation SUCCESS: Already at goal location %s. Stopping movement."), *Location.ToString());
+			// 목표에 도달했다고 판단하면 블랙보드 값 초기화
+			BlackboardComp->ClearValue(TEXT("TargetLocation"));
+			StopMovement();
+			break;
+		case EPathFollowingRequestResult::Failed:
 			UE_LOG(LogTemp, Error, TEXT("[ChaserController] MoveToLocation FAILED! Target Location: %s. Reason: Path not found."), *Location.ToString());
-		}
-		else if (MoveResult == EPathFollowingRequestResult::AlreadyAtGoal)
-		{
-			UE_LOG(LogTemp, Log, TEXT("[ChaserController] MoveToLocation SUCCESS. Already at goal location: %s."), *Location.ToString());
-		}
-		else
-		{
-			UE_LOG(LogTemp, Log, TEXT("[ChaserController] MoveToLocation SUCCESS. Moving to %s."), *Location.ToString());
+			// 경로 찾기 실패 시 대안 로직 (직선 이동 등)을 여기에 추가할 수 있음
+			break;
+		default:
+			// UE_LOG(LogTemp, Log, TEXT("[ChaserController] MoveToLocation SUCCESS: Moving to %s."), *Location.ToString());
+			break;
 		}
 	}
 }
@@ -404,6 +411,9 @@ void ANS_ChaserController::WarpToPlayerLocation()
 	// **장애물 검사 (Sphere Trace) 로직은 이 부분에서 완전히 제거됩니다.**
 
 	// 모든 검사를 통과했으므로 NavMesh 유무와 관계없이 워프를 강행합니다.
+	// 워프 전 현재 이동을 강제로 멈춥니다.
+	StopMovement();
+
 	ControlledPawn->SetActorLocation(CorrectedWarpLocation);
 	UE_LOG(LogTemp, Warning, TEXT("[ChaserController] WARP SUCCESS! Final location: %s (Manually verified)"), *CorrectedWarpLocation.ToString());
 
@@ -412,7 +422,8 @@ void ANS_ChaserController::WarpToPlayerLocation()
 	BlackboardComp->SetValueAsBool(TEXT("IsChasingEvent"), false);
 	BlackboardComp->ClearValue(TEXT("TargetActor"));
 
-	MoveToLocation(PlayerLocation, 50.f, true);
+	// MoveToLocation을 호출하여 새로운 이동 명령을 시작합니다.
+	MoveToLocation(PlayerLocation, 50.f, true, true, true, false, UNavigationQueryFilter::StaticClass(), true);
 
 	UE_LOG(LogTemp, Log, TEXT("[ChaserController] Initiating movement to player's location after successful warp."));
 }
