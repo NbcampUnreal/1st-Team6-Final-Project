@@ -19,6 +19,7 @@
 #include <Net/UnrealNetwork.h>
 #include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
 #include "Character/NS_PlayerController.h"
+#include "Sound/SoundBase.h"
 
 ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
 {
@@ -1348,5 +1349,13 @@ void ANS_PlayerCharacterBase::ActivateHallucinationEffect(float Duration)
         {
             CameraComp->AddOrUpdateBlendable(HallucinationMID, 0.f); // 비활성화
         }, Duration, false);
+    }
+}
+
+void ANS_PlayerCharacterBase::PlaySoundOnCharacter_Multicast_Implementation(USoundBase* SoundToPlay)
+{
+    if (SoundToPlay)
+    {
+        UGameplayStatics::PlaySoundAtLocation(this, SoundToPlay, GetActorLocation());
     }
 }

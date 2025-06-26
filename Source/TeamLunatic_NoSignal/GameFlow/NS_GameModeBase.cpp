@@ -328,7 +328,7 @@ FVector ANS_GameModeBase::GetSpawnLocationOnGround(AANS_ZombieSpawner* Spawner)
     // 지면을 찾았으면 그 위치에 스폰
     if (bHit)
     {
-        return HitResult.Location + FVector(0, 0, 10);  // 지면 위 10 유닛에 위치
+        return HitResult.Location + FVector(0, 0, 90);  // 지면 위 10 유닛에 위치
     }
     
     return SpawnLocation;
@@ -341,7 +341,7 @@ ANS_ZombieBase* ANS_GameModeBase::SpawnZombieAtLocation(TSubclassOf<ANS_ZombieBa
     FTransform SpawnTransform(SpawnRotation, Location);
 
     FActorSpawnParameters Params;
-    Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+    Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding ;
     Params.bNoFail = true;
     
     return GetWorld()->SpawnActor<ANS_ZombieBase>(ZombieClass, SpawnTransform, Params);

@@ -49,7 +49,7 @@ protected:
     int32 CurrentZombieCount = 0;
 
     // 최대 좀비 수
-    UPROPERTY(EditAnywhere, Category = "Zombie")
+    UPROPERTY(EditAnywhere,BlueprintReadWrite ,Category = "Zombie")
     int32 MaxZombieCount = 40;
     
     // 플레이어 수
