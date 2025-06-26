@@ -1,23 +1,28 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Zombie/NS_ZombieBase.h"
-#include "NavigationInvokerComponent.h"  // 네비게이션 인보커 컴포넌트 헤더 추가
+//#include "Zombie/NS_ZombieBase.h"
+#include "GameFramework/Character.h"
+#include "NavigationInvokerComponent.h"  
 #include "NS_Chaser.generated.h"
 
 UCLASS()
-class TEAMLUNATIC_NOSIGNAL_API ANS_Chaser : public ANS_ZombieBase
+class TEAMLUNATIC_NOSIGNAL_API ANS_Chaser : public ACharacter
 {
 	GENERATED_BODY()
 
 public:
 	ANS_Chaser();
-	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+	//virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
-	// 체이서 좀비는 항상 활성화 상태 유지하기 위해 오버라이드
-	virtual void SetActive_Multicast_Implementation(bool setActive) override;
+	//// 체이서 좀비는 항상 활성화 상태 유지하기 위해 오버라이드
+	////virtual void SetActive_Multicast_Implementation(bool setActive) override;
 
 	virtual void Tick(float DeltaTime) override;
+
+	// Invoker 컴포넌트
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+	class UNavigationInvokerComponent* NavigationInvoker;
 
 protected:
 	virtual void BeginPlay() override;
