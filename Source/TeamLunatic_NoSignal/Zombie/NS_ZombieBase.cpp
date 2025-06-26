@@ -36,7 +36,7 @@ ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), C
 	PhysicsComponent = CreateDefaultSubobject<UPhysicalAnimationComponent>(FName("PhysicsComponent"));
 	NavigationInvoker = CreateDefaultSubobject<UNavigationInvokerComponent>(TEXT("NavigationInvoker"));
 
-	NavigationInvoker->SetGenerationRadii(1000.f, 1500.f);
+	NavigationInvoker->SetGenerationRadii(1500.f, 2000.f);
 	NavigationInvoker->SetAutoActivate(false);
 	
 	GetCharacterMovement()->MaxWalkSpeed = 300.f;
