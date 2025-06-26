@@ -17,7 +17,7 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_EndingStatusUI : public UUserWidget
 public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Ending UI")
-	void EndingUpdateStatus(int32 NumPlayersInZone, int32 NumItemsCollected);
+	void EndingUpdateStatus(int32 NumPlayersInZone, int32 TotalPlayerCount, int32 NumItemsCollected);
 
 	UFUNCTION(BlueprintCallable, Category = "Ending UI")
 	void UpdateRemainingTime(float TimeRemaining);

@@ -3,11 +3,11 @@
 
 #include "World/EndingUI/NS_EndingStatusUI.h"
 
-void UNS_EndingStatusUI::EndingUpdateStatus(int32 NumPlayersInZone, int32 NumItemsCollected)
+void UNS_EndingStatusUI::EndingUpdateStatus(int32 NumPlayersInZone, int32 TotalPlayerCount, int32 NumItemsCollected)
 {
 	if (PlayerCountText)
 	{
-		PlayerCountText->SetText(FText::FromString(FString::Printf(TEXT("%d / 2"), NumPlayersInZone)));
+		PlayerCountText->SetText(FText::FromString(FString::Printf(TEXT("%d / %d"), NumPlayersInZone, TotalPlayerCount)));
 	}
 
 	if (ItemCountText)

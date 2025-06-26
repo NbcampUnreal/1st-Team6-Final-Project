@@ -11,6 +11,8 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_GameModeBase : public AGameModeBase
 {
     GENERATED_BODY()
 
+public:
+    ANS_GameModeBase();
 protected:
 	
 	virtual void BeginPlay() override;
@@ -77,6 +79,10 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie Spawning")
     float MaxSpawnDistance = 8000.0f; // 플레이어로부터 좀비가 스폰될 수 있는 최대 거리;
 
+    // 좀비 제거 거리
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie Spawning")
+    float ZombieDestroyDistance = 8001.0f;
+    
     // 타이머 핸들
     FTimerHandle ZombieCleanupTimer;
 
@@ -85,10 +91,6 @@ protected:
     
     // 디버그 타이머 핸들
     FTimerHandle ZombieDebugTimerHandle;
-    
-    // 좀비 제거 거리
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie Spawning")
-    float ZombieDestroyDistance = 8001.0f;
 
     // 디버그 카운터
     int32 ZombiesInCloseRange = 0;    // 4000 이내
