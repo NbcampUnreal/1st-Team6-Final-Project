@@ -24,46 +24,5 @@ public:
 
 	virtual void NativeConstruct() override;
 
-	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
-	UBorder* Backround;
 
-	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)//, BlueprintReadOnly / BlueprintReadWrite
-		UTextBlock* Subtitle;
-
-	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UTextBlock* Title;
-
-	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
-	UButton* RefreshButton;
-
-	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UUserWidget* ResolutionSelector;
-
-	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UUserWidget* WindowModeSelector;
-
-	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UUserWidget* VSyncSelector;
-
-
-	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UUserWidget* AntiAliasingSelector;
-
-	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UUserWidget* ViewDist;
-
-	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UUserWidget* Textures;
-
-	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UUserWidget* PostProcessing;
-
-	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UUserWidget* Foliage;
-
-	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UUserWidget* Effects;
-
-	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
-	UUserWidget* Shadows;
 };
