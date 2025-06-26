@@ -111,8 +111,16 @@ public:
 	const FNS_ItemDataStruct* GetItemData() const;
 
 	virtual void OnUseItem(class ANS_PlayerCharacterBase* Character);
-	void UseConsumableItem(ANS_PlayerCharacterBase* Character, const FNS_ItemDataStruct& ItemData);
+
+
+	UFUNCTION(Server, Reliable)
+	void UseConsumableItem_Server(ANS_PlayerCharacterBase* Character, FName InItemDatatRowName);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void UseConsumableItem_Multicast(ANS_PlayerCharacterBase* Character, FName InItemDataRowName);
+
 	bool IsSupportedForNetworking() const;
+
 protected:
 	bool operator == (const FName& OtherID) const
 	{

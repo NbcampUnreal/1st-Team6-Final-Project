@@ -428,4 +428,7 @@ public:
 
 	// 환각효과 켜기
 	void ActivateHallucinationEffect(float Duration);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void PlaySoundOnCharacter_Multicast(USoundBase* SoundToPlay);
 };
