@@ -23,10 +23,7 @@ public:
 	float Loudness;
 	
 	virtual void Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference) override;
-	
-	UPROPERTY()
-	TArray<AActor*> TrackerActors;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Sound")
 	USoundCue* ScreamSound;
 };

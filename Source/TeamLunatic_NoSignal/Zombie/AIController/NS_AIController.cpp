@@ -104,7 +104,7 @@ void ANS_AIController::OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
 		{
 			if (LastSeenTarget == Actor)
 			{
-				BlackboardComp->SetValueAsVector("LastKnownLocation", LastSeenTarget->GetActorLocation());
+				BlackboardComp->SetValueAsVector("LastSeenLocation", LastSeenTarget->GetActorLocation());
 				BlackboardComp->ClearValue("TargetActor");
 				LastSeenTarget = nullptr;
 			}
