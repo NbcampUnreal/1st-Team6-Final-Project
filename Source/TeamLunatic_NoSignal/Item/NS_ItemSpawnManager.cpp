@@ -65,36 +65,6 @@ void ANS_ItemSpawnManager::SpawnItemsInRandomLocations(float Radius)
     }
 }
 
-void ANS_ItemSpawnManager::FindAndSpawnItems()
-{
-    if (SpawnPointTagToFind.IsNone())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("SpawnManager '%s': 'SpawnPointTagToFind'가 설정되지 않았습니다."), *GetName());
-        return;
-    }
-
-    //설정된 태그를 가진 모든 스폰 포인트를 월드에서 찾습니다
-    TArray<AActor*> FoundSpawnPoints;
-    UGameplayStatics::GetAllActorsWithTag(GetWorld(), SpawnPointTagToFind, FoundSpawnPoints);
-
-    if (FoundSpawnPoints.Num() == 0)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("SpawnManager '%s': 태그 '%s'를 가진 스폰 포인트를 찾을 수 없습니다."), *GetName(), *SpawnPointTagToFind.ToString());
-        return;
-    }
-
-    UE_LOG(LogTemp, Log, TEXT("Found %d spawn points with tag '%s'. Spawning items..."), FoundSpawnPoints.Num(), *SpawnPointTagToFind.ToString());
-
-    //찾은 각각의 스폰 포인트를 순회하며 아이템 스폰 함수를 호출합니다.
-    for (AActor* SpawnPoint : FoundSpawnPoints)
-    {
-        if (SpawnPoint)
-        {
-            SpawnRandomItemAt(SpawnPoint->GetActorTransform());
-        }
-    }
-}
-
 void ANS_ItemSpawnManager::SpawnRandomItemAt(const FTransform& SpawnTransform)
 {
     if (!PickupClass)

@@ -27,9 +27,7 @@ UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
 {
 	GENERATED_BODY()
-
-private:
-
+	
 	// ========== 이동 관련 =============
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	float DefaultWalkSpeed;
@@ -370,6 +368,11 @@ public:
 	void StopAimingAction_Server(const FInputActionValue& Value);
 	//////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
 
+	// 데미지 받으면 모든 클라이언트에 멀티캐스트
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_TakeDmage(float DamageAmount);
+
+	
 	// 캐릭터 죽는 애니메이션 멀티캐스트
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void PlayDeath_Server();
@@ -431,4 +434,8 @@ public:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void PlaySoundOnCharacter_Multicast(USoundBase* SoundToPlay);
+
+	// 캐릭터가 현재 조준 중인지 확인하는 함수
+	UFUNCTION(BlueprintCallable, Category = "Character")
+	bool IsAimingChange() const { return IsAiming; }
 };
