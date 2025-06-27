@@ -28,16 +28,4 @@ public:
 
 	virtual void PlayAnimationShowR() override;
 	virtual void PlayAnimationShowL() override;
-
-
-	//UFUNCTION(BlueprintCallable, Category = "Widget")
-	//void SelectWidget(EWidgetToggleType ToggleType); //안쓰임 지울것!!
-
-	//UNS_MasterMenuPanel* GetWidget(EWidgetToggleType ToggleType);
-
-	//void QuitNSGame();
-
-private:
-	//UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Widget")
-	//TMap<EWidgetToggleType, UNS_MasterMenuPanel*> WidgetMap;
 };

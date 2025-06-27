@@ -52,8 +52,6 @@ public:
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "Hit Reaction")
 	UPhysicalAnimationComponent* PhysicsComponent;
-	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category = "Hit Reaction")
-	UNiagaraSystem* Blood;
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Replicated, Category = "State")
 	EZombieState CurrentState;
@@ -88,6 +86,9 @@ public:
 	void ResetHit();
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hit")
 	USoundCue* HitSound;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hit")
+	TSubclassOf<AActor> BloodDecal;
+	
 	//Replicate
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
@@ -120,7 +121,7 @@ public:
 
 	//이펙트
 	UFUNCTION(NetMulticast, Unreliable)
-	void Multicast_SpawnEffect(FName Bone,FVector Location, FRotator Rotation);
+	void Multicast_SpawnBloodEffect(FName Bone,FVector Location, FRotator Rotation);
 
 	//공격 컴포넌트
 	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Attack")

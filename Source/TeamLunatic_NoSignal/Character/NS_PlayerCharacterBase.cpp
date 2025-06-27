@@ -18,6 +18,7 @@
 #include "Kismet/GameplayStatics.h"
 #include <Net/UnrealNetwork.h>
 #include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
+#include "Item/NS_BaseWeapon.h"
 #include "Character/NS_PlayerController.h"
 #include "Sound/SoundBase.h"
 
@@ -377,44 +378,47 @@ float ANS_PlayerCharacterBase::TakeDamage(
     }
 
     float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-    if (!HasAuthority() || ActualDamage <= 0.f)
-        return ActualDamage;
-
-    // 캐릭터 체력 감소
-    StatusComp->AddHealthGauge(-ActualDamage);
-
-    if (AController* PC = GetController())
+    
+    // 서버에서만 실제 데미지 처리 및 멀티캐스트 전송
+    if (HasAuthority() && ActualDamage > 0.f)
     {
-        if (ANS_PlayerController* NS_PC = Cast<ANS_PlayerController>(PC))
+        // 캐릭터 체력 감소
+        StatusComp->AddHealthGauge(-ActualDamage);
+        
+        // 모든 클라이언트에 데미지 처리 결과 전파
+        Multicast_TakeDmage(ActualDamage);
+        
+        if (AController* PC = GetController())
         {
-            NS_PC->Client_ShowHitEffect();
+            if (ANS_PlayerController* NS_PC = Cast<ANS_PlayerController>(PC))
+            {
+                NS_PC->Client_ShowHitEffect();
+            }
         }
-    }
 
+        IsHit = true;
 
-
-    IsHit = true;
-
-    // IsHit 타이머핸들 람다로 0.5초간 실행
-    FTimerHandle ResetHitTime;
-    GetWorldTimerManager().SetTimer(
-        ResetHitTime,
-        [this]()
-    {
-        // 캐릭터가 있다면 IsHit을 false로 설정
-        if (IsValid(this)) //
+        // IsHit 타이머핸들 람다로 0.5초간 실행
+        FTimerHandle ResetHitTime;
+        GetWorldTimerManager().SetTimer(
+            ResetHitTime,
+            [this]()
         {
-            IsHit = false; //
-        }
-    },
-        0.5f,
-        false
-    );
+            // 캐릭터가 있다면 IsHit을 false로 설정
+            if (IsValid(this))
+            {
+                IsHit = false;
+            }
+        },
+            0.5f,
+            false
+        );
 
-    // 캐릭터 체력이 0이면 죽음 애니메이션 실행
-    if (StatusComp->Health <= 0.f)
-    {
-        PlayDeath_Server();
+        // 캐릭터 체력이 0이면 죽음 애니메이션 실행
+        if (StatusComp->Health <= 0.f)
+        {
+            PlayDeath_Server();
+        }
     }
 
     return ActualDamage;
@@ -611,14 +615,41 @@ void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputAct
 
 void ANS_PlayerCharacterBase::StartAimingAction_Server_Implementation(const FInputActionValue& Value)
 {
-    if(IsAvaliableAiming)
-        IsAiming = true; 
+    if(IsAvaliableAiming) 
+    {
+        if (!IsPickUp && !IsChangeAnim && !IsReload && !IsThrow) 
+        {
+            // 현재 무기가 있는지 확인
+            if (EquipedWeaponComp)
+            {
+                // 현재 무기가 원거리 무기인지 확인
+                ANS_BaseWeapon* CurrentWeapon = EquipedWeaponComp->CurrentWeapon;
+                
+                if (CurrentWeapon && CurrentWeapon->GetWeaponType() == EWeaponType::Ranged)
+                {
+                    // 원거리 무기일 경우에만 조준 활성화
+                    IsAiming = true;
+                    UE_LOG(LogTemp, Verbose, TEXT("조준 시작: 원거리 무기 조준 모드 활성화"));
+                }
+                else
+                {
+                    UE_LOG(LogTemp, Verbose, TEXT("조준 불가: 원거리 무기가 아님"));
+                }
+            }
+            else
+            {
+                UE_LOG(LogTemp, Verbose, TEXT("조준 불가: 장착된 무기 없음"));
+            }
+        }
+    }
 }
-
 
 void ANS_PlayerCharacterBase::StopAimingAction_Server_Implementation(const FInputActionValue& Value)
 {
-    IsAiming = false; 
+    if (IsAiming)
+    {
+        IsAiming = false; 
+    }
 }
 
 // 퀵슬롯 선택 함수들
@@ -629,6 +660,50 @@ void ANS_PlayerCharacterBase::QuickSlot4Selected() { HandleQuickSlotKeyInput(4);
 void ANS_PlayerCharacterBase::QuickSlot5Selected() { HandleQuickSlotKeyInput(5); }
 //////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
 
+void ANS_PlayerCharacterBase::Multicast_TakeDmage_Implementation(float DamageAmount)
+{
+    // 서버에서는 이미 처리했으므로 클라이언트에서만 실행
+    if (!HasAuthority())
+    {
+        // 클라이언트에서 시각적 효과 처리
+        if (StatusComp)
+        {
+            // 체력 값 직접 업데이트 (서버에서 복제될 때까지 기다리지 않음)
+            StatusComp->Health = FMath::Clamp(StatusComp->Health - DamageAmount, 0.f, StatusComp->MaxHealth);
+            
+            // UI 업데이트
+            if (APlayerController* PC = Cast<APlayerController>(GetController()))
+            {
+                if (ANS_PlayerController* NS_PC = Cast<ANS_PlayerController>(PC))
+                {
+                    // 피격 효과 표시 (이미 Client_ShowHitEffect가 있다면 중복 호출 방지)
+                    if (IsLocallyControlled())
+                    {
+                        NS_PC->Client_ShowHitEffect();
+                    }
+                }
+            }
+        }
+        
+        // 피격 상태 설정
+        IsHit = true;
+        
+        // 0.5초 후 피격 상태 해제
+        FTimerHandle ResetHitTime;
+        GetWorldTimerManager().SetTimer(
+            ResetHitTime,
+            [this]()
+        {
+            if (IsValid(this))
+            {
+                IsHit = false;
+            }
+        },
+            0.5f,
+            false
+        );
+    }
+}
 
 void ANS_PlayerCharacterBase::PlayDeath_Server_Implementation()
 {
@@ -647,7 +722,6 @@ void ANS_PlayerCharacterBase::PlayDeath_Server_Implementation()
                 {
                     PS->bIsAlive = false;
                 }
-
             }
 
         }

@@ -41,7 +41,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status|Stamina")
 	float CurrentStaminaRegenRate; // 현재 스태미너 재생 속도
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status|Stamina")
-    float StaminaDereaseRate = -40.f;
+    float StaminaDereaseRate = -20.f; // 스태미너 감소 속도
 
 
 
