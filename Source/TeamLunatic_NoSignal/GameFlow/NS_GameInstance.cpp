@@ -19,6 +19,13 @@ UNS_GameInstance::UNS_GameInstance()
 	if (BP_UIManager.Succeeded())
 	{
 		UIManagerClass = BP_UIManager.Class;
+		UE_LOG(LogTemp, Warning, TEXT("BP_NS_UIManager 블루프린트 로드 성공"));
+	}
+	else
+	{
+		// 블루프린트를 찾지 못한 경우 C++ 클래스 직접 사용
+		UIManagerClass = UNS_UIManager::StaticClass();
+		UE_LOG(LogTemp, Warning, TEXT("BP_NS_UIManager 블루프린트를 찾지 못해 C++ 클래스 사용"));
 	}
 
 	static ConstructorHelpers::FClassFinder<UUserWidget> BP_LoadingWait(TEXT("/Game/UI/Blueprints/BP_Wait.BP_Wait_C"));

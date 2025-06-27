@@ -13,6 +13,9 @@
 #include "GameFramework/PlayerController.h"
 #include "UI/NS_MasterMenuPanel.h"
 #include "UI/NS_UIManager.h"
+#include "Zombie/NS_ZombieBase.h"
+#include "Engine/World.h"
+#include "EngineUtils.h"
 #include "AsyncLoadingScreenLibrary.h"
 
 void UNS_InGameStartMenu::NativeConstruct()
@@ -111,6 +114,20 @@ void UNS_InGameStartMenu::On_MainMenuClicked()
         // 패키징된 빌드에서 문제가 있다면 이 부분을 주석 처리해보세요
         UAsyncLoadingScreenLibrary::SetEnableLoadingScreen(false);
         
+        // 레벨 전환 전에 모든 좀비의 타이머 정리
+        if (UWorld* World = GetWorld())
+        {
+            for (TActorIterator<ANS_ZombieBase> ActorItr(World); ActorItr; ++ActorItr)
+            {
+                ANS_ZombieBase* Zombie = *ActorItr;
+                if (Zombie && IsValid(Zombie))
+                {
+                    // 좀비의 모든 타이머 정리
+                    World->GetTimerManager().ClearAllTimersForObject(Zombie);
+                }
+            }
+        }
+
         // 메인 타이틀 레벨 로드
         // 레벨 이름이 정확한지 확인하세요
         UE_LOG(LogTemp, Warning, TEXT("메인 메뉴로 이동 시도 중..."));
