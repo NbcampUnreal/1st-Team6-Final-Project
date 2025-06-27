@@ -17,9 +17,6 @@ public:
     // 현재 좀비가 감시할 플레이어 (멀티 전체 공유) 
     UPROPERTY(BlueprintReadOnly, Replicated)
     APawn* TrackingTarget;
-
-    void SavePlayerData();
-    // 복제 항목 등록 
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
     UFUNCTION(NetMulticast, Reliable)

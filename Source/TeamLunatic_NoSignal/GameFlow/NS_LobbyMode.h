@@ -4,6 +4,8 @@
 #include "GameFramework/GameMode.h"
 #include "NS_LobbyMode.generated.h"
 
+class APawn; // Pawn 클래스에 대한 전방 선언 추가
+
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_LobbyMode : public AGameMode
 {
@@ -18,4 +20,7 @@ public:
 
 protected:
     AActor* FindSpawnPointByIndex(int32 Index);
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spawn")
+    TArray<TSubclassOf<APawn>> PawnClassesToSpawn;
 };

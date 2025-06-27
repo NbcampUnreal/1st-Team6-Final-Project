@@ -19,13 +19,6 @@ public:
     UPROPERTY(BlueprintReadWrite, Replicated)
     TSubclassOf<APawn> SelectedPawnClass;
 
-    // UI 슬롯 인덱스 
-    UPROPERTY(BlueprintReadWrite, Replicated)
-    int32 PlayerIndex = -1;
-
-	FORCEINLINE FString GetPlayerModelPath() const { return PlayerModelPath; } // 플레이어 모델 경로 반환
-    void LoadPlayerData(); // 플레이어의 데이터를 불러오는 함수
-
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
     UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_IsAlive)
@@ -36,7 +29,4 @@ public:
     void OnRep_IsAlive();
     
 private:
-	// 플레이어 모델 경로 (예: 캐릭터 모델 경로)
-	UPROPERTY(BlueprintReadWrite, Replicated, Category = "PlayerData", meta = (AllowPrivateAccess = "true"))
-	FString PlayerModelPath;
 };

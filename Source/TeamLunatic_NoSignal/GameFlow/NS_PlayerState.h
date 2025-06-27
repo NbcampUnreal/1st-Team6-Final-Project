@@ -35,8 +35,6 @@ public:
 	int32 PlayerIndex;
 
 	void SetPlayerIndex(int32 Index); 
-	void SetPlayerModelPath(const FString& ModelPath);
-	void SavePlayerData();
 
 protected:
 	FString PlayerModelPath;

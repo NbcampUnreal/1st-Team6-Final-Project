@@ -47,10 +47,9 @@ void UInventoryPanel::TryBindInventory()
 
 void UInventoryPanel::SetInfoText() const
 {
-    const FString WeightInfoValue{
-        FString::SanitizeFloat(InventoryReference->GetInventoryTotalWeight()) + "/"
-        + FString::SanitizeFloat(InventoryReference->GetWeightCapacity())
-    };
+    const float TotalWeight = FMath::Abs(InventoryReference->GetInventoryTotalWeight());
+    const float MaxWeight = FMath::Abs(InventoryReference->GetWeightCapacity());
+    const FString WeightInfoValue = FString::Printf(TEXT("%.1f/%.1f"), TotalWeight, MaxWeight);
 
     const FString CapacityInfoValue{
         FString::FromInt(InventoryReference->GetInventoryContents().Num()) + "/"

@@ -27,8 +27,6 @@ public:
 	void UpdatePlayerStatusList();
 
 protected:
-	UPROPERTY(meta = (BindWidget))
-	class UVerticalBox* RootBox;
 
 	UPROPERTY(meta = (BindWidget))
 	class UButton* ReadyButton;

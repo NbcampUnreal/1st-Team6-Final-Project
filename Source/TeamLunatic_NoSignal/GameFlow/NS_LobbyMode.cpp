@@ -2,7 +2,7 @@
 #include "NS_PlayerState.h"
 #include "EngineUtils.h"
 #include "Character/NS_PlayerCharacterBase.h"
-#include "GameFlow/NS_GameInstance.h" 
+#include "GameFlow/NS_GameInstance.h"
 #include "GameFramework/GameState.h"
 #include "NS_LobbyController.h"
 #include "GameFramework/PlayerController.h"
@@ -16,7 +16,7 @@
 
 ANS_LobbyMode::ANS_LobbyMode()
 {
-	DefaultPawnClass = nullptr; 
+	DefaultPawnClass = nullptr;
 }
 
 void ANS_LobbyMode::BeginPlay()
@@ -55,24 +55,26 @@ void ANS_LobbyMode::PostLogin(APlayerController* NewPlayer)
 
 	int32 PlayerIndex = GetGameState<AGameState>()->PlayerArray.Num() - 1;
 
-	if (!GI->AvailableCharacterClasses.IsValidIndex(PlayerIndex))
+	if (!PawnClassesToSpawn.IsValidIndex(PlayerIndex))
 	{
+		UE_LOG(LogTemp, Error, TEXT("PawnClassesToSpawn 배열에 PlayerIndex %d에 해당하는 클래스가 없습니다. 배열 크기를 확인해주세요!"), PlayerIndex);
 		return;
 	}
 
 	AActor* StartSpot = FindSpawnPointByIndex(PlayerIndex);
 	if (!StartSpot)
 	{
+		UE_LOG(LogTemp, Error, TEXT("Spawn point not found for index %d."), PlayerIndex);
 		return;
 	}
 
 	FTransform SpawnTransform = StartSpot->GetActorTransform();
 
-	APawn* SpawnedPawn = GetWorld()->SpawnActor<APawn>(GI->AvailableCharacterClasses[PlayerIndex], SpawnTransform);
+	APawn* SpawnedPawn = GetWorld()->SpawnActor<APawn>(PawnClassesToSpawn[PlayerIndex], SpawnTransform);
 	if (SpawnedPawn)
 	{
 		NewPlayer->Possess(SpawnedPawn);
-		UE_LOG(LogTemp, Log, TEXT("Spawned & Possessed Pawn: %s from GameInstance"), *SpawnedPawn->GetName());
+		UE_LOG(LogTemp, Log, TEXT("Spawned & Possessed Pawn: %s from LobbyMode array"), *SpawnedPawn->GetName());
 	}
 	else
 	{
@@ -82,7 +84,6 @@ void ANS_LobbyMode::PostLogin(APlayerController* NewPlayer)
 	if (ANS_PlayerState* PS = Cast<ANS_PlayerState>(NewPlayer->PlayerState))
 	{
 		PS->SetPlayerIndex(PlayerIndex);
-		PS->SavePlayerData();
 	}
 	else
 	{
