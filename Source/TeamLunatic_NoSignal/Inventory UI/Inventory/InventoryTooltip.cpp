@@ -18,6 +18,7 @@ void UInventoryTooltip::NativeConstruct()
 		ItemType->SetText(FText::FromString(TEXT("소모품")));
 		WeaponTypeHorizontal->SetVisibility(ESlateVisibility::Collapsed);
 		DamageHorizontal->SetVisibility(ESlateVisibility::Collapsed);
+		UsageText->SetVisibility(ESlateVisibility::Collapsed);
 		break;
 
 		// 엔딩 조건
@@ -25,6 +26,7 @@ void UInventoryTooltip::NativeConstruct()
 		ItemType->SetText(FText::FromString(TEXT("엔딩 조건")));
 		WeaponTypeHorizontal->SetVisibility(ESlateVisibility::Collapsed);
 		DamageHorizontal->SetVisibility(ESlateVisibility::Collapsed);
+		UsageText->SetVisibility(ESlateVisibility::Collapsed);
 		break;
 
 		// 장비
@@ -54,11 +56,13 @@ void UInventoryTooltip::NativeConstruct()
 			break;
 		case EWeaponType::Ammo:
 			WeaponType->SetText(FText::FromString(TEXT("탄약")));
-			DamageValue->SetVisibility(ESlateVisibility::Visible);
+			DamageHorizontal->SetVisibility(ESlateVisibility::Collapsed);
+			MaxStack->SetVisibility(ESlateVisibility::Visible);
 			break;
 		default:
 			WeaponType->SetText(FText::FromString(TEXT("기타 무기")));
 			DamageValue->SetVisibility(ESlateVisibility::Visible);
+			MaxStack->SetVisibility(ESlateVisibility::Visible);
 			break;
 		}
 		break;
@@ -68,6 +72,7 @@ void UInventoryTooltip::NativeConstruct()
 		ItemType->SetText(FText::FromString(TEXT("제작 재료")));
 		WeaponTypeHorizontal->SetVisibility(ESlateVisibility::Collapsed);
 		DamageHorizontal->SetVisibility(ESlateVisibility::Collapsed);
+		UsageText->SetVisibility(ESlateVisibility::Collapsed);
 		break;
 
 		// 치료품
@@ -75,6 +80,7 @@ void UInventoryTooltip::NativeConstruct()
 		ItemType->SetText(FText::FromString(TEXT("치료 아이템")));
 		WeaponTypeHorizontal->SetVisibility(ESlateVisibility::Collapsed);
 		DamageHorizontal->SetVisibility(ESlateVisibility::Collapsed);
+		UsageText->SetVisibility(ESlateVisibility::Collapsed);
 		break;
 
 		// 기타
@@ -82,6 +88,7 @@ void UInventoryTooltip::NativeConstruct()
 		ItemType->SetText(FText::FromString(TEXT("기타")));
 		WeaponTypeHorizontal->SetVisibility(ESlateVisibility::Collapsed);
 		DamageHorizontal->SetVisibility(ESlateVisibility::Collapsed);
+		UsageText->SetVisibility(ESlateVisibility::Collapsed);
 		break;
 
 		// 도구
@@ -89,12 +96,14 @@ void UInventoryTooltip::NativeConstruct()
 		ItemType->SetText(FText::FromString(TEXT("도구")));
 		WeaponTypeHorizontal->SetVisibility(ESlateVisibility::Collapsed);
 		DamageHorizontal->SetVisibility(ESlateVisibility::Collapsed);
+		UsageText->SetVisibility(ESlateVisibility::Collapsed);
 		break;
 
 	default:
 		ItemType->SetText(FText::FromString(TEXT("알 수 없음")));
 		WeaponTypeHorizontal->SetVisibility(ESlateVisibility::Collapsed);
 		DamageHorizontal->SetVisibility(ESlateVisibility::Collapsed);
+		UsageText->SetVisibility(ESlateVisibility::Collapsed);
 		break;
 	}
 
@@ -111,7 +120,7 @@ void UInventoryTooltip::NativeConstruct()
 
 	if (ItemBeingHovered->NumericData.isStackable)
 	{
-		const FString StackInfo = {FString(TEXT("용량: ")) + FString::FromInt(ItemBeingHovered->NumericData.MaxStack) };
+		const FString StackInfo = {FString(TEXT("최대 수량: ")) + FString::FromInt(ItemBeingHovered->NumericData.MaxStack) };
 
 		MaxStack->SetText(FText::FromString(StackInfo));
 		MaxStackHorizontal->SetVisibility(ESlateVisibility::Visible);

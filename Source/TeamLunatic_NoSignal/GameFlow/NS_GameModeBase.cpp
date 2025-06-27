@@ -18,8 +18,8 @@ ANS_GameModeBase::ANS_GameModeBase()
 {
     // 기본 설정
     PlayerCount = 1;
-    ZombiesPerSpawn = 2;  // 한 번에 2마리씩 스폰
-    ZombieSpawnInterval = 3.0f;  // 3초마다 스폰
+    ZombiesPerSpawn = 3;  // 한 번에 3마리씩 스폰
+    ZombieSpawnInterval = 3.0f;  // 2초마다 스폰
     MinSpawnDistance = 4000.0f;
     MaxSpawnDistance = 8000.0f;
     ZombieDestroyDistance = 8001.0f;

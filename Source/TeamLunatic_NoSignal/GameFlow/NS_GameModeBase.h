@@ -38,11 +38,11 @@ protected:
 
     // 좀비 스폰 간격
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie Spawning")
-    float ZombieSpawnInterval = 3.0f;
+    float ZombieSpawnInterval = 2;
     
     // 한 번에 스폰할 좀비 수
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie Spawning")
-    int32 ZombiesPerSpawn = 1;
+    int32 ZombiesPerSpawn = 3;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie")
     // 현재 좀비 수
@@ -50,7 +50,7 @@ protected:
 
     // 최대 좀비 수
     UPROPERTY(EditAnywhere,BlueprintReadWrite ,Category = "Zombie")
-    int32 MaxZombieCount = 40;
+    int32 MaxZombieCount = 60;
     
     // 플레이어 수
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie Spawning")
