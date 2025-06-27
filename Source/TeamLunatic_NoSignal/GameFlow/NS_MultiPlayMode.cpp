@@ -14,7 +14,8 @@ ANS_MultiPlayMode::ANS_MultiPlayMode()
 {
     // 멀티플레이 모드에서는 3초마다 스폰하도록 설정
     ZombieSpawnInterval = 3.0f;
-
+    // 좀비 스폰 수
+    ZombiesPerSpawn = 2;
 }
 
 void ANS_MultiPlayMode::BeginPlay()
@@ -37,18 +38,28 @@ void ANS_MultiPlayMode::BeginPlay()
         // 최소 1명 이상으로 설정
         PlayerCount = FMath::Max(1, PlayerCount);
 
-        // 플레이어 수에 따라 한 번에 스폰할 좀비 수 설정 (플레이어 수 × 1)
-        ZombiesPerSpawn = PlayerCount * 1;
+        // 플레이어 수에 따라 한 번에 스폰할 좀비 수 설정 (플레이어 수 × 기본 스폰 수)
+        ZombiesPerSpawn = PlayerCount * ZombiesPerSpawn;
 
-        UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 플레이어 수: %d, 한 번에 스폰할 좀비 수: %d"),
-            PlayerCount, ZombiesPerSpawn);
     }
+
+    // 부모 클래스의 BeginPlay 호출 전에 최대 좀비 수 저장
+    int32 BaseMaxZombieCount = MaxZombieCount;
 
     // 부모 클래스의 BeginPlay 호출 (여기서 MaxZombieCount가 설정됨)
     ANS_GameModeBase::BeginPlay();
 
+    // 플레이어 수에 따라 최대 좀비 수 조정 (플레이어 수 × 기본 최대 좀비 수 ÷ 1.5)
+    // 너무 많은 좀비가 생성되지 않도록 1.5로 나눔
+    float AdjustedMaxZombies = (BaseMaxZombieCount * PlayerCount) / 1.5f;
+    MaxZombieCount = FMath::CeilToInt(AdjustedMaxZombies); // 올림 처리하여 정수로 변환
+
+    UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 플레이어 수에 따라 최대 좀비 수 조정: %d (기본: %d × 플레이어 수: %d ÷ 1.5)"),
+        MaxZombieCount, BaseMaxZombieCount, PlayerCount);
+
     // 기존 MultiPlayMode의 BeginPlay 로직
     UE_LOG(LogTemp, Warning, TEXT("MultiPlayMode BeginPlay 실행"));
+
 
     if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
@@ -73,10 +84,6 @@ void ANS_MultiPlayMode::BeginPlay()
 
     UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 좀비 스폰 타이머 설정 완료 (%.1f초마다 %d마리)"),
         ZombieSpawnInterval, ZombiesPerSpawn);
-
-    // 10초마다 플레이어 수를 체크하는 타이머 설정
-    GetWorldTimerManager().SetTimer(PlayerCountCheckTimer, this, &ANS_MultiPlayMode::CheckPlayerCountAndEndSession, 10.0f, true);
-    UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 플레이어 수 체크 타이머 설정 완료 (5초마다 실행)"));
 }
 
 
