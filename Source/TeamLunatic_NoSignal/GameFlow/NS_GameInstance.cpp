@@ -40,6 +40,13 @@ void UNS_GameInstance::Init()
 	{
 		NS_UIManager = NewObject<UNS_UIManager>(this, UIManagerClass);
 		NS_UIManager->InitUi(GetWorld());
+		
+		// UIManager에서 메인 메뉴 참조 가져오기
+		if (NS_UIManager)
+		{
+			// UNS_InGameMenu*를 UNS_BaseMainMenu*로 캐스팅
+			MainMenu = Cast<UNS_BaseMainMenu>(NS_UIManager->GetNS_MainMenuWidget());
+		}
 	}
 
 	// Dedicated 서버가 실행될 경우, 커맨드라인에서 포트 추출
@@ -320,4 +327,24 @@ void UNS_GameInstance::DestroyCurrentSession()
 		SessionInterface->DestroySession(NAME_GameSession);
 		UE_LOG(LogTemp, Warning, TEXT("[GameInstance] 세션 파기 요청됨"));
 	}
+}
+
+UNS_BaseMainMenu* UNS_GameInstance::GetMainMenu()
+{
+	// MainMenu가 null이면 생성
+	if (!MainMenu && MainMenuClass)
+	{
+		UWorld* World = GetWorld();
+		if (World)
+		{
+			APlayerController* PC = World->GetFirstPlayerController();
+			if (PC)
+			{
+				MainMenu = CreateWidget<UNS_BaseMainMenu>(PC, MainMenuClass);
+				UE_LOG(LogTemp, Log, TEXT("MainMenu created in GetMainMenu()"));
+			}
+		}
+	}
+	
+	return MainMenu;
 }

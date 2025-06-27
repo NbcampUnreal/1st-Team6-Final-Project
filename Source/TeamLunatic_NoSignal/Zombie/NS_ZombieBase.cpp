@@ -426,20 +426,31 @@ void ANS_ZombieBase::Multicast_PlaySound_Implementation(USoundCue* Sound)
 
 void ANS_ZombieBase::ScheduleSound(USoundCue* SoundCue)
 {
-	if (SoundCue)
-	{
-		float RandomTime = FMath::FRandRange(5.f,8.f);
-		GetWorldTimerManager().SetTimer(AmbientSoundTimer,[this, SoundCue]()
-		{
-			float PlayPercent = 0.5f;
-			float ActualPercent = FMath::FRandRange(0.0f, 1.0f);
-			if (PlayPercent > ActualPercent)
-			{
-				Server_PlaySound(SoundCue);
-			}
-			ScheduleSound(SoundCue);
-		}, RandomTime, false);
-	}
+    // 유효성 검사 추가
+    if (!SoundCue || !IsValid(this) || !GetWorld())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ScheduleSound: Invalid parameters or zombie is being destroyed"));
+        return;
+    }
+
+    float RandomTime = FMath::FRandRange(5.f,8.f);
+    GetWorldTimerManager().SetTimer(AmbientSoundTimer,[this, SoundCue]()
+    {
+        // 타이머 콜백 내에서도 유효성 검사
+        if (!IsValid(this) || !GetWorld())
+        {
+            UE_LOG(LogTemp, Warning, TEXT("ScheduleSound Timer: Zombie is being destroyed"));
+            return;
+        }
+
+        float PlayPercent = 0.5f;
+        float ActualPercent = FMath::FRandRange(0.0f, 1.0f);
+        if (PlayPercent > ActualPercent)
+        {
+            Server_PlaySound(SoundCue);
+        }
+        ScheduleSound(SoundCue);
+    }, RandomTime, false);
 }
 
 void ANS_ZombieBase::Die_Multicast_Implementation()

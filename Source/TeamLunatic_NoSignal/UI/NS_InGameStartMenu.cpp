@@ -12,6 +12,7 @@
 #include "GameFlow/NS_GameInstance.h"
 #include "GameFramework/PlayerController.h"
 #include "UI/NS_MasterMenuPanel.h"
+#include "Zombie/NS_ZombieBase.h"
 #include "UI/NS_UIManager.h"
 #include "AsyncLoadingScreenLibrary.h"
 
@@ -37,6 +38,15 @@ void UNS_InGameStartMenu::Init(UNS_BaseMainMenu* NsMainMenu)
     // 부모 클래스의 Init 호출
     Super::Init(NsMainMenu);
     
+    // MainMenu가 null인지 로그로 확인
+    if (!MainMenu)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Init: MainMenu is still null after Super::Init"));
+        return;
+    }
+    
+    UE_LOG(LogTemp, Log, TEXT("Init: MainMenu is valid, registering submenus"));
+    
     // 서브 메뉴들을 맵에 등록
     SubMenus.Add(EWidgetToggleType::SaveGame, MainMenu->GetWidget(EWidgetToggleType::SaveGame));
     SubMenus.Add(EWidgetToggleType::LoadGame, MainMenu->GetWidget(EWidgetToggleType::LoadGame));
@@ -47,11 +57,23 @@ void UNS_InGameStartMenu::Init(UNS_BaseMainMenu* NsMainMenu)
 
 void UNS_InGameStartMenu::ShowWidget()
 {
+    // 부모 클래스의 ShowWidget 호출 전에 MainMenu가 null인지 확인
+    if (!MainMenu)
+    {
+        UE_LOG(LogTemp, Error, TEXT("ShowWidget: MainMenu is null"));
+        // MainMenu가 null이면 부모 클래스의 ShowWidget을 호출하지 않고 기본 동작만 수행
+        SetVisibility(ESlateVisibility::Visible);
+        return;
+    }
+    
     // 부모 클래스의 ShowWidget 호출
     Super::ShowWidget();
     
-    // 모든 서브 메뉴 숨기기
-    HideSubMenuWidget();
+    // SubMenus가 비어있지 않은 경우에만 서브 메뉴 숨기기
+    if (SubMenus.Num() > 0)
+    {
+        HideSubMenuWidget();
+    }
 }
 
 void UNS_InGameStartMenu::OnResumeClicked()
@@ -73,21 +95,69 @@ void UNS_InGameStartMenu::OnSettingsClicked()
     // 서브 메뉴 숨기기
     HideSubMenuWidget();
     
+    // MainMenu가 null인지 확인
+    if (!MainMenu)
+    {
+        UE_LOG(LogTemp, Error, TEXT("OnSettingsClicked: MainMenu is null"));
+        
+        // 게임 인스턴스에서 메인 메뉴 가져오기 시도
+        if (UNS_GameInstance* GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
+        {
+            MainMenu = GameInstance->GetMainMenu();
+            UE_LOG(LogTemp, Log, TEXT("OnSettingsClicked: Tried to get MainMenu from GameInstance: %s"), 
+                   MainMenu ? TEXT("Success") : TEXT("Failed"));
+        }
+        
+        if (!MainMenu)
+            return;
+    }
+    
     // 현재 메뉴 숨기기
     HideWidget();
     
     // 설정 메뉴 표시
     if (UNS_MasterMenuPanel* Widget = MainMenu->GetWidget(EWidgetToggleType::Settings))
+    {
+        UE_LOG(LogTemp, Log, TEXT("OnSettingsClicked: Showing Settings widget"));
         Widget->ShowWidget();
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("OnSettingsClicked: Settings widget not found"));
+    }
 }
 void UNS_InGameStartMenu::OnControlsClicked()
 {
     // 서브 메뉴 숨기기
     HideSubMenuWidget();
     
+    // MainMenu가 null인지 확인
+    if (!MainMenu)
+    {
+        UE_LOG(LogTemp, Error, TEXT("OnControlsClicked: MainMenu is null"));
+        
+        // 게임 인스턴스에서 메인 메뉴 가져오기 시도
+        if (UNS_GameInstance* GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
+        {
+            MainMenu = GameInstance->GetMainMenu();
+            UE_LOG(LogTemp, Log, TEXT("OnControlsClicked: Tried to get MainMenu from GameInstance: %s"), 
+                   MainMenu ? TEXT("Success") : TEXT("Failed"));
+        }
+        
+        if (!MainMenu)
+            return;
+    }
+    
     // 컨트롤 설정 메뉴 표시
     if (UNS_MasterMenuPanel* Widget = MainMenu->GetWidget(EWidgetToggleType::Controls))
+    {
+        UE_LOG(LogTemp, Log, TEXT("OnControlsClicked: Showing Controls widget"));
         Widget->ShowWidget();
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("OnControlsClicked: Controls widget not found"));
+    }
 }
 void UNS_InGameStartMenu::On_MainMenuClicked()
 {
@@ -97,6 +167,29 @@ void UNS_InGameStartMenu::On_MainMenuClicked()
     // 에러 방지를 위해 try-catch 패턴 사용
     try
     {
+        // 월드 객체 가져오기
+        UWorld* World = GetWorld();
+        if (!World)
+        {
+            UE_LOG(LogTemp, Error, TEXT("On_MainMenuClicked: World is null"));
+            return;
+        }
+
+        // 모든 좀비 객체의 타이머 정리
+        TArray<AActor*> FoundZombies;
+        UGameplayStatics::GetAllActorsOfClass(World, ANS_ZombieBase::StaticClass(), FoundZombies);
+        for (AActor* Actor : FoundZombies)
+        {
+            if (ANS_ZombieBase* Zombie = Cast<ANS_ZombieBase>(Actor))
+            {
+                // 좀비 객체의 타이머 정리
+                World->GetTimerManager().ClearTimer(Zombie->AmbientSoundTimer);
+                
+                // 좀비 비활성화
+                Zombie->SetActive_Multicast(false);
+            }
+        }
+
         // 온라인 세션 연결 해제 (에러 발생 가능성 있음)
         OnDisconnectClicked();
         
@@ -104,7 +197,7 @@ void UNS_InGameStartMenu::On_MainMenuClicked()
         if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
         {
             if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
-                UIManager->HideInGameMenuWidget(GetWorld());
+                UIManager->HideInGameMenuWidget(World);
         }
         
         // 로딩 화면 설정 (에러 발생 가능성 있음)
@@ -114,7 +207,7 @@ void UNS_InGameStartMenu::On_MainMenuClicked()
         // 메인 타이틀 레벨 로드
         // 레벨 이름이 정확한지 확인하세요
         UE_LOG(LogTemp, Warning, TEXT("메인 메뉴로 이동 시도 중..."));
-        UGameplayStatics::OpenLevel(GetWorld(), FName(TEXT("MainTitle")));
+        UGameplayStatics::OpenLevel(World, FName(TEXT("MainTitle")));
     }
     catch (...)  // 사용하지 않는 변수 제거
     {

@@ -8,6 +8,10 @@
 #include "GameFlow/NS_GameInstance.h"
 #include "UI/NS_UIManager.h"
 
+/**
+ * 게임 시작 시 호출되는 함수
+ * 로비 환경 설정 및 UI 초기화를 담당
+ */
 void ANS_LobbyController::BeginPlay()
 {
 	Super::BeginPlay();
@@ -35,8 +39,10 @@ void ANS_LobbyController::BeginPlay()
 	{
 		if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
 		{
+			// Ready UI 표시
 			GI->ShowReadyUI();
 
+			// 플레이어 상태 목록 업데이트
 			if (GI->ReadyUIInstance)
 			{
 				GI->ReadyUIInstance->UpdatePlayerStatusList();
@@ -46,9 +52,15 @@ void ANS_LobbyController::BeginPlay()
 }
 
 
+/**
+ * 플레이어 폰 소유 시 호출되는 함수
+ * 로비 카메라로 뷰 설정
+ */
 void ANS_LobbyController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
+	
+	// 로비 카메라 찾아서 뷰 설정
 	for (TActorIterator<ACameraActor> It(GetWorld()); It; ++It)
 	{
 		if (It->ActorHasTag(FName("LobbyCamera")))
@@ -59,10 +71,15 @@ void ANS_LobbyController::OnPossess(APawn* InPawn)
 	}
 }
 
+/**
+ * 클라이언트에 대기 UI 표시 요청
+ * 서버에서 호출하여 모든 클라이언트에 전파
+ */
 void ANS_LobbyController::Client_ShowWait_Implementation()
 {
 	if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
 	{
+		// 대기 UI 표시
 		GI->ShowWait();
 	}
 }

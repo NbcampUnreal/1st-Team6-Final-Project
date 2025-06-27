@@ -18,9 +18,13 @@
 #include "Kismet/GameplayStatics.h"
 #include <Net/UnrealNetwork.h>
 #include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
+#include "UI/NS_BaseMainMenu.h"
 #include "Item/NS_BaseWeapon.h"
+#include "UI/NS_MenuButtonWidget.h"
 #include "Character/NS_PlayerController.h"
 #include "Sound/SoundBase.h"
+#include "GameFlow/NS_GameInstance.h"
+#include "UI/NS_UIManager.h"
 
 ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
 {
@@ -312,6 +316,16 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                 ETriggerEvent::Started,
                 this,
                 &ANS_PlayerCharacterBase::QuickSlot5Selected
+                );
+        }
+
+        if (ToggleSettingMenuAction)
+        {
+            EnhancedInput->BindAction(
+                ToggleSettingMenuAction,
+                ETriggerEvent::Started,
+                this,
+                &ANS_PlayerCharacterBase::ToggleSettingMenu
                 );
         }
     }
@@ -1385,5 +1399,84 @@ void ANS_PlayerCharacterBase::PlaySoundOnCharacter_Multicast_Implementation(USou
     if (SoundToPlay)
     {
         UGameplayStatics::PlaySoundAtLocation(this, SoundToPlay, GetActorLocation());
+    }
+}
+
+void ANS_PlayerCharacterBase::ToggleSettingMenu()
+{
+    UE_LOG(LogTemp, Warning, TEXT("ToggleSettingMenu() called"));
+    
+    // 플레이어 컨트롤러 가져오기
+    APlayerController* PC = Cast<APlayerController>(Controller);
+    if (!PC) return;
+    
+    if (!bIsMenuVisible)
+    {
+        // 메뉴가 표시되어 있지 않으면 생성하고 표시
+        if (!InGameMenuWidget && InGameMenuWidgetClass)
+        {
+            // 위젯 생성
+            InGameMenuWidget = CreateWidget<UNS_InGameStartMenu>(PC, InGameMenuWidgetClass);
+            if (!InGameMenuWidget)
+            {
+                UE_LOG(LogTemp, Error, TEXT("인게임 메뉴 위젯 생성 실패"));
+                return;
+            }
+            
+            // 메인 메뉴 참조 가져오기
+            UNS_GameInstance* GameInstance = Cast<UNS_GameInstance>(GetGameInstance());
+            if (GameInstance)
+            {
+                UNS_BaseMainMenu* MainMenuRef = GameInstance->GetMainMenu();
+                if (MainMenuRef)
+                {
+                    // 메인 메뉴 참조 설정
+                    InGameMenuWidget->Init(MainMenuRef);
+                    UE_LOG(LogTemp, Log, TEXT("인게임 메뉴 위젯 초기화 성공"));
+                }
+                else
+                {
+                    UE_LOG(LogTemp, Error, TEXT("메인 메뉴 참조를 찾을 수 없음"));
+                    // MainMenu가 null이므로 ShowWidget 함수에서 오류가 발생하지 않도록 처리
+                    // 이 경우 ShowWidget 함수에서 MainMenu를 사용하지 않도록 수정해야 함
+                }
+            }
+        }
+        
+        if (InGameMenuWidget)
+        {
+            // 위젯 표시
+            InGameMenuWidget->AddToViewport();
+            
+            // MainMenu가 null인 경우에도 안전하게 처리하도록 수정된 ShowWidget 함수 호출
+            InGameMenuWidget->ShowWidget();
+            
+            // 입력 모드 설정
+            FInputModeGameAndUI InputMode;
+            InputMode.SetWidgetToFocus(InGameMenuWidget->TakeWidget());
+            InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+            PC->SetInputMode(InputMode);
+            PC->SetShowMouseCursor(true);
+            
+            bIsMenuVisible = true;
+            UE_LOG(LogTemp, Warning, TEXT("인게임 메뉴 표시"));
+        }
+    }
+    else
+    {
+        // 메뉴가 표시되어 있으면 숨김
+        if (InGameMenuWidget)
+        {
+            InGameMenuWidget->HideWidget();
+            InGameMenuWidget->RemoveFromParent();
+            
+            // 입력 모드 설정
+            FInputModeGameOnly InputMode;
+            PC->SetInputMode(InputMode);
+            PC->SetShowMouseCursor(false);
+            
+            bIsMenuVisible = false;
+            UE_LOG(LogTemp, Warning, TEXT("인게임 메뉴 숨김"));
+        }
     }
 }

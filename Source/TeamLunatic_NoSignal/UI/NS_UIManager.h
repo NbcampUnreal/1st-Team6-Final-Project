@@ -47,7 +47,7 @@ public:
 
     // 인게임 메뉴 위젯 반환
     UFUNCTION(BlueprintCallable, Category = "UI")
-    UNS_InGameMenu* GetNS_MainMenuWidget()const { return InGameMenuWidget; }
+    UNS_BaseMainMenu* GetNS_MainMenuWidget() const { return InGameMenuWidget; }
     
     // 플레이어 HUD 위젯 반환
     UNS_PlayerHUD* GetPlayerHUDWidget() const { return NS_PlayerHUDWidget; }
@@ -68,7 +68,7 @@ public:
     bool ShowGameOverWidget(UWorld* World);
 
     // 게임 오버 위젯 숨기기
-    UFUNCTION(BlueprintCallable, Category = "UI")
+    UFUNCTION(BlueprintCallable, Category =  "UI")
     void HideGameOverWidget(UWorld* World);
 
     // 히트 이펙트 위젯 표시 (피격 시 화면 효과)
@@ -123,7 +123,7 @@ public:
 protected:
     // 인게임 메뉴 위젯 인스턴스
     UPROPERTY()
-    UNS_InGameMenu* InGameMenuWidget;
+    UNS_BaseMainMenu* InGameMenuWidget;
     
     // 게임 오버 메시지 위젯 인스턴스
     UNS_Msg_GameOver* NS_Msg_GameOveWidget;

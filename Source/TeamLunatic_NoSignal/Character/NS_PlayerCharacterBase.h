@@ -9,6 +9,7 @@
 #include "GameFlow/NS_GameModeBase.h"
 #include "GameFlow/NS_MainGamePlayerState.h"
 #include "Character/ThrowActor/NS_ThrowActor.h"
+#include "UI/NS_InGameStartMenu.h"
 #include "NS_PlayerCharacterBase.generated.h"
 
 class UInputMappingContext;
@@ -223,7 +224,7 @@ public:
 	float LastTurnYaw = 0.0f;
 	// ===============================Turn In Place변수 끝!===================================
 
-
+	
 	
 	/////////////////////////////// 리플리케이션용 변수들////////////////////////////////
 	// 캐릭터가 바라보고있는 좌/우 값
@@ -325,7 +326,9 @@ public:
 	UInputAction* InputQuickSlot4;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputQuickSlot5;
-	
+	// 인게임에서 메뉴 여는 키 변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	UInputAction* ToggleSettingMenuAction;
 	
 
 	// 캐릭터 EnhancedInput을 없앴다가 다시 부착하는는 함수 IMC를 지워웠다가 다시 장착하게해서 AnimNotify로 발차기 공격동안 IMC없앰
@@ -428,7 +431,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PostProcess")
 	UMaterialInstanceDynamic* HallucinationMID;
 
-
+	
 	// 환각효과 켜기
 	void ActivateHallucinationEffect(float Duration);
 
@@ -438,4 +441,30 @@ public:
 	// 캐릭터가 현재 조준 중인지 확인하는 함수
 	UFUNCTION(BlueprintCallable, Category = "Character")
 	bool IsAimingChange() const { return IsAiming; }
+
+
+	// =============================================UI 관련 ========================================================
+	// 인게임 메뉴 위젯 클래스 참조 (UUserWidget으로 변경)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<UUserWidget> SimpleMenuWidgetClass;
+
+	// 인게임 메뉴 위젯 인스턴스
+	UPROPERTY(BlueprintReadOnly, Category = "UI")
+	UUserWidget* SimpleMenuWidget;
+
+	// 설정 메뉴 토글 함수
+	UFUNCTION(BlueprintCallable, Category = "UI")
+	void ToggleSettingMenu();
+	
+	// 메뉴가 표시 중인지 여부
+	UPROPERTY(BlueprintReadOnly, Category = "UI")
+	bool bIsMenuVisible = false;
+
+	// 인게임 메뉴 위젯 클래스 참조
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<UNS_InGameStartMenu> InGameMenuWidgetClass;
+	
+	// 인게임 메뉴 위젯 인스턴스
+	UPROPERTY(BlueprintReadOnly, Category = "UI")
+	UNS_InGameStartMenu* InGameMenuWidget;
 };

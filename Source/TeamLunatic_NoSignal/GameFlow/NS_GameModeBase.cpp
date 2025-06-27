@@ -483,3 +483,12 @@ void ANS_GameModeBase::DebugZombieDistances()
     UE_LOG(LogTemp, Warning, TEXT("[좀비 디버그] 8000 초과 좀비: %d"), AllZombies.Num() - ZombiesInCloseRange - ZombiesInMidRange);
     UE_LOG(LogTemp, Warning, TEXT("[좀비 디버그] 누적 제거된 좀비: %d"), ZombiesRemoved);*/
 }
+
+// 기본 구현 추가
+void ANS_GameModeBase::OnPlayerCharacterDied_Implementation(ANS_PlayerCharacterBase* DeadCharacter)
+{
+    // 기본 구현은 아무 작업도 수행하지 않음
+    UE_LOG(LogTemp, Warning, TEXT("ANS_GameModeBase::OnPlayerCharacterDied_Implementation - 기본 구현 호출됨"));
+    
+    // 자식 클래스에서 이 함수를 재정의하여 실제 동작을 구현해야 함
+}

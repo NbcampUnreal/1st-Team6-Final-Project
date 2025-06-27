@@ -12,6 +12,7 @@
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonReader.h"
+#include "UI/NS_BaseMainMenu.h"
 #include "NS_GameInstance.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnCreateSessionSuccess);
@@ -114,6 +115,22 @@ public:
 	void DestroyCurrentSession();
 
 	int32 MyServerPort = -1;
+
+	// 메인 메뉴 위젯 인스턴스
+	UPROPERTY(BlueprintReadOnly, Category = "UI")
+	UNS_BaseMainMenu* MainMenu;
+
+	// 메인 메뉴 위젯 클래스
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UNS_BaseMainMenu> MainMenuClass;
+
+	// 메인 메뉴 참조 반환 함수 (동적 생성 기능 포함)
+	UFUNCTION(BlueprintCallable, Category = "UI")
+	UNS_BaseMainMenu* GetMainMenu();
+
+	// MainMenu 설정 함수 추가
+	UFUNCTION(BlueprintCallable, Category = "Game")
+	void SetMainMenu(UNS_BaseMainMenu* NewMainMenu) { MainMenu = NewMainMenu; }
 
 private:
 	EGameModeType GameModeType = EGameModeType::SinglePlayMode;

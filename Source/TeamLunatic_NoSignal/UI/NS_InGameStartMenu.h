@@ -45,7 +45,6 @@ public:
     UFUNCTION()
     void On_MainMenuClicked();
 
-protected:
     // 게임 재개 버튼
     UPROPERTY(meta = (BindWidget))
     UNS_MenuButtonWidget* BP_Resume;

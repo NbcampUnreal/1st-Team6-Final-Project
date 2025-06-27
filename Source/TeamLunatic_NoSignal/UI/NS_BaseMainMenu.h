@@ -28,7 +28,6 @@ public:
 
 	virtual void QuitNSGame();
 
-protected:
 	virtual void ShowWidget();
 	virtual void HideWidget();
 	//UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Widget")

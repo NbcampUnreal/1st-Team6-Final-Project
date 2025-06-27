@@ -80,3 +80,8 @@ void UNS_TheSettingsWidget::OnMainMenuClicked()
     else
         MainMenu->GetWidget(EWidgetToggleType::InGamemStartMenu)->ShowWidget();
 }
+
+EWidgetToggleType UNS_TheSettingsWidget::GetToggleType() const
+{
+    return EWidgetToggleType::Settings;
+}

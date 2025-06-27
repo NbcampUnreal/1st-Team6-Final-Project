@@ -16,4 +16,5 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_ControlsR : public UNS_MasterMenuPanel
 	
 public:
 	virtual void NativeConstruct() override;
+	virtual EWidgetToggleType GetToggleType() const override;
 };

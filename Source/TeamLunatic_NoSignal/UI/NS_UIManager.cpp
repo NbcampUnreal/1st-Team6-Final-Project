@@ -248,7 +248,18 @@ bool UNS_UIManager::ShowInGameMenuWidget(UWorld* World)
     if (!InGameMenuWidget || InGameMenuWidget && !InGameMenuWidget->IsInViewport())
     {
         if (InGameMenuWidgetClass)
-            InGameMenuWidget = CreateWidget<UNS_InGameMenu>(PC, InGameMenuWidgetClass);
+        {
+            InGameMenuWidget = CreateWidget<UNS_BaseMainMenu>(PC, InGameMenuWidgetClass);
+            UE_LOG(LogTemp, Log, TEXT("Created InGameMenuWidget: %s"), *InGameMenuWidget->GetName());
+            
+            // 게임 인스턴스에서 메인 메뉴 참조 설정
+            UNS_GameInstance* GameInstance = Cast<UNS_GameInstance>(World->GetGameInstance());
+            if (GameInstance)
+            {
+                GameInstance->SetMainMenu(InGameMenuWidget);
+                UE_LOG(LogTemp, Log, TEXT("Set MainMenu in GameInstance"));
+            }
+        }
         else
         {
             // 위젯 클래스가 없으면 오류 로그 출력 후 실패 반환
@@ -262,14 +273,11 @@ bool UNS_UIManager::ShowInGameMenuWidget(UWorld* World)
     if (InGameMenuWidget)
     {
         InGameMenuWidget->ShowWidget();
-
         SetFInputModeGameAndUI(PC, InGameMenuWidget);
-
         return true;
     }
     return false;
-}
-void UNS_UIManager::ShowLoadGameWidget(UWorld* World)
+}void UNS_UIManager::ShowLoadGameWidget(UWorld* World)
 {
     // 인게임 메뉴의 로드 게임 위젯 표시
     InGameMenuWidget->GetWidget(EWidgetToggleType::LoadMenuInGameOver)->ShowWidgetD();

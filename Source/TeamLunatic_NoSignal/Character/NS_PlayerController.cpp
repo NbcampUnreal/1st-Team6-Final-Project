@@ -82,21 +82,10 @@ void ANS_PlayerController::SetupInputComponent()
 
 /**
  * 인게임 메뉴 토글 함수
- * M 키(에디터) 또는 ESC 키(패키징 버전)를 눌러 인게임 메뉴를 표시하거나 숨깁니다.
- * ProjectSetting>Input>입력매핑>추가 "ToggleInGameMenu" (단축키"M"설정)
+ * 인게임 메뉴를 표시하거나 숨깁니다.
  */
 void ANS_PlayerController::ToggleInGameMenu()
 {
-#if WITH_EDITOR
-    // 에디터에서는 M 키를 사용
-    if (!IsInputKeyDown(EKeys::M))
-        return;
-#else
-    // 패키징 버전에서는 ESC 키를 사용
-    if (!IsInputKeyDown(EKeys::Escape))
-        return;
-#endif
-
     // 인벤토리 HUD가 표시 중인지 확인
     if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
     {

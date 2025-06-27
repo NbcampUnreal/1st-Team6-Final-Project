@@ -19,6 +19,7 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_TheSettingsWidget : public UNS_MasterMenuPane
 public:
 	virtual void NativeConstruct() override;
 	virtual void Init(UNS_BaseMainMenu* NsMainMenu) override;
+	virtual EWidgetToggleType GetToggleType() const override;
 protected:
 
 	//UPROPERTY(meta = (BindWidget))

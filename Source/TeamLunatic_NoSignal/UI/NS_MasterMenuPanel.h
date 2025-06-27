@@ -41,23 +41,16 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Widget")
 	void SetToggleType();
-protected:
+
+	// GetToggleType 함수 선언
+	UFUNCTION(BlueprintCallable, Category = "Widget")
+	virtual EWidgetToggleType GetToggleType() const;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widget")//EditDefaultsOnly
 		UNS_BaseMainMenu* MainMenu;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widget")
 	TMap< EWidgetToggleType, UNS_MasterMenuPanel*> SubMenus;//TArray<UNS_MasterMenuPanel*> SubMenus;
 
-	//UPROPERTY(BlueprintReadWrite)
-	//UUserWidget* EscMenu;
-
-	//UPROPERTY(BlueprintReadWrite)
-	//UUserWidget* BP_PlayerInventory;
-
-	//UFUNCTION(BlueprintCallable, Category = "Widget")
-	//virtual void HideSubMenuWidget();
-
-private:
 	int32 MotionID = -1;
 
 	void SetBlockInput(ANS_MainUiPlayerController* Player, bool bBlock);

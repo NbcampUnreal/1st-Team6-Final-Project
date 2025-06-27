@@ -33,7 +33,6 @@ public:
 	void UpdateTipHUD(const FText& Message);
 
 
-protected:
 	virtual void BeginPlay() override;
 	void SetupInputComponent();
 

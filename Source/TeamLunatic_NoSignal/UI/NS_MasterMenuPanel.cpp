@@ -151,6 +151,14 @@ void UNS_MasterMenuPanel::SaveGame()
 void UNS_MasterMenuPanel::ShowWidget()
 {
     SetVisibility(ESlateVisibility::Visible);
+    
+    // MainMenu가 null인지 확인
+    if (!MainMenu)
+    {
+        UE_LOG(LogTemp, Error, TEXT("ShowWidget: MainMenu is null"));
+        return;
+    }
+    
     if (MotionID == 0) 
         MainMenu->PlayAnimationShowL();
     else
@@ -169,16 +177,36 @@ void UNS_MasterMenuPanel::HideWidget()
 
 void UNS_MasterMenuPanel::HideSubMenuWidget()
 {
-    for (const TPair<EWidgetToggleType, UNS_MasterMenuPanel*>& Elem : SubMenus)
+    // SubMenus가 비어있는지 확인
+    if (SubMenus.Num() == 0)
+    {
+        return;
+    }
+    
+    // 모든 서브 메뉴 숨기기
+    for (auto& Elem : SubMenus)
     {
         if (Elem.Value)
+        {
             Elem.Value->HideWidget();
+        }
     }
 }
 
 void UNS_MasterMenuPanel::Init(UNS_BaseMainMenu* NsMainMenu)
 {
+    // NsMainMenu가 null인지 확인
+    if (!NsMainMenu)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Init: NsMainMenu is null"));
+        return;
+    }
+    
+    // MainMenu 변수 설정
     MainMenu = NsMainMenu;
+    UE_LOG(LogTemp, Log, TEXT("Init: MainMenu set to %s"), *NsMainMenu->GetName());
+    
+    // 토글 타입 설정
     SetToggleType();
 }
 
@@ -217,4 +245,9 @@ void UNS_MasterMenuPanel::PlayerInventoryComponentClose()
 
   //  UE_LOG(LogTemp, Log, TEXT("Closing inventory component..."));
     // 예: RemoveFromParent(), BlockInput = false, 참조 초기화 등
+}
+
+EWidgetToggleType UNS_MasterMenuPanel::GetToggleType() const
+{
+    return MyToggleType;
 }
