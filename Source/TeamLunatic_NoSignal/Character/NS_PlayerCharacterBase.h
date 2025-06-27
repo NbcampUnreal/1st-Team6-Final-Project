@@ -434,4 +434,8 @@ public:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void PlaySoundOnCharacter_Multicast(USoundBase* SoundToPlay);
+
+	// 캐릭터가 현재 조준 중인지 확인하는 함수
+	UFUNCTION(BlueprintCallable, Category = "Character")
+	bool IsAimingChange() const { return IsAiming; }
 };

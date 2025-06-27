@@ -18,6 +18,7 @@
 #include "Kismet/GameplayStatics.h"
 #include <Net/UnrealNetwork.h>
 #include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
+#include "Item/NS_BaseWeapon.h"
 #include "Character/NS_PlayerController.h"
 #include "Sound/SoundBase.h"
 
@@ -614,14 +615,41 @@ void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputAct
 
 void ANS_PlayerCharacterBase::StartAimingAction_Server_Implementation(const FInputActionValue& Value)
 {
-    if(IsAvaliableAiming)
-        IsAiming = true; 
+    if(IsAvaliableAiming) 
+    {
+        if (!IsPickUp && !IsChangeAnim && !IsReload && !IsThrow) 
+        {
+            // 현재 무기가 있는지 확인
+            if (EquipedWeaponComp)
+            {
+                // 현재 무기가 원거리 무기인지 확인
+                ANS_BaseWeapon* CurrentWeapon = EquipedWeaponComp->CurrentWeapon;
+                
+                if (CurrentWeapon && CurrentWeapon->GetWeaponType() == EWeaponType::Ranged)
+                {
+                    // 원거리 무기일 경우에만 조준 활성화
+                    IsAiming = true;
+                    UE_LOG(LogTemp, Verbose, TEXT("조준 시작: 원거리 무기 조준 모드 활성화"));
+                }
+                else
+                {
+                    UE_LOG(LogTemp, Verbose, TEXT("조준 불가: 원거리 무기가 아님"));
+                }
+            }
+            else
+            {
+                UE_LOG(LogTemp, Verbose, TEXT("조준 불가: 장착된 무기 없음"));
+            }
+        }
+    }
 }
-
 
 void ANS_PlayerCharacterBase::StopAimingAction_Server_Implementation(const FInputActionValue& Value)
 {
-    IsAiming = false; 
+    if (IsAiming)
+    {
+        IsAiming = false; 
+    }
 }
 
 // 퀵슬롯 선택 함수들

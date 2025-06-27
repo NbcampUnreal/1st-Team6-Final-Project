@@ -1,3 +1,5 @@
+// NS_UIManager.cpp - 게임의 모든 UI 위젯을 관리하는 중앙 매니저 클래스 구현
+
 #include "UI/NS_UIManager.h"
 #include "UI/NS_BaseMainMenu.h"
 #include "UI/NS_InGameMenu.h"
@@ -7,8 +9,6 @@
 #include "UI/NS_InGameMsg.h"
 #include "UI/NS_PlayerHUD.h"
 #include "UI/NS_LoadingScreen.h"
-
-#include "UI/NS_LoadingScreen.h"
 #include "UI/NS_SpectatorWidgetClass.h" 
 #include "GameFlow/NS_GameInstance.h"
 #include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
@@ -17,110 +17,99 @@
 
 UNS_UIManager::UNS_UIManager()
 {
-    if (!InGameMenuWidgetClass)
-    {
-        static ConstructorHelpers::FClassFinder<UNS_BaseMainMenu> BP_InGameMenu_ksw(TEXT("/Game/SurvivalGameKitV2/Blueprints/Widgets/BP_InGameMenu_ksw.BP_InGameMenu_ksw_C"));
-        if (BP_InGameMenu_ksw.Succeeded())
-            InGameMenuWidgetClass = BP_InGameMenu_ksw.Class;
-        else
-            UE_LOG(LogTemp, Warning, TEXT("InGameMenuWidgetClass: %s"), *GetNameSafe(InGameMenuWidgetClass));
-    }
-    if (!NS_MsgGameOverWidgetClass)
-    {
+    // 생성자에서 위젯 클래스 참조 설정
+    
+    // 인게임 메뉴 위젯 클래스 찾기
+    static ConstructorHelpers::FClassFinder<UNS_InGameMenu> WBP_InGameMenu(TEXT("/Game/UI/Blueprints/WBP_InGameMenu.WBP_InGameMenu_C"));
+    if (WBP_InGameMenu.Succeeded())
+        InGameMenuWidgetClass = WBP_InGameMenu.Class;
+    else
+        UE_LOG(LogTemp, Warning, TEXT("InGameMenuWidgetClass: %s"), *GetNameSafe(InGameMenuWidgetClass));
 
-        static ConstructorHelpers::FClassFinder<UNS_Msg_GameOver> BP_GameOveWidget(TEXT("/Game/SurvivalGameKitV2/Blueprints/Widgets/BP_NS_Msg_GameOver.BP_NS_Msg_GameOver_C"));
-        if (BP_GameOveWidget.Succeeded())
-            NS_MsgGameOverWidgetClass = BP_GameOveWidget.Class;
-        else
-            UE_LOG(LogTemp, Warning, TEXT("NS_MsgGameOverWidgetClass: %s"), *GetNameSafe(NS_MsgGameOverWidgetClass));
-    }
-    if (!NS_InGameMsgWidgetClass)
-    {
-        static ConstructorHelpers::FClassFinder<UNS_InGameMsg> WBP_InGameMessage(TEXT("/Game/UI/Blueprints/WBP_InGameMessage.WBP_InGameMessage_C"));
-        if (WBP_InGameMessage.Succeeded())
-            NS_InGameMsgWidgetClass = WBP_InGameMessage.Class;
-        else
-            UE_LOG(LogTemp, Warning, TEXT("NS_InGameMsgWidgetClass: %s"), *GetNameSafe(NS_InGameMsgWidgetClass));
-    }
+    // 게임 오버 메시지 위젯 클래스 찾기
+    static ConstructorHelpers::FClassFinder<UNS_Msg_GameOver> WBP_GameOver(TEXT("/Game/UI/Blueprints/WBP_GameOver.WBP_GameOver_C"));
+    if (WBP_GameOver.Succeeded())
+        NS_MsgGameOverWidgetClass = WBP_GameOver.Class;
+    else
+        UE_LOG(LogTemp, Warning, TEXT("NS_MsgGameOverWidgetClass: %s"), *GetNameSafe(NS_MsgGameOverWidgetClass));
 
-    if (!NS_PlayerHUDWidgetClass)
-    {
-        static ConstructorHelpers::FClassFinder<UNS_PlayerHUD> WBP_PlayerHUD(TEXT("/Game/SurvivalGameKitV2/Blueprints/Widgets/WBP_PlayerHUD.WBP_PlayerHUD_C"));
-        if (WBP_PlayerHUD.Succeeded())
-            NS_PlayerHUDWidgetClass = WBP_PlayerHUD.Class;
-        else
-            UE_LOG(LogTemp, Warning, TEXT("NS_PlayerHUDWidgetClass: %s"), *GetNameSafe(NS_PlayerHUDWidgetClass));
-    }
-    if (!NS_LoadingScreenClass)
-    {
-        static ConstructorHelpers::FClassFinder<UNS_LoadingScreen> WBP_LoadingScreen(TEXT("/Game/UI/Blueprints/WBP_LoadingScreen.WBP_LoadingScreen_C"));
-        if (WBP_LoadingScreen.Succeeded())
-            NS_LoadingScreenClass = WBP_LoadingScreen.Class;
-        else
-            UE_LOG(LogTemp, Warning, TEXT("NS_LoadingScreenClass: %s"), *GetNameSafe(NS_LoadingScreenClass));
-    }
+    // 인게임 메시지 위젯 클래스 찾기
+    static ConstructorHelpers::FClassFinder<UNS_InGameMsg> WBP_InGameMsg(TEXT("/Game/UI/Blueprints/WBP_InGameMsg.WBP_InGameMsg_C"));
+    if (WBP_InGameMsg.Succeeded())
+        NS_InGameMsgWidgetClass = WBP_InGameMsg.Class;
+    else
+        UE_LOG(LogTemp, Warning, TEXT("NS_InGameMsgWidgetClass: %s"), *GetNameSafe(NS_InGameMsgWidgetClass));
+
+    // 플레이어 HUD 위젯 클래스 찾기
+    static ConstructorHelpers::FClassFinder<UNS_PlayerHUD> WBP_PlayerHUD(TEXT("/Game/UI/Blueprints/WBP_PlayerHUD.WBP_PlayerHUD_C"));
+    if (WBP_PlayerHUD.Succeeded())
+        NS_PlayerHUDWidgetClass = WBP_PlayerHUD.Class;
+    else
+        UE_LOG(LogTemp, Warning, TEXT("NS_PlayerHUDWidgetClass: %s"), *GetNameSafe(NS_PlayerHUDWidgetClass));
+
+    // 히트 이펙트 위젯 클래스 찾기
+    static ConstructorHelpers::FClassFinder<UUserWidget> WBP_HitEffect(TEXT("/Game/UI/Blueprints/WBP_HitEffect.WBP_HitEffect_C"));
+    if (WBP_HitEffect.Succeeded())
+        HitEffectWidgetClass = WBP_HitEffect.Class;
+    else
+        UE_LOG(LogTemp, Warning, TEXT("HitEffectWidgetClass: %s"), *GetNameSafe(HitEffectWidgetClass));
+
+    // 관전자 위젯 클래스 찾기
+    static ConstructorHelpers::FClassFinder<UNS_SpectatorWidgetClass> WBP_Spectator(TEXT("/Game/UI/Blueprints/WBP_Spectator.WBP_Spectator_C"));
+    if (WBP_Spectator.Succeeded())
+        SpectatorWidgetClass = WBP_Spectator.Class;
+    else
+        UE_LOG(LogTemp, Warning, TEXT("SpectatorWidgetClass: %s"), *GetNameSafe(SpectatorWidgetClass));
+
+    // 로딩 화면 위젯 클래스 찾기
+    static ConstructorHelpers::FClassFinder<UNS_LoadingScreen> WBP_LoadingScreen(TEXT("/Game/UI/Blueprints/WBP_LoadingScreen.WBP_LoadingScreen_C"));
+    if (WBP_LoadingScreen.Succeeded())
+        NS_LoadingScreenClass = WBP_LoadingScreen.Class;
+    else
+        UE_LOG(LogTemp, Warning, TEXT("NS_LoadingScreenClass: %s"), *GetNameSafe(NS_LoadingScreenClass));
 }
 
 void UNS_UIManager::InitUi(UWorld* World)
 {
-    //if (InGameMenuWidgetClass)
-    //    InGameMenuWidget = CreateWidget<UNS_BaseMainMenu>(World, InGameMenuWidgetClass);
+    // UI 시스템 초기화 함수
+    // 현재는 비어있지만, 필요한 경우 여기에 초기화 코드 추가
 }
+
 UNS_QuickSlotPanel* UNS_UIManager::GetQuickSlotPanel()
 {
+    // 플레이어 HUD에서 퀵슬롯 패널 가져오기
     if (NS_PlayerHUDWidget)
         return NS_PlayerHUDWidget->NS_QuickSlotPanel;
     return nullptr;
 }
 
-//bool UNS_UIManager::ShowPlayerHUDWidget( UWorld* World)
-//{
-//    if (!World || World->IsNetMode(NM_DedicatedServer)) 
-//    {
-//        return false;
-//    }
-//
-//    APlayerController* PC = World->GetFirstPlayerController();
-//    if (!NS_PlayerHUDWidget || NS_PlayerHUDWidget && !NS_PlayerHUDWidget->IsInViewport())
-//    {
-//        if (NS_PlayerHUDWidgetClass)
-//            NS_PlayerHUDWidget = CreateWidget<UNS_PlayerHUD>(PC, NS_PlayerHUDWidgetClass);
-//        else
-//        {
-//            UE_LOG(LogTemp, Warning, TEXT("ERROR!!! EMPTY NS_PlayerHUDWidgetClass!!!!!"));
-//            return false;
-//        }
-//        NS_PlayerHUDWidget->AddToViewport();
-//    }
-//    if (NS_PlayerHUDWidget)
-//    {
-//        NS_PlayerHUDWidget->ShowWidget();
-//        return true;
-//    }
-//    return false;
-//}
-
-
 void UNS_UIManager::HidePlayerHUDWidget(UWorld* World)
 {
+    // 플레이어 HUD 위젯이 존재하고 뷰포트에 있으면 숨기기
     if (NS_PlayerHUDWidget && NS_PlayerHUDWidget->IsInViewport())
         NS_PlayerHUDWidget->HideWidget();
 }
 
 bool UNS_UIManager::ShowGameMsgWidget(FString& GameMsg, UWorld* World)
 {
+    // 플레이어 컨트롤러 가져오기
     APlayerController* PC = World->GetFirstPlayerController();
+    
+    // 인게임 메시지 위젯이 없거나 뷰포트에 없으면 생성
     if (!NS_InGameMsgWidget || NS_InGameMsgWidget && !NS_InGameMsgWidget->IsInViewport())
     {
         if (NS_InGameMsgWidgetClass)
             NS_InGameMsgWidget = CreateWidget<UNS_InGameMsg>(PC, NS_InGameMsgWidgetClass);
         else
         {
+            // 위젯 클래스가 없으면 오류 로그 출력 후 실패 반환
             UE_LOG(LogTemp, Warning, TEXT("ERROR!!! EMPTY NS_InGameMsgWidgetClass!!!!!"));
             return false;
         }
         NS_InGameMsgWidget->AddToViewport();
     }
+    
+    // 위젯이 존재하면 메시지 표시 후 성공 반환
     if (NS_InGameMsgWidget)
     {
         NS_InGameMsgWidget->ShowMessageText(GameMsg);
@@ -131,23 +120,27 @@ bool UNS_UIManager::ShowGameMsgWidget(FString& GameMsg, UWorld* World)
 
 void UNS_UIManager::HideGameMsgWidget(UWorld* World)
 {
+    // 인게임 메시지 위젯이 존재하고 뷰포트에 있으면 숨기기
     if (NS_InGameMsgWidget && NS_InGameMsgWidget->IsInViewport())
         NS_InGameMsgWidget->HideWidget();
 }
 
 bool UNS_UIManager::ShowGameOverWidget(UWorld* World)
 {
+    // 서버에서는 실행하지 않음
     if (!World || World->IsNetMode(NM_DedicatedServer))
     {
         return false;
     }
 
+    // 플레이어 컨트롤러 가져오기
     APlayerController* PC = World->GetFirstPlayerController();
     if (!PC)
     {
         return false;
     }
 
+    // 게임 오버 위젯이 없거나 뷰포트에 없으면 생성
     if (!NS_Msg_GameOveWidget || !NS_Msg_GameOveWidget->IsInViewport())
     {
         if (NS_MsgGameOverWidgetClass)
@@ -161,6 +154,7 @@ bool UNS_UIManager::ShowGameOverWidget(UWorld* World)
         }
     }
 
+    // 위젯이 존재하면 표시하고 입력 모드 설정 후 성공 반환
     if (NS_Msg_GameOveWidget)
     {
         NS_Msg_GameOveWidget->ShowWidgetD();
@@ -173,10 +167,9 @@ bool UNS_UIManager::ShowGameOverWidget(UWorld* World)
 
 void UNS_UIManager::HideGameOverWidget(UWorld* World)
 {
+    // 게임 오버 위젯이 존재하고 뷰포트에 있으면 숨기기
     if (NS_Msg_GameOveWidget && NS_Msg_GameOveWidget->IsInViewport())
     {
-        //NS_Msg_GameOveWidget->RemoveFromParent();
-        //NS_Msg_GameOveWidget = nullptr;
         NS_Msg_GameOveWidget->HideWidget();
         APlayerController* PC = World->GetFirstPlayerController();
         SetFInputModeGameOnly(PC);
@@ -184,24 +177,26 @@ void UNS_UIManager::HideGameOverWidget(UWorld* World)
 }
 void UNS_UIManager::SetFInputModeGameAndUI(APlayerController* PC,UUserWidget* Widget)
 {
-    //FInputModeUIOnly InputMode;
+    // 게임 및 UI 입력 모드 설정
     FInputModeGameAndUI InputMode;
     InputMode.SetWidgetToFocus(Widget->TakeWidget()); // UI 위젯을 포커싱
     InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock); // 마우스 락 해제
     InputMode.SetHideCursorDuringCapture(false); // 마우스 커서 보이게
 
     PC->SetInputMode(InputMode);
-    PC->bShowMouseCursor = true;
+    PC->bShowMouseCursor = true; // 마우스 커서 표시
 }
 void UNS_UIManager::SetFInputModeGameOnly(APlayerController* PC)
 {
-    PC->bShowMouseCursor = false;
+    // 게임 전용 입력 모드 설정
+    PC->bShowMouseCursor = false; // 마우스 커서 숨김
     FInputModeGameOnly InputMode;
     PC->SetInputMode(InputMode);
 }
 
 void UNS_UIManager::CloseLoadingUI()
 {
+    // 로딩 화면이 존재하고 뷰포트에 있으면 제거
     if (NS_LoadingScreen && NS_LoadingScreen->IsInViewport())
     {
         UE_LOG(LogTemp, Log, TEXT("Remove Loading Screen!!!!"));
@@ -211,6 +206,7 @@ void UNS_UIManager::CloseLoadingUI()
 }
 void UNS_UIManager::CompleteLoadingProcess()
 {
+    // 로딩 화면이 존재하면 로딩 완료 처리
     if (NS_LoadingScreen)
     {
         NS_LoadingScreen->LevelLoadComplete();
@@ -219,38 +215,50 @@ void UNS_UIManager::CompleteLoadingProcess()
 
 void UNS_UIManager::LoadingScreen(UWorld* World)
 {
+    // 로딩 화면 초기화
     NS_LoadingScreen = nullptr;
 
+    // 플레이어 컨트롤러 가져오기
     APlayerController* PC = World->GetFirstPlayerController();
-   // if (!NS_LoadingScreen || NS_LoadingScreen && !NS_LoadingScreen->IsInViewport())
+    
+    // 로딩 화면 생성 및 표시
     NS_LoadingScreen = CreateWidget<UNS_LoadingScreen>(PC, NS_LoadingScreenClass);
 
+    // 로딩 완료 델리게이트 초기화
     OnLoadingFinished.Unbind();
+    
+    // 로딩 화면을 뷰포트에 추가하고 진행 상태 업데이트
     NS_LoadingScreen->AddToViewport();
-	//NS_LoadingScreen->FakeUpdateProgress();
     NS_LoadingScreen->UpdateProgress();
 }
 
 bool UNS_UIManager::IsInViewportInGameMenuWidget()
 {
-    if (InGameMenuWidget && InGameMenuWidget->GetVisibility() == ESlateVisibility::Visible )//InGameMenuWidget->IsInViewport()
+    // 인게임 메뉴 위젯이 존재하고 보이는 상태인지 확인
+    if (InGameMenuWidget && InGameMenuWidget->GetVisibility() == ESlateVisibility::Visible)
         return true;
     return false;
 }
 bool UNS_UIManager::ShowInGameMenuWidget(UWorld* World)
 {
+    // 플레이어 컨트롤러 가져오기
     APlayerController* PC = World->GetFirstPlayerController();
-    if (!InGameMenuWidget || InGameMenuWidget && !InGameMenuWidget->IsInViewport())//!IsValid(InGameMenuWidget))
+    
+    // 인게임 메뉴 위젯이 없거나 뷰포트에 없으면 생성
+    if (!InGameMenuWidget || InGameMenuWidget && !InGameMenuWidget->IsInViewport())
     {
         if (InGameMenuWidgetClass)
             InGameMenuWidget = CreateWidget<UNS_InGameMenu>(PC, InGameMenuWidgetClass);
         else
         {
+            // 위젯 클래스가 없으면 오류 로그 출력 후 실패 반환
             UE_LOG(LogTemp, Warning, TEXT("ERROR!!! EMPTY InGameMenuWidgetClass!!!!!"));
             return false;
         }
         InGameMenuWidget->AddToViewport();
     }
+    
+    // 위젯이 존재하면 표시하고 입력 모드 설정 후 성공 반환
     if (InGameMenuWidget)
     {
         InGameMenuWidget->ShowWidget();
@@ -263,16 +271,21 @@ bool UNS_UIManager::ShowInGameMenuWidget(UWorld* World)
 }
 void UNS_UIManager::ShowLoadGameWidget(UWorld* World)
 {
+    // 인게임 메뉴의 로드 게임 위젯 표시
     InGameMenuWidget->GetWidget(EWidgetToggleType::LoadMenuInGameOver)->ShowWidgetD();
+    
+    // 플레이어 컨트롤러 가져와서 입력 모드 설정
     APlayerController* PC = World->GetFirstPlayerController();
     SetFInputModeGameAndUI(PC, InGameMenuWidget);
 }
 void UNS_UIManager::HideInGameMenuWidget(UWorld* World)
 {
+    // 인게임 메뉴 위젯이 존재하고 뷰포트에 있으면 숨기기
     if (InGameMenuWidget && InGameMenuWidget->IsInViewport())
     {
         InGameMenuWidget->HideWidget();
 
+        // 플레이어 컨트롤러 가져와서 게임 전용 입력 모드로 설정
         APlayerController* PC = World->GetFirstPlayerController();
         SetFInputModeGameOnly(PC);
     }
@@ -280,9 +293,11 @@ void UNS_UIManager::HideInGameMenuWidget(UWorld* World)
 
 bool UNS_UIManager::ShowSpectatorWidget(UWorld* World)
 {
+    // 플레이어 컨트롤러 가져오기
     APlayerController* PC = World->GetFirstPlayerController();
     if (!PC) return false;
 
+    // 관전자 위젯이 없거나 뷰포트에 없으면 생성
     if (!SpectatorWidget || !SpectatorWidget->IsInViewport())
     {
         if (SpectatorWidgetClass)
@@ -295,11 +310,13 @@ bool UNS_UIManager::ShowSpectatorWidget(UWorld* World)
         }
         else
         {
+            // 위젯 클래스가 없으면 오류 로그 출력 후 실패 반환
             UE_LOG(LogTemp, Error, TEXT("SpectatorWidgetClass is NULL!"));
             return false;
         }
     }
 
+    // 입력 모드 설정 후 성공 반환
     SetFInputModeGameAndUI(PC, SpectatorWidget);
     return true;
 }
@@ -307,11 +324,14 @@ bool UNS_UIManager::ShowSpectatorWidget(UWorld* World)
 
 void UNS_UIManager::ShowHitEffectWidget(UWorld* World)
 {
+    // 월드 유효성 검사
     if (!World) return;
 
+    // 플레이어 컨트롤러 가져오기
     APlayerController* PC = UGameplayStatics::GetPlayerController(World, 0);
     if (!PC || !PC->IsLocalController()) return;
 
+    // 히트 이펙트 위젯 클래스가 있으면 위젯 생성 및 표시
     if (HitEffectWidgetClass)
     {
         UUserWidget* HitWidget = CreateWidget<UUserWidget>(PC, HitEffectWidgetClass);
@@ -319,6 +339,7 @@ void UNS_UIManager::ShowHitEffectWidget(UWorld* World)
         {
             HitWidget->AddToViewport();
 
+            // 0.5초 후 위젯 제거하는 타이머 설정
             FTimerHandle TempHandle;
             PC->GetWorldTimerManager().SetTimer(TempHandle, [HitWidget]()
             {
@@ -329,7 +350,7 @@ void UNS_UIManager::ShowHitEffectWidget(UWorld* World)
     }
 }
 
-// 새 함수 추가
+// PlayerHUD 등록 함수
 void UNS_UIManager::SetPlayerHUDWidget(UNS_PlayerHUD* InHUD)
 {
     // 이미 등록되어 있다면 아무것도 하지 않음
@@ -337,16 +358,17 @@ void UNS_UIManager::SetPlayerHUDWidget(UNS_PlayerHUD* InHUD)
 
     if (InHUD)
     {
+        // HUD 등록 및 이벤트 방송
         NS_PlayerHUDWidget = InHUD;
-        // HUD가 성공적으로 등록되었음을 모두에게 알립니다 (이벤트 방송)
         OnPlayerHUDReady.Broadcast(NS_PlayerHUDWidget);
         UE_LOG(LogTemp, Log, TEXT("PlayerHUD가 UIManager에 등록되고, OnPlayerHUDReady 이벤트가 방송되었습니다."));
     }
 }
 
-// 기존 함수 수정 (이제 생성 로직이 필요 없음)
+// 플레이어 HUD 위젯 표시 함수
 bool UNS_UIManager::ShowPlayerHUDWidget(UWorld* World)
 {
+    // HUD가 존재하면 표시하고 성공 반환
     if (NS_PlayerHUDWidget)
     {
         NS_PlayerHUDWidget->ShowWidget();
