@@ -13,6 +13,7 @@
 #include "UI/NS_UIManager.h"
 #include "Character/NS_PlayerController.h"
 #include "UI/NS_PlayerHUD.h"
+#include "Net/UnrealNetwork.h"
 
 APickup::APickup()
 {
@@ -22,7 +23,7 @@ APickup::APickup()
 	SetReplicatingMovement(true);
 
 	PickupMesh = CreateDefaultSubobject<UStaticMeshComponent>("PickupMesh");
-	PickupMesh->SetSimulatePhysics(false);
+	PickupMesh->SetSimulatePhysics(true);
 	SetRootComponent(PickupMesh);
 }
 
@@ -32,41 +33,15 @@ void APickup::BeginPlay()
 
 	FString LogMessage = FString::Printf(
 		TEXT("Pickup BeginPlay -> 이름: [ %s ], 월드 위치: [ %s ]"),
-		*GetName(), 
-		*GetActorLocation().ToString() 
+		*GetName(),
+		*GetActorLocation().ToString()
 	);
 
 	UE_LOG(LogTemp, Log, TEXT("%s"), *LogMessage);
 
-
-
-	if (HasAuthority() && DesiredItemID == FName("Memo"))
-	{
-		if (UNS_GameInstance* GI = GetGameInstance<UNS_GameInstance>())
-		{
-			if (UNS_UIManager* UIManager = GI->GetUIManager())
-			{
-				UIManager->OnPlayerHUDReady.AddDynamic(this, &APickup::OnHUDReady);
-				UE_LOG(LogTemp, Log, TEXT("Pickup '%s'이 HUD 준비 완료 이벤트를 구독합니다."), *GetName());
-			}
-		}
-	}
-
 	if (HasAuthority())
 	{
 		InitializePickup(UNS_InventoryBaseItem::StaticClass(), ItemQuantity);
-
-		if (DesiredItemID == FName("Memo"))
-		{
-			FTimerHandle DelayHandle;
-			GetWorldTimerManager().SetTimer(
-				DelayHandle,
-				this,
-				&APickup::TryAssignToHUD,
-				0.2f,
-				false
-			);
-		}
 	}
 	else
 	{
@@ -80,9 +55,9 @@ void APickup::InitializePickup(const TSubclassOf<UNS_InventoryBaseItem> BaseClas
 	{
 		const FNS_ItemDataStruct* ItemData = ItemDataTable->FindRow<FNS_ItemDataStruct>(DesiredItemID, DesiredItemID.ToString());
 
-		UE_LOG(LogTemp, Warning, TEXT("[PickupInit] 아이템: %s | AmmoType: %d"),
+		/*UE_LOG(LogTemp, Warning, TEXT("[PickupInit] 아이템: %s | AmmoType: %d"),
 			*ItemData->ItemDataRowName.ToString(),
-			static_cast<uint8>(ItemData->WeaponData.AmmoType));
+			static_cast<uint8>(ItemData->WeaponData.AmmoType));*/
 
 		ReplicatedItemData = *ItemData;
 		ReplicatedItemData.Quantity = InQuantity > 0 ? InQuantity : 1;
@@ -189,7 +164,7 @@ void APickup::Interact_Implementation(AActor* InteractingActor)
 
 void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 {
-	if (!HasAuthority()) return; 
+	if (!HasAuthority()) return;
 
 	if (!IsPendingKillPending())
 	{
@@ -205,42 +180,6 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 			// 아이템이 성공적으로 (전부 또는 부분적으로) 추가되었다면
 			if (AddResult.OperationResult == EItemAddResult::TAR_AllItemAdded || AddResult.OperationResult == EItemAddResult::TAR_PartialAmountItemAdded)
 			{
-				// "Memo" 아이템을 주웠을 경우의 처리
-				if (ItemReference->ItemDataRowName == FName("Memo"))
-				{
-					// 월드에 있는 모든 퀘스트 쪽지를 찾기.
-					TArray<AActor*> FoundPickups;
-					UGameplayStatics::GetAllActorsOfClass(GetWorld(), APickup::StaticClass(), FoundPickups);
-
-					TArray<APickup*> QuestPickupsToShow;
-					const TArray<FName> TargetNoteIDs = { FName("One"), FName("Two"), FName("Three"), FName("Four"), FName("Five") };
-
-					for (AActor* PickupActor : FoundPickups)
-					{
-						APickup* QuestPickup = Cast<APickup>(PickupActor);
-						if (QuestPickup && QuestPickup->GetItemData() && TargetNoteIDs.Contains(QuestPickup->GetItemData()->ItemDataRowName))
-						{
-							QuestPickupsToShow.Add(QuestPickup);
-						}
-					}
-
-					// 모든 클라이언트에게 보내 마커를 추가하도록 명령
-					if (QuestPickupsToShow.Num() > 0)
-					{
-						Multicast_AddMarkerToAll(QuestPickupsToShow);
-					}
-
-					// 팁 메시지를 수정
-					if (ANS_GameState* GS = GetWorld()->GetGameState<ANS_GameState>())
-					{
-						const FText TipMessage = FText::FromString(TEXT("메모를 읽고 단서를 찾아라."));
-						GS->Multicast_UpdateAllTipTexts(TipMessage);
-					}
-				}
-
-				// 모든 플레이어의 HUD에서 제거하라고 명령
-				Multicast_RemoveMarkerFromAll();
-
 				// 아이템 추가 성공 시 장비 아이템인 경우 자동 퀵슬롯 할당 처리
 				if (AddResult.ActualAmountAdded > 0 &&
 					ItemReference->ItemType == EItemType::Equipment &&
@@ -355,93 +294,8 @@ void APickup::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent
 
 #endif
 
-void APickup::TryAssignToHUD()
-{
-	if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
-	{
-		if (UNS_UIManager* UIManager = GI->GetUIManager())
-		{
-			if (UNS_PlayerHUD* PlayerHUD = UIManager->GetPlayerHUDWidget())
-			{
-				PlayerHUD->SetYeddaItem(this);
-
-				return;
-			}
-		}
-	}
-
-	AssignToHUDRetryCount++;
-
-	if (AssignToHUDRetryCount < 20)
-	{
-		FTimerHandle RetryHandle;
-		GetWorldTimerManager().SetTimer(
-			RetryHandle,
-			this,
-			&APickup::TryAssignToHUD,
-			0.2f,
-			false
-		);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Pickup '%s': HUD 할당을 위한 재시도 횟수를 초과했습니다."), *GetName());
-	}
-}
 void APickup::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(APickup, ReplicatedItemData);
-}
-
-void APickup::Multicast_AddMarkerToAll_Implementation(const TArray<APickup*>& QuestItems)
-{
-	// 이 코드는 모든 클라이언트에서 실행됩니다.
-	if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
-	{
-		if (UNS_UIManager* UIManager = GI->GetUIManager())
-		{
-			if (UNS_PlayerHUD* PlayerHUD = UIManager->GetPlayerHUDWidget())
-			{
-				for (APickup* Item : QuestItems)
-				{
-					if (Item)
-					{
-						PlayerHUD->SetYeddaItem(Item);
-					}
-				}
-			}
-		}
-	}
-}
-
-void APickup::Multicast_RemoveMarkerFromAll_Implementation()
-{
-	// 이 코드는 모든 클라이언트에서 실행됩니다.
-	if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
-	{
-		if (UNS_UIManager* UIManager = GI->GetUIManager())
-		{
-			if (UNS_PlayerHUD* PlayerHUD = UIManager->GetPlayerHUDWidget())
-			{
-				PlayerHUD->DeleteCompasItem(this);
-			}
-		}
-	}
-}
-
-void APickup::OnHUDReady(UNS_PlayerHUD* PlayerHUD)
-{
-	if (IsValid(PlayerHUD))
-	{
-		PlayerHUD->SetYeddaItem(this);
-
-		if (UNS_GameInstance* GI = GetGameInstance<UNS_GameInstance>())
-		{
-			if (UNS_UIManager* UIManager = GI->GetUIManager())
-			{
-				UIManager->OnPlayerHUDReady.RemoveDynamic(this, &APickup::OnHUDReady);
-			}
-		}
-	}
 }

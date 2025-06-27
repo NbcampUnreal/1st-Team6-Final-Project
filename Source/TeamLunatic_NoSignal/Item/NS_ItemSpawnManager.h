@@ -37,6 +37,12 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spawning Config")
 	FName SpawnPointTagToFind;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spawning")
+	TMap<EEndingType, FName> EndingItemSpawnTags;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spawning")
+	TMap<EEndingType, int32> EndingItemsToSpawn;
+
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spawning")
 	int32 SpawnItemNum;
@@ -45,10 +51,13 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SpawnItemsInRandomLocations(float Radius);
 
-	void FindAndSpawnItems();
-
 	void SpawnRandomItemAt(const FTransform& SpawnTransform);
 
 	UFUNCTION(BlueprintCallable)
 	void SpawnRandomTaggedLocations();
+
+	UFUNCTION(BlueprintCallable)
+	void SpawnEndingItems();
+
+	void SpawnSpecificItemAt(FName ItemID, const FTransform& SpawnTransform);
 };

@@ -37,7 +37,7 @@ protected:
     UFUNCTION()
     void OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
 
-   
+
     // 지속 데미지 루프 시작 / 정지 / 실행 
     void StartDamageLoop(AActor* Target);
     void StopDamageLoop();
