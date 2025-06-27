@@ -38,7 +38,7 @@ protected:
 
     // 좀비 스폰 간격
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie Spawning")
-    float ZombieSpawnInterval = 2;
+    float ZombieSpawnInterval = 1;
     
     // 한 번에 스폰할 좀비 수
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie Spawning")
