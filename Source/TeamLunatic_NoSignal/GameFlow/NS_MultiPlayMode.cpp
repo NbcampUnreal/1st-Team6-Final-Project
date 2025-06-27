@@ -14,6 +14,7 @@ ANS_MultiPlayMode::ANS_MultiPlayMode()
 {
     // 멀티플레이 모드에서는 3초마다 스폰하도록 설정
     ZombieSpawnInterval = 3.0f;
+
 }
 
 void ANS_MultiPlayMode::BeginPlay()
@@ -49,8 +50,6 @@ void ANS_MultiPlayMode::BeginPlay()
     // 기존 MultiPlayMode의 BeginPlay 로직
     UE_LOG(LogTemp, Warning, TEXT("MultiPlayMode BeginPlay 실행"));
 
-    SpawnAllPlayers();
-
     if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
         GI->SetGameModeType(EGameModeType::MultiPlayMode);
@@ -79,6 +78,66 @@ void ANS_MultiPlayMode::BeginPlay()
     GetWorldTimerManager().SetTimer(PlayerCountCheckTimer, this, &ANS_MultiPlayMode::CheckPlayerCountAndEndSession, 10.0f, true);
     UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 플레이어 수 체크 타이머 설정 완료 (5초마다 실행)"));
 }
+
+
+void ANS_MultiPlayMode::PostLogin(APlayerController* NewPlayer)
+{
+    Super::PostLogin(NewPlayer);
+
+    if (NewPlayer)
+    {
+        if (MainGamePawnClassesToSpawn.Num() == 0)
+        {
+            UE_LOG(LogTemp, Error, TEXT("MainGamePawnClassesToSpawn 배열이 비어있습니다. BP_NS_MultiPlayMode에서 폰 클래스를 할당해주세요!"));
+            return;
+        }
+
+        // 사용 가능한 폰 중에서 랜덤 인덱스를 선택합니다.
+        const int32 RandIndex = FMath::RandRange(0, MainGamePawnClassesToSpawn.Num() - 1);
+        TSubclassOf<APawn> ChosenPawnClass = MainGamePawnClassesToSpawn[RandIndex];
+
+        // 모든 PlayerStart를 찾아서 랜덤으로 하나를 선택합니다.
+        TArray<AActor*> PlayerStarts;
+        UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerStart::StaticClass(), PlayerStarts);
+
+        AActor* StartSpot = nullptr;
+        if (PlayerStarts.Num() > 0)
+        {
+            const int32 RandStartSpotIndex = FMath::RandRange(0, PlayerStarts.Num() - 1);
+            StartSpot = PlayerStarts[RandStartSpotIndex];
+        }
+
+        if (!StartSpot)
+        {
+            UE_LOG(LogTemp, Error, TEXT("No PlayerStart actors found in the level. Please place them."));
+            return;
+        }
+
+        if (ChosenPawnClass)
+        {
+            FActorSpawnParameters SpawnInfo;
+            SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+            APawn* NewPawn = GetWorld()->SpawnActor<APawn>(ChosenPawnClass, StartSpot->GetActorLocation(), StartSpot->GetActorRotation(), SpawnInfo);
+
+            if (NewPawn)
+            {
+                NewPlayer->Possess(NewPawn);
+                UE_LOG(LogTemp, Log, TEXT("Player %s spawned and possessed random unique pawn %s."), *NewPlayer->PlayerState->GetPlayerName(), *NewPawn->GetName());
+            }
+            else
+            {
+                UE_LOG(LogTemp, Error, TEXT("Failed to spawn pawn for player %s."), *NewPlayer->PlayerState->GetPlayerName());
+            }
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("PawnClass is null. Check MainGamePawnClassesToSpawn in BP."));
+        }
+    }
+}
+
+
 
 FVector ANS_MultiPlayMode::GetPlayerLocation_Implementation() const
 {
@@ -126,72 +185,6 @@ void ANS_MultiPlayMode::OnPlayerCharacterDied_Implementation(ANS_PlayerCharacter
         {
             PS->bIsAlive = false;
         }
-    }
-}
-
-void ANS_MultiPlayMode::SpawnAllPlayers()
-{
-    UWorld* World = GetWorld();
-    if (!World) return;
-
-    UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance());
-    if (!GI)
-    {
-        UE_LOG(LogTemp, Error, TEXT("[SpawnAllPlayers] UNS_GameInstance를 찾을 수 없습니다!"));
-        return;
-    }
-
-    TArray<AActor*> PlayerStarts;
-    UGameplayStatics::GetAllActorsOfClass(World, APlayerStart::StaticClass(), PlayerStarts);
-
-    int32 SpawnPointIndex = 0;
-    for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
-    {
-        APlayerController* PC = It->Get();
-        if (!PC) continue;
-
-        if (APawn* OldPawn = PC->GetPawn())
-        {
-            OldPawn->Destroy();
-        }
-
-        if (ANS_MainGamePlayerState* PS = Cast<ANS_MainGamePlayerState>(PC->PlayerState))
-        {
-            int32 PlayerCharacterIndex = PS->PlayerIndex;
-            TSubclassOf<APawn> PawnClass = nullptr;
-
-            if (GI->AvailableCharacterClasses.IsValidIndex(PlayerCharacterIndex))
-            {
-                PawnClass = GI->AvailableCharacterClasses[PlayerCharacterIndex];
-            }
-            else
-            {
-                UE_LOG(LogTemp, Error, TEXT("[SpawnAllPlayers] GameInstance의 AvailableCharacterClasses 배열에 유효하지 않은 인덱스(%d)입니다. 배열 크기: %d"), PlayerCharacterIndex, GI->AvailableCharacterClasses.Num());
-                continue;
-            }
-
-            if (!PawnClass)
-            {
-                UE_LOG(LogTemp, Error, TEXT("[SpawnAllPlayers] 인덱스 %d에 해당하는 PawnClass가 Null입니다."), PlayerCharacterIndex);
-                continue;
-            }
-
-            FVector SpawnLoc = PlayerStarts.IsValidIndex(SpawnPointIndex) ? PlayerStarts[SpawnPointIndex]->GetActorLocation() : FVector::ZeroVector;
-            FRotator SpawnRot = PlayerStarts.IsValidIndex(SpawnPointIndex) ? PlayerStarts[SpawnPointIndex]->GetActorRotation() : FRotator::ZeroRotator;
-
-            APawn* NewPawn = World->SpawnActor<APawn>(PawnClass, SpawnLoc, SpawnRot);
-            if (NewPawn)
-            {
-                PC->Possess(NewPawn);
-                UE_LOG(LogTemp, Warning, TEXT("[SpawnAllPlayers] %s → %s 로 Possess됨 (인덱스 기반 스폰)"), *PC->GetName(), *NewPawn->GetName());
-            }
-            else
-            {
-                UE_LOG(LogTemp, Error, TEXT("[SpawnAllPlayers] Pawn 스폰 실패"));
-            }
-        }
-
-        SpawnPointIndex++;
     }
 }
 

@@ -52,6 +52,9 @@ protected:
     // 좀비 스폰 체크 함수 오버라이드
     virtual void CheckAndSpawnZombies() override;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spawn")
+    TArray<TSubclassOf<APawn>> SinglePlayPawnClasses; 
+
 
 private:
 

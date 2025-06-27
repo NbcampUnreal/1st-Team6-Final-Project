@@ -55,7 +55,6 @@ void ANS_LobbyMode::PostLogin(APlayerController* NewPlayer)
 
 	int32 PlayerIndex = GetGameState<AGameState>()->PlayerArray.Num() - 1;
 
-	// GameInstance의 배열 대신 LobbyMode 헤더에 선언된 배열을 사용합니다.
 	if (!PawnClassesToSpawn.IsValidIndex(PlayerIndex))
 	{
 		UE_LOG(LogTemp, Error, TEXT("PawnClassesToSpawn 배열에 PlayerIndex %d에 해당하는 클래스가 없습니다. 배열 크기를 확인해주세요!"), PlayerIndex);
@@ -85,7 +84,6 @@ void ANS_LobbyMode::PostLogin(APlayerController* NewPlayer)
 	if (ANS_PlayerState* PS = Cast<ANS_PlayerState>(NewPlayer->PlayerState))
 	{
 		PS->SetPlayerIndex(PlayerIndex);
-		PS->SavePlayerData();
 	}
 	else
 	{

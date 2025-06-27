@@ -76,29 +76,4 @@ void ANS_PlayerState::SetPlayerIndex(int32 Index)
 	}
 }
 
-void ANS_PlayerState::SetPlayerModelPath(const FString& ModelPath)
-{
-	PlayerModelPath = ModelPath;
-}
 
-void ANS_PlayerState::SavePlayerData()
-{
-	if (UNS_GameInstance* GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
-	{
-		int32 SavingPlayerId = GetPlayerId();
-
-		if (!GameInstance->PlayerDataMap.Contains(SavingPlayerId))
-		{
-			FNS_PlayerData NewPlayerData;
-			NewPlayerData.CharacterModelPath = TEXT(""); // 기본값 설정
-			GameInstance->PlayerDataMap.Add(SavingPlayerId, NewPlayerData);
-		}
-
-		FNS_PlayerData& PlayerData = GameInstance->PlayerDataMap[SavingPlayerId];
-		PlayerData.CharacterModelPath = PlayerModelPath;
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to cast GameInstance to UNS_GameInstance"));
-	}
-}

@@ -19,15 +19,6 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnSessionListReceived, const TArray<TShared
 
 class UNS_UIManager;
 
-USTRUCT(BlueprintType)
-struct FNS_PlayerData
-{
-	GENERATED_BODY()
-	
-	UPROPERTY(BlueprintReadWrite, Category = "PlayerData")
-	FString CharacterModelPath; // 캐릭터 모델 경로
-};
-
 
 
 UCLASS()
@@ -67,10 +58,6 @@ public:
 	void RequestUpdateSessionStatus(int32 Port, FString Status); 
 	void OnUpdateSessionStatusResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character Data")
-	TArray<TSubclassOf<APawn>> AvailableCharacterClasses;
-
 	UPROPERTY(EditAnywhere, Category = "Level")
 	TSoftObjectPtr<UWorld> WaitingRoom;
 
@@ -86,8 +73,6 @@ public:
 	bool bIsSinglePlayer = true;
 
 	void SendHeartbeat();
-
-	TMap<int32, FNS_PlayerData> PlayerDataMap;
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UUserWidget> ReadyUIClass;

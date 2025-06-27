@@ -23,19 +23,22 @@ void ANS_SinglePlayMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
 
-	UNS_GameInstance* GI = GetGameInstance<UNS_GameInstance>();
 	UWorld* World = GetWorld();
+	if (!World || !NewPlayer) return;
 
-	if (!World || !NewPlayer || !GI || GI->AvailableCharacterClasses.Num() < 1) return;
-
+	if (SinglePlayPawnClasses.Num() == 0)
+	{
+		UE_LOG(LogTemp, Error, TEXT("SinglePlayPawnClasses 배열이 비어있습니다. BP_NS_SinglePlayMode에서 폰 클래스를 할당해주세요!"));
+		return;
+	}
 
 	if (APawn* ExistingPawn = NewPlayer->GetPawn())
 	{
 		ExistingPawn->Destroy();
 	}
 
-	const int32 RandIndex = FMath::RandRange(0, GI->AvailableCharacterClasses.Num() - 1);
-	TSubclassOf<APawn> ChosenPawnClass = GI->AvailableCharacterClasses[RandIndex];
+	const int32 RandIndex = FMath::RandRange(0, SinglePlayPawnClasses.Num() - 1);
+	TSubclassOf<APawn> ChosenPawnClass = SinglePlayPawnClasses[RandIndex];
 
 	AActor* Start = UGameplayStatics::GetActorOfClass(World, APlayerStart::StaticClass());
 	if (!Start) return;
