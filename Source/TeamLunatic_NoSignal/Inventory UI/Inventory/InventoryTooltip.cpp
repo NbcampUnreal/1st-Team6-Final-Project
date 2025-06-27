@@ -56,7 +56,7 @@ void UInventoryTooltip::NativeConstruct()
 			break;
 		case EWeaponType::Ammo:
 			WeaponType->SetText(FText::FromString(TEXT("탄약")));
-			DamageValue->SetVisibility(ESlateVisibility::Visible);
+			DamageHorizontal->SetVisibility(ESlateVisibility::Collapsed);
 			MaxStack->SetVisibility(ESlateVisibility::Visible);
 			break;
 		default:
