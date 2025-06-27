@@ -13,7 +13,7 @@
 #include "Components/ComboBoxString.h"
 #include "UI/NS_MainMenu.h"
 #include "UI/NS_AreYouSureMenu.h"
-#include "AsyncLoadingScreenLibrary.h"
+
 
 
 void UNS_HostNewGameServerR::NativeConstruct()
@@ -68,7 +68,7 @@ void UNS_HostNewGameServerR::StartGame()
         //저장은 여기서 해도 괜찮지만, 실패 복구 고려 시 나중으로 미루는 것도 방법
         //NS_SaveLoadHelper::SaveGame(SlotName, PlayerData, LevelData);
 
-        UAsyncLoadingScreenLibrary::SetEnableLoadingScreen(false);
+
         GI->CreateDedicatedSessionViaHTTP(SessionName, MaxPlayers);
 
         // 맵 이동 이후 자동으로 UI가 정리될 것이므로 따로 Hide 안 해도 됨
