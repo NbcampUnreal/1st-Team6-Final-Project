@@ -15,15 +15,16 @@
 #include "Net/UnrealNetwork.h"
 #include "Sound/SoundCue.h"
 #include "PhysicsEngine/PhysicalAnimationComponent.h"
-#include "NiagaraFunctionLibrary.h"
 #include "NavigationInvokerComponent.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Engine/Engine.h"
 #if WITH_EDITOR 
 #include "AssetTypeActions/AssetDefinition_SoundBase.h"
 #endif 
-#include "NavigationSystem.h"
-#include "AI/NavigationSystemBase.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "Engine/CanvasRenderTarget2D.h"
 
 
 ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), CurrentState(EZombieState::IDLE),
@@ -67,7 +68,7 @@ ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), C
 	L_SphereComp->SetupAttachment(GetMesh(), FName("attack_l"));
 	L_SphereComp->OnComponentBeginOverlap.AddDynamic(this,&ANS_ZombieBase::OnOverlapSphere);
 	L_SphereComp->SetGenerateOverlapEvents(false);
-
+	
 	// bIsActive의 초기값은 false로 설정해서 처음부터 캐릭터가 활성화 거리 밖에있으면 안보이도록 설정
 	bIsActive = false;
 }
@@ -75,14 +76,14 @@ ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), C
 void ANS_ZombieBase::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	SetActive_Multicast(false);
 	SetState(CurrentState);
 	
 	GetMesh()->GetAnimInstance()->RootMotionMode = ERootMotionMode::RootMotionFromEverything;
 	
 	InitializePhysics();
-	
+
 	if (!Controller)
 	{
 		// AIController를 스폰
@@ -104,6 +105,16 @@ void ANS_ZombieBase::BeginPlay()
 			AIController->GetBrainComponent()->PauseLogic("Reason");
 		}
 	}
+}
+
+void ANS_ZombieBase::BeginDestroy()
+{
+	if (GetWorld())
+	{
+		GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
+		GetWorldTimerManager().ClearTimer(HitTimer);
+	}
+	Super::BeginDestroy();
 }
 
 void ANS_ZombieBase::Multicast_PlayMontage_Implementation(UAnimMontage* MontageToPlay)
@@ -268,12 +279,8 @@ float ANS_ZombieBase::TakeDamage(float DamageAmount, struct FDamageEvent const& 
 	if (DamageEvent.GetTypeID() == FPointDamageEvent::ClassID)
 	{
 		const FPointDamageEvent* Point = static_cast<const FPointDamageEvent*>(&DamageEvent);
-		
 		FName Bone = Point->HitInfo.BoneName;
-		
 		FVector HitDirection = Point->ShotDirection;
-		
-		FVector Up = FVector::UpVector;
 		FRotator HitRotation = HitDirection.Rotation();
 		
 		if (Bone == "head" || Bone == "neck")
@@ -296,12 +303,13 @@ float ANS_ZombieBase::TakeDamage(float DamageAmount, struct FDamageEvent const& 
 			
 			ApplyPhysics(Bone, HitDirection * 20000.f);
 		}
-		if (CurrentHealth <= 0)
+		else if (CurrentHealth <= 0)
 		{
 			GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
 			SetState(EZombieState::DEAD);
 		}
-		Multicast_SpawnBloodEffect(Bone, Point->HitInfo.Location, HitRotation);
+		
+		Multicast_SpawnBloodEffect(Bone, Point->HitInfo.ImpactPoint, HitRotation);
 	}
 	return ActualDamage;
 }
@@ -390,7 +398,6 @@ void ANS_ZombieBase::OnDeadState()
 		bIsDead = true;
 		Die_Multicast();
 	}
-	
 }
 
 void ANS_ZombieBase::OnFrozenState()
@@ -407,8 +414,18 @@ void ANS_ZombieBase::Multicast_SpawnBloodEffect_Implementation(FName Bone,FVecto
 		{
 			Spawned->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform, Bone);
 		}
-		
-	}	
+	}
+	if (BloodEffect)
+	{
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+		AActor* DecalActor = GetWorld()->SpawnActor<AActor>(BloodDecal, Location, Rotation, SpawnParams);
+		if (DecalActor)
+		{
+			DecalActor->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepWorldTransform, Bone);
+		}
+	}
 }
 
 void ANS_ZombieBase::Server_PlaySound_Implementation(USoundCue* Sound)
@@ -426,26 +443,38 @@ void ANS_ZombieBase::Multicast_PlaySound_Implementation(USoundCue* Sound)
 
 void ANS_ZombieBase::ScheduleSound(USoundCue* SoundCue)
 {
-	if (SoundCue)
+	if (!SoundCue || !GetWorld() || GetWorld()->bIsTearingDown)
 	{
-		float RandomTime = FMath::FRandRange(5.f,8.f);
-		GetWorldTimerManager().SetTimer(AmbientSoundTimer,[this, SoundCue]()
-		{
-			float PlayPercent = 0.5f;
-			float ActualPercent = FMath::FRandRange(0.0f, 1.0f);
-			if (PlayPercent > ActualPercent)
-			{
-				Server_PlaySound(SoundCue);
-			}
-			ScheduleSound(SoundCue);
-		}, RandomTime, false);
+		return;
 	}
+	
+	float RandomTime = FMath::FRandRange(5.f,8.f);
+	GetWorldTimerManager().SetTimer(AmbientSoundTimer,[this, SoundCue]()
+	{
+		if (!GetWorld() || GetWorld()->bIsTearingDown)
+		{
+			return;
+		}
+		float PlayPercent = 0.5f;
+		float ActualPercent = FMath::FRandRange(0.0f, 1.0f);
+		if (PlayPercent > ActualPercent)
+		{
+			Server_PlaySound(SoundCue);
+		}
+		ScheduleSound(SoundCue);
+	}, RandomTime, false);
 }
 
 void ANS_ZombieBase::Die_Multicast_Implementation()
 {
 	R_SphereComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	L_SphereComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	if (GetWorld())
+	{
+		GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
+		GetWorldTimerManager().ClearTimer(HitTimer);
+	}
 	
 	DetachFromControllerPendingDestroy();
 	GetCharacterMovement()->DisableMovement();
@@ -586,8 +615,9 @@ void ANS_ZombieBase::Server_SetState_Implementation(EZombieState NewState)
 void ANS_ZombieBase::Server_SetAttackType_Implementation(EZombieAttackType NewAttackType)
 {
 	if (CurrentAttackType == NewAttackType) return;
-	
+
 	CurrentAttackType = NewAttackType;
 	SetAttackType(CurrentAttackType);
 }
+
 

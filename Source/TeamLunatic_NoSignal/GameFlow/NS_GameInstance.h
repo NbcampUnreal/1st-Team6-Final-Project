@@ -7,6 +7,7 @@
 #include "EGameModeType.h"
 #include "NS_ReadyUI.h"
 #include "HttpModule.h"
+#include "UI/NS_BaseMainMenu.h"
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
 #include "Dom/JsonObject.h"
@@ -18,15 +19,6 @@ DECLARE_MULTICAST_DELEGATE(FOnCreateSessionSuccess);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnSessionListReceived, const TArray<TSharedPtr<FJsonObject>>&);
 
 class UNS_UIManager;
-
-USTRUCT(BlueprintType)
-struct FNS_PlayerData
-{
-	GENERATED_BODY()
-	
-	UPROPERTY(BlueprintReadWrite, Category = "PlayerData")
-	FString CharacterModelPath; // 캐릭터 모델 경로
-};
 
 
 
@@ -67,10 +59,6 @@ public:
 	void RequestUpdateSessionStatus(int32 Port, FString Status); 
 	void OnUpdateSessionStatusResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character Data")
-	TArray<TSubclassOf<APawn>> AvailableCharacterClasses;
-
 	UPROPERTY(EditAnywhere, Category = "Level")
 	TSoftObjectPtr<UWorld> WaitingRoom;
 
@@ -86,8 +74,6 @@ public:
 	bool bIsSinglePlayer = true;
 
 	void SendHeartbeat();
-
-	TMap<int32, FNS_PlayerData> PlayerDataMap;
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UUserWidget> ReadyUIClass;
@@ -114,6 +100,21 @@ public:
 	void DestroyCurrentSession();
 
 	int32 MyServerPort = -1;
+	// 메인 메뉴 위젯 인스턴스
+	UPROPERTY(BlueprintReadOnly, Category = "UI")
+	UNS_BaseMainMenu* MainMenu;
+
+	// 메인 메뉴 위젯 클래스
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UNS_BaseMainMenu> MainMenuClass;
+
+	// 메인 메뉴 참조 반환 함수 (동적 생성 기능 포함)
+	UFUNCTION(BlueprintCallable, Category = "UI")
+	UNS_BaseMainMenu* GetMainMenu();
+
+	// MainMenu 설정 함수 추가
+	UFUNCTION(BlueprintCallable, Category = "Game")
+	void SetMainMenu(UNS_BaseMainMenu* NewMainMenu) { MainMenu = NewMainMenu; }
 
 private:
 	EGameModeType GameModeType = EGameModeType::SinglePlayMode;

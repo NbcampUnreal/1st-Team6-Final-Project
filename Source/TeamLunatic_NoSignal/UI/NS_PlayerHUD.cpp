@@ -109,6 +109,12 @@ void UNS_PlayerHUD::NativeConstruct()
         Crosshair->SetVisibility(ESlateVisibility::Visible);
     }
 
+    CurrentHpPercent = 1.f;
+    CurrentStPercent = 1.f;
+
+    BGHpPercent = 1.f;
+    BGStPercent = 1.f;
+
     // 초기화 완료 플래그 설정
     testcheck = true;
 }
@@ -153,10 +159,36 @@ void UNS_PlayerHUD::ShowWidget()
         if (!SafeThis->GetWorld()) return;
         if (!SafeThis->CachedPlayerCharacter || !SafeThis->CachedPlayerCharacter->StatusComp) return;
 
+        //목표값
+        const float NewHpPercent = SafeThis->CachedPlayerCharacter->StatusComp->Health / SafeThis->CachedPlayerCharacter->StatusComp->MaxHealth;
+        //const float NewStPercent = SafeThis->CachedPlayerCharacter->StatusComp->Stamina / SafeThis->CachedPlayerCharacter->StatusComp->MaxStamina;
         // 체력과 스태미너 업데이트
         SafeThis->ProgressBar_Stamina->SetPercent(SafeThis->CachedPlayerCharacter->StatusComp->Stamina * 0.01f);
-        SafeThis->ProgressBar_Health->SetPercent(SafeThis->CachedPlayerCharacter->StatusComp->Health * 0.01f);
-        
+        //SafeThis->ProgressBar_Health->SetPercent(SafeThis->CachedPlayerCharacter->StatusComp->Health * 0.01f);
+
+        //hp bar 업데이트
+        if (SafeThis->ProgressBar_Health)
+        {
+            SafeThis->CurrentHpPercent = FMath::Lerp(SafeThis->CurrentHpPercent, NewHpPercent, 0.2f);
+            SafeThis->ProgressBar_Health->SetPercent(SafeThis->CurrentHpPercent);
+        }
+
+        if (SafeThis->ProgressBarBG_Health)
+        {
+            SafeThis->BGHpPercent = FMath::Lerp(SafeThis->BGHpPercent, NewHpPercent, 0.05f);
+            SafeThis->ProgressBarBG_Health->SetPercent(SafeThis->BGHpPercent);
+        }
+
+        //스태미나 bar 업데이트
+        //스태미나는 2개의 상태를 체크
+        //먼저 플레이어가 대쉬상태인가? -> 대쉬에서 회복중인가.
+        //대쉬 상태가 아닐때, 피격되면 소모된 구간으로 값을 변경해줘야될거같다.
+        if (SafeThis->ProgressBar_Stamina && SafeThis->ProgressBarBG_Stamina)
+        {
+            
+        }
+
+
         // 조준 상태에 따라 조준점 표시/숨김 처리
         if (SafeThis->CachedPlayerCharacter && SafeThis->Crosshair)
         {

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "NS_ZombieBase.generated.h"
 
 class USphereComponent;
@@ -13,10 +14,10 @@ class UNiagaraComponent;
 class UNiagaraSystem;
 class UPhysicalAnimationComponent;
 class ANS_AIController;
+class UMaterialInstanceDynamic;
 enum class EZombieAttackType : uint8;
 enum class EZombieType : uint8;
 enum class EZombieState : uint8;
-
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_ZombieBase : public ACharacter
@@ -28,6 +29,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void BeginDestroy() override;
 
 public:
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite, Category = "Stat")
@@ -86,8 +88,10 @@ public:
 	void ResetHit();
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hit")
 	USoundCue* HitSound;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hit")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hit/Effect")
 	TSubclassOf<AActor> BloodDecal;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Hit/Effect")
+	TSubclassOf<AActor> BloodEffect;
 	
 	//Replicate
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -122,7 +126,7 @@ public:
 	//이펙트
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multicast_SpawnBloodEffect(FName Bone,FVector Location, FRotator Rotation);
-
+ 
 	//공격 컴포넌트
 	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Attack")
 	USphereComponent* R_SphereComp;
@@ -166,7 +170,3 @@ public:
 	FORCEINLINE USphereComponent* GetR_SphereComponent() const {return R_SphereComp;}
 	FORCEINLINE USphereComponent* GetL_SphereComponent() const {return L_SphereComp;}
 };
-
-
-
-
