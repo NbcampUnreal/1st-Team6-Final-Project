@@ -132,7 +132,7 @@ void UNS_PlayerHUD::ShowWidget()
         SafeThis->ProgressBar_Stamina->SetPercent(SafeThis->CachedPlayerCharacter->StatusComp->Stamina * 0.01f);
         SafeThis->ProgressBar_Health->SetPercent(SafeThis->CachedPlayerCharacter->StatusComp->Health * 0.01f);
     }),
-        0.05f,
+        0.016f,  // 0.05f에서 0.016f로 변경 (약 60FPS)
         true
     );
 }
