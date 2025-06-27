@@ -328,3 +328,23 @@ void UNS_GameInstance::DestroyCurrentSession()
 		UE_LOG(LogTemp, Warning, TEXT("[GameInstance] 세션 파기 요청됨"));
 	}
 }
+
+UNS_BaseMainMenu* UNS_GameInstance::GetMainMenu()
+{
+	// MainMenu가 null이면 생성
+	if (!MainMenu && MainMenuClass)
+	{
+		UWorld* World = GetWorld();
+		if (World)
+		{
+			APlayerController* PC = World->GetFirstPlayerController();
+			if (PC)
+			{
+				MainMenu = CreateWidget<UNS_BaseMainMenu>(PC, MainMenuClass);
+				UE_LOG(LogTemp, Log, TEXT("MainMenu created in GetMainMenu()"));
+			}
+		}
+	}
+
+	return MainMenu;
+}
