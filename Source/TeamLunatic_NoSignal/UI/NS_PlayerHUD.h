@@ -54,9 +54,17 @@ public:
     UPROPERTY(meta = (BindWidget))
     class UProgressBar* ProgressBar_Health;
 
+    // 체력 프로그레스 바 BG
+    UPROPERTY(meta = (BindWidget))
+    class UProgressBar* ProgressBarBG_Health;
+
     // 스태미너 프로그레스 바
     UPROPERTY(meta = (BindWidget))
     class UProgressBar* ProgressBar_Stamina;
+
+    // 스태미너 프로그레스 바 BG
+    UPROPERTY(meta = (BindWidget))
+    class UProgressBar* ProgressBarBG_Stamina;
 
     // 나침반 스크롤 박스
     UPROPERTY(meta = (BindWidget))
@@ -84,4 +92,12 @@ private:
     
     // 초기화 완료 플래그
     bool testcheck = false;
+
+    float CurrentHpPercent;
+    float CurrentStPercent;
+
+    float BGHpPercent;
+    float BGStPercent;
+
+    bool bSprintcheck = false;
 };
