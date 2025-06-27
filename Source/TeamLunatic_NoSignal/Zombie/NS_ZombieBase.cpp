@@ -55,7 +55,6 @@ ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), C
 	
 	GetMesh()->SetRelativeLocation(FVector(0.f,0.f,-90.f));
 	GetMesh()->SetRelativeRotation(FRotator(0.f,-90.f,0.f));
-
 	
 	R_SphereComp = CreateDefaultSubobject<USphereComponent>("RightAttack");
 	R_SphereComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -272,10 +271,10 @@ float ANS_ZombieBase::TakeDamage(float DamageAmount, struct FDamageEvent const& 
 		
 		FName Bone = Point->HitInfo.BoneName;
 		
-		FVector HitDirection = -Point->ShotDirection;
+		FVector HitDirection = Point->ShotDirection;
 		
 		FVector Up = FVector::UpVector;
-		FRotator HitRotation = FRotationMatrix::MakeFromXZ(HitDirection,Up).Rotator();
+		FRotator HitRotation = HitDirection.Rotation();
 		
 		if (Bone == "head" || Bone == "neck")
 		{
@@ -294,7 +293,7 @@ float ANS_ZombieBase::TakeDamage(float DamageAmount, struct FDamageEvent const& 
 			}
 			GetWorldTimerManager().SetTimer(HitTimer, this, &ANS_ZombieBase::ResetHit, .5f,false);
 			Multicast_PlaySound(HitSound);
-			Multicast_SpawnEffect(Bone, Point->HitInfo.Location, HitRotation);
+			
 			ApplyPhysics(Bone, HitDirection * 20000.f);
 		}
 		if (CurrentHealth <= 0)
@@ -302,6 +301,7 @@ float ANS_ZombieBase::TakeDamage(float DamageAmount, struct FDamageEvent const& 
 			GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
 			SetState(EZombieState::DEAD);
 		}
+		Multicast_SpawnBloodEffect(Bone, Point->HitInfo.Location, HitRotation);
 	}
 	return ActualDamage;
 }
@@ -397,12 +397,18 @@ void ANS_ZombieBase::OnFrozenState()
 {
 }
 
-void ANS_ZombieBase::Multicast_SpawnEffect_Implementation(FName Bone,FVector Location, FRotator Rotation)
+void ANS_ZombieBase::Multicast_SpawnBloodEffect_Implementation(FName Bone,FVector Location, FRotator Rotation)
 {
-	if (Blood)
+	if (BloodDecal)
 	{
-		UNiagaraComponent* Comp = UNiagaraFunctionLibrary::SpawnSystemAttached(Blood,GetMesh(),Bone, Location, -1*Rotation,EAttachLocation::KeepWorldPosition,true, true);
-	}
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		if (AActor* Spawned = GetWorld()->SpawnActor<AActor>(BloodDecal, Location, Rotation, SpawnParams))
+		{
+			Spawned->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform, Bone);
+		}
+		
+	}	
 }
 
 void ANS_ZombieBase::Server_PlaySound_Implementation(USoundCue* Sound)
