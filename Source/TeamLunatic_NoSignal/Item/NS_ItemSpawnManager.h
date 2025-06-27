@@ -51,8 +51,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SpawnItemsInRandomLocations(float Radius);
 
-	void FindAndSpawnItems();
-
 	void SpawnRandomItemAt(const FTransform& SpawnTransform);
 
 	UFUNCTION(BlueprintCallable)
