@@ -16,6 +16,7 @@ ANS_MultiPlayMode::ANS_MultiPlayMode()
     
     // 멀티플레이 모드에서는 3초마다 스폰하도록 설정
     ZombieSpawnInterval = 3.0f;
+    // 좀비 스폰 수
     ZombiesPerSpawn = 2;
 }
 

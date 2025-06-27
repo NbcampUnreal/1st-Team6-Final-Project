@@ -156,6 +156,7 @@ void UNS_MasterMenuPanel::ShowWidget()
     else
         MainMenu->PlayAnimationShowR();
 }
+
 void UNS_MasterMenuPanel::ShowWidgetD()
 {
     SetVisibility(ESlateVisibility::Visible);
