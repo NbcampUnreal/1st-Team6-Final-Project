@@ -227,16 +227,70 @@ void UNS_UIManager::LoadingScreen(UWorld* World)
 
     // 플레이어 컨트롤러 가져오기
     APlayerController* PC = World->GetFirstPlayerController();
-    
+
     // 로딩 화면 생성 및 표시
     NS_LoadingScreen = CreateWidget<UNS_LoadingScreen>(PC, NS_LoadingScreenClass);
 
     // 로딩 완료 델리게이트 초기화
     OnLoadingFinished.Unbind();
-    
+
     // 로딩 화면을 뷰포트에 추가하고 진행 상태 업데이트
     NS_LoadingScreen->AddToViewport();
     NS_LoadingScreen->UpdateProgress();
+}
+
+void UNS_UIManager::ShowLoadingScreen(UWorld* World)
+{
+    // 기존 로딩 화면이 있으면 제거
+    if (NS_LoadingScreen && NS_LoadingScreen->IsInViewport())
+    {
+        NS_LoadingScreen->RemoveFromParent();
+        NS_LoadingScreen = nullptr;
+    }
+
+    // 플레이어 컨트롤러 가져오기
+    APlayerController* PC = World->GetFirstPlayerController();
+    if (!PC || !NS_LoadingScreenClass)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ShowLoadingScreen: PlayerController 또는 LoadingScreenClass가 없습니다."));
+        return;
+    }
+
+    // 로딩 화면 생성 및 표시 (최상위 레이어에 오버레이로)
+    NS_LoadingScreen = CreateWidget<UNS_LoadingScreen>(PC, NS_LoadingScreenClass);
+    if (NS_LoadingScreen)
+    {
+        // 최상위 Z-Order로 추가하여 게임 화면 위에 오버레이
+        NS_LoadingScreen->AddToViewport(9999);
+        NS_LoadingScreen->UpdateProgress();
+
+        // 입력 모드를 UI 전용으로 설정
+        FInputModeUIOnly InputMode;
+        PC->SetInputMode(InputMode);
+        PC->bShowMouseCursor = false; // 로딩 중에는 마우스 커서 숨김
+
+        UE_LOG(LogTemp, Log, TEXT("로딩 화면 오버레이 표시 완료"));
+    }
+}
+
+void UNS_UIManager::HideLoadingScreen(UWorld* World)
+{
+    if (NS_LoadingScreen && NS_LoadingScreen->IsInViewport())
+    {
+        // 로딩 스크린 제거
+        NS_LoadingScreen->RemoveFromParent();
+        NS_LoadingScreen = nullptr;
+
+        // 게임 입력 모드로 복원
+        if (APlayerController* PC = World->GetFirstPlayerController())
+        {
+            FInputModeGameOnly InputMode;
+            PC->SetInputMode(InputMode);
+            PC->bShowMouseCursor = false;
+
+            UE_LOG(LogTemp, Log, TEXT("로딩 화면 숨김 완료 - 게임 모드로 전환"));
+        }
+    }
 }
 
 bool UNS_UIManager::IsInViewportInGameMenuWidget()

@@ -169,6 +169,7 @@ void ANS_LobbyMode::CheckAllPlayersReady()
 		}
 	}
 
+	// 모든 플레이어에게 로딩 스크린 표시
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		if (APlayerController* PC = It->Get())
@@ -176,6 +177,7 @@ void ANS_LobbyMode::CheckAllPlayersReady()
 			if (ANS_LobbyController* LC = Cast<ANS_LobbyController>(PC))
 			{
 				LC->Client_ShowWait();
+				LC->Client_ShowLoadingScreen(); // 로딩 스크린 표시
 			}
 		}
 	}

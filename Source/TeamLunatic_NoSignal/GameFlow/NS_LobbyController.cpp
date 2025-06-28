@@ -66,3 +66,20 @@ void ANS_LobbyController::Client_ShowWait_Implementation()
 		GI->ShowWait();
 	}
 }
+
+void ANS_LobbyController::Client_ShowLoadingScreen_Implementation()
+{
+	if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+	{
+		if (UNS_UIManager* UIManager = GI->GetUIManager())
+		{
+			// Ready UI 숨기기
+			GI->HideReadyUI();
+
+			// 로딩 스크린 표시
+			UIManager->ShowLoadingScreen(GetWorld());
+
+			UE_LOG(LogTemp, Log, TEXT("멀티플레이 로딩 스크린 표시"));
+		}
+	}
+}

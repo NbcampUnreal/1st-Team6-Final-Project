@@ -17,6 +17,9 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_ShowWait();
 
+	UFUNCTION(Client, Reliable)
+	void Client_ShowLoadingScreen();
+
 	FTimerHandle CheckLoadingHandle;
 
 

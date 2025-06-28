@@ -16,7 +16,6 @@
 #include "Zombie/NS_ZombieBase.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
-#include "AsyncLoadingScreenLibrary.h"
 
 void UNS_InGameStartMenu::NativeConstruct()
 {
@@ -103,16 +102,15 @@ void UNS_InGameStartMenu::On_MainMenuClicked()
         // 온라인 세션 연결 해제 (에러 발생 가능성 있음)
         OnDisconnectClicked();
         
-        // UI 매니저를 통해 인게임 메뉴 숨기기
+        // UI 매니저를 통해 인게임 메뉴 숨기기 및 로딩 스크린 표시
         if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
         {
             if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
+            {
                 UIManager->HideInGameMenuWidget(GetWorld());
+                UIManager->ShowLoadingScreen(GetWorld()); // 로딩 스크린 표시
+            }
         }
-        
-        // 로딩 화면 설정 (에러 발생 가능성 있음)
-        // 패키징된 빌드에서 문제가 있다면 이 부분을 주석 처리해보세요
-        UAsyncLoadingScreenLibrary::SetEnableLoadingScreen(false);
         
         // 레벨 전환 전에 모든 좀비의 타이머 정리
         if (UWorld* World = GetWorld())

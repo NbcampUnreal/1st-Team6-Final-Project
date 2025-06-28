@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "Containers/Ticker.h"
+#include "Blueprint/UserWidget.h"
+#include "Engine/World.h"
 #include "NS_UIManager.generated.h"
 
 // 전방 선언
@@ -99,7 +101,15 @@ public:
 
     // 로딩 화면 표시
     void LoadingScreen(UWorld* World);
-    
+
+    // 로딩 화면 표시 (레벨 전환용)
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    void ShowLoadingScreen(UWorld* World);
+
+    // 로딩 화면 숨기기 및 게임 모드 복원
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    void HideLoadingScreen(UWorld* World);
+
     // 로딩 UI 닫기
     void CloseLoadingUI();
 
