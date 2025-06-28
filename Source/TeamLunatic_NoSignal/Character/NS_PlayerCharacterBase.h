@@ -194,9 +194,14 @@ public:
 
 	// 점프가 가능하게 하는 변수 
 	bool IsCanJump = true;
-	// ====================================
+	// =================================================================================================
+	
+	// ==================================== 데미지 받을 때 재생할 사운드 =========================================
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	USoundBase* DamageSound;
+	// =================================================================================================
 
-
+	
 	// =================================Turn In Place관련 변수들 ===============================
 	// Turn In Place가 가능한 Yaw회전 값
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
@@ -427,14 +432,14 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PostProcess")
 	UMaterialInstanceDynamic* HallucinationMID;
-
-
+	
 	// 환각효과 켜기
 	void ActivateHallucinationEffect(float Duration);
 
+	// 사운드 멀티캐스트
 	UFUNCTION(NetMulticast, Reliable)
 	void PlaySoundOnCharacter_Multicast(USoundBase* SoundToPlay);
-
+	
 	// 캐릭터가 현재 조준 중인지 확인하는 함수
 	UFUNCTION(BlueprintCallable, Category = "Character")
 	bool IsAimingChange() const { return IsAiming; }

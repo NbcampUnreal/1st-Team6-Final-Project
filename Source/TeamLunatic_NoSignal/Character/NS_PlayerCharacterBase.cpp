@@ -384,7 +384,14 @@ float ANS_PlayerCharacterBase::TakeDamage(
     {
         // 캐릭터 체력 감소
         StatusComp->AddHealthGauge(-ActualDamage);
-        
+
+        // 데미지 사운드 재생 (모든 클라이언트에서)
+        if (DamageSound)
+        {
+            PlaySoundOnCharacter_Multicast(DamageSound);
+            UE_LOG(LogTemp, Warning, TEXT("TakeDamage: 데미지 사운드 재생 - %s"), *GetName());
+        }
+
         // 모든 클라이언트에 데미지 처리 결과 전파
         Multicast_TakeDmage(ActualDamage);
         
