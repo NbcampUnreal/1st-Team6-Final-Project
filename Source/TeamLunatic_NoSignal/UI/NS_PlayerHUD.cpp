@@ -161,9 +161,10 @@ void UNS_PlayerHUD::ShowWidget()
 
         //목표값
         const float NewHpPercent = SafeThis->CachedPlayerCharacter->StatusComp->Health / SafeThis->CachedPlayerCharacter->StatusComp->MaxHealth;
-        //const float NewStPercent = SafeThis->CachedPlayerCharacter->StatusComp->Stamina / SafeThis->CachedPlayerCharacter->StatusComp->MaxStamina;
+        const float NewStPercent = SafeThis->CachedPlayerCharacter->StatusComp->MaxStamina / 100.f;
+        const bool bIsCurrentlySprint = SafeThis->CachedPlayerCharacter->IsSprint;
         // 체력과 스태미너 업데이트
-        SafeThis->ProgressBar_Stamina->SetPercent(SafeThis->CachedPlayerCharacter->StatusComp->Stamina * 0.01f);
+        //SafeThis->ProgressBar_Stamina->SetPercent(SafeThis->CachedPlayerCharacter->StatusComp->Stamina * 0.01f);
         //SafeThis->ProgressBar_Health->SetPercent(SafeThis->CachedPlayerCharacter->StatusComp->Health * 0.01f);
 
         //hp bar 업데이트
@@ -180,12 +181,32 @@ void UNS_PlayerHUD::ShowWidget()
         }
 
         //스태미나 bar 업데이트
-        //스태미나는 2개의 상태를 체크
-        //먼저 플레이어가 대쉬상태인가? -> 대쉬에서 회복중인가.
-        //대쉬 상태가 아닐때, 피격되면 소모된 구간으로 값을 변경해줘야될거같다.
         if (SafeThis->ProgressBar_Stamina && SafeThis->ProgressBarBG_Stamina)
         {
-            
+            if (bIsCurrentlySprint)
+            {
+                SafeThis->ProgressBar_Stamina->SetPercent(SafeThis->CachedPlayerCharacter->StatusComp->Stamina * 0.01f);
+            }
+            else //현재 대쉬 중이 아닐때
+            {
+                if (SafeThis->CachedPlayerCharacter->StatusComp->Stamina < SafeThis->CachedPlayerCharacter->StatusComp->MaxStamina)
+                {
+                    SafeThis->ProgressBar_Stamina->SetPercent(SafeThis->CachedPlayerCharacter->StatusComp->Stamina * 0.01f);
+                    if (NewHpPercent < SafeThis->BGStPercent)
+                    {
+                        SafeThis->BGStPercent = FMath::Lerp(SafeThis->BGStPercent, NewStPercent, 0.05f);
+                        SafeThis->ProgressBarBG_Stamina->SetPercent(SafeThis->BGStPercent);
+                    }
+                }
+                //현재 스태미너가 최대치일때, 피격되면 소모되는거 표현.
+                else if (SafeThis->CachedPlayerCharacter->StatusComp->Stamina >= SafeThis->CachedPlayerCharacter->StatusComp->MaxStamina)
+                {
+                    SafeThis->CurrentStPercent = FMath::Lerp(SafeThis->CurrentStPercent, NewStPercent, 0.2f);
+                    SafeThis->ProgressBar_Stamina->SetPercent(SafeThis->CurrentStPercent);
+                    SafeThis->BGStPercent = FMath::Lerp(SafeThis->BGStPercent, NewStPercent, 0.05f);
+                    SafeThis->ProgressBarBG_Stamina->SetPercent(SafeThis->BGStPercent);
+                }
+            }
         }
 
 

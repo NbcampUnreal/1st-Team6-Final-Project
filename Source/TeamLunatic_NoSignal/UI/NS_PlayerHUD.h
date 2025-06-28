@@ -98,6 +98,4 @@ private:
 
     float BGHpPercent;
     float BGStPercent;
-
-    bool bSprintcheck = false;
 };
