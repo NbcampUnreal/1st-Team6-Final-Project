@@ -96,46 +96,37 @@ void UNS_InGameStartMenu::On_MainMenuClicked()
     // 현재 메뉴 숨기기
     HideWidget();
 
-    // 에러 방지를 위해 try-catch 패턴 사용
-    try
-    {
-        // 온라인 세션 연결 해제 (에러 발생 가능성 있음)
-        OnDisconnectClicked();
-        
-        // UI 매니저를 통해 인게임 메뉴 숨기기 및 로딩 스크린 표시
-        if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
-        {
-            if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
-            {
-                UIManager->HideInGameMenuWidget(GetWorld());
-                UIManager->ShowLoadingScreen(GetWorld()); // 로딩 스크린 표시
-            }
-        }
-        
-        // 레벨 전환 전에 모든 좀비의 타이머 정리
-        if (UWorld* World = GetWorld())
-        {
-            for (TActorIterator<ANS_ZombieBase> ActorItr(World); ActorItr; ++ActorItr)
-            {
-                ANS_ZombieBase* Zombie = *ActorItr;
-                if (Zombie && IsValid(Zombie))
-                {
-                    // 좀비의 모든 타이머 정리
-                    World->GetTimerManager().ClearAllTimersForObject(Zombie);
-                }
-            }
-        }
+    // 온라인 세션 연결 해제
+    OnDisconnectClicked();
 
-        // 메인 타이틀 레벨 로드
-        // 레벨 이름이 정확한지 확인하세요
-        UE_LOG(LogTemp, Warning, TEXT("메인 메뉴로 이동 시도 중..."));
-        UGameplayStatics::OpenLevel(GetWorld(), FName(TEXT("MainTitle")));
-    }
-    catch (...)  // 사용하지 않는 변수 제거
+    // UI 매니저를 통해 인게임 메뉴 숨기기 및 로딩 스크린 표시
+    if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
     {
-        // C++ 예외 처리 (UE4에서는 제한적으로 작동)
-        UE_LOG(LogTemp, Error, TEXT("메인 메뉴 이동 중 오류 발생"));
+        if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
+        {
+            UIManager->HideInGameMenuWidget(GetWorld());
+            UIManager->ShowLoadingScreen(GetWorld()); // 로딩 스크린 표시
+        }
     }
+
+    // 레벨 전환 전에 모든 좀비의 타이머 정리
+    if (UWorld* World = GetWorld())
+    {
+        for (TActorIterator<ANS_ZombieBase> ActorItr(World); ActorItr; ++ActorItr)
+        {
+            ANS_ZombieBase* Zombie = *ActorItr;
+            if (Zombie && IsValid(Zombie))
+            {
+                // 좀비의 모든 타이머 정리
+                World->GetTimerManager().ClearAllTimersForObject(Zombie);
+            }
+        }
+    }
+
+    // 메인 타이틀 레벨 로드
+    // 레벨 이름이 정확한지 확인하세요
+    UE_LOG(LogTemp, Warning, TEXT("메인 메뉴로 이동 시도 중..."));
+    UGameplayStatics::OpenLevel(GetWorld(), FName(TEXT("MainTitle")));
 }
 
 void UNS_InGameStartMenu::OnDisconnectClicked()

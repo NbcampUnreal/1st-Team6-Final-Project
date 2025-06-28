@@ -4,53 +4,79 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/TextBlock.h"
+#include "Components/Image.h"
+#include "Components/CanvasPanel.h"
+#include "Components/CanvasPanelSlot.h"
+#include "Blueprint/WidgetTree.h"
 #include "NS_LoadingScreen.generated.h"
 
 /**
- * 
+ * 새로운 로딩 스크린 - 단순하고 효과적인 구조
  */
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UNS_LoadingScreen : public UUserWidget
 {
 	GENERATED_BODY()
+
 public:
 	virtual void NativeConstruct() override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
-	void LevelLoadComplete()
-	{
-		bIsLevelLoadComplete = true;
-	}
-	void FakeUpdateProgress();
-	//UFUNCTION()
-	void UpdateProgress();
-
-	void NativeTick(const FGeometry& MyGeometry, float InDeltaTime);
-
-	UPROPERTY(meta = (BindWidget))
-	class UProgressBar* ProgressBar_Loading;
-
+	// UI 위젯들
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* Text_LoadingPercent;
 
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* Text_LoadingStatus;
 
-	float FakeProgress = 0.f;
-	float FakeProgressMax = 15.f; // 15초 동안 로딩이 진행된다고 가정
-	bool bIsLevelLoadComplete = false;
-	FTimerHandle LoadingTickHandle;
+	UPROPERTY(meta = (BindWidget))
+	class UImage* Image_Background;
 
-	// 실제 게임 상태 체크 관련 변수들
+	// 로딩 시작
+	UFUNCTION(BlueprintCallable, Category = "Loading")
+	void StartLoading();
+
+	// 로딩 완료 확인
+	UFUNCTION(BlueprintCallable, Category = "Loading")
+	bool IsLoadingComplete() const;
+
+	// 현재 진행률 가져오기
+	UFUNCTION(BlueprintCallable, Category = "Loading")
+	float GetCurrentProgress() const { return CurrentProgress; }
+
+	// 초기화
+	UFUNCTION(BlueprintCallable, Category = "Loading")
+	void InitializeLoadingScreen();
+
+private:
+	// 로딩 상태
+	bool bIsLoading = false;
+	float CurrentProgress = 0.0f;
+
+	// 게임 상태 체크
+	bool bIsLevelLoaded = false;
 	bool bIsRenderingReady = false;
 	bool bIsFrameRateStable = false;
-	float FrameRateCheckDuration = 0.f;
-	float MinRequiredFrameRate = 45.0f; // 최소 요구 프레임률 (더 부드러운 게임플레이를 위해)
-	float StableFrameCheckTime = 1.0f; // 안정적인 프레임을 확인할 시간 (초)
-	TArray<float> RecentFrameRates; // 최근 프레임률 기록
 
-	// 실제 게임 준비 상태 체크 함수들
-	bool CheckRenderingReadiness();
-	bool CheckFrameRateStability();
-	void UpdateRealLoadingProgress();
+	// 프레임률 관련
+	float MinRequiredFrameRate = 45.0f;
+	float StableFrameCheckTime = 1.0f;
+	float FrameRateCheckDuration = 0.0f;
+	TArray<float> RecentFrameRates;
 
+	// 로딩 시간 추적
+	float LoadingTime = 0.0f;
+
+	// 로딩 단계별 진행률
+	void UpdateLoadingProgress();
+	void UpdateUI();
+
+	// 상태 체크 함수들
+	bool CheckLevelLoaded();
+	bool CheckRenderingReady();
+	bool CheckFrameRateStable();
+
+	// 로딩 완료 처리
+	void OnLoadingFinished();
 };

@@ -19,11 +19,12 @@ protected:
 
 public:
 	UNS_AnimNotify_CallTracker();
-	float MaxHeardRange;
-	float Loudness;
-	
-	virtual void Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference) override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Sound")
 	USoundCue* ScreamSound;
+
+	float MaxHeardRange;
+	float Loudness;
+
+	virtual void Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference) override;
 };

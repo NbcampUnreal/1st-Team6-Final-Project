@@ -89,8 +89,8 @@ void UNS_ServerBrowserR::RefreshServerList()
 
                 FString Address = FString::Printf(TEXT("%s:%d"), *IP, Port);
 
-                int32 MaxPlayers = SessionObj->GetIntegerField("max_players");
-                int32 CurrentPlayers = SessionObj->GetIntegerField("current_players");
+                int32 MaxPlayers = SessionObj->GetIntegerField(TEXT("max_players"));
+                int32 CurrentPlayers = SessionObj->GetIntegerField(TEXT("current_players"));
 
                 FString PlayerInfo = FString::Printf(TEXT("%d/%d"), CurrentPlayers, MaxPlayers);
 

@@ -1,334 +1,321 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "UI/NS_LoadingScreen.h"
-#include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
-#include "UI/NS_UIManager.h"
+#include "Components/Image.h"
+#include "Engine/World.h"
+#include "GameFramework/GameModeBase.h"
+#include "GameFramework/PlayerController.h"
 #include "GameFlow/NS_GameInstance.h"
+#include "UI/NS_UIManager.h"
 
 void UNS_LoadingScreen::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-}
-void UNS_LoadingScreen::FakeUpdateProgress()
-{
-	FakeProgressMax = 3.0f; // 15초 동안 로딩이 진행된다고 가정
-	TWeakObjectPtr<UNS_LoadingScreen> SafeThis = this;
-	float ElapsedTime = 0.f;
-	float PrevTime = GetWorld()->GetTimeSeconds();
-	GetWorld()->GetTimerManager().SetTimer
-	(
-		LoadingTickHandle,
-		FTimerDelegate::CreateLambda([SafeThis, ElapsedTime, PrevTime]() mutable
-			{
-				if (!SafeThis.IsValid())return;
+	// 에디터에서 실행 중인지 확인
+	bool bIsInEditor = GIsEditor;
+	UE_LOG(LogTemp, Warning, TEXT("로딩 스크린 생성 - 에디터 모드: %s"), bIsInEditor ? TEXT("예") : TEXT("아니오"));
 
-				UWorld* World = GEngine->GetWorldFromContextObjectChecked(SafeThis.Get());
+	// 배경을 완전 불투명한 검은색으로 설정하여 화면을 완전히 가림
+	if (Image_Background)
+	{
+		Image_Background->SetColorAndOpacity(FLinearColor(0.0f, 0.0f, 0.0f, 1.0f)); // 완전 불투명
+		Image_Background->SetVisibility(ESlateVisibility::Visible);
+		UE_LOG(LogTemp, Warning, TEXT("로딩 스크린 배경 이미지 설정 완료 - 완전 불투명"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Image_Background가 null입니다! 코드로 강제 생성"));
 
-				if (!World)return;
-
-				ElapsedTime += World->GetTimeSeconds() - PrevTime;
-				float Alpha = FMath::Clamp(ElapsedTime / SafeThis->FakeProgressMax, 0.f, 1.f);
-				float CurValue = FMath::Lerp(0.f, 1.f, Alpha);
-				//UE_LOG(LogTemp, Warning, TEXT("ElapsedTime : %f / PrevTime :  %f / TimeSeconds :  %f "), FEmt.ElapsedTime, FEmt.PrevTime, GetWorld()->GetTimeSeconds());
-
-				if (SafeThis->bIsLevelLoadComplete&& SafeThis->FakeProgressMax != 5.f)
-				{
-					SafeThis->FakeProgressMax = 5.f;
-					ElapsedTime = 3.5f;
-				}
-				else
-				{
-					if (0.6f < CurValue)
-						CurValue = 0.6f;
-				}
-
-				SafeThis->ProgressBar_Loading->SetPercent(CurValue);
-
-				if (1.f <= CurValue)
-				{
-					SafeThis->ProgressBar_Loading->SetPercent(CurValue);
-					if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(World->GetGameInstance()))
-					{
-						if (GI->GetUIManager()->OnLoadingFinished.IsBound())
-						{
-							GI->GetUIManager()->OnLoadingFinished.Execute();
-							GI->GetUIManager()->OnLoadingFinished.Unbind();
-						}
-					}
-
-					World->GetTimerManager().ClearTimer(SafeThis->LoadingTickHandle);
-				}
-				else
-					PrevTime = World->GetTimeSeconds();
-
-			}), 0.05f, true
-	);
-}
-
-void UNS_LoadingScreen::UpdateProgress()
-{
-	// 실제 게임 상태를 체크하는 로딩 시스템
-	TWeakObjectPtr<UNS_LoadingScreen> SafeThis = this;
-	float ElapsedTime = 0.f;
-	float PrevTime = GetWorld()->GetTimeSeconds();
-
-	// 초기화
-	bIsRenderingReady = false;
-	bIsFrameRateStable = false;
-	FrameRateCheckDuration = 0.f;
-	RecentFrameRates.Empty();
-
-#if WITH_EDITOR
-	// 에디터에서는 더 빠른 체크를 위해 기준 완화
-	MinRequiredFrameRate = 30.0f;
-	StableFrameCheckTime = 0.5f;
-#else
-	// 패키징 빌드에서는 더 엄격한 기준
-	MinRequiredFrameRate = 45.0f;
-	StableFrameCheckTime = 1.0f;
-#endif
-
-	GetWorld()->GetTimerManager().SetTimer(
-		LoadingTickHandle,
-		FTimerDelegate::CreateLambda([SafeThis, ElapsedTime, PrevTime]() mutable
+		// 배경이 없다면 코드로 강제 생성
+		Image_Background = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass());
+		if (Image_Background)
 		{
-			if (!SafeThis.IsValid()) return;
+			Image_Background->SetColorAndOpacity(FLinearColor(0.0f, 0.0f, 0.0f, 1.0f)); // 완전 불투명
 
-			UWorld* World = SafeThis->GetWorld();
-			if (!World) return;
+			// 전체 화면을 덮도록 설정
+			UCanvasPanel* RootCanvas = WidgetTree->ConstructWidget<UCanvasPanel>(UCanvasPanel::StaticClass());
+			WidgetTree->RootWidget = RootCanvas;
 
-			if (SafeThis->ProgressBar_Loading->GetPercent() < 1.f)
+			UCanvasPanelSlot* BackgroundSlot = RootCanvas->AddChildToCanvas(Image_Background);
+			if (BackgroundSlot)
 			{
-				ElapsedTime += World->GetTimeSeconds() - PrevTime;
-
-				// 실제 게임 준비 상태 업데이트
-				SafeThis->UpdateRealLoadingProgress();
-
-				float CurValue = 0.f;
-
-				// 실제 인게임 상태 기반 진행률 계산
-				if (!SafeThis->bIsLevelLoadComplete)
-				{
-					// 1단계: 레벨 로딩 (0% ~ 30%) - 빠르게 완료
-					float Alpha = FMath::Clamp(ElapsedTime / 1.0f, 0.f, 1.f);
-					CurValue = FMath::Lerp(0.f, 0.3f, Alpha);
-
-					// 1초 후에는 레벨 로딩 완료로 간주 (이미 인게임에 있으므로)
-					if (ElapsedTime >= 1.0f)
-					{
-						SafeThis->bIsLevelLoadComplete = true;
-					}
-				}
-				else if (!SafeThis->bIsRenderingReady)
-				{
-					// 2단계: 인게임 렌더링 준비 (30% ~ 60%)
-					if (SafeThis->CheckRenderingReadiness())
-					{
-						CurValue = 0.6f;
-					}
-					else
-					{
-						// 렌더링 준비 진행 중
-						float RenderProgress = FMath::Clamp((ElapsedTime - 1.0f) / 2.0f, 0.f, 1.f);
-						CurValue = 0.3f + (RenderProgress * 0.3f);
-					}
-				}
-				else if (!SafeThis->bIsFrameRateStable)
-				{
-					// 3단계: 실제 인게임 프레임률 안정화 (60% ~ 100%)
-					float StabilityProgress = SafeThis->FrameRateCheckDuration / SafeThis->StableFrameCheckTime;
-					CurValue = 0.6f + (StabilityProgress * 0.4f);
-
-					// 프레임률이 안정되면 100% 완료
-					if (SafeThis->bIsFrameRateStable)
-					{
-						CurValue = 1.0f;
-					}
-				}
-				else
-				{
-					// 모든 준비 완료 - 인게임에서 45fps 이상 달성
-					CurValue = 1.0f;
-				}
-
-				SafeThis->ProgressBar_Loading->SetPercent(CurValue);
-
-				// 퍼센트 텍스트 업데이트
-				if (SafeThis->Text_LoadingPercent)
-				{
-					FString PercentText = FString::Printf(TEXT("%.0f%%"), CurValue * 100.0f);
-					SafeThis->Text_LoadingPercent->SetText(FText::FromString(PercentText));
-				}
-
-				// 로딩 상태 텍스트 업데이트 (인게임 상황에 맞게)
-				if (SafeThis->Text_LoadingStatus)
-				{
-					FString StatusText;
-					if (!SafeThis->bIsLevelLoadComplete)
-					{
-						StatusText = TEXT("게임 초기화 중...");
-					}
-					else if (!SafeThis->bIsRenderingReady)
-					{
-						StatusText = TEXT("인게임 렌더링 최적화 중...");
-					}
-					else if (!SafeThis->bIsFrameRateStable)
-					{
-						// 현재 프레임률 표시
-						float CurrentFPS = SafeThis->RecentFrameRates.Num() > 0 ?
-							SafeThis->RecentFrameRates.Last() : 0.0f;
-						StatusText = FString::Printf(TEXT("프레임률 안정화 중... (현재: %.0f FPS, 목표: %.0f FPS)"),
-							CurrentFPS, SafeThis->MinRequiredFrameRate);
-					}
-					else
-					{
-						StatusText = FString::Printf(TEXT("게임 준비 완료! (%.0f FPS 달성)"),
-							SafeThis->MinRequiredFrameRate);
-					}
-					SafeThis->Text_LoadingStatus->SetText(FText::FromString(StatusText));
-				}
-
-				UE_LOG(LogTemp, Log, TEXT("로딩 진행률: %.1f%% | 레벨완료: %s | 렌더링준비: %s | 프레임안정: %s"),
-					CurValue * 100.0f,
-					SafeThis->bIsLevelLoadComplete ? TEXT("O") : TEXT("X"),
-					SafeThis->bIsRenderingReady ? TEXT("O") : TEXT("X"),
-					SafeThis->bIsFrameRateStable ? TEXT("O") : TEXT("X"));
-
-				if (CurValue >= 1.0f && SafeThis->bIsFrameRateStable)
-				{
-					// 100% 완료 및 모든 준비가 완료되면 로딩 종료
-					SafeThis->ProgressBar_Loading->SetPercent(1.f);
-
-					// 최종 텍스트 업데이트
-					if (SafeThis->Text_LoadingPercent)
-					{
-						SafeThis->Text_LoadingPercent->SetText(FText::FromString(TEXT("100%")));
-					}
-					if (SafeThis->Text_LoadingStatus)
-					{
-						SafeThis->Text_LoadingStatus->SetText(FText::FromString(TEXT("게임 시작!")));
-					}
-
-					if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(World->GetGameInstance()))
-					{
-						// UIManager를 통해 로딩 스크린 숨기기
-						if (UNS_UIManager* UIManager = GI->GetUIManager())
-						{
-							UIManager->HideLoadingScreen(World);
-						}
-
-						// 기존 델리게이트도 실행
-						if (GI->GetUIManager()->OnLoadingFinished.IsBound())
-						{
-							GI->GetUIManager()->OnLoadingFinished.Execute();
-							GI->GetUIManager()->OnLoadingFinished.Unbind();
-						}
-
-						UE_LOG(LogTemp, Warning, TEXT("100%% 완료 - 인게임 45fps 이상 달성 - 로딩 스크린 제거"));
-					}
-					World->GetTimerManager().ClearTimer(SafeThis->LoadingTickHandle);
-				}
-				else
-				{
-					PrevTime = World->GetTimeSeconds();
-				}
+				BackgroundSlot->SetAnchors(FAnchors(0.0f, 0.0f, 1.0f, 1.0f)); // 전체 화면
+				BackgroundSlot->SetOffsets(FMargin(0.0f)); // 여백 없음
 			}
-		}), 0.05f, true
-	);
+
+			UE_LOG(LogTemp, Warning, TEXT("코드로 전체 화면 배경 생성 완료"));
+		}
+	}
+
+	// 위젯 자체도 강제로 보이게 설정
+	SetVisibility(ESlateVisibility::Visible);
+
+	InitializeLoadingScreen();
 }
 
 void UNS_LoadingScreen::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
-
-	//if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
-	//{
-	//	//float Progress = GI->GetLoadingProgress();
-	//	ProgressBar_Loading->SetPercent(InDeltaTime*0.01f);
-	//}
+	
+	if (bIsLoading)
+	{
+		UpdateLoadingProgress();
+		UpdateUI();
+	}
 }
 
-bool UNS_LoadingScreen::CheckRenderingReadiness()
+void UNS_LoadingScreen::StartLoading()
 {
-	UWorld* World = GetWorld();
-	if (!World) return false;
+	bIsLoading = true;
+	CurrentProgress = 0.0f;
+	bIsLevelLoaded = false;
+	bIsRenderingReady = false;
+	bIsFrameRateStable = false;
+	FrameRateCheckDuration = 0.0f;
+	RecentFrameRates.Empty();
+	LoadingTime = 0.0f; // 로딩 시간 초기화 (0%에서 시작)
 
-	// 월드가 완전히 로드되었는지 확인
-	if (World->AreActorsInitialized() && World->HasBegunPlay())
+	UE_LOG(LogTemp, Warning, TEXT("로딩 시작 - 0%%에서 시작 - 뷰포트에 있는지 확인: %s"), IsInViewport() ? TEXT("예") : TEXT("아니오"));
+
+	// 뷰포트에 없다면 다시 추가
+	if (!IsInViewport())
 	{
-		bIsRenderingReady = true;
-		return true;
+		AddToViewport(32767); // 최대 Z-Order로 모든 것을 가림
+		UE_LOG(LogTemp, Warning, TEXT("로딩 스크린을 최상위 Z-Order로 뷰포트에 추가함"));
 	}
 
-	return false;
+	// 강제로 보이게 설정
+	SetVisibility(ESlateVisibility::Visible);
+
+	UE_LOG(LogTemp, Warning, TEXT("로딩 시작 완료"));
 }
 
-bool UNS_LoadingScreen::CheckFrameRateStability()
+void UNS_LoadingScreen::InitializeLoadingScreen()
 {
-	if (!bIsRenderingReady) return false;
+	CurrentProgress = 0.0f;
+	
+	if (Text_LoadingPercent)
+	{
+		Text_LoadingPercent->SetText(FText::FromString(TEXT("0%%")));
+	}
+	
+	if (Text_LoadingStatus)
+	{
+		Text_LoadingStatus->SetText(FText::FromString(TEXT("로딩 중...")));
+	}
+	
+	UE_LOG(LogTemp, Warning, TEXT("로딩 스크린 초기화 완료"));
+}
 
-	// 현재 프레임률 계산 (DeltaTime이 0에 가까우면 매우 높은 프레임률로 처리)
-	float DeltaTime = GetWorld()->GetDeltaSeconds();
+bool UNS_LoadingScreen::IsLoadingComplete() const
+{
+	return bIsLevelLoaded && bIsRenderingReady && bIsFrameRateStable;
+}
+
+void UNS_LoadingScreen::UpdateLoadingProgress()
+{
+	// 새로운 진행률 계산: 0% → 70% (시간 기반) → 100% (프레임률 안정화)
+	float NewProgress = 0.0f;
+
+	// 시간 기반으로 진행률 계산
+	LoadingTime += GetWorld()->GetDeltaSeconds();
+
+	if (LoadingTime < 5.0f)
+	{
+		// 0% ~ 70%: 5초에 걸쳐 시간 기반으로 천천히 증가 (렌더링 시뮬레이션)
+		float TimeProgress = FMath::Clamp(LoadingTime / 5.0f, 0.0f, 1.0f);
+		NewProgress = TimeProgress * 0.7f;
+	}
+	else
+	{
+		// 70% 이후: 실제 프레임률 체크 시작
+		NewProgress = 0.7f;
+
+		// 레벨과 렌더링이 준비되었고 프레임률도 안정적이면 100%
+		if (CheckLevelLoaded() && CheckRenderingReady() && CheckFrameRateStable())
+		{
+			NewProgress = 1.0f;
+		}
+		else if (CheckLevelLoaded() && CheckRenderingReady())
+		{
+			// 프레임률 안정화 진행 중 (70% ~ 100%)
+			float FrameProgress = FMath::Clamp(FrameRateCheckDuration / StableFrameCheckTime, 0.0f, 1.0f);
+			NewProgress = 0.7f + (FrameProgress * 0.3f);
+		}
+	}
+
+	// 진행률이 뒤로 가지 않도록 보장
+	CurrentProgress = FMath::Max(CurrentProgress, NewProgress);
+	CurrentProgress = FMath::Clamp(CurrentProgress, 0.0f, 1.0f);
+
+	// 로딩 완료 체크 (70% 이후에만)
+	if (LoadingTime >= 5.0f && IsLoadingComplete())
+	{
+		OnLoadingFinished();
+	}
+}
+
+void UNS_LoadingScreen::UpdateUI()
+{
+	if (Text_LoadingPercent)
+	{
+		FString PercentText = FString::Printf(TEXT("%.0f%%"), CurrentProgress * 100.0f);
+		Text_LoadingPercent->SetText(FText::FromString(PercentText));
+	}
+	
+	if (Text_LoadingStatus)
+	{
+		FString StatusText;
+		if (LoadingTime < 5.0f)
+		{
+			// 0% ~ 70%: 시간 기반 렌더링 시뮬레이션
+			if (CurrentProgress < 0.2f)
+			{
+				StatusText = TEXT("게임 시작 중...");
+			}
+			else if (CurrentProgress < 0.5f)
+			{
+				StatusText = TEXT("에셋 로딩 중...");
+			}
+			else
+			{
+				StatusText = TEXT("렌더링 준비 중...");
+			}
+		}
+		else if (!bIsFrameRateStable)
+		{
+			// 70% ~ 100%: 실제 프레임률 안정화
+			float CurrentFPS = 0.0f;
+			if (RecentFrameRates.Num() > 0)
+			{
+				CurrentFPS = RecentFrameRates.Last();
+			}
+			StatusText = FString::Printf(TEXT("프레임률 안정화 중... (현재: %.0f FPS)"), CurrentFPS);
+		}
+		else
+		{
+			StatusText = TEXT("로딩 완료!");
+		}
+
+		Text_LoadingStatus->SetText(FText::FromString(StatusText));
+	}
+}
+
+bool UNS_LoadingScreen::CheckLevelLoaded()
+{
+	if (bIsLevelLoaded) return true;
+	
+	UWorld* World = GetWorld();
+	if (!World) return false;
+	
+	// 월드가 완전히 로드되었는지 확인
+	bool bActorsInitialized = World->AreActorsInitialized();
+	bool bHasBegunPlay = World->HasBegunPlay();
+	
+	if (bActorsInitialized && bHasBegunPlay)
+	{
+		bIsLevelLoaded = true;
+		UE_LOG(LogTemp, Warning, TEXT("레벨 로딩 완료"));
+	}
+	
+	return bIsLevelLoaded;
+}
+
+bool UNS_LoadingScreen::CheckRenderingReady()
+{
+	if (bIsRenderingReady) return true;
+	
+	UWorld* World = GetWorld();
+	if (!World) return false;
+	
+	// 게임 모드와 플레이어 컨트롤러가 준비되었는지 확인
+	AGameModeBase* GameMode = World->GetAuthGameMode();
+	APlayerController* PC = World->GetFirstPlayerController();
+	
+	if (GameMode && PC)
+	{
+		bIsRenderingReady = true;
+		UE_LOG(LogTemp, Warning, TEXT("렌더링 준비 완료"));
+	}
+	
+	return bIsRenderingReady;
+}
+
+bool UNS_LoadingScreen::CheckFrameRateStable()
+{
+	if (bIsFrameRateStable) return true;
+	
+	UWorld* World = GetWorld();
+	if (!World) return false;
+	
+	// 현재 프레임률 계산
+	float DeltaTime = World->GetDeltaSeconds();
 	float CurrentFrameRate = (DeltaTime > 0.001f) ? (1.0f / DeltaTime) : 1000.0f;
-
+	
 	// 최근 프레임률 기록에 추가
 	RecentFrameRates.Add(CurrentFrameRate);
-
-	// 최대 60개의 프레임률 기록 유지 (약 3초간)
+	
+	// 최대 60개의 프레임률 기록 유지 (약 1초간)
 	if (RecentFrameRates.Num() > 60)
 	{
 		RecentFrameRates.RemoveAt(0);
 	}
-
-	// 충분한 데이터가 쌓였는지 확인
-	if (RecentFrameRates.Num() >= 30) // 최소 1.5초간의 데이터
+	
+	// 충분한 샘플이 있을 때만 안정성 체크
+	if (RecentFrameRates.Num() >= 30) // 최소 0.5초간의 데이터
 	{
 		// 평균 프레임률 계산
-		float AverageFrameRate = 0.0f;
+		float TotalFrameRate = 0.0f;
 		for (float FrameRate : RecentFrameRates)
 		{
-			AverageFrameRate += FrameRate;
+			TotalFrameRate += FrameRate;
 		}
-		AverageFrameRate /= RecentFrameRates.Num();
-
-		// 프레임률이 안정적인지 확인
+		float AverageFrameRate = TotalFrameRate / RecentFrameRates.Num();
+		
+		// 안정적인 프레임률인지 확인
 		if (AverageFrameRate >= MinRequiredFrameRate)
 		{
-			FrameRateCheckDuration += GetWorld()->GetDeltaSeconds();
-
+			FrameRateCheckDuration += DeltaTime;
+			
 			// 충분한 시간 동안 안정적이었는지 확인
 			if (FrameRateCheckDuration >= StableFrameCheckTime)
 			{
 				bIsFrameRateStable = true;
-				UE_LOG(LogTemp, Log, TEXT("프레임률 안정화 완료: 평균 %.1f FPS"), AverageFrameRate);
-				return true;
+				UE_LOG(LogTemp, Warning, TEXT("프레임률 안정화 완료: 평균 %.1f FPS"), AverageFrameRate);
 			}
 		}
 		else
 		{
 			// 프레임률이 떨어지면 다시 측정 시작
 			FrameRateCheckDuration = 0.0f;
-			UE_LOG(LogTemp, Warning, TEXT("프레임률 불안정: 현재 %.1f FPS (요구: %.1f FPS)"), AverageFrameRate, MinRequiredFrameRate);
 		}
 	}
-
-	return false;
+	
+	return bIsFrameRateStable;
 }
 
-void UNS_LoadingScreen::UpdateRealLoadingProgress()
+void UNS_LoadingScreen::OnLoadingFinished()
 {
-	// 렌더링 준비 상태 체크
-	if (!bIsRenderingReady)
+	if (!bIsLoading) return;
+	
+	bIsLoading = false;
+	UE_LOG(LogTemp, Warning, TEXT("로딩 완료 - 로딩 스크린 제거"));
+	
+	// UIManager에게 로딩 완료 알림
+	if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
 	{
-		CheckRenderingReadiness();
+		if (UNS_UIManager* UIManager = GI->GetUIManager())
+		{
+			if (UIManager->OnLoadingFinished.IsBound())
+			{
+				UIManager->OnLoadingFinished.Execute();
+				UIManager->OnLoadingFinished.Unbind();
+			}
+		}
 	}
-
-	// 프레임률 안정성 체크
-	if (bIsRenderingReady && !bIsFrameRateStable)
-	{
-		CheckFrameRateStability();
-	}
+	
+	// 로딩 스크린 제거
+	RemoveFromParent();
 }

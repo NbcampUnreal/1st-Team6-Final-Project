@@ -30,6 +30,7 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_GameInstance : public UGameInstance
 public:
 	UNS_GameInstance();
 	virtual void Init() override;
+	virtual void Shutdown() override;
 
 	//UFUNCTION()
 	//void OnLevelLoaded(UWorld* LoadedWorld);
@@ -44,6 +45,27 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	UNS_UIManager* GetUIManager() const { return NS_UIManager; };
+
+	// 레벨 로드 완료 후 프레임률 체크 시작
+	UFUNCTION(BlueprintCallable, Category = "Loading")
+	void StartPostLevelLoadFrameRateCheck();
+
+	// 영구 로딩 스크린 생성 (레벨 전환에도 살아남음)
+	UFUNCTION(BlueprintCallable, Category = "Loading")
+	void CreatePersistentLoadingScreen();
+
+	// 레벨 로드 완료 감지를 위한 타이머 핸들
+	FTimerHandle LevelLoadCheckTimer;
+
+	// 레벨 로드 완료 체크 함수
+	void CheckForLevelLoadComplete();
+
+	// 프레임률 체크가 이미 시작되었는지 플래그
+	bool bFrameRateCheckStarted = false;
+
+	// 레벨 전환에도 살아남는 로딩 스크린 (GameInstance에서 관리)
+	UPROPERTY()
+	class UNS_LoadingScreen* PersistentLoadingScreen = nullptr;
 
 	void SetGameModeType(EGameModeType Type);
 	EGameModeType GetGameModeType() const { return GameModeType; }

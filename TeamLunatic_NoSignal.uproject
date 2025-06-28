@@ -58,7 +58,7 @@
 		},
 		{
 			"Name": "PreLoadScreenMoviePlayer",
-			"Enabled": true
+			"Enabled": false
 		},
 		{
 			"Name": "AsyncLoadingScreen",

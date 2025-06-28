@@ -110,6 +110,14 @@ public:
     UFUNCTION(BlueprintCallable, Category = "UI")
     void HideLoadingScreen(UWorld* World);
 
+    // 로딩 스크린에서 실제 프레임률 체크 시작
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    void StartFrameRateCheck();
+
+    // LoadingScreenClass getter 함수
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    TSubclassOf<UNS_LoadingScreen> GetLoadingScreenClass() const { return NS_LoadingScreenClass; }
+
     // 로딩 UI 닫기
     void CloseLoadingUI();
 

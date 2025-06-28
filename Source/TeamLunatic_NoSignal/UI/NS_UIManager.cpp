@@ -9,10 +9,11 @@
 #include "UI/NS_InGameMsg.h"
 #include "UI/NS_PlayerHUD.h"
 #include "UI/NS_LoadingScreen.h"
-#include "UI/NS_SpectatorWidgetClass.h" 
+#include "UI/NS_SpectatorWidgetClass.h"
 #include "GameFlow/NS_GameInstance.h"
 #include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
-#include "Containers/Ticker.h" 
+#include "Containers/Ticker.h"
+#include "Components/ProgressBar.h"
 #include "Kismet/GameplayStatics.h"
 
 UNS_UIManager::UNS_UIManager()
@@ -213,15 +214,14 @@ void UNS_UIManager::CloseLoadingUI()
 }
 void UNS_UIManager::CompleteLoadingProcess()
 {
-    // 로딩 화면이 존재하면 로딩 완료 처리
-    if (NS_LoadingScreen)
-    {
-        NS_LoadingScreen->LevelLoadComplete();
-    }
+    // 새로운 로딩 시스템에서는 자동으로 로딩 완료를 감지합니다
+    UE_LOG(LogTemp, Warning, TEXT("CompleteLoadingProcess 호출됨 - 새로운 시스템에서는 자동 감지"));
 }
 
 void UNS_UIManager::LoadingScreen(UWorld* World)
 {
+    UE_LOG(LogTemp, Error, TEXT("=== LoadingScreen 함수 호출됨 (구버전) ==="));
+
     // 로딩 화면 초기화
     NS_LoadingScreen = nullptr;
 
@@ -236,16 +236,29 @@ void UNS_UIManager::LoadingScreen(UWorld* World)
 
     // 로딩 화면을 뷰포트에 추가하고 진행 상태 업데이트
     NS_LoadingScreen->AddToViewport();
-    NS_LoadingScreen->UpdateProgress();
+
+    // 로딩 시작
+    NS_LoadingScreen->StartLoading();
+
+    UE_LOG(LogTemp, Error, TEXT("=== LoadingScreen 함수 완료 ==="));
 }
 
 void UNS_UIManager::ShowLoadingScreen(UWorld* World)
 {
-    // 기존 로딩 화면이 있으면 제거
+    UE_LOG(LogTemp, Error, TEXT("=== ShowLoadingScreen 호출됨 ==="));
+    UE_LOG(LogTemp, Error, TEXT("현재 NS_LoadingScreen 상태: %s"), NS_LoadingScreen ? TEXT("존재함") : TEXT("null"));
+
+    // 이미 로딩 스크린이 있다면 재사용 (연속 로딩)
     if (NS_LoadingScreen && NS_LoadingScreen->IsInViewport())
     {
-        NS_LoadingScreen->RemoveFromParent();
-        NS_LoadingScreen = nullptr;
+        UE_LOG(LogTemp, Error, TEXT("기존 로딩 스크린 재사용 - 연속 로딩 모드"));
+
+        // 기존 로딩 스크린을 레벨 전환 모드로 전환
+        if (!NS_LoadingScreen->IsLoadingComplete())
+        {
+            NS_LoadingScreen->StartLoading(); // 로딩 재시작
+        }
+        return;
     }
 
     // 플레이어 컨트롤러 가져오기
@@ -256,20 +269,44 @@ void UNS_UIManager::ShowLoadingScreen(UWorld* World)
         return;
     }
 
-    // 로딩 화면 생성 및 표시 (최상위 레이어에 오버레이로)
+    // 로딩 화면 생성 및 표시
     NS_LoadingScreen = CreateWidget<UNS_LoadingScreen>(PC, NS_LoadingScreenClass);
     if (NS_LoadingScreen)
     {
-        // 최상위 Z-Order로 추가하여 게임 화면 위에 오버레이
-        NS_LoadingScreen->AddToViewport(9999);
-        NS_LoadingScreen->UpdateProgress();
+        // 최상위 Z-Order로 추가하여 모든 것을 가림
+        NS_LoadingScreen->AddToViewport(32767); // 최대 Z-Order
 
-        // 입력 모드를 UI 전용으로 설정
-        FInputModeUIOnly InputMode;
-        PC->SetInputMode(InputMode);
-        PC->bShowMouseCursor = false; // 로딩 중에는 마우스 커서 숨김
+        // 강제로 보이게 설정
+        NS_LoadingScreen->SetVisibility(ESlateVisibility::Visible);
 
-        UE_LOG(LogTemp, Log, TEXT("로딩 화면 오버레이 표시 완료"));
+        // 로딩 시작
+        NS_LoadingScreen->StartLoading();
+
+        // 입력 모드 설정 (에디터에서는 덜 제한적으로)
+        if (GIsEditor)
+        {
+            // 에디터에서는 게임과 UI 모두 허용
+            FInputModeGameAndUI InputMode;
+            InputMode.SetWidgetToFocus(NS_LoadingScreen->TakeWidget());
+            PC->SetInputMode(InputMode);
+            PC->bShowMouseCursor = true;
+            UE_LOG(LogTemp, Warning, TEXT("에디터 모드: GameAndUI 입력 모드 설정"));
+        }
+        else
+        {
+            // 패키징된 게임에서는 게임과 UI 모두 허용 (검은 화면 방지)
+            FInputModeGameAndUI InputMode;
+            InputMode.SetWidgetToFocus(NS_LoadingScreen->TakeWidget());
+            PC->SetInputMode(InputMode);
+            PC->bShowMouseCursor = false;
+            UE_LOG(LogTemp, Error, TEXT("게임 모드: GameAndUI 입력 모드 설정 (검은 화면 방지)"));
+        }
+
+        UE_LOG(LogTemp, Warning, TEXT("새로운 로딩 화면 표시 완료 - Z-Order: 10000"));
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("ShowLoadingScreen: 로딩 화면 생성 실패"));
     }
 }
 
@@ -290,6 +327,34 @@ void UNS_UIManager::HideLoadingScreen(UWorld* World)
 
             UE_LOG(LogTemp, Log, TEXT("로딩 화면 숨김 완료 - 게임 모드로 전환"));
         }
+    }
+}
+
+void UNS_UIManager::StartFrameRateCheck()
+{
+    if (!NS_LoadingScreen)
+    {
+        UE_LOG(LogTemp, Error, TEXT("StartFrameRateCheck: 로딩 스크린이 null입니다"));
+        return;
+    }
+
+    if (!IsValid(NS_LoadingScreen))
+    {
+        UE_LOG(LogTemp, Error, TEXT("StartFrameRateCheck: 로딩 스크린이 유효하지 않습니다"));
+        NS_LoadingScreen = nullptr;
+        return;
+    }
+
+    UE_LOG(LogTemp, Warning, TEXT("StartFrameRateCheck: 기존 로딩 스크린을 연속 모드로 전환"));
+
+    // 현재 진행률 확인
+    float CurrentProgress = NS_LoadingScreen->GetCurrentProgress();
+    UE_LOG(LogTemp, Warning, TEXT("연속 모드 전환 - 현재 진행률: %.1f%%"), CurrentProgress * 100.0f);
+
+    // 로딩이 아직 진행 중이 아니라면 다시 시작
+    if (!NS_LoadingScreen->IsLoadingComplete())
+    {
+        NS_LoadingScreen->StartLoading();
     }
 }
 

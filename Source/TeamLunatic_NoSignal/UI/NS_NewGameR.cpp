@@ -93,23 +93,24 @@ void UNS_NewGameR::StartGame()
     FString GameModePath = TEXT("Game=/Game/GameFlowBP/BP_NS_SinglePlayMode.BP_NS_SinglePlayMode_C");
     if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
-        // 로딩 스크린 표시
+        // 임시: UIManager 방식과 GameInstance 방식 둘 다 시도
         if (UNS_UIManager* UIManager = GI->GetUIManager())
         {
             UIManager->ShowLoadingScreen(GetWorld());
+            UE_LOG(LogTemp, Warning, TEXT("StartGame: UIManager 로딩 스크린 표시"));
         }
 
-#if WITH_EDITOR
-        // 에디터에서는 로딩 스크린이 보이도록 약간의 딜레이 추가
+        // GameInstance에서도 영구 로딩 스크린 생성
+        GI->CreatePersistentLoadingScreen();
+        UE_LOG(LogTemp, Warning, TEXT("StartGame: 영구 로딩 스크린 생성"));
+
+        // 로딩 스크린이 완전히 표시된 후 레벨 전환
         FTimerHandle DelayHandle;
-        GetWorld()->GetTimerManager().SetTimer(DelayHandle, [this, GI, SelectedLevelName, GameModePath]()
+        GetWorld()->GetTimerManager().SetTimer(DelayHandle, [GI, SelectedLevelName, GameModePath]()
         {
+            UE_LOG(LogTemp, Error, TEXT("=== 레벨 전환 시작 ==="));
             UGameplayStatics::OpenLevel(GI->GetWorld(), FName(*SelectedLevelName), true, GameModePath);
-        }, 0.5f, false); // 0.5초 딜레이
-#else
-        // 패키징된 빌드에서는 바로 실행
-        UGameplayStatics::OpenLevel(GI->GetWorld(), FName(*SelectedLevelName), true, GameModePath);
-#endif
+        }, 0.5f, false); // 0.5초 딜레이로 로딩 스크린이 완전히 표시되도록
     }
 }
 

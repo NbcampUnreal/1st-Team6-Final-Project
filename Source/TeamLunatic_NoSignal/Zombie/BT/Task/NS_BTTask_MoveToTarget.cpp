@@ -56,7 +56,7 @@ void UNS_BTTask_MoveToTarget::OnTaskFinished(UBehaviorTreeComponent& OwnerComp, 
 	if (!Pawn) return;
 
 	const FVector CurrentLocation = Pawn->GetActorLocation();
-	const FVector FinalTarget = MyAI->GetTargetLocation();
+	const FVector FinalTarget = MyAI->GetCurrentTargetLocation();
 	const float Distance = FVector::Dist(CurrentLocation, FinalTarget);
 
 	if (Distance < 200.f)
