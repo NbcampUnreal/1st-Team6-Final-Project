@@ -104,13 +104,12 @@ void UNS_NewGameR::StartGame()
         GI->CreatePersistentLoadingScreen();
         UE_LOG(LogTemp, Warning, TEXT("StartGame: 영구 로딩 스크린 생성"));
 
-        // 로딩 스크린이 완전히 표시된 후 레벨 전환
-        FTimerHandle DelayHandle;
-        GetWorld()->GetTimerManager().SetTimer(DelayHandle, [GI, SelectedLevelName, GameModePath]()
+        // 다음 틱에 실행 - 로딩 스크린 렌더링 완료 보장
+        GetWorld()->GetTimerManager().SetTimerForNextTick([GI, SelectedLevelName, GameModePath]()
         {
-            UE_LOG(LogTemp, Error, TEXT("=== 레벨 전환 시작 ==="));
+            UE_LOG(LogTemp, Error, TEXT("=== 레벨 전환 시작 (다음 틱) ==="));
             UGameplayStatics::OpenLevel(GI->GetWorld(), FName(*SelectedLevelName), true, GameModePath);
-        }, 0.5f, false); // 0.5초 딜레이로 로딩 스크린이 완전히 표시되도록
+        });
     }
 }
 

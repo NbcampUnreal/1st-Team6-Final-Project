@@ -564,21 +564,36 @@ void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputAct
 {
     // 낙하 중에는 아이템 줍기 불가
     if (GetCharacterMovement()->IsFalling()) { return; }
-    
-    // 이미 아이템 줍기 중이면 무시
-    if (IsPickUp) { return; }
-    
+
+    // 이미 아이템 줍기 중이면 무시 (중복 체크 강화)
+    if (IsPickUp) {
+        UE_LOG(LogTemp, Warning, TEXT("PickUpAction_Server: 이미 아이템 획득 중 - 입력 무시 (IsPickUp = true)"));
+        return;
+    }
+
     // 재장전 중이면 무시
-    if (IsReload) { return; }
-    
+    if (IsReload) {
+        UE_LOG(LogTemp, Warning, TEXT("PickUpAction_Server: 재장전 중 - 입력 무시 (IsReload = true)"));
+        return;
+    }
+
     // 무기 교체 애니메이션 중이면 무시
-    if (IsChangeAnim) { return; }
-    
+    if (IsChangeAnim) {
+        UE_LOG(LogTemp, Warning, TEXT("PickUpAction_Server: 무기 교체 중 - 입력 무시 (IsChangeAnim = true)"));
+        return;
+    }
+
     // 공격 중이면 무시
-    if (EquipedWeaponComp && EquipedWeaponComp->IsAttack) { return; }
-    
+    if (EquipedWeaponComp && EquipedWeaponComp->IsAttack) {
+        UE_LOG(LogTemp, Warning, TEXT("PickUpAction_Server: 공격 중 - 입력 무시 (IsAttack = true)"));
+        return;
+    }
+
     // 투척 중이면 무시
-    if (IsThrow) { return; }
+    if (IsThrow) {
+        UE_LOG(LogTemp, Warning, TEXT("PickUpAction_Server: 투척 중 - 입력 무시 (IsThrow = true)"));
+        return;
+    }
 
     if (UInteractionComponent* InteractComp = FindComponentByClass<UInteractionComponent>())
     {

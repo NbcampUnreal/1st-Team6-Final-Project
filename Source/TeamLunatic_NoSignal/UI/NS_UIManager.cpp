@@ -248,17 +248,61 @@ void UNS_UIManager::ShowLoadingScreen(UWorld* World)
     UE_LOG(LogTemp, Error, TEXT("=== ShowLoadingScreen 호출됨 ==="));
     UE_LOG(LogTemp, Error, TEXT("현재 NS_LoadingScreen 상태: %s"), NS_LoadingScreen ? TEXT("존재함") : TEXT("null"));
 
-    // 이미 로딩 스크린이 있다면 재사용 (연속 로딩)
-    if (NS_LoadingScreen && NS_LoadingScreen->IsInViewport())
+    // 안전한 null 체크 및 유효성 검사
+    if (NS_LoadingScreen && IsValid(NS_LoadingScreen))
     {
-        UE_LOG(LogTemp, Error, TEXT("기존 로딩 스크린 재사용 - 연속 로딩 모드"));
+        // IsInViewport 안전 체크 (간단한 방법)
+        bool bIsInViewport = false;
 
-        // 기존 로딩 스크린을 레벨 전환 모드로 전환
-        if (!NS_LoadingScreen->IsLoadingComplete())
+        // 강화된 유효성 체크 (UE5 호환)
+        if (IsValid(NS_LoadingScreen))
         {
-            NS_LoadingScreen->StartLoading(); // 로딩 재시작
+            // 매우 안전한 방법: 단계별 체크
+            bool bCanCallIsInViewport = true;
+
+            // 위젯의 파괴 상태 체크
+            if (NS_LoadingScreen->HasAnyFlags(RF_BeginDestroyed | RF_FinishDestroyed))
+            {
+                bCanCallIsInViewport = false;
+                UE_LOG(LogTemp, Error, TEXT("NS_LoadingScreen이 파괴 플래그 설정됨"));
+            }
+
+            if (bCanCallIsInViewport)
+            {
+                bIsInViewport = NS_LoadingScreen->IsInViewport();
+            }
+            else
+            {
+                NS_LoadingScreen = nullptr;
+            }
         }
-        return;
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("NS_LoadingScreen이 유효하지 않음 - null로 설정"));
+            NS_LoadingScreen = nullptr;
+        }
+
+        if (bIsInViewport)
+        {
+            UE_LOG(LogTemp, Error, TEXT("기존 로딩 스크린 재사용 - 연속 로딩 모드"));
+
+            // 기존 로딩 스크린을 레벨 전환 모드로 전환
+            if (!NS_LoadingScreen->IsLoadingComplete())
+            {
+                NS_LoadingScreen->StartLoading(); // 로딩 재시작
+            }
+            return;
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("기존 로딩 스크린이 뷰포트에 없음 - 재생성"));
+            NS_LoadingScreen = nullptr; // 안전하게 null로 설정
+        }
+    }
+    else if (NS_LoadingScreen)
+    {
+        UE_LOG(LogTemp, Error, TEXT("NS_LoadingScreen이 유효하지 않음 - null로 설정"));
+        NS_LoadingScreen = nullptr;
     }
 
     // 플레이어 컨트롤러 가져오기

@@ -7,6 +7,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFlow/NS_GameInstance.h"
+#include "GameFlow/NS_LobbyController.h"
 #include "UI/NS_UIManager.h"
 
 void UNS_LoadingScreen::NativeConstruct()
@@ -16,38 +17,6 @@ void UNS_LoadingScreen::NativeConstruct()
 	// 에디터에서 실행 중인지 확인
 	bool bIsInEditor = GIsEditor;
 	UE_LOG(LogTemp, Warning, TEXT("로딩 스크린 생성 - 에디터 모드: %s"), bIsInEditor ? TEXT("예") : TEXT("아니오"));
-
-	// 배경을 완전 불투명한 검은색으로 설정하여 화면을 완전히 가림
-	if (Image_Background)
-	{
-		Image_Background->SetColorAndOpacity(FLinearColor(0.0f, 0.0f, 0.0f, 1.0f)); // 완전 불투명
-		Image_Background->SetVisibility(ESlateVisibility::Visible);
-		UE_LOG(LogTemp, Warning, TEXT("로딩 스크린 배경 이미지 설정 완료 - 완전 불투명"));
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("Image_Background가 null입니다! 코드로 강제 생성"));
-
-		// 배경이 없다면 코드로 강제 생성
-		Image_Background = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass());
-		if (Image_Background)
-		{
-			Image_Background->SetColorAndOpacity(FLinearColor(0.0f, 0.0f, 0.0f, 1.0f)); // 완전 불투명
-
-			// 전체 화면을 덮도록 설정
-			UCanvasPanel* RootCanvas = WidgetTree->ConstructWidget<UCanvasPanel>(UCanvasPanel::StaticClass());
-			WidgetTree->RootWidget = RootCanvas;
-
-			UCanvasPanelSlot* BackgroundSlot = RootCanvas->AddChildToCanvas(Image_Background);
-			if (BackgroundSlot)
-			{
-				BackgroundSlot->SetAnchors(FAnchors(0.0f, 0.0f, 1.0f, 1.0f)); // 전체 화면
-				BackgroundSlot->SetOffsets(FMargin(0.0f)); // 여백 없음
-			}
-
-			UE_LOG(LogTemp, Warning, TEXT("코드로 전체 화면 배경 생성 완료"));
-		}
-	}
 
 	// 위젯 자체도 강제로 보이게 설정
 	SetVisibility(ESlateVisibility::Visible);
@@ -299,10 +268,33 @@ bool UNS_LoadingScreen::CheckFrameRateStable()
 void UNS_LoadingScreen::OnLoadingFinished()
 {
 	if (!bIsLoading) return;
-	
+
 	bIsLoading = false;
 	UE_LOG(LogTemp, Warning, TEXT("로딩 완료 - 로딩 스크린 제거"));
-	
+
+	// 멀티플레이어에서는 서버에 로딩 완료 알림
+	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+	{
+		// 멀티플레이어인지 확인
+		if (GetWorld()->GetNetMode() != NM_Standalone)
+		{
+			// 멀티플레이어: 서버에 로딩 완료 알림
+			if (ANS_LobbyController* LC = Cast<ANS_LobbyController>(PC))
+			{
+				LC->Server_NotifyLoadingComplete();
+				UE_LOG(LogTemp, Warning, TEXT("=== 멀티플레이어: 서버에 로딩 완료 알림 ==="));
+				// 멀티에서는 서버 명령을 기다림 (로딩 스크린 유지)
+				return;
+			}
+		}
+
+		// 싱글플레이어: 즉시 입력 모드 변경
+		FInputModeGameOnly InputMode;
+		PC->SetInputMode(InputMode);
+		PC->bShowMouseCursor = false;
+		UE_LOG(LogTemp, Error, TEXT("=== 싱글플레이어: 입력 모드를 게임 전용으로 변경 ==="));
+	}
+
 	// UIManager에게 로딩 완료 알림
 	if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
 	{
@@ -315,7 +307,7 @@ void UNS_LoadingScreen::OnLoadingFinished()
 			}
 		}
 	}
-	
+
 	// 로딩 스크린 제거
 	RemoveFromParent();
 }

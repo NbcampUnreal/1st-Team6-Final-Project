@@ -60,6 +60,12 @@ public:
 	// 레벨 로드 완료 체크 함수
 	void CheckForLevelLoadComplete();
 
+	// 레벨 전환 시작 전 호출 (인게임 화면 숨기기)
+	void OnPreLoadMap(const FString& MapName);
+
+	// 레벨 전환 완료 후 호출
+	void OnPostLoadMapWithWorld(UWorld* LoadedWorld);
+
 	// 프레임률 체크가 이미 시작되었는지 플래그
 	bool bFrameRateCheckStarted = false;
 

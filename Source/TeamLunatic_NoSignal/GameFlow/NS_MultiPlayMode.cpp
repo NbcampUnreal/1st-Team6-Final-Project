@@ -4,6 +4,7 @@
 #include "NS_GameInstance.h"
 #include "NS_MainGamePlayerState.h"
 #include "NS_GameState.h"
+#include "NS_LobbyController.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "GameFramework/PlayerStart.h"
 #include "Zombie/NS_ZombieBase.h"
@@ -224,6 +225,57 @@ void ANS_MultiPlayMode::CheckPlayerCountAndEndSession()
                 UE_LOG(LogTemp, Error, TEXT("[CheckPlayerCount] UNS_GameInstance의 MyServerPort가 유효하지 않습니다."));
             }
         }
+    }
+}
+
+void ANS_MultiPlayMode::OnPlayerLoadingComplete(APlayerController* Player)
+{
+    if (!HasAuthority()) return;
+
+    // 이미 완료된 플레이어인지 확인
+    if (LoadingCompletedPlayers.Contains(Player))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("플레이어 %s는 이미 로딩 완료 목록에 있음"), *Player->GetName());
+        return;
+    }
+
+    // 완료된 플레이어 목록에 추가
+    LoadingCompletedPlayers.Add(Player);
+    UE_LOG(LogTemp, Warning, TEXT("플레이어 %s 로딩 완료 (%d/%d)"),
+        *Player->GetName(), LoadingCompletedPlayers.Num(), GetNumPlayers());
+
+    // 모든 플레이어가 완료되었는지 확인
+    CheckAllPlayersLoadingComplete();
+}
+
+void ANS_MultiPlayMode::CheckAllPlayersLoadingComplete()
+{
+    if (!HasAuthority()) return;
+
+    int32 TotalPlayers = GetNumPlayers();
+    int32 CompletedPlayers = LoadingCompletedPlayers.Num();
+
+    UE_LOG(LogTemp, Warning, TEXT("로딩 완료 체크: %d/%d 플레이어"), CompletedPlayers, TotalPlayers);
+
+    // 모든 플레이어가 로딩 완료되었으면
+    if (CompletedPlayers >= TotalPlayers && TotalPlayers > 0)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("=== 모든 플레이어 로딩 완료! 동시에 로딩 스크린 숨기기 ==="));
+
+        // 모든 클라이언트에게 로딩 스크린 숨기기 명령
+        for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+        {
+            if (APlayerController* PC = It->Get())
+            {
+                if (ANS_LobbyController* LC = Cast<ANS_LobbyController>(PC))
+                {
+                    LC->Client_HideLoadingScreen();
+                }
+            }
+        }
+
+        // 완료된 플레이어 목록 초기화
+        LoadingCompletedPlayers.Empty();
     }
 }
 

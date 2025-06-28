@@ -63,7 +63,9 @@ void UNS_HostNewGameServerR::StartGame()
 
     if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
-        GI->ShowWait(); // 서버 생성 중 대기 화면만 표시
+        // ShowWait 비활성화 - NS_LoadingScreen 사용
+        UE_LOG(LogTemp, Error, TEXT("=== HostNewGameServerR ShowWait 호출 - 비활성화됨 ==="));
+
         GI->SetGameModeType(EGameModeType::MultiPlayMode);
 
         //저장은 여기서 해도 괜찮지만, 실패 복구 고려 시 나중으로 미루는 것도 방법

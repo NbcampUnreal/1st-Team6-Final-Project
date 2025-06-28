@@ -150,6 +150,16 @@ void APickup::EndFocus()
 
 void APickup::Interact_Implementation(AActor* InteractingActor)
 {
+	// IsPickUp 상태 체크 - 이미 아이템 획득 중이면 상호작용 차단
+	if (ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(InteractingActor))
+	{
+		if (PlayerCharacter->IsPickUp)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Interact: 이미 아이템 획득 중 - 상호작용 차단 (IsPickUp = true)"));
+			return;
+		}
+	}
+
 	if (!HasAuthority())
 	{
 		Server_TakePickup(InteractingActor);
@@ -165,6 +175,13 @@ void APickup::Interact_Implementation(AActor* InteractingActor)
 void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 {
 	if (!HasAuthority()) return;
+
+	// IsPickUp 상태 체크 - 이미 아이템 획득 중이면 추가 획득 차단
+	if (Taker->IsPickUp)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TakePickup: 이미 아이템 획득 중 - 추가 획득 차단 (IsPickUp = true)"));
+		return;
+	}
 
 	if (!IsPendingKillPending())
 	{
@@ -252,8 +269,8 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 					}
 				}
 
-				// 아이템 획득 애니메이션 시작
-				Taker->IsPickUp = true;
+				// IsPickUp은 이미 PickUpAction_Server에서 설정되므로 여기서는 제거
+				// Taker->IsPickUp = true; // 중복 설정 제거
 			}
 
 			// 전부 추가 성공 시에만 액터 파괴
@@ -269,6 +286,13 @@ void APickup::Server_TakePickup_Implementation(AActor* InteractingActor)
 {
 	if (ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(InteractingActor))
 	{
+		// IsPickUp 상태 체크 - 이미 아이템 획득 중이면 추가 획득 차단
+		if (PlayerCharacter->IsPickUp)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Server_TakePickup: 이미 아이템 획득 중 - 추가 획득 차단 (IsPickUp = true)"));
+			return;
+		}
+
 		TakePickup(PlayerCharacter);
 	}
 }

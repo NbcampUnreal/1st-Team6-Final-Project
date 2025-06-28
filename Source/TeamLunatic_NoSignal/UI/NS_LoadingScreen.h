@@ -30,8 +30,6 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* Text_LoadingStatus;
 
-	UPROPERTY(meta = (BindWidget))
-	class UImage* Image_Background;
 
 	// 로딩 시작
 	UFUNCTION(BlueprintCallable, Category = "Loading")

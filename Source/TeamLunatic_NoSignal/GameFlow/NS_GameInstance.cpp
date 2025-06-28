@@ -58,6 +58,10 @@ void UNS_GameInstance::Init()
 			2.0f, true); // 2초마다 체크
 	}
 
+	// 레벨 전환 시작 전 델리게이트 바인딩 (인게임 화면 숨기기)
+	FCoreUObjectDelegates::PreLoadMap.AddUObject(this, &UNS_GameInstance::OnPreLoadMap);
+	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &UNS_GameInstance::OnPostLoadMapWithWorld);
+
 	// Dedicated 서버가 실행될 경우, 커맨드라인에서 포트 추출
 	if (IsRunningDedicatedServer())
 	{
@@ -301,6 +305,14 @@ void UNS_GameInstance::HideReadyUI()
 
 void UNS_GameInstance::ShowWait()
 {
+	// ShowWait 완전 비활성화 - 중복 로딩 스크린 방지
+	UE_LOG(LogTemp, Error, TEXT("=== ShowWait 호출됨 - 완전 비활성화됨 ==="));
+
+	// 아무것도 하지 않음 (NS_LoadingScreen은 다른 곳에서 관리)
+	return;
+
+	/*
+	// 기존 코드 (비활성화)
 	if (!WaitClass) return;
 
 	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
@@ -315,13 +327,19 @@ void UNS_GameInstance::ShowWait()
 	{
 		WaitWidget->AddToViewport();
 	}
+	*/
 }
 
 void UNS_GameInstance::HideWait()
 {
+	// WaitWidget 숨기기 비활성화 - NS_LoadingScreen이 자동으로 처리
+	UE_LOG(LogTemp, Error, TEXT("=== HideWait 호출됨 - NS_LoadingScreen이 자동 처리 ==="));
+
+	// 기존 WaitWidget이 있다면 제거
 	if (WaitWidget && WaitWidget->IsInViewport())
 	{
 		WaitWidget->RemoveFromParent();
+		UE_LOG(LogTemp, Error, TEXT("기존 WaitWidget 제거됨"));
 	}
 }
 
@@ -356,6 +374,60 @@ UNS_BaseMainMenu* UNS_GameInstance::GetMainMenu()
 	}
 
 	return MainMenu;
+}
+
+void UNS_GameInstance::OnPreLoadMap(const FString& MapName)
+{
+	UE_LOG(LogTemp, Error, TEXT("=== OnPreLoadMap 호출됨: %s ==="), *MapName);
+
+	// 게임 레벨(MainWorld)로 전환할 때만 로딩 스크린 표시
+	if (MapName.Contains(TEXT("MainWorld")))
+	{
+		if (NS_UIManager)
+		{
+			NS_UIManager->ShowLoadingScreen(GetWorld());
+			UE_LOG(LogTemp, Error, TEXT("게임 레벨 전환 - 로딩 스크린 표시"));
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("게임 레벨이 아님 - 로딩 스크린 표시 안함: %s"), *MapName);
+	}
+}
+
+void UNS_GameInstance::OnPostLoadMapWithWorld(UWorld* LoadedWorld)
+{
+	if (!LoadedWorld) return;
+
+	FString MapName = LoadedWorld->GetMapName();
+	UE_LOG(LogTemp, Error, TEXT("=== OnPostLoadMapWithWorld 호출됨: %s ==="), *MapName);
+
+	// 게임 레벨(MainWorld)로 전환했을 때만 로딩 스크린 표시
+	if (MapName.Contains(TEXT("MainWorld")))
+	{
+		// UIManager 강화된 안전성 체크
+		if (NS_UIManager && IsValid(NS_UIManager) && IsValid(LoadedWorld))
+		{
+			// 추가 안전 체크: 월드가 유효하고 초기화되었는지 확인
+			if (LoadedWorld->HasBegunPlay() && LoadedWorld->AreActorsInitialized())
+			{
+				NS_UIManager->ShowLoadingScreen(LoadedWorld);
+				UE_LOG(LogTemp, Error, TEXT("게임 레벨 로드 완료 - 로딩 스크린 즉시 표시"));
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("월드가 아직 완전히 초기화되지 않음 - 로딩 스크린 표시 건너뜀"));
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("NS_UIManager가 유효하지 않음"));
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("게임 레벨이 아님 - 로딩 스크린 표시 안함: %s"), *MapName);
+	}
 }
 
 void UNS_GameInstance::CheckForLevelLoadComplete()

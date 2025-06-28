@@ -176,21 +176,18 @@ void ANS_LobbyMode::CheckAllPlayersReady()
 		{
 			if (ANS_LobbyController* LC = Cast<ANS_LobbyController>(PC))
 			{
-				LC->Client_ShowWait();
+				// Client_ShowWait 제거 - 불필요한 호출 방지
 				LC->Client_ShowLoadingScreen(); // 로딩 스크린 표시
 			}
 		}
 	}
 
+	// 딜레이 최소화 - 대기 화면 방지
 	GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
 	{
-		FTimerHandle DelayHandle;
-		GetWorld()->GetTimerManager().SetTimer(DelayHandle, [this]()
-		{
-			UE_LOG(LogTemp, Warning, TEXT("ServerTravel 실행: MainWorld 이동"));
-			const FString LevelPath = TEXT("/Game/Maps/MainWorld");
-			const FString Options = TEXT("Game=/Game/GameFlowBP/BP_NS_MultiPlayMode.BP_NS_MultiPlayMode_C");
-			GetWorld()->ServerTravel(LevelPath + TEXT("?") + Options);
-		}, 1.0f, false);
+		UE_LOG(LogTemp, Warning, TEXT("ServerTravel 즉시 실행: MainWorld 이동"));
+		const FString LevelPath = TEXT("/Game/Maps/MainWorld");
+		const FString Options = TEXT("Game=/Game/GameFlowBP/BP_NS_MultiPlayMode.BP_NS_MultiPlayMode_C");
+		GetWorld()->ServerTravel(LevelPath + TEXT("?") + Options);
 	});
 }
