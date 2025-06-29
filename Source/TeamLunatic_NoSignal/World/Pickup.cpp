@@ -31,13 +31,13 @@ void APickup::BeginPlay()
 {
 	Super::BeginPlay();
 
-	FString LogMessage = FString::Printf(
+	/*FString LogMessage = FString::Printf(
 		TEXT("Pickup BeginPlay -> 이름: [ %s ], 월드 위치: [ %s ]"),
 		*GetName(),
 		*GetActorLocation().ToString()
-	);
+	);*/
 
-	UE_LOG(LogTemp, Log, TEXT("%s"), *LogMessage);
+	//UE_LOG(LogTemp, Log, TEXT("%s"), *LogMessage);
 
 	if (HasAuthority())
 	{

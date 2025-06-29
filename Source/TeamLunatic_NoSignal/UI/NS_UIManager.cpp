@@ -21,60 +21,60 @@ UNS_UIManager::UNS_UIManager()
     // 생성자에서 위젯 클래스 참조 설정
     
     // 인게임 메뉴 위젯 클래스 찾기 - 여러 경로 시도
-    static ConstructorHelpers::FClassFinder<UNS_InGameMenu> WBP_InGameMenu(TEXT("/Game/UI/Blueprints/WBP_InGameMenu.WBP_InGameMenu_C"));
-    if (WBP_InGameMenu.Succeeded())
-    {
-        InGameMenuWidgetClass = WBP_InGameMenu.Class;
-        UE_LOG(LogTemp, Warning, TEXT("InGameMenuWidgetClass 로드 성공: %s"), *GetNameSafe(InGameMenuWidgetClass));
-    }
-    else
-    {
-        // 블루프린트를 찾지 못한 경우 C++ 클래스 직접 사용
-        InGameMenuWidgetClass = UNS_InGameMenu::StaticClass();
-        UE_LOG(LogTemp, Warning, TEXT("블루프린트를 찾지 못해 C++ 클래스 사용: %s"), *GetNameSafe(InGameMenuWidgetClass));
-    }
+    //static ConstructorHelpers::FClassFinder<UNS_InGameMenu> WBP_InGameMenu(TEXT("/Game/UI/Blueprints/WBP_InGameMenu.WBP_InGameMenu_C"));
+    //if (WBP_InGameMenu.Succeeded())
+    //{
+    //    InGameMenuWidgetClass = WBP_InGameMenu.Class;
+    //    UE_LOG(LogTemp, Warning, TEXT("InGameMenuWidgetClass 로드 성공: %s"), *GetNameSafe(InGameMenuWidgetClass));
+    //}
+    //else
+    //{
+    //    // 블루프린트를 찾지 못한 경우 C++ 클래스 직접 사용
+    //    InGameMenuWidgetClass = UNS_InGameMenu::StaticClass();
+    //    UE_LOG(LogTemp, Warning, TEXT("블루프린트를 찾지 못해 C++ 클래스 사용: %s"), *GetNameSafe(InGameMenuWidgetClass));
+    //}
 
-    // 게임 오버 메시지 위젯 클래스 찾기
-    static ConstructorHelpers::FClassFinder<UNS_Msg_GameOver> WBP_GameOver(TEXT("/Game/UI/Blueprints/WBP_GameOver.WBP_GameOver_C"));
-    if (WBP_GameOver.Succeeded())
-        NS_MsgGameOverWidgetClass = WBP_GameOver.Class;
-    else
-        UE_LOG(LogTemp, Warning, TEXT("NS_MsgGameOverWidgetClass: %s"), *GetNameSafe(NS_MsgGameOverWidgetClass));
+    //// 게임 오버 메시지 위젯 클래스 찾기
+    //static ConstructorHelpers::FClassFinder<UNS_Msg_GameOver> WBP_GameOver(TEXT("/Game/UI/Blueprints/WBP_GameOver.WBP_GameOver_C"));
+    //if (WBP_GameOver.Succeeded())
+    //    NS_MsgGameOverWidgetClass = WBP_GameOver.Class;
+    //else
+    //    UE_LOG(LogTemp, Warning, TEXT("NS_MsgGameOverWidgetClass: %s"), *GetNameSafe(NS_MsgGameOverWidgetClass));
 
-    // 인게임 메시지 위젯 클래스 찾기
-    static ConstructorHelpers::FClassFinder<UNS_InGameMsg> WBP_InGameMsg(TEXT("/Game/UI/Blueprints/WBP_InGameMsg.WBP_InGameMsg_C"));
-    if (WBP_InGameMsg.Succeeded())
-        NS_InGameMsgWidgetClass = WBP_InGameMsg.Class;
-    else
-        UE_LOG(LogTemp, Warning, TEXT("NS_InGameMsgWidgetClass: %s"), *GetNameSafe(NS_InGameMsgWidgetClass));
+    //// 인게임 메시지 위젯 클래스 찾기
+    //static ConstructorHelpers::FClassFinder<UNS_InGameMsg> WBP_InGameMsg(TEXT("/Game/UI/Blueprints/WBP_InGameMsg.WBP_InGameMsg_C"));
+    //if (WBP_InGameMsg.Succeeded())
+    //    NS_InGameMsgWidgetClass = WBP_InGameMsg.Class;
+    //else
+    //    UE_LOG(LogTemp, Warning, TEXT("NS_InGameMsgWidgetClass: %s"), *GetNameSafe(NS_InGameMsgWidgetClass));
 
-    // 플레이어 HUD 위젯 클래스 찾기
-    static ConstructorHelpers::FClassFinder<UNS_PlayerHUD> WBP_PlayerHUD(TEXT("/Game/UI/Blueprints/WBP_PlayerHUD.WBP_PlayerHUD_C"));
-    if (WBP_PlayerHUD.Succeeded())
-        NS_PlayerHUDWidgetClass = WBP_PlayerHUD.Class;
-    else
-        UE_LOG(LogTemp, Warning, TEXT("NS_PlayerHUDWidgetClass: %s"), *GetNameSafe(NS_PlayerHUDWidgetClass));
+    //// 플레이어 HUD 위젯 클래스 찾기
+    //static ConstructorHelpers::FClassFinder<UNS_PlayerHUD> WBP_PlayerHUD(TEXT("/Game/UI/Blueprints/WBP_PlayerHUD.WBP_PlayerHUD_C"));
+    //if (WBP_PlayerHUD.Succeeded())
+    //    NS_PlayerHUDWidgetClass = WBP_PlayerHUD.Class;
+    //else
+    //    UE_LOG(LogTemp, Warning, TEXT("NS_PlayerHUDWidgetClass: %s"), *GetNameSafe(NS_PlayerHUDWidgetClass));
 
-    // 히트 이펙트 위젯 클래스 찾기
-    static ConstructorHelpers::FClassFinder<UUserWidget> WBP_HitEffect(TEXT("/Game/UI/Blueprints/WBP_HitEffect.WBP_HitEffect_C"));
-    if (WBP_HitEffect.Succeeded())
-        HitEffectWidgetClass = WBP_HitEffect.Class;
-    else
-        UE_LOG(LogTemp, Warning, TEXT("HitEffectWidgetClass: %s"), *GetNameSafe(HitEffectWidgetClass));
+    //// 히트 이펙트 위젯 클래스 찾기
+    //static ConstructorHelpers::FClassFinder<UUserWidget> WBP_HitEffect(TEXT("/Game/UI/Blueprints/WBP_HitEffect.WBP_HitEffect_C"));
+    //if (WBP_HitEffect.Succeeded())
+    //    HitEffectWidgetClass = WBP_HitEffect.Class;
+    //else
+    //    UE_LOG(LogTemp, Warning, TEXT("HitEffectWidgetClass: %s"), *GetNameSafe(HitEffectWidgetClass));
 
-    // 관전자 위젯 클래스 찾기
-    static ConstructorHelpers::FClassFinder<UNS_SpectatorWidgetClass> WBP_Spectator(TEXT("/Game/UI/Blueprints/WBP_Spectator.WBP_Spectator_C"));
-    if (WBP_Spectator.Succeeded())
-        SpectatorWidgetClass = WBP_Spectator.Class;
-    else
-        UE_LOG(LogTemp, Warning, TEXT("SpectatorWidgetClass: %s"), *GetNameSafe(SpectatorWidgetClass));
+    //// 관전자 위젯 클래스 찾기
+    //static ConstructorHelpers::FClassFinder<UNS_SpectatorWidgetClass> WBP_Spectator(TEXT("/Game/UI/Blueprints/WBP_Spectator.WBP_Spectator_C"));
+    //if (WBP_Spectator.Succeeded())
+    //    SpectatorWidgetClass = WBP_Spectator.Class;
+    //else
+    //    UE_LOG(LogTemp, Warning, TEXT("SpectatorWidgetClass: %s"), *GetNameSafe(SpectatorWidgetClass));
 
-    // 로딩 화면 위젯 클래스 찾기
-    static ConstructorHelpers::FClassFinder<UNS_LoadingScreen> WBP_LoadingScreen(TEXT("/Game/UI/Blueprints/WBP_LoadingScreen.WBP_LoadingScreen_C"));
-    if (WBP_LoadingScreen.Succeeded())
-        NS_LoadingScreenClass = WBP_LoadingScreen.Class;
-    else
-        UE_LOG(LogTemp, Warning, TEXT("NS_LoadingScreenClass: %s"), *GetNameSafe(NS_LoadingScreenClass));
+    //// 로딩 화면 위젯 클래스 찾기
+    //static ConstructorHelpers::FClassFinder<UNS_LoadingScreen> WBP_LoadingScreen(TEXT("/Game/UI/Blueprints/WBP_LoadingScreen.WBP_LoadingScreen_C"));
+    //if (WBP_LoadingScreen.Succeeded())
+    //    NS_LoadingScreenClass = WBP_LoadingScreen.Class;
+    //else
+    //    UE_LOG(LogTemp, Warning, TEXT("NS_LoadingScreenClass: %s"), *GetNameSafe(NS_LoadingScreenClass));
 }
 
 void UNS_UIManager::InitUi(UWorld* World)
