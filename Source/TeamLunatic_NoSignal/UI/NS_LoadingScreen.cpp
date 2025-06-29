@@ -91,27 +91,22 @@ void UNS_LoadingScreen::UpdateLoadingProgress()
 	// 시간 기반으로 진행률 계산
 	LoadingTime += GetWorld()->GetDeltaSeconds();
 
-	if (LoadingTime < 5.0f)
+	if (LoadingTime < 2.0f)
 	{
-		// 0% ~ 70%: 5초에 걸쳐 시간 기반으로 천천히 증가 (렌더링 시뮬레이션)
-		float TimeProgress = FMath::Clamp(LoadingTime / 5.0f, 0.0f, 1.0f);
-		NewProgress = TimeProgress * 0.7f;
+		// 0% ~ 90%: 2초에 걸쳐 빠르게 증가
+		float TimeProgress = FMath::Clamp(LoadingTime / 2.0f, 0.0f, 1.0f);
+		NewProgress = TimeProgress * 0.9f;
 	}
 	else
 	{
-		// 70% 이후: 실제 프레임률 체크 시작
-		NewProgress = 0.7f;
-
-		// 레벨과 렌더링이 준비되었고 프레임률도 안정적이면 100%
-		if (CheckLevelLoaded() && CheckRenderingReady() && CheckFrameRateStable())
+		// 90% 이후: 간단한 체크만 수행
+		if (CheckLevelLoaded() && CheckRenderingReady())
 		{
 			NewProgress = 1.0f;
 		}
-		else if (CheckLevelLoaded() && CheckRenderingReady())
+		else
 		{
-			// 프레임률 안정화 진행 중 (70% ~ 100%)
-			float FrameProgress = FMath::Clamp(FrameRateCheckDuration / StableFrameCheckTime, 0.0f, 1.0f);
-			NewProgress = 0.7f + (FrameProgress * 0.3f);
+			NewProgress = 0.9f;
 		}
 	}
 
@@ -119,8 +114,8 @@ void UNS_LoadingScreen::UpdateLoadingProgress()
 	CurrentProgress = FMath::Max(CurrentProgress, NewProgress);
 	CurrentProgress = FMath::Clamp(CurrentProgress, 0.0f, 1.0f);
 
-	// 로딩 완료 체크 (70% 이후에만)
-	if (LoadingTime >= 5.0f && IsLoadingComplete())
+	// 로딩 완료 체크 (2초 이후에만)
+	if (LoadingTime >= 2.0f && CheckLevelLoaded() && CheckRenderingReady())
 	{
 		OnLoadingFinished();
 	}
@@ -283,9 +278,8 @@ void UNS_LoadingScreen::OnLoadingFinished()
 			{
 				LC->Server_NotifyLoadingComplete();
 				UE_LOG(LogTemp, Warning, TEXT("=== 멀티플레이어: 서버에 로딩 완료 알림 ==="));
-				// 멀티에서는 서버 명령을 기다림 (로딩 스크린 유지)
-				return;
 			}
+			// 서버 명령을 기다리지 말고 즉시 로딩 스크린 제거
 		}
 
 		// 싱글플레이어: 즉시 입력 모드 변경

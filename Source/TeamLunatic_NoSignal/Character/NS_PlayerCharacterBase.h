@@ -9,6 +9,7 @@
 #include "GameFlow/NS_GameModeBase.h"
 #include "GameFlow/NS_MainGamePlayerState.h"
 #include "Character/ThrowActor/NS_ThrowActor.h"
+#include "UI/NS_OpenLevelMap.h"
 #include "NS_PlayerCharacterBase.generated.h"
 
 class UInputMappingContext;
@@ -22,6 +23,7 @@ class UNS_EquipedWeaponComponent;
 class UNS_QuickSlotPanel;
 class UNS_QuickSlotComponent;
 class UNS_PlayerController;
+class UNS_OpenLevelMap;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
@@ -426,6 +428,14 @@ public:
 	void UpdateYawReset(float DeltaTime);
 	// ======================== Turn In Place 끝! =================================
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OpenLevelMap")
+	TSubclassOf<UNS_OpenLevelMap> OpenLevelMapWidgetClass;
+	
+	UPROPERTY()
+	UNS_OpenLevelMap* CurrentOpenMapWidget;
+
+	void OpenMapAction(const FInputActionValue& Value);
+	
 	//환각 관련
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PostProcess")
 	UMaterialInterface* HallucinationMaterial;

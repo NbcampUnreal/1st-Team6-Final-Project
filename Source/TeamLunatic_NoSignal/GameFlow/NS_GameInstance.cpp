@@ -546,7 +546,7 @@ void UNS_GameInstance::CreatePersistentLoadingScreen()
 
 	// 새로운 영구 로딩 스크린 생성
 	UE_LOG(LogTemp, Warning, TEXT("CreatePersistentLoadingScreen: 위젯 생성 시도"));
-	PersistentLoadingScreen = CreateWidget<UNS_LoadingScreen>(PC, LoadingScreenClass);
+	PersistentLoadingScreen = CreateWidget<UNS_LoadingScreen>(PC, TSubclassOf<UNS_LoadingScreen>(LoadingScreenClass)); // 변경: NS_LoadingScreen으로 통일
 	if (PersistentLoadingScreen)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("CreatePersistentLoadingScreen: 위젯 생성 성공"));

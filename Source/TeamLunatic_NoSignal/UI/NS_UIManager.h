@@ -69,6 +69,14 @@ public:
     UFUNCTION(BlueprintCallable, Category = "UI")
     bool ShowGameOverWidget(UWorld* World);
 
+
+UFUNCTION(BlueprintCallable, Category = "UI")
+TSubclassOf<UUserWidget> GetOpenMapClass() const { return OpenMapClass; }
+
+UPROPERTY(EditAnywhere, Category = "UI")
+TSubclassOf<UUserWidget> OpenMapClass;
+
+    
     // 게임 오버 위젯 숨기기
     UFUNCTION(BlueprintCallable, Category = "UI")
     void HideGameOverWidget(UWorld* World);
