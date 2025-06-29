@@ -87,7 +87,7 @@ private:
     FTimerHandle UpdatePlayerStausHandle;
     
     // 캐싱된 플레이어 캐릭터 참조
-    UPROPERTY()
+	UPROPERTY()
     class ANS_PlayerCharacterBase* CachedPlayerCharacter;
     
     // 나침반 텍스트 요소 배열
