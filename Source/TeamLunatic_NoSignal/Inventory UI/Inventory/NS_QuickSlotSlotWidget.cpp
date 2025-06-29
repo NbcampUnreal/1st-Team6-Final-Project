@@ -20,6 +20,10 @@ void UNS_QuickSlotSlotWidget::NativeConstruct()
 {
     Super::NativeConstruct();
 
+    if (UseSelectWeapon)
+    {
+        UseSelectWeapon->SetVisibility(ESlateVisibility::Collapsed);
+    }
 }
 
 void UNS_QuickSlotSlotWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -40,6 +44,11 @@ void UNS_QuickSlotSlotWidget::NativeTick(const FGeometry& MyGeometry, float InDe
 
     if (ItemInSlot && EquippedItem && ItemInSlot == EquippedItem)
     {
+        if (UseSelectWeapon)
+        {
+            UseSelectWeapon->SetVisibility(ESlateVisibility::Visible);
+        }
+
         // 현재 무기 가져오기 → 원거리 무기인지 확인
         if (auto* RangedWeapon = Cast<ANS_BaseRangedWeapon>(WeaponComp->CurrentWeapon))
         {
@@ -76,6 +85,11 @@ void UNS_QuickSlotSlotWidget::NativeTick(const FGeometry& MyGeometry, float InDe
         
         WeaponShotTypeText->SetText(FText::GetEmpty());
         WeaponShotTypeText->SetVisibility(ESlateVisibility::Collapsed);
+
+        if (UseSelectWeapon)
+        {
+            UseSelectWeapon->SetVisibility(ESlateVisibility::Collapsed);
+        }
     }
 }
 
