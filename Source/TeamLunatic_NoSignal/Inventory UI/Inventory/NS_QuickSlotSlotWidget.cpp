@@ -46,15 +46,36 @@ void UNS_QuickSlotSlotWidget::NativeTick(const FGeometry& MyGeometry, float InDe
             int32 CurrentAmmo = RangedWeapon->GetCurrentAmmo();
             int32 MaxAmmo = RangedWeapon->GetMaxAmmo();
 
+            EWeaponType CurrentWeaponType = RangedWeapon->GetWeaponType();
+            FText ShotText;
+
+            switch (CurrentWeaponType)
+            {
+            case EWeaponType::Pistol:
+                ShotText = FText::FromString(FString::Printf(TEXT("단발")));
+                break;
+            case EWeaponType::Ranged:
+                ShotText = FText::FromString(FString::Printf(TEXT("연발")));
+                break;
+            default:
+                break;
+            }
+
             // UI 갱신
             AmmoText->SetText(FText::FromString(FString::Printf(TEXT("%d / %d"), CurrentAmmo, MaxAmmo)));
             AmmoText->SetVisibility(ESlateVisibility::Visible);
+
+            WeaponShotTypeText->SetText(ShotText);
+            WeaponShotTypeText->SetVisibility(ESlateVisibility::Visible);
         }
     }
     else
     {
         AmmoText->SetText(FText::GetEmpty());
         AmmoText->SetVisibility(ESlateVisibility::Collapsed);
+        
+        WeaponShotTypeText->SetText(FText::GetEmpty());
+        WeaponShotTypeText->SetVisibility(ESlateVisibility::Collapsed);
     }
 }
 
@@ -101,5 +122,11 @@ void UNS_QuickSlotSlotWidget::ClearAssignedItem()
     {
         AmountText->SetText(FText::GetEmpty());
         AmountText->SetVisibility(ESlateVisibility::Collapsed);
+    }
+
+    if (WeaponShotTypeText)
+    {
+        WeaponShotTypeText->SetText(FText::GetEmpty());
+        WeaponShotTypeText->SetVisibility(ESlateVisibility::Collapsed);
     }
 }
