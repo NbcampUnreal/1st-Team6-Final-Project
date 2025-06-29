@@ -89,7 +89,7 @@ void ANS_PlayerController::ToggleInGameMenu()
 {
 #if WITH_EDITOR
     // 에디터에서는 J 키를 사용
-    if (!IsInputKeyDown(EKeys::Escape))
+    if (!IsInputKeyDown(EKeys::J))
         return;
 #else
     // 패키징 버전에서는 ESC 키를 사용

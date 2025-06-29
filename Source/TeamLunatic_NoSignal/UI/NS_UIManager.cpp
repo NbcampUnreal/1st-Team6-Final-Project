@@ -205,11 +205,30 @@ void UNS_UIManager::SetFInputModeGameOnly(APlayerController* PC)
 void UNS_UIManager::CloseLoadingUI()
 {
     // 로딩 화면이 존재하고 뷰포트에 있으면 제거
-    if (NS_LoadingScreen && NS_LoadingScreen->IsInViewport())
+    if (NS_LoadingScreen && IsValid(NS_LoadingScreen))
     {
         UE_LOG(LogTemp, Log, TEXT("Remove Loading Screen!!!!"));
         NS_LoadingScreen->RemoveFromParent();
         NS_LoadingScreen = nullptr;
+    }
+}
+
+void UNS_UIManager::HideLoadingScreen(UWorld* World)
+{
+    UE_LOG(LogTemp, Warning, TEXT("HideLoadingScreen 호출됨"));
+    
+    if (NS_LoadingScreen && IsValid(NS_LoadingScreen))
+    {
+        NS_LoadingScreen->RemoveFromParent();
+        NS_LoadingScreen = nullptr;
+        
+        // 입력 모드를 게임 전용으로 변경
+        if (APlayerController* PC = World->GetFirstPlayerController())
+        {
+            SetFInputModeGameOnly(PC);
+        }
+        
+        UE_LOG(LogTemp, Warning, TEXT("로딩 스크린 숨김 완료"));
     }
 }
 void UNS_UIManager::CompleteLoadingProcess()

@@ -19,6 +19,9 @@
 #include <Net/UnrealNetwork.h>
 #include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
 #include "Item/NS_BaseWeapon.h"
+#include "UI/NS_UIManager.h"
+#include "Blueprint/UserWidget.h"
+#include "UI/NS_OpenLevelMap.h"
 #include "Character/NS_PlayerController.h"
 #include "Sound/SoundBase.h"
 
@@ -312,6 +315,16 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                 ETriggerEvent::Started,
                 this,
                 &ANS_PlayerCharacterBase::QuickSlot5Selected
+                );
+        }
+
+        if (InputOpenMapAction)
+        {
+            EnhancedInput->BindAction(
+                InputOpenMapAction,
+                ETriggerEvent::Started,
+                this,
+                &ANS_PlayerCharacterBase::OpenMapAction
                 );
         }
     }
@@ -1407,5 +1420,48 @@ void ANS_PlayerCharacterBase::PlaySoundOnCharacter_Multicast_Implementation(USou
     if (SoundToPlay)
     {
         UGameplayStatics::PlaySoundAtLocation(this, SoundToPlay, GetActorLocation());
+    }
+}
+
+
+void ANS_PlayerCharacterBase::OpenMapAction(const FInputActionValue& Value)
+{
+    if (!IsLocallyControlled()) return;
+    
+    // 맵 위젯이 이미 열려있으면 닫기
+    if (CurrentOpenMapWidget && CurrentOpenMapWidget->IsInViewport())
+    {
+        CurrentOpenMapWidget->RemoveFromParent();
+        CurrentOpenMapWidget = nullptr;
+        
+        // 마우스 커서 숨기기 및 입력 모드 복원
+        if (APlayerController* PC = Cast<APlayerController>(GetController()))
+        {
+            PC->SetInputMode(FInputModeGameOnly());
+            PC->SetShowMouseCursor(false);
+        }
+        return;
+    }
+    
+    // 맵 위젯 새로 생성하여 열기
+    if (OpenLevelMapWidgetClass)
+    {
+        CurrentOpenMapWidget = CreateWidget<UNS_OpenLevelMap>(GetWorld(), OpenLevelMapWidgetClass);
+    }
+    else
+    {
+        CurrentOpenMapWidget = CreateWidget<UNS_OpenLevelMap>(GetWorld(), UNS_OpenLevelMap::StaticClass());
+    }
+    
+    if (CurrentOpenMapWidget)
+    {
+        CurrentOpenMapWidget->AddToViewport();
+        
+        // 마우스 커서 표시 및 입력 모드 변경
+        if (APlayerController* PC = Cast<APlayerController>(GetController()))
+        {
+            PC->SetInputMode(FInputModeGameAndUI());
+            PC->SetShowMouseCursor(true);
+        }
     }
 }
