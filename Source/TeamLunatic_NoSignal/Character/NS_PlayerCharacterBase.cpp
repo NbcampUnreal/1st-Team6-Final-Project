@@ -1462,7 +1462,7 @@ void ANS_PlayerCharacterBase::OpenMapAction(const FInputActionValue& Value)
         if (APlayerController* PC = Cast<APlayerController>(GetController()))
         {
             PC->SetInputMode(FInputModeGameAndUI());
-            PC->SetShowMouseCursor(true);
+            PC->SetShowMouseCursor(false);
         }
     }
 }
