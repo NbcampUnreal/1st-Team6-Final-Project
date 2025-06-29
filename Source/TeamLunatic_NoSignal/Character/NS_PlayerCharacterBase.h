@@ -387,9 +387,13 @@ public:
 	void PlayDeath_Multicast();
 
 	// 카메라 Yaw값, Pitch값 서버로 전송
-	UFUNCTION(BlueprintCallable, Server, Reliable)
+	UFUNCTION(BlueprintCallable, Server, Unreliable)
 	void UpdateAim_Server(float NewCamYaw, float NewCamPitch);
-
+	
+	// 현재 캐릭터가 바라보는 카메라 Yaw값 업데이트 함수
+	UFUNCTION(NetMulticast, Unreliable)
+	void UpdateAim_Multicast(float Yaw, float Pitch);
+	
 	// 헤드램프 켜고 끄는 함수
 	UFUNCTION(BlueprintCallable, Category = "Flashlight")
 	void ToggleFlashlight();
@@ -400,10 +404,6 @@ public:
 	// 헤드램프 켜고 끄는 멀티캐스트 전송 함수
 	UFUNCTION(NetMulticast, Reliable)
 	void ToggleFlashlight_Multicast();
-
-	// 현재 캐릭터가 바라보는 카메라 Yaw값 업데이트 함수
-	UFUNCTION(NetMulticast, Unreliable)
-	void UpdateAim_Multicast(float Yaw, float Pitch);
 
 	// 캐릭터가 병투척해서 날아가는 속도/방향/궤도 함수
 	UFUNCTION(BlueprintCallable)
@@ -418,10 +418,10 @@ public:
 	void OnTurnInPlaceFinished();
 
 	// Turn In Place 상태를 서버에 업데이트하는 함수
-	UFUNCTION(Server, Reliable)
+	UFUNCTION(Server, unreliable)
 	void Server_UpdateTurnInPlaceState(bool bInTurnLeft, bool bInTurnRight, bool bInUseControllerDesiredRotation);
 	// Turn In Place 상태를 모든 클라이언트에 멀티캐스트하는 함수
-	UFUNCTION(NetMulticast, Reliable)
+	UFUNCTION(NetMulticast, unreliable)
 	void Multicast_UpdateTurnInPlaceState(bool bInTurnLeft, bool bInTurnRight, bool bInUseControllerDesiredRotation);
 
 	// Yaw 리셋 관련 함수

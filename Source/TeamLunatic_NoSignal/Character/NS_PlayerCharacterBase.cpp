@@ -1371,7 +1371,8 @@ void ANS_PlayerCharacterBase::Server_UpdateTurnInPlaceState_Implementation(bool 
     Multicast_UpdateTurnInPlaceState(bInTurnLeft, bInTurnRight, bInUseControllerDesiredRotation);
 }
 
-void ANS_PlayerCharacterBase::Multicast_UpdateTurnInPlaceState_Implementation(bool bInTurnLeft, bool bInTurnRight, bool bInUseControllerDesiredRotation)
+void ANS_PlayerCharacterBase::Multicast_UpdateTurnInPlaceState_Implementation(bool bInTurnLeft, bool bInTurnRight,
+    bool bInUseControllerDesiredRotation)
 {
     // 로컬 플레이어가 아닌 경우에만 적용
     if (!IsLocallyControlled())

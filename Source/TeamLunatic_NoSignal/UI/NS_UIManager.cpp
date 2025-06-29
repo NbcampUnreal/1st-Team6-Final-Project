@@ -373,25 +373,25 @@ void UNS_UIManager::ShowLoadingScreen(UWorld* World)
     }
 }
 
-void UNS_UIManager::HideLoadingScreen(UWorld* World)
-{
-    if (NS_LoadingScreen && NS_LoadingScreen->IsInViewport())
-    {
-        // 로딩 스크린 제거
-        NS_LoadingScreen->RemoveFromParent();
-        NS_LoadingScreen = nullptr;
-
-        // 게임 입력 모드로 복원
-        if (APlayerController* PC = World->GetFirstPlayerController())
-        {
-            FInputModeGameOnly InputMode;
-            PC->SetInputMode(InputMode);
-            PC->bShowMouseCursor = false;
-
-            UE_LOG(LogTemp, Log, TEXT("로딩 화면 숨김 완료 - 게임 모드로 전환"));
-        }
-    }
-}
+// void UNS_UIManager::HideLoadingScreen(UWorld* World)
+// {
+//     if (NS_LoadingScreen && NS_LoadingScreen->IsInViewport())
+//     {
+//         // 로딩 스크린 제거
+//         NS_LoadingScreen->RemoveFromParent();
+//         NS_LoadingScreen = nullptr;
+//
+//         // 게임 입력 모드로 복원
+//         if (APlayerController* PC = World->GetFirstPlayerController())
+//         {
+//             FInputModeGameOnly InputMode;
+//             PC->SetInputMode(InputMode);
+//             PC->bShowMouseCursor = false;
+//
+//             UE_LOG(LogTemp, Log, TEXT("로딩 화면 숨김 완료 - 게임 모드로 전환"));
+//         }
+//     }
+// }
 
 void UNS_UIManager::StartFrameRateCheck()
 {
