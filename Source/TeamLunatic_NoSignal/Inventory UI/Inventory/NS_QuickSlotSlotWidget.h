@@ -34,6 +34,8 @@ public:
     UTextBlock* AmountText;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
     UTextBlock* AmmoText;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+    UTextBlock* WeaponShotTypeText;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
     class UNS_QuickSlotKey* QuickSlotKey;
