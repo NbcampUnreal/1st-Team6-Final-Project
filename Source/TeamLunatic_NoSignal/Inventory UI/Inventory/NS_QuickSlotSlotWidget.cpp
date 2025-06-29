@@ -55,15 +55,15 @@ void UNS_QuickSlotSlotWidget::NativeTick(const FGeometry& MyGeometry, float InDe
             int32 CurrentAmmo = RangedWeapon->GetCurrentAmmo();
             int32 MaxAmmo = RangedWeapon->GetMaxAmmo();
 
-            EWeaponType CurrentWeaponType = RangedWeapon->GetWeaponType();
+            ERangeChangeFireMode CurrentWeaponFireMode = Char->EquipedWeaponComp->CurrentFireMode;
             FText ShotText;
 
-            switch (CurrentWeaponType)
+            switch (CurrentWeaponFireMode)
             {
-            case EWeaponType::Pistol:
+            case ERangeChangeFireMode::Manual:
                 ShotText = FText::FromString(FString::Printf(TEXT("단발")));
                 break;
-            case EWeaponType::Ranged:
+            case ERangeChangeFireMode::Auto:
                 ShotText = FText::FromString(FString::Printf(TEXT("연발")));
                 break;
             default:
