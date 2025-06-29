@@ -348,3 +348,11 @@ void UNS_PlayerHUD::SetCrosshairVisibility(bool bVisible)
         Crosshair->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
     }
 }
+
+void UNS_PlayerHUD::HideTipText()
+{
+    if (IsValid(TipText))
+    {
+        TipText->SetVisibility(ESlateVisibility::Hidden);
+    }
+}
