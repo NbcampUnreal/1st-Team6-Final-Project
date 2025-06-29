@@ -47,12 +47,19 @@ void UEndingResultWidget::SetEndingType(FName EndingType)
     if (CarEndingImage)
         CarEndingImage->SetVisibility(ESlateVisibility::Collapsed);
 
+    if (RadionEndingText)
+        RadionEndingText->SetVisibility((ESlateVisibility::Collapsed));
+    if (CarEndingText)
+        CarEndingText->SetVisibility((ESlateVisibility::Collapsed));
+    
     if (EndingType == "Radio" && RadioEndingImage)
     {
         RadioEndingImage->SetVisibility(ESlateVisibility::Visible);
+        RadionEndingText->SetVisibility((ESlateVisibility::Visible));
     }
     else if (EndingType == "Car" && CarEndingImage)
     {
         CarEndingImage->SetVisibility(ESlateVisibility::Visible);
+        CarEndingText->SetVisibility((ESlateVisibility::Visible));
     }
 }
