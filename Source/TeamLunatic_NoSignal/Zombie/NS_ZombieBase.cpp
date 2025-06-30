@@ -29,11 +29,11 @@
 
 ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), CurrentState(EZombieState::IDLE),
                                    BaseDamage(20.f),PatrolSpeed(20.f), ChaseSpeed(100.f),AccelerationSpeed(200.f),
-                                   ZombieType(EZombieType::BASIC), bIsDead(false), bIsGotHit(false), SafeBones({"clavicle_r","clavicle_l","upperarm_r","upperarm_r","lowerarm_r","lowerarm_r","neck_01","head","spine_02","spine_03"})
+                                   ZombieType(EZombieType::BASIC), bIsDead(false), SafeBones({"clavicle_r","clavicle_l","upperarm_r","upperarm_r","lowerarm_r","lowerarm_r","neck_01","head","spine_02","spine_03"})
 {
 	PrimaryActorTick.bCanEverTick = false;
 	bUseControllerRotationYaw = false;
-
+	
 	PhysicsComponent = CreateDefaultSubobject<UPhysicalAnimationComponent>(FName("PhysicsComponent"));
 	NavigationInvoker = CreateDefaultSubobject<UNavigationInvokerComponent>(TEXT("NavigationInvoker"));
 
@@ -111,8 +111,8 @@ void ANS_ZombieBase::BeginDestroy()
 {
 	if (GetWorld())
 	{
-		GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
-		GetWorldTimerManager().ClearTimer(HitTimer);
+		if (GetWorldTimerManager().IsTimerActive(AmbientSoundTimer) )GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
+		if (GetWorldTimerManager().IsTimerActive(HitTimer)) GetWorldTimerManager().ClearTimer(HitTimer);
 	}
 	Super::BeginDestroy();
 }
@@ -328,28 +328,11 @@ void ANS_ZombieBase::ApplyPhysics_Implementation(FName Bone, FVector Impulse)
 	if (SafeBones.Contains(Bone))
 	{
 		USkeletalMeshComponent* MeshComp = GetMesh();
-		// FBodyInstance* BodyInstance = MeshComp->GetBodyInstance(Bone);
-		// if (BodyInstance)
-		// {
-		// 	BodyInstance->SetInstanceSimulatePhysics(true);
-		// 	BodyInstance->PhysicsBlendWeight = 1.f;
-		// 	BodyInstance->AddImpulse(Impulse,true);
-		// }
+
 		GetMesh()->SetAllBodiesBelowSimulatePhysics(Bone,true,true);
 		GetMesh()->SetAllBodiesBelowPhysicsBlendWeight(Bone, 1.f, false);
 	
 		GetMesh()->AddImpulse(Impulse, Bone, false);
-
-		// if (HitTimers.Contains(Bone))
-		// {
-		// 	GetWorldTimerManager().ClearTimer(HitTimers[Bone]);
-		// }
-
-		// FTimerHandle& NewTimer = HitTimers.FindOrAdd(Bone);
-		// GetWorldTimerManager().SetTimer(NewTimer, [this, Bone]()
-		// {
-		// 	ResetPhysics(Bone);
-		// }, 1.f, false);
 	}
 }
 
@@ -492,8 +475,7 @@ void ANS_ZombieBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(ANS_ZombieBase, CurrentHealth);
 	DOREPLIFETIME(ANS_ZombieBase, CurrentAttackType);
 	DOREPLIFETIME(ANS_ZombieBase, CurrentState);
-	DOREPLIFETIME(ANS_ZombieBase, bGetHit);
-	DOREPLIFETIME(ANS_ZombieBase, bIsGotHit); // 누락된 속성 추가
+	DOREPLIFETIME(ANS_ZombieBase, bIsDead);
 }
 
 void ANS_ZombieBase::InitializePhysics()
