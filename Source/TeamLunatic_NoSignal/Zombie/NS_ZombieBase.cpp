@@ -37,7 +37,7 @@ ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), C
 	PhysicsComponent = CreateDefaultSubobject<UPhysicalAnimationComponent>(FName("PhysicsComponent"));
 	NavigationInvoker = CreateDefaultSubobject<UNavigationInvokerComponent>(TEXT("NavigationInvoker"));
 
-	NavigationInvoker->SetGenerationRadii(1500.f, 2000.f);
+	NavigationInvoker->SetGenerationRadii(1000.f, 1500.f);
 	NavigationInvoker->SetAutoActivate(false);
 	
 	GetCharacterMovement()->MaxWalkSpeed = 300.f;
@@ -259,7 +259,7 @@ void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 		GetMesh()->SetHiddenInGame(true, true); // 추가: 명시적으로 메쉬 숨김
 
 		// 충돌 비활성화
-		SetActorEnableCollision(false);
+		SetActorEnableCollision(true);
 
 		// 액터 틱 비활성화 (단, 렌더링은 유지)
 		SetActorTickEnabled(false);
@@ -317,7 +317,7 @@ void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 				
 			}
 		}
-		UE_LOG(LogTemp, Warning, TEXT("Zombie %s is now fully INACTIVE."), *GetName());
+
 	}
 
 	// 멀티플레이에서 메쉬 가시성 강제 업데이트
@@ -335,9 +335,6 @@ void ANS_ZombieBase::ForceUpdateMeshVisibility_Multicast_Implementation(bool bVi
 
 		// 렌더링 상태 강제 업데이트
 		MeshComp->MarkRenderStateDirty();
-
-		UE_LOG(LogTemp, Verbose, TEXT("[ForceUpdateMeshVisibility] 좀비 %s 메쉬 가시성: %s"),
-			*GetName(), bVisible ? TEXT("보임") : TEXT("숨김"));
 	}
 }
 

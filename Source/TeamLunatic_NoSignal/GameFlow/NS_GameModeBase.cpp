@@ -38,9 +38,7 @@ void ANS_GameModeBase::BeginPlay()
             ZombieSpawnPoints.Add(Spawner);
         }
     }
-    
-    //UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 스포너 수: %d"), ZombieSpawnPoints.Num());
-    
+	
     // 현재 레벨의 좀비 액터 찾기
     TArray<AActor*> ExistingZombies;
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), ANS_ZombieBase::StaticClass(), ExistingZombies);
@@ -63,13 +61,9 @@ void ANS_GameModeBase::BeginPlay()
     }
 
     // 플레이어 수에 따라 최대 좀비 수 조정
-    MaxZombieCount = 40 * PlayerCount;
-    //UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 플레이어 수(%d)에 따라 최대 좀비 수를 %d로 설정"), 
-    //    PlayerCount, MaxZombieCount);
+    MaxZombieCount += PlayerCount * 15;
 
     // 하이브리드 접근법: 최적화된 타이머 설정
-    UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 최적화된 타이머 시스템 활성화"));
-
     // 1. 필수 타이머만 안전한 주기로 활성화
     float SafeSpawnInterval = CalculateOptimizedSpawnInterval();
     GetWorldTimerManager().SetTimer(ZombieSpawnTimer, this,
@@ -84,8 +78,6 @@ void ANS_GameModeBase::BeginPlay()
     GetWorldTimerManager().SetTimer(DelayedSpawnerSearchTimer, this,
         &ANS_GameModeBase::SearchForSpawnersDelayed, 5.0f, false);
 
-    UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 타이머 설정 완료 - 스폰: %.1f초, 정리: %.1f초"),
-        SafeSpawnInterval, SafeCleanupInterval);
     
     // 제거된 좀비 카운터 초기화
     ZombiesRemoved = 0;
@@ -111,9 +103,8 @@ float ANS_GameModeBase::CalculateOptimizedCleanupInterval()
 void ANS_GameModeBase::OptimizedSpawnCheck()
 {
     // 서버 부하 체크 - 프레임 시간이 33ms(30FPS) 이상이면 건너뜀
-    if (GetWorld()->GetDeltaSeconds() > 0.033f)
+    if (GetWorld()->GetDeltaSeconds() < 0.033f)
     {
-        UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 서버 부하로 인해 스폰 체크 건너뜀"));
         return;
     }
 
@@ -125,9 +116,8 @@ void ANS_GameModeBase::OptimizedSpawnCheck()
 void ANS_GameModeBase::BatchedCleanup()
 {
     // 서버 부하 체크
-    if (GetWorld()->GetDeltaSeconds() > 0.033f)
+    if (GetWorld()->GetDeltaSeconds() < 0.033f)
     {
-        UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 서버 부하로 인해 정리 작업 건너뜀"));
         return;
     }
 
@@ -243,8 +233,6 @@ void ANS_GameModeBase::UpdateZombieCache()
             CachedZombies.Add(TWeakObjectPtr<ANS_ZombieBase>(Zombie));
         }
     }
-
-    UE_LOG(LogTemp, Verbose, TEXT("[GameModeBase] 좀비 캐시 업데이트: %d마리"), CachedZombies.Num());
 }
 
 void ANS_GameModeBase::UpdatePlayerCache()
@@ -260,8 +248,6 @@ void ANS_GameModeBase::UpdatePlayerCache()
             CachedPlayers.Add(TWeakObjectPtr<ANS_PlayerCharacterBase>(Player));
         }
     }
-
-    UE_LOG(LogTemp, Verbose, TEXT("[GameModeBase] 플레이어 캐시 업데이트: %d명"), CachedPlayers.Num());
 }
 
 void ANS_GameModeBase::UpdateSpawnerCache()
@@ -277,8 +263,6 @@ void ANS_GameModeBase::UpdateSpawnerCache()
             CachedSpawners.Add(TWeakObjectPtr<AANS_ZombieSpawner>(Spawner));
         }
     }
-
-    UE_LOG(LogTemp, Verbose, TEXT("[GameModeBase] 스포너 캐시 업데이트: %d개"), CachedSpawners.Num());
 }
 
 // 거리 계산 최적화 함수들
@@ -343,9 +327,6 @@ void ANS_GameModeBase::SearchForSpawnersDelayed()
 			}
 		}
 	}
-	
-	//UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 지연 검색으로 %d개의 새 스포너 추가됨, 총 스포너 수: %d"), 
-		//NewSpawnersAdded, ZombieSpawnPoints.Num());
 }
 
 // 플레이어 위치 반환
@@ -377,7 +358,6 @@ void ANS_GameModeBase::CheckAndSpawnZombies()
 		static int32 LogCounter = 0;
 		if (LogCounter++ % 30 == 0)  // 30번에 한 번만 로그 출력
 		{
-			//UE_LOG(LogTemp, Warning, TEXT("[GameMode] 등록된 스포너가 없습니다. 스폰 불가능"));
 			SearchForSpawnersDelayed();
 		}
 		return;
@@ -408,9 +388,6 @@ void ANS_GameModeBase::CheckAndSpawnZombies()
 		int32 SpawnerIndex = i % SuitableSpawners.Num();
 		SpawnZombieAtPoint(SuitableSpawners[SpawnerIndex]);
 	}
-	
-	//UE_LOG(LogTemp, Verbose, TEXT("[GameMode] %d마리 좀비 스폰 완료, 현재 좀비 %d/%d"), 
-		//SpawnCount, CurrentZombieCount, MaxZombieCount);
 }
 
 // 적합한 스포너 찾기
@@ -449,7 +426,7 @@ TArray<AANS_ZombieSpawner*> ANS_GameModeBase::FindSuitableSpawners(const FVector
 			}
 
 			// 좀비가 스포너 근처에 있으면 해당 스포너는 사용 중으로 표시 (500^2 = 250000)
-			if (ClosestSpawner && ClosestDistanceSquared < 250000.0f)
+			if (ClosestSpawner && ClosestDistanceSquared < 4000.0f)
 			{
 				SpawnerHasZombie.Add(ClosestSpawner, true);
 			}
@@ -519,17 +496,17 @@ void ANS_GameModeBase::SpawnZombieAtPoint(AANS_ZombieSpawner* SpawnSpawner)
 // 좀비 클래스 선택 함수
 TSubclassOf<ANS_ZombieBase> ANS_GameModeBase::SelectZombieClass()
 {
-    int32 RandNum = FMath::RandRange(1, 100);
+    int32 RandNum = FMath::RandRange(0, 100);
     
-    if (RandNum <= 60 && BasicZombieClass)  // 60% 기본 좀비
+    if (RandNum <= 70 && BasicZombieClass)  // 60% 기본 좀비
     {
         return BasicZombieClass;
     }
-    else if (RandNum <= 95 && FatZombieClass)  // 35% 뚱 좀비
+    if (RandNum <= 85 && RandNum > 70 && FatZombieClass)  // 20% 뚱 좀비
     {
         return FatZombieClass;
     }
-    else if (RandNum <= 100 && RunnerZombieClass)  // 5% 러너 좀비
+    if (RandNum <= 100 && RandNum > 85 && RunnerZombieClass)  // 20% 러너 좀비
     {
         return RunnerZombieClass;
     }
@@ -542,30 +519,32 @@ FVector ANS_GameModeBase::GetSpawnLocationOnGround(AANS_ZombieSpawner* Spawner)
 {
     // 스폰 위치 가져오기
     FVector SpawnLocation = Spawner->GetRandomSpawnLocationInBounds();
-    
+
     // 지면 위에 스폰하기 위한 트레이스 수행
     FHitResult HitResult;
-    FVector TraceStart = SpawnLocation + FVector(0, 0, 100);  // 약간 위에서 시작
-    FVector TraceEnd = SpawnLocation - FVector(0, 0, 500);    // 충분히 아래까지 트레이스
-    
+    FVector TraceStart = SpawnLocation + FVector(0, 0, 200);  // 더 높은 위치에서 시작
+    FVector TraceEnd = SpawnLocation - FVector(0, 0, 1000);   // 더 깊이 트레이스
+
     FCollisionQueryParams QueryParams;
     QueryParams.bTraceComplex = false;
     QueryParams.AddIgnoredActor(Spawner);
-    
+
+    // WorldStatic 채널을 사용하여 더 정확한 지면 감지
     bool bHit = GetWorld()->LineTraceSingleByChannel(
         HitResult,
         TraceStart,
         TraceEnd,
-        ECC_Visibility,
+        ECC_WorldStatic,
         QueryParams
     );
-    
-    // 지면을 찾았으면 그 위치에 스폰
+
+    // 지면을 찾았으면 그 위치에 스폰 (좀비 캡슐 높이 고려)
     if (bHit)
     {
-        return HitResult.Location + FVector(0, 0, 90);  // 지면 위 10 유닛에 위치
+        // 좀비 캡슐 컴포넌트의 절반 높이만큼 위에 스폰 (일반적으로 88-95 정도)
+        return HitResult.Location + FVector(0, 0, 95);
     }
-    
+    // 지면을 찾지 못했으면 원래 스폰 위치 반환
     return SpawnLocation;
 }
 
@@ -576,10 +555,18 @@ ANS_ZombieBase* ANS_GameModeBase::SpawnZombieAtLocation(TSubclassOf<ANS_ZombieBa
     FTransform SpawnTransform(SpawnRotation, Location);
 
     FActorSpawnParameters Params;
-    Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding ;
+    // 콜리전이 있어도 강제로 스폰하되, 위치를 약간 조정
+    Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
     Params.bNoFail = true;
-    
-    return GetWorld()->SpawnActor<ANS_ZombieBase>(ZombieClass, SpawnTransform, Params);
+
+    ANS_ZombieBase* SpawnedZombie = GetWorld()->SpawnActor<ANS_ZombieBase>(ZombieClass, SpawnTransform, Params);
+
+    // 스폰된 좀비가 있다면 추가 검증
+    if (SpawnedZombie)
+    {
+    	return SpawnedZombie;
+    }	
+	return nullptr;   
 }
 
 // 스폰된 좀비 등록 함수
@@ -689,7 +676,6 @@ void ANS_GameModeBase::CleanupDistantZombies()
         if (DistanceSquared > ZombieDestroyDistanceSquared)
         {
             // 좀비 제거 (OnZombieDestroyed 이벤트가 자동으로 호출됨)
-            //UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 제거: 거리 %.2f"), FMath::Sqrt(DistanceSquared));
             Zombie->Destroy();
             DestroyedCount++;
         }
@@ -697,7 +683,7 @@ void ANS_GameModeBase::CleanupDistantZombies()
 
     if (DestroyedCount > 0)
     {
-        //UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 거리가 먼 좀비 %d마리 제거됨"), DestroyedCount);
+        
     }
 }
 
@@ -708,12 +694,8 @@ void ANS_GameModeBase::OnPlayerCharacterDied_Implementation(ANS_PlayerCharacterB
     // 기본 구현: 플레이어가 죽었을 때의 기본 처리
     if (!DeadCharacter)
     {
-        UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] OnPlayerCharacterDied: DeadCharacter is null"));
         return;
     }
-
-    UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] Player character died: %s"), *DeadCharacter->GetName());
-
     // 플레이어 상태 업데이트
     if (AController* Controller = DeadCharacter->GetController())
     {
