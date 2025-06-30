@@ -68,13 +68,7 @@ public:
     // 게임 오버 위젯 표시
     UFUNCTION(BlueprintCallable, Category = "UI")
     bool ShowGameOverWidget(UWorld* World);
-
-
-UFUNCTION(BlueprintCallable, Category = "UI")
-TSubclassOf<UUserWidget> GetOpenMapClass() const { return OpenMapClass; }
-
-UPROPERTY(EditAnywhere, Category = "UI")
-TSubclassOf<UUserWidget> OpenMapClass;
+    
 
     
     // 게임 오버 위젯 숨기기
@@ -151,17 +145,26 @@ protected:
     UPROPERTY()
     UNS_InGameMenu* InGameMenuWidget;
     
+    UPROPERTY()
     // 게임 오버 메시지 위젯 인스턴스
     UNS_Msg_GameOver* NS_Msg_GameOveWidget;
     
+    UPROPERTY()
     // 인게임 메시지 위젯 인스턴스
     UNS_InGameMsg* NS_InGameMsgWidget;
     
+    UPROPERTY()
     // 플레이어 HUD 위젯 인스턴스
     UNS_PlayerHUD* NS_PlayerHUDWidget;
     
+    UPROPERTY()
     // 로딩 화면 위젯 인스턴스
     UNS_LoadingScreen* NS_LoadingScreen;
+
+    // 관전자 위젯 인스턴스
+    UPROPERTY()
+    UNS_SpectatorWidgetClass* SpectatorWidget;
+
 
     // 인게임 메뉴 위젯 클래스
     UPROPERTY(EditDefaultsOnly, Category = "UI")
@@ -186,15 +189,8 @@ protected:
     // 히트 이펙트 위젯 클래스
     UPROPERTY(EditDefaultsOnly, Category = "UI")
     TSubclassOf<UUserWidget> HitEffectWidgetClass;
-
-    // 관전자 위젯 인스턴스
-    UPROPERTY()
-    UNS_SpectatorWidgetClass* SpectatorWidget;
-
+    
     // 관전자 위젯 클래스
     UPROPERTY(EditDefaultsOnly, Category = "UI")
     TSubclassOf<UNS_SpectatorWidgetClass> SpectatorWidgetClass;
-
-private:
-    // 추가 private 멤버가 필요한 경우 여기에 선언
 };

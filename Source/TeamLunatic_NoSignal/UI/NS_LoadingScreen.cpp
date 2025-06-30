@@ -9,6 +9,7 @@
 #include "GameFlow/NS_GameInstance.h"
 #include "GameFlow/NS_LobbyController.h"
 #include "UI/NS_UIManager.h"
+#include "Character/NS_PlayerCharacterBase.h"
 
 void UNS_LoadingScreen::NativeConstruct()
 {
@@ -20,6 +21,15 @@ void UNS_LoadingScreen::NativeConstruct()
 
 	// 위젯 자체도 강제로 보이게 설정
 	SetVisibility(ESlateVisibility::Visible);
+
+	// 항상 입력을 UI Only로 강제 (로딩 스크린 생성 시)
+	if (APlayerController* PC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr)
+	{
+		FInputModeUIOnly InputMode;
+		InputMode.SetWidgetToFocus(TakeWidget());
+		PC->SetInputMode(InputMode);
+		PC->bShowMouseCursor = true;
+	}
 
 	InitializeLoadingScreen();
 }
@@ -46,6 +56,23 @@ void UNS_LoadingScreen::StartLoading()
 	RecentFrameRates.Empty();
 	LoadingTime = 0.0f; // 로딩 시간 초기화 (0%에서 시작)
 
+	// 모든 플레이어의 IMC(입력 매핑 컨텍스트) 제거 (입력 완전 차단)
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+		{
+			APlayerController* PC = It->Get();
+			if (PC)
+			{
+				if (ANS_PlayerCharacterBase* PlayerChar = Cast<ANS_PlayerCharacterBase>(PC->GetPawn()))
+				{
+					PlayerChar->SetMovementLockState_Server(true);
+				}
+			}
+		}
+	}
+
 	UE_LOG(LogTemp, Warning, TEXT("로딩 시작 - 0%%에서 시작 - 뷰포트에 있는지 확인: %s"), IsInViewport() ? TEXT("예") : TEXT("아니오"));
 
 	// 뷰포트에 없다면 다시 추가
@@ -53,6 +80,15 @@ void UNS_LoadingScreen::StartLoading()
 	{
 		AddToViewport(32767); // 최대 Z-Order로 모든 것을 가림
 		UE_LOG(LogTemp, Warning, TEXT("로딩 스크린을 최상위 Z-Order로 뷰포트에 추가함"));
+
+		// 입력을 UI Only로 전환 (로딩 중에는 입력 차단)
+		if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+		{
+			FInputModeUIOnly InputMode;
+			InputMode.SetWidgetToFocus(TakeWidget());
+			PC->SetInputMode(InputMode);
+			PC->bShowMouseCursor = true;
+		}
 	}
 
 	// 강제로 보이게 설정
@@ -85,7 +121,7 @@ bool UNS_LoadingScreen::IsLoadingComplete() const
 
 void UNS_LoadingScreen::UpdateLoadingProgress()
 {
-	// 새로운 진행률 계산: 0% → 70% (시간 기반) → 100% (프레임률 안정화)
+	// 새로운 진행�� 계산: 0% → 70% (시간 기반) → 100% (프레임률 안정화)
 	float NewProgress = 0.0f;
 
 	// 시간 기반으로 진행률 계산
@@ -99,10 +135,20 @@ void UNS_LoadingScreen::UpdateLoadingProgress()
 	}
 	else
 	{
-		// 90% 이후: 간단한 체크만 수행
+		// 90% 이후: 레벨 로딩과 렌더링 준비 체크
 		if (CheckLevelLoaded() && CheckRenderingReady())
 		{
-			NewProgress = 1.0f;
+			// 프레임률 안정화 체크 추가
+			CheckFrameRateStable();
+			
+			if (bIsFrameRateStable)
+			{
+				NewProgress = 1.0f;
+			}
+			else
+			{
+				NewProgress = 0.95f; // 프레임률 안정화 대기 중
+			}
 		}
 		else
 		{
@@ -114,8 +160,8 @@ void UNS_LoadingScreen::UpdateLoadingProgress()
 	CurrentProgress = FMath::Max(CurrentProgress, NewProgress);
 	CurrentProgress = FMath::Clamp(CurrentProgress, 0.0f, 1.0f);
 
-	// 로딩 완료 체크 (2초 이후에만)
-	if (LoadingTime >= 2.0f && CheckLevelLoaded() && CheckRenderingReady())
+	// 로딩 완료 체크 (2초 이후에만, 프레임률 안정화 포함)
+	if (LoadingTime >= 2.0f && CheckLevelLoaded() && CheckRenderingReady() && CheckFrameRateStable())
 	{
 		OnLoadingFinished();
 	}
@@ -134,7 +180,6 @@ void UNS_LoadingScreen::UpdateUI()
 		FString StatusText;
 		if (LoadingTime < 5.0f)
 		{
-			// 0% ~ 70%: 시간 기반 렌더링 시뮬레이션
 			if (CurrentProgress < 0.2f)
 			{
 				StatusText = TEXT("게임 시작 중...");
@@ -150,7 +195,6 @@ void UNS_LoadingScreen::UpdateUI()
 		}
 		else if (!bIsFrameRateStable)
 		{
-			// 70% ~ 100%: 실제 프레임률 안정화
 			float CurrentFPS = 0.0f;
 			if (RecentFrameRates.Num() > 0)
 			{
@@ -164,6 +208,67 @@ void UNS_LoadingScreen::UpdateUI()
 		}
 
 		Text_LoadingStatus->SetText(FText::FromString(StatusText));
+	}
+
+	// 멀티플레이어 상태 텍스트 갱신
+	UpdateMultiplayerInfo();
+}
+
+// 현재 로딩 상태 텍스트 반환
+FString UNS_LoadingScreen::GetCurrentLoadingStatusText() const
+{
+	if (GetWorld()->GetNetMode() == NM_Standalone)
+	{
+		return TEXT("싱글플레이어");
+	}
+	else if (GetWorld()->GetNetMode() == NM_Client)
+	{
+		return TEXT("멀티플레이어(클라이언트)");
+	}
+	else if (GetWorld()->GetNetMode() == NM_ListenServer)
+	{
+		return TEXT("멀티플레이어(호스트)");
+	}
+	else if (GetWorld()->GetNetMode() == NM_DedicatedServer)
+	{
+		return TEXT("멀티플레이어(서버)");
+	}
+	return TEXT("알 수 없음");
+}
+
+// 멀티플레이어 상태 텍스트 반환
+FString UNS_LoadingScreen::GetMultiplayerStatusText() const
+{
+	UWorld* World = GetWorld();
+	if (!World || World->GetNetMode() == NM_Standalone)
+		return TEXT("");
+
+	int32 NumPlayers = 0;
+	int32 NumReady = 0;
+	for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+	{
+		APlayerController* PC = It->Get();
+		if (PC)
+		{
+			NumPlayers++;
+			// 준비 상태 체크는 필요시 확장
+		}
+	}
+	return FString::Printf(TEXT("접속 인원: %d명"), NumPlayers);
+}
+
+// 멀티플레이어 상태 텍스트를 위젯에 표시
+void UNS_LoadingScreen::UpdateMultiplayerInfo()
+{
+	if (Text_MultiplayerStatus)
+	{
+		FString Status = GetCurrentLoadingStatusText();
+		FString MultiStatus = GetMultiplayerStatusText();
+		if (!MultiStatus.IsEmpty())
+		{
+			Status += TEXT(" / ") + MultiStatus;
+		}
+		Text_MultiplayerStatus->SetText(FText::FromString(Status));
 	}
 }
 
@@ -267,6 +372,23 @@ void UNS_LoadingScreen::OnLoadingFinished()
 	bIsLoading = false;
 	UE_LOG(LogTemp, Warning, TEXT("로딩 완료 - 로딩 스크린 제거"));
 
+	// 모든 플레이어의 IMC(입력 매핑 컨텍스트) 다시 활성화
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+		{
+			APlayerController* PC = It->Get();
+			if (PC)
+			{
+				if (ANS_PlayerCharacterBase* PlayerChar = Cast<ANS_PlayerCharacterBase>(PC->GetPawn()))
+				{
+					PlayerChar->SetMovementLockState_Server(false);
+				}
+			}
+		}
+	}
+	
 	// 멀티플레이어에서는 서버에 로딩 완료 알림
 	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
 	{

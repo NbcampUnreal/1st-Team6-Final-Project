@@ -337,6 +337,7 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsSprint);            // 달리기 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsPickUp);            // 아이템줍기 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsHit);               // 맞는지 확인 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, LookMagnification);
     DOREPLIFETIME(ANS_PlayerCharacterBase, CamYaw);              // 카메라 좌/우 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, CamPitch);            // 카메라 상/하 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsAiming);            // 조준중인지 확인 변수
@@ -533,11 +534,21 @@ void ANS_PlayerCharacterBase::JumpAction(const FInputActionValue& Value)
         Jump(); 
         IsCanJump = false; 
 
+        // 기존 타이머가 있다면 클리어
+        if (GetWorldTimerManager().IsTimerActive(JumpTimerHandle))
+        {
+            GetWorldTimerManager().ClearTimer(JumpTimerHandle);
+        }
+
         // 점프한 뒤로 1.3초동안은 점프를 못함
-        FTimerHandle RestartJumpTime; 
         GetWorldTimerManager().SetTimer( 
-            RestartJumpTime, 
-            FTimerDelegate::CreateLambda([this]() { IsCanJump = true; }), 
+            JumpTimerHandle, 
+            FTimerDelegate::CreateLambda([this]() { 
+                if (IsValid(this))
+                {
+                    IsCanJump = true; 
+                }
+            }), 
             1.3f, 
             false 
         );

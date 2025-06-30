@@ -30,6 +30,9 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* Text_LoadingStatus;
 
+	// 멀티플레이어 상태 표시용 (선택적)
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* Text_MultiplayerStatus;
 
 	// 로딩 시작
 	UFUNCTION(BlueprintCallable, Category = "Loading")
@@ -58,13 +61,19 @@ private:
 	bool bIsFrameRateStable = false;
 
 	// 프레임률 관련
-	float MinRequiredFrameRate = 45.0f;
+	float MinRequiredFrameRate = 30.0f;
 	float StableFrameCheckTime = 1.0f;
 	float FrameRateCheckDuration = 0.0f;
 	TArray<float> RecentFrameRates;
 
 	// 로딩 시간 추적
 	float LoadingTime = 0.0f;
+
+	// 멀티플레이어 관련
+	bool bIsWaitingForOtherPlayers = false;
+	float WaitingStartTime = 0.0f;
+	int32 TotalPlayerCount = 1;
+	int32 LoadingCompletedCount = 0;
 
 	// 로딩 단계별 진행률
 	void UpdateLoadingProgress();
@@ -74,6 +83,11 @@ private:
 	bool CheckLevelLoaded();
 	bool CheckRenderingReady();
 	bool CheckFrameRateStable();
+
+	// 멀티플레이어 상태 관리
+	FString GetCurrentLoadingStatusText() const;
+	FString GetMultiplayerStatusText() const;
+	void UpdateMultiplayerInfo();
 
 	// 로딩 완료 처리
 	void OnLoadingFinished();
