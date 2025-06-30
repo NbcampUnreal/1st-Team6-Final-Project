@@ -449,19 +449,30 @@ void ANS_ZombieBase::ScheduleSound(USoundCue* SoundCue)
 	}
 	
 	float RandomTime = FMath::FRandRange(5.f,8.f);
-	GetWorldTimerManager().SetTimer(AmbientSoundTimer,[this, SoundCue]()
+	TWeakObjectPtr<ANS_ZombieBase> WeakZombie(this);
+	GetWorldTimerManager().SetTimer(AmbientSoundTimer,[WeakZombie, SoundCue]()
 	{
-		if (!GetWorld() || GetWorld()->bIsTearingDown)
-		{
-			return;
-		}
-		float PlayPercent = 0.5f;
-		float ActualPercent = FMath::FRandRange(0.0f, 1.0f);
-		if (PlayPercent > ActualPercent)
-		{
-			Server_PlaySound(SoundCue);
-		}
-		ScheduleSound(SoundCue);
+			if (!WeakZombie.IsValid())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Zombie already destroyed, skipping sound timer."));
+				return;
+			}
+
+			ANS_ZombieBase* Zombie = WeakZombie.Get();
+
+			if (!Zombie->GetWorld() || Zombie->GetWorld()->bIsTearingDown)
+			{
+				return;
+			}
+
+			float PlayPercent = 0.5f;
+			float ActualPercent = FMath::FRandRange(0.0f, 1.0f);
+			if (PlayPercent > ActualPercent)
+			{
+				Zombie->Server_PlaySound(SoundCue);
+			}
+
+			Zombie->ScheduleSound(SoundCue);
 	}, RandomTime, false);
 }
 
