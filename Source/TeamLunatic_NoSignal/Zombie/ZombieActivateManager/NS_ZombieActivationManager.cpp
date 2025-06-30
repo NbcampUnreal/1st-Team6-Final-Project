@@ -33,7 +33,6 @@ void ANS_ZombieActivationManager::BeginPlay()
             // 체이서 좀비는 즉시 활성화
             if (Cast<ANS_Chaser>(Zombie))
             {
-                UE_LOG(LogTemp, Warning, TEXT("체이서 좀비 발견 및 활성화: %s"), *Zombie->GetName());
                 Zombie->SetActive_Multicast(true);
                 Zombie->SetActorTickEnabled(true);
                 if (AAIController* AIController = Cast<AAIController>(Zombie->GetController()))
@@ -78,9 +77,7 @@ void ANS_ZombieActivationManager::PerformActivationUpdate_Implementation()
         {
             if (!Zombie->bIsActive)
             {
-                UE_LOG(LogTemp, Warning, TEXT("체이서 좀비 재활성화: %s"), *Zombie->GetName());
                 Zombie->SetActive_Multicast(true);
-                Zombie->SetActorTickEnabled(true);
                 if (AAIController* AIController = Cast<AAIController>(Zombie->GetController()))
                 {
                     AIController->SetActorTickEnabled(true);
@@ -113,8 +110,6 @@ void ANS_ZombieActivationManager::PerformActivationUpdate_Implementation()
             if (!Zombie->bIsActive) // 현재 비활성 상태인데 활성화되어야 한다면
             {
                 Zombie->SetActive_Multicast(true);
-                // SetActive_Multicast에서 이미 틱을 처리하므로 중복 제거
-                UE_LOG(LogTemp, Verbose, TEXT("[ZombieActivationManager] 좀비 %s 활성화"), *Zombie->GetName());
             }
         }
         else // 비활성화되어야 한다면
@@ -122,8 +117,6 @@ void ANS_ZombieActivationManager::PerformActivationUpdate_Implementation()
             if (Zombie->bIsActive) // 현재 활성 상태인데 비활성화되어야 한다면
             {
                 Zombie->SetActive_Multicast(false);
-                // SetActive_Multicast에서 이미 틱을 처리하므로 중복 제거
-                UE_LOG(LogTemp, Verbose, TEXT("[ZombieActivationManager] 좀비 %s 비활성화"), *Zombie->GetName());
             }
         }
     }
@@ -179,8 +172,6 @@ void ANS_ZombieActivationManager::UpdatePlayerCache()
             CachedPlayers.Add(TWeakObjectPtr<ANS_PlayerCharacterBase>(Player));
         }
     }
-
-    UE_LOG(LogTemp, Verbose, TEXT("[ZombieActivationManager] 플레이어 캐시 업데이트: %d명"), CachedPlayers.Num());
 }
 
 
