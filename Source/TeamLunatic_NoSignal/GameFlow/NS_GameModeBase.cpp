@@ -47,12 +47,18 @@ void ANS_GameModeBase::BeginPlay()
 
     CurrentZombieCount = ExistingZombies.Num();
     
-    // 기존 좀비 파괴 이벤트 바인딩
+    // 기존 좀비 파괴 이벤트 바인딩 및 캐시에 추가
     for (AActor* Z : ExistingZombies)
     {
         if (IsValid(Z))
         {
             Z->OnDestroyed.AddDynamic(this, &ANS_GameModeBase::OnZombieDestroyed);
+
+            // 기존 좀비들을 캐시에 추가
+            if (ANS_ZombieBase* Zombie = Cast<ANS_ZombieBase>(Z))
+            {
+                CachedZombies.Add(TWeakObjectPtr<ANS_ZombieBase>(Zombie));
+            }
         }
     }
 
@@ -61,24 +67,248 @@ void ANS_GameModeBase::BeginPlay()
     //UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 플레이어 수(%d)에 따라 최대 좀비 수를 %d로 설정"), 
     //    PlayerCount, MaxZombieCount);
 
-    // 좀비 스폰 타이머 설정 - 3초마다 스폰
-    GetWorldTimerManager().SetTimer(ZombieSpawnTimer, this, &ANS_GameModeBase::CheckAndSpawnZombies, ZombieSpawnInterval, true);
-    //UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 스폰 타이머 설정 완료 (%.1f초 간격, 한 번에 %d마리)"), 
-    //    ZombieSpawnInterval, ZombiesPerSpawn);
-    
-    // 지연된 스포너 검색 타이머 설정 (3초 후 실행)
-    GetWorldTimerManager().SetTimer(DelayedSpawnerSearchTimer, this, &ANS_GameModeBase::SearchForSpawnersDelayed, 3.0f, false);
+    // 하이브리드 접근법: 최적화된 타이머 설정
+    UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 최적화된 타이머 시스템 활성화"));
 
-    // 좀비 정리 타이머 설정 (5초마다 실행)
-    GetWorldTimerManager().SetTimer(ZombieCleanupTimer, this, &ANS_GameModeBase::CleanupDistantZombies, 5.0f, true);
-    //UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 정리 타이머 설정 완료 (5초마다 실행)"));
-    
-    // 좀비 디버그 타이머 설정 (1초마다 실행)
-    GetWorldTimerManager().SetTimer(ZombieDebugTimerHandle, this, &ANS_GameModeBase::DebugZombieDistances, 1.0f, true);
-    //UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 디버그 타이머 설정 완료 (1초마다 실행)"));
+    // 1. 필수 타이머만 안전한 주기로 활성화
+    float SafeSpawnInterval = CalculateOptimizedSpawnInterval();
+    GetWorldTimerManager().SetTimer(ZombieSpawnTimer, this,
+        &ANS_GameModeBase::OptimizedSpawnCheck, SafeSpawnInterval, true);
+
+    // 2. 정리 타이머는 더 긴 주기로
+    float SafeCleanupInterval = CalculateOptimizedCleanupInterval();
+    GetWorldTimerManager().SetTimer(ZombieCleanupTimer, this,
+        &ANS_GameModeBase::BatchedCleanup, SafeCleanupInterval, true);
+
+    // 3. 지연된 스포너 검색은 더 긴 주기로 (한 번만 실행)
+    GetWorldTimerManager().SetTimer(DelayedSpawnerSearchTimer, this,
+        &ANS_GameModeBase::SearchForSpawnersDelayed, 5.0f, false);
+
+    UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 타이머 설정 완료 - 스폰: %.1f초, 정리: %.1f초"),
+        SafeSpawnInterval, SafeCleanupInterval);
     
     // 제거된 좀비 카운터 초기화
     ZombiesRemoved = 0;
+}
+
+// 최적화된 스폰 주기 계산
+float ANS_GameModeBase::CalculateOptimizedSpawnInterval()
+{
+    // 플레이어 수가 많을수록 주기를 길게, 최소 3초 보장
+    float BaseInterval = ZombieSpawnInterval;
+    float PlayerMultiplier = FMath::Max(1.0f, PlayerCount * 0.5f);
+    return FMath::Max(BaseInterval * PlayerMultiplier, 3.0f);
+}
+
+// 최적화된 정리 주기 계산
+float ANS_GameModeBase::CalculateOptimizedCleanupInterval()
+{
+    // 플레이어 수에 따라 10-20초 사이로 조정
+    return FMath::Clamp(10.0f + (PlayerCount * 2.0f), 10.0f, 20.0f);
+}
+
+// 최적화된 스폰 체크 (기존 함수를 래핑)
+void ANS_GameModeBase::OptimizedSpawnCheck()
+{
+    // 서버 부하 체크 - 프레임 시간이 33ms(30FPS) 이상이면 건너뜀
+    if (GetWorld()->GetDeltaSeconds() > 0.033f)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 서버 부하로 인해 스폰 체크 건너뜀"));
+        return;
+    }
+
+    // 기존 스폰 로직 실행
+    CheckAndSpawnZombies();
+}
+
+// 배치 처리된 좀비 정리
+void ANS_GameModeBase::BatchedCleanup()
+{
+    // 서버 부하 체크
+    if (GetWorld()->GetDeltaSeconds() > 0.033f)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 서버 부하로 인해 정리 작업 건너뜀"));
+        return;
+    }
+
+    // 기존 정리 로직 실행
+    CleanupDistantZombies();
+}
+
+// 강화된 캐싱 시스템 구현
+TArray<ANS_ZombieBase*> ANS_GameModeBase::GetCachedZombies()
+{
+    float CurrentTime = GetWorld()->GetTimeSeconds();
+
+    // 캐시 업데이트가 필요한지 확인
+    if (CurrentTime - LastZombieListUpdateTime > ZombieListUpdateInterval)
+    {
+        UpdateZombieCache();
+        LastZombieListUpdateTime = CurrentTime;
+    }
+
+    // 유효한 좀비들만 반환
+    TArray<ANS_ZombieBase*> ValidZombies;
+    ValidZombies.Reserve(CachedZombies.Num());
+
+    for (int32 i = CachedZombies.Num() - 1; i >= 0; --i)
+    {
+        if (CachedZombies[i].IsValid())
+        {
+            ValidZombies.Add(CachedZombies[i].Get());
+        }
+        else
+        {
+            // 무효한 포인터 제거
+            CachedZombies.RemoveAtSwap(i);
+        }
+    }
+
+    return ValidZombies;
+}
+
+TArray<ANS_PlayerCharacterBase*> ANS_GameModeBase::GetCachedPlayers()
+{
+    float CurrentTime = GetWorld()->GetTimeSeconds();
+
+    // 캐시 업데이트가 필요한지 확인
+    if (CurrentTime - LastPlayerListUpdateTime > PlayerListUpdateInterval)
+    {
+        UpdatePlayerCache();
+        LastPlayerListUpdateTime = CurrentTime;
+    }
+
+    // 유효한 플레이어들만 반환
+    TArray<ANS_PlayerCharacterBase*> ValidPlayers;
+    ValidPlayers.Reserve(CachedPlayers.Num());
+
+    for (int32 i = CachedPlayers.Num() - 1; i >= 0; --i)
+    {
+        if (CachedPlayers[i].IsValid())
+        {
+            ValidPlayers.Add(CachedPlayers[i].Get());
+        }
+        else
+        {
+            // 무효한 포인터 제거
+            CachedPlayers.RemoveAtSwap(i);
+        }
+    }
+
+    return ValidPlayers;
+}
+
+TArray<AANS_ZombieSpawner*> ANS_GameModeBase::GetCachedSpawners()
+{
+    float CurrentTime = GetWorld()->GetTimeSeconds();
+
+    // 캐시 업데이트가 필요한지 확인 (스포너는 거의 변하지 않으므로 긴 주기)
+    if (CurrentTime - LastSpawnerListUpdateTime > SpawnerListUpdateInterval)
+    {
+        UpdateSpawnerCache();
+        LastSpawnerListUpdateTime = CurrentTime;
+    }
+
+    // 유효한 스포너들만 반환
+    TArray<AANS_ZombieSpawner*> ValidSpawners;
+    ValidSpawners.Reserve(CachedSpawners.Num());
+
+    for (int32 i = CachedSpawners.Num() - 1; i >= 0; --i)
+    {
+        if (CachedSpawners[i].IsValid())
+        {
+            ValidSpawners.Add(CachedSpawners[i].Get());
+        }
+        else
+        {
+            // 무효한 포인터 제거
+            CachedSpawners.RemoveAtSwap(i);
+        }
+    }
+
+    return ValidSpawners;
+}
+
+// 캐시 업데이트 함수들
+void ANS_GameModeBase::UpdateZombieCache()
+{
+    TArray<AActor*> FoundZombies;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ANS_ZombieBase::StaticClass(), FoundZombies);
+
+    CachedZombies.Empty(FoundZombies.Num());
+    for (AActor* Actor : FoundZombies)
+    {
+        if (ANS_ZombieBase* Zombie = Cast<ANS_ZombieBase>(Actor))
+        {
+            CachedZombies.Add(TWeakObjectPtr<ANS_ZombieBase>(Zombie));
+        }
+    }
+
+    UE_LOG(LogTemp, Verbose, TEXT("[GameModeBase] 좀비 캐시 업데이트: %d마리"), CachedZombies.Num());
+}
+
+void ANS_GameModeBase::UpdatePlayerCache()
+{
+    TArray<AActor*> FoundPlayers;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ANS_PlayerCharacterBase::StaticClass(), FoundPlayers);
+
+    CachedPlayers.Empty(FoundPlayers.Num());
+    for (AActor* Actor : FoundPlayers)
+    {
+        if (ANS_PlayerCharacterBase* Player = Cast<ANS_PlayerCharacterBase>(Actor))
+        {
+            CachedPlayers.Add(TWeakObjectPtr<ANS_PlayerCharacterBase>(Player));
+        }
+    }
+
+    UE_LOG(LogTemp, Verbose, TEXT("[GameModeBase] 플레이어 캐시 업데이트: %d명"), CachedPlayers.Num());
+}
+
+void ANS_GameModeBase::UpdateSpawnerCache()
+{
+    TArray<AActor*> FoundSpawners;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), AANS_ZombieSpawner::StaticClass(), FoundSpawners);
+
+    CachedSpawners.Empty(FoundSpawners.Num());
+    for (AActor* Actor : FoundSpawners)
+    {
+        if (AANS_ZombieSpawner* Spawner = Cast<AANS_ZombieSpawner>(Actor))
+        {
+            CachedSpawners.Add(TWeakObjectPtr<AANS_ZombieSpawner>(Spawner));
+        }
+    }
+
+    UE_LOG(LogTemp, Verbose, TEXT("[GameModeBase] 스포너 캐시 업데이트: %d개"), CachedSpawners.Num());
+}
+
+// 거리 계산 최적화 함수들
+bool ANS_GameModeBase::IsWithinDistanceSquared(const FVector& Location1, const FVector& Location2, float DistanceThreshold)
+{
+    // 제곱근 계산을 피하기 위해 DistSquared 사용
+    float DistanceThresholdSquared = DistanceThreshold * DistanceThreshold;
+    return FVector::DistSquared(Location1, Location2) <= DistanceThresholdSquared;
+}
+
+TArray<ANS_ZombieBase*> ANS_GameModeBase::GetZombiesInRange(const FVector& CenterLocation, float Range)
+{
+    TArray<ANS_ZombieBase*> ZombiesInRange;
+    TArray<ANS_ZombieBase*> AllZombies = GetCachedZombies();
+
+    ZombiesInRange.Reserve(AllZombies.Num() / 4); // 대략적인 예상 크기
+
+    float RangeSquared = Range * Range;
+    for (ANS_ZombieBase* Zombie : AllZombies)
+    {
+        if (IsValid(Zombie))
+        {
+            if (FVector::DistSquared(CenterLocation, Zombie->GetActorLocation()) <= RangeSquared)
+            {
+                ZombiesInRange.Add(Zombie);
+            }
+        }
+    }
+
+    return ZombiesInRange;
 }
 
 void ANS_GameModeBase::SearchForSpawnersDelayed()
@@ -189,64 +419,68 @@ TArray<AANS_ZombieSpawner*> ANS_GameModeBase::FindSuitableSpawners(const FVector
     TArray<AANS_ZombieSpawner*> SuitableSpawners;
     TMap<AANS_ZombieSpawner*, bool> SpawnerHasZombie;
     
-    // 현재 좀비 위치 확인
-    TArray<AActor*> ExistingZombies;
-    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ANS_ZombieBase::StaticClass(), ExistingZombies);
+    // 캐시된 좀비 위치 확인 (GetAllActorsOfClass 대신 캐시 사용)
+    TArray<ANS_ZombieBase*> ExistingZombies = GetCachedZombies();
 
 	// 월드에 좀비가 있으면
 	if (ExistingZombies.Num() > 0)
 	{
-		// 각 좀비의 가장 가까운 스포너 찾기
-		for (AActor* ZombieActor : ExistingZombies)
+		// 각 좀비의 가장 가까운 스포너 찾기 (최적화된 버전)
+		TArray<AANS_ZombieSpawner*> CachedSpawnerList = GetCachedSpawners();
+		for (ANS_ZombieBase* Zombie : ExistingZombies)
 		{
-			ANS_ZombieBase* Zombie = Cast<ANS_ZombieBase>(ZombieActor);
-			if (!Zombie) continue;
-        
+			if (!IsValid(Zombie)) continue;
+
 			FVector ZombieLocation = Zombie->GetActorLocation();
-			float ClosestDistance = MAX_FLT;
+			float ClosestDistanceSquared = MAX_FLT;
 			AANS_ZombieSpawner* ClosestSpawner = nullptr;
-        
-			for (AANS_ZombieSpawner* Spawner : ZombieSpawnPoints)
+
+			// 캐시된 스포너 리스트 사용 및 DistSquared로 최적화
+			for (AANS_ZombieSpawner* Spawner : CachedSpawnerList)
 			{
 				if (!IsValid(Spawner)) continue;
-            
-				float Distance = FVector::Dist(ZombieLocation, Spawner->GetActorLocation());
-				if (Distance < ClosestDistance)
+
+				float DistanceSquared = FVector::DistSquared(ZombieLocation, Spawner->GetActorLocation());
+				if (DistanceSquared < ClosestDistanceSquared)
 				{
-					ClosestDistance = Distance;
+					ClosestDistanceSquared = DistanceSquared;
 					ClosestSpawner = Spawner;
 				}
 			}
-        
-			// 좀비가 스포너 근처에 있으면 해당 스포너는 사용 중으로 표시
-			if (ClosestSpawner && ClosestDistance < 500.0f)
+
+			// 좀비가 스포너 근처에 있으면 해당 스포너는 사용 중으로 표시 (500^2 = 250000)
+			if (ClosestSpawner && ClosestDistanceSquared < 250000.0f)
 			{
 				SpawnerHasZombie.Add(ClosestSpawner, true);
 			}
 		}
 	}
 	
-    // 적합한 스포너 찾기
-    for (AANS_ZombieSpawner* Spawner : ZombieSpawnPoints) 
+    // 적합한 스포너 찾기 (캐시된 리스트 사용 및 거리 계산 최적화)
+    TArray<AANS_ZombieSpawner*> CachedSpawnerList = GetCachedSpawners();
+    float MinSpawnDistanceSquared = MinSpawnDistance * MinSpawnDistance;
+    float MaxSpawnDistanceSquared = MaxSpawnDistance * MaxSpawnDistance;
+
+    for (AANS_ZombieSpawner* Spawner : CachedSpawnerList)
     {
         // 유효하지 않거나 비활성화된 스포너는 제외
         if (!IsValid(Spawner) || !Spawner->bIsEnabled)
         {
             continue;
         }
-        
+
         // 이미 좀비가 있는 스포너는 제외
         if (SpawnerHasZombie.Contains(Spawner) && SpawnerHasZombie[Spawner])
         {
             continue;
         }
-        
-        // 플레이어와의 거리 확인
+
+        // 플레이어와의 거리 확인 (DistSquared 사용으로 최적화)
         FVector SpawnerLocation = Spawner->GetActorLocation();
-        float DistanceToPlayer = FVector::Dist(PlayerLocation, SpawnerLocation);
+        float DistanceToPlayerSquared = FVector::DistSquared(PlayerLocation, SpawnerLocation);
 
         // 최소/최대 거리 범위 내에 있는 스포너만 선택
-        if (DistanceToPlayer >= MinSpawnDistance && DistanceToPlayer <= MaxSpawnDistance)
+        if (DistanceToPlayerSquared >= MinSpawnDistanceSquared && DistanceToPlayerSquared <= MaxSpawnDistanceSquared)
         {
             SuitableSpawners.Add(Spawner);
         }
@@ -352,11 +586,14 @@ ANS_ZombieBase* ANS_GameModeBase::SpawnZombieAtLocation(TSubclassOf<ANS_ZombieBa
 void ANS_GameModeBase::RegisterSpawnedZombie(ANS_ZombieBase* Zombie)
 {
     if (!Zombie) return;
-    
+
     // 좀비 파괴 이벤트 바인딩
     Zombie->OnDestroyed.AddDynamic(this, &ANS_GameModeBase::OnZombieDestroyed);
     ++CurrentZombieCount;
-    
+
+    // 캐시에 추가
+    CachedZombies.Add(TWeakObjectPtr<ANS_ZombieBase>(Zombie));
+
     // 좀비 활성화 매니저에 등록
     AActor* ZombieActivationManager = UGameplayStatics::GetActorOfClass(GetWorld(), ANS_ZombieActivationManager::StaticClass());
     if (ANS_ZombieActivationManager* ZombieActivationManagerCasted = Cast<ANS_ZombieActivationManager>(ZombieActivationManager))
@@ -369,12 +606,50 @@ void ANS_GameModeBase::OnZombieDestroyed(AActor* DestroyedActor)
 {
 	if (IsValid(DestroyedActor))
 	{
-		if (DestroyedActor->IsA(ANS_ZombieBase::StaticClass()))
+		if (ANS_ZombieBase* Zombie = Cast<ANS_ZombieBase>(DestroyedActor))
 		{
-			--CurrentZombieCount; 
-			CurrentZombieCount = FMath::Max(0, CurrentZombieCount); 
+			--CurrentZombieCount;
+			CurrentZombieCount = FMath::Max(0, CurrentZombieCount);
+
+			// 캐시에서 제거
+			CachedZombies.RemoveAll([Zombie](const TWeakObjectPtr<ANS_ZombieBase>& WeakPtr)
+			{
+				return !WeakPtr.IsValid() || WeakPtr.Get() == Zombie;
+			});
 		}
 	}
+}
+
+// 캐시된 좀비 리스트 반환 함수
+TArray<ANS_ZombieBase*> ANS_GameModeBase::GetValidZombies()
+{
+    TArray<ANS_ZombieBase*> ValidZombies;
+
+    // 현재 시간 확인
+    float CurrentTime = GetWorld()->GetTimeSeconds();
+
+    // 일정 시간마다만 캐시 정리
+    if (CurrentTime - LastZombieListUpdateTime > ZombieListUpdateInterval)
+    {
+        // 무효한 참조 제거
+        CachedZombies.RemoveAll([](const TWeakObjectPtr<ANS_ZombieBase>& WeakPtr)
+        {
+            return !WeakPtr.IsValid();
+        });
+
+        LastZombieListUpdateTime = CurrentTime;
+    }
+
+    // 유효한 좀비들만 반환
+    for (const TWeakObjectPtr<ANS_ZombieBase>& WeakZombie : CachedZombies)
+    {
+        if (WeakZombie.IsValid())
+        {
+            ValidZombies.Add(WeakZombie.Get());
+        }
+    }
+
+    return ValidZombies;
 }
 
 // 플레이어로부터 너무 멀리 있는 좀비 제거 함수
@@ -386,98 +661,47 @@ void ANS_GameModeBase::CleanupDistantZombies()
     {
         return; // 유효한 플레이어 위치가 없으면 종료
     }
-    
-    // 모든 좀비 찾기
-    TArray<AActor*> AllZombies;
-    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ANS_ZombieBase::StaticClass(), AllZombies);
-    
+
+    // 캐시된 좀비 리스트 사용 (GetAllActorsOfClass 대신!)
+    TArray<ANS_ZombieBase*> AllZombies = GetCachedZombies();
+
     int32 DestroyedCount = 0;
-    
-    // 각 좀비의 거리 확인 및 제거
-    for (AActor* ZombieActor : AllZombies)
+    float ZombieDestroyDistanceSquared = ZombieDestroyDistance * ZombieDestroyDistance;
+
+    // 각 좀비의 거리 확인 및 제거 (최적화된 버전)
+    for (ANS_ZombieBase* Zombie : AllZombies)
     {
-        if (!IsValid(ZombieActor))
+        if (!IsValid(Zombie))
         {
             continue;
         }
-        
+
         // 체이서 좀비는 제거하지 않음
-        if (Cast<ANS_Chaser>(ZombieActor))
+        if (Cast<ANS_Chaser>(Zombie))
         {
             continue;
         }
-        
-        // 플레이어와의 거리 계산
-        float Distance = FVector::Dist(PlayerLocation, ZombieActor->GetActorLocation());
-        
-        // 거리 디버깅
-        if (Distance > ZombieDestroyDistance * 0.9f)  // 90% 이상 거리에 있는 좀비 로그
-        {
-            //UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 거리: %.2f (제거 거리: %.2f)"), Distance, ZombieDestroyDistance);
-        }
-        
-        // 설정된 거리보다 멀리 있으면 제거
-        if (Distance > ZombieDestroyDistance)
+
+        // 플레이어와의 거리 계산 (DistSquared 사용으로 최적화)
+        float DistanceSquared = FVector::DistSquared(PlayerLocation, Zombie->GetActorLocation());
+
+        // 설정된 거리보다 멀리 있으면 제거 (DistSquared 비교로 최적화)
+        if (DistanceSquared > ZombieDestroyDistanceSquared)
         {
             // 좀비 제거 (OnZombieDestroyed 이벤트가 자동으로 호출됨)
-            //UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 제거: 거리 %.2f"), Distance);
-            ZombieActor->Destroy();
+            //UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 좀비 제거: 거리 %.2f"), FMath::Sqrt(DistanceSquared));
+            Zombie->Destroy();
             DestroyedCount++;
         }
     }
-    
+
     if (DestroyedCount > 0)
     {
         //UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] 거리가 먼 좀비 %d마리 제거됨"), DestroyedCount);
     }
 }
 
-// 좀비 거리 디버그 함수
-void ANS_GameModeBase::DebugZombieDistances()
-{
-    // 플레이어 위치 가져오기
-    FVector PlayerLocation = GetPlayerLocation();
-    
-    // 플레이어 위치가 유효하지 않으면 종료
-    if (PlayerLocation.IsZero())
-    {
-        return;
-    }
-    
-    // 현재 레벨의 모든 좀비 찾기
-    TArray<AActor*> AllZombies;
-    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ANS_ZombieBase::StaticClass(), AllZombies);
-    
-    // 거리별 좀비 수 초기화
-    ZombiesInCloseRange = 0;
-    ZombiesInMidRange = 0;
-    
-    // 각 좀비의 거리 확인
-    for (const AActor* ZombieActor : AllZombies)
-    {
-        if (!IsValid(ZombieActor))
-        {
-            continue;
-        }
-        
-        // 플레이어와의 거리 계산 및 거리에 따라 카운트
-        if (const float Distance = FVector::Dist(PlayerLocation, ZombieActor->GetActorLocation()); Distance <= 4000.0f)
-        {
-            ZombiesInCloseRange++;
-        }
-        else if (Distance <= 8000.0f)
-        {
-            ZombiesInMidRange++;
-        }
-    }
-    
-    // 디버그 로그 출력
-   /* UE_LOG(LogTemp, Warning, TEXT("[좀비 디버그] 총 좀비 수: %d"), AllZombies.Num());
-    UE_LOG(LogTemp, Warning, TEXT("[좀비 디버그] 4000 이내 좀비: %d"), ZombiesInCloseRange);
-    UE_LOG(LogTemp, Warning, TEXT("[좀비 디버그] 4000-8000 사이 좀비: %d"), ZombiesInMidRange);
-    UE_LOG(LogTemp, Warning, TEXT("[좀비 디버그] 8000 초과 좀비: %d"), AllZombies.Num() - ZombiesInCloseRange - ZombiesInMidRange);
-    UE_LOG(LogTemp, Warning, TEXT("[좀비 디버그] 누적 제거된 좀비: %d"), ZombiesRemoved);*/
-}
+
 
 void ANS_GameModeBase::OnPlayerCharacterDied_Implementation(ANS_PlayerCharacterBase* DeadCharacter)
 {

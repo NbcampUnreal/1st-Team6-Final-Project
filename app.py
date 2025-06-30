@@ -159,9 +159,10 @@ def cleanup_sessions():
         with session_list_lock:
             before = len(session_list)
 
+            # 세션 정리: 1분 이상 응답 없거나 'closed' 상태면 제거
             stale_sessions = [
                 s for s in session_list
-                if (now - s.get("last_seen", 0) > 30 or s.get("status") == "closed")
+                if (now - s.get("last_seen", 0) > 60 or s.get("status") == "closed")
             ]
 
             for s in stale_sessions:

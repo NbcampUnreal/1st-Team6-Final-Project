@@ -75,6 +75,10 @@ public:
 	// bIsActive가 리플리케이트될 때 호출될 함수
 	UFUNCTION(NetMulticast, Reliable)
 	void SetActive_Multicast(bool setActive);
+
+	// 메쉬 가시성 강제 업데이트 (멀티플레이 문제 해결용)
+	UFUNCTION(NetMulticast, Reliable)
+	void ForceUpdateMeshVisibility_Multicast(bool bVisible);
 	
 	//피격관련
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
