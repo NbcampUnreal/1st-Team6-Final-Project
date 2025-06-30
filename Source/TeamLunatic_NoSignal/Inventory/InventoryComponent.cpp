@@ -378,7 +378,7 @@ void UInventoryComponent::AddNewItem(UNS_InventoryBaseItem* Item, const int32 Am
 	UE_LOG(LogTemp, Warning, TEXT("[Inventory] Added %s"), *NewItem->GetName());
 	UE_LOG(LogTemp, Warning, TEXT("[Inventory] NewItem OwingInventory: %s"), *GetNameSafe(NewItem->OwingInventory));
 
-	// 쪽지 아이템 획득 시 PlayerHUD의 TipText 숨기기 처리
+	// 쪽지 아이템 획득 시 PlayerHUD의 TipText 숨기기 처리 (클라이언트 RPC 사용)
     	if (NewItem->ItemType == EItemType::Misc)
     	{
     		AActor* OwnerActor = GetOwner();
@@ -387,16 +387,9 @@ void UInventoryComponent::AddNewItem(UNS_InventoryBaseItem* Item, const int32 Am
     			ANS_PlayerCharacterBase* Player = Cast<ANS_PlayerCharacterBase>(OwnerActor);
     			if (Player)
     			{
-    				if (UNS_GameInstance* GI = Player->GetGameInstance<UNS_GameInstance>())
-    				{
-    					if (UNS_UIManager* UIManager = GI->GetUIManager())
-    					{
-    						if (UNS_PlayerHUD* PlayerHUD = UIManager->GetPlayerHUDWidget())
-    						{
-    							PlayerHUD->HideTipText();
-    						}
-    					}
-    				}
+    				// 클라이언트 RPC를 통해 TipText 숨기기 처리
+    				Player->Client_HideTipText();
+    				UE_LOG(LogTemp, Warning, TEXT("AddNewItem: Misc 아이템 획득으로 Client_HideTipText() 호출"));
     			}
     		}
     	}
