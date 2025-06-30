@@ -113,11 +113,8 @@ void ANS_ZombieActivationManager::PerformActivationUpdate_Implementation()
             if (!Zombie->bIsActive) // 현재 비활성 상태인데 활성화되어야 한다면
             {
                 Zombie->SetActive_Multicast(true);
-                Zombie->SetActorTickEnabled(true);
-                if (AAIController* AIController = Cast<AAIController>(Zombie->GetController()))
-                {
-                    AIController->SetActorTickEnabled(true);
-                }
+                // SetActive_Multicast에서 이미 틱을 처리하므로 중복 제거
+                UE_LOG(LogTemp, Verbose, TEXT("[ZombieActivationManager] 좀비 %s 활성화"), *Zombie->GetName());
             }
         }
         else // 비활성화되어야 한다면
@@ -125,11 +122,8 @@ void ANS_ZombieActivationManager::PerformActivationUpdate_Implementation()
             if (Zombie->bIsActive) // 현재 활성 상태인데 비활성화되어야 한다면
             {
                 Zombie->SetActive_Multicast(false);
-                Zombie->SetActorTickEnabled(false);
-                if (AAIController* AIController = Cast<AAIController>(Zombie->GetController()))
-                {
-                    AIController->SetActorTickEnabled(false);
-                }
+                // SetActive_Multicast에서 이미 틱을 처리하므로 중복 제거
+                UE_LOG(LogTemp, Verbose, TEXT("[ZombieActivationManager] 좀비 %s 비활성화"), *Zombie->GetName());
             }
         }
     }
