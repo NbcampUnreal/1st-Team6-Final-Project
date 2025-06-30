@@ -58,4 +58,18 @@ private:
     // Flask 서버에 플레이어 로그인/로그아웃 알림 함수들
     void NotifyPlayerLogin();
     void NotifyPlayerLogout();
+
+    // 캐릭터 중복 방지 시스템
+    UPROPERTY()
+    TArray<int32> UsedPawnIndices; // 이미 사용된 폰 인덱스들
+
+    // 중복되지 않는 폰 클래스 선택 함수
+    TSubclassOf<APawn> GetUniqueRandomPawnClass();
+
+    // 플레이어 로그아웃 시 사용된 폰 인덱스 해제
+    void ReleasePawnIndex(APlayerController* ExitingPlayer);
+
+    // 캐릭터 중복 방지 시스템 리셋 (게임 재시작 시 사용)
+    UFUNCTION(BlueprintCallable, Category = "Character Management")
+    void ResetCharacterDuplicationSystem();
 };

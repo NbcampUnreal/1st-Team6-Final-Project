@@ -6,22 +6,22 @@
 #include "Net/UnrealNetwork.h"
 #include "NS_ChaserAnimInstance.h"
 #include "Zombie/AIController/NS_ChaserController.h"
+#include "GameFlow/NS_MainGamePlayerState.h"
+#include "GameFlow/NS_GameState.h"
 
 ANS_Chaser::ANS_Chaser()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	// 기본값 초기화
-	MaxHealth = 1000.0f;
-	CurrentHealth = 1000.0f;
+	MaxHealth = 750.0f;
+	CurrentHealth = 750.0f;
 	bEnableAutoDamageTest = false;
 
 }
 
 void ANS_Chaser::BeginPlay()
 {
-	Super::BeginPlay();
-
+	Super::BeginPlay(); 
 
 	if (NavigationInvoker)
 	{
@@ -30,7 +30,30 @@ void ANS_Chaser::BeginPlay()
 
 	NavigationInvoker->SetGenerationRadii(75000.f, 75000.f);
 
-	CurrentHealth = MaxHealth;
+	if (GetLocalRole() == ROLE_Authority) 
+	{
+		AGameStateBase* GameState = GetWorld()->GetGameState();
+		if (GameState)
+		{
+			int32 NumPlayers = GameState->PlayerArray.Num();
+
+			if (NumPlayers == 0)
+			{
+				NumPlayers = 1; 
+			}
+
+			MaxHealth = 750.0f * static_cast<float>(NumPlayers);
+			CurrentHealth = MaxHealth; 
+
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("ANS_Chaser (Server): Failed to get GameState. Setting default health to 1000.0f."));
+			MaxHealth = 750.0f; 
+			CurrentHealth = MaxHealth;
+		}
+	}
+
 
 	if (bEnableAutoDamageTest)
 	{
@@ -51,29 +74,29 @@ void ANS_Chaser::ApplyAutoDamage()
 
 float ANS_Chaser::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
+	if (GetLocalRole() < ROLE_Authority)
+	{
+		return 0.0f; 
+	}
+
 	const float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
-	// AnimBP를 가져와서 이미 무릎 꿇는 중인지 확인
 	if (UNS_ChaserAnimInstance* Anim = Cast<UNS_ChaserAnimInstance>(GetMesh()->GetAnimInstance()))
 	{
 		if (Anim->IsKneel)
 		{
-			// 이미 무릎 꿇었으면 데미지 안받음
 			UE_LOG(LogTemp, Warning, TEXT("Chaser is already kneeling, no damage taken. Current Health: %f"), CurrentHealth);
 			return 0.0f;
 		}
 	}
 
 	CurrentHealth -= ActualDamage;
-	// 체력이 닳을 때마다 로그 출력
-	UE_LOG(LogTemp, Warning, TEXT("Chaser damaged. Current Health: %f (Damage Taken: %f)"), CurrentHealth, ActualDamage);
 
 	if (CurrentHealth <= 0.0f)
 	{
 		CurrentHealth = 0.0f;
 		UE_LOG(LogTemp, Warning, TEXT("Chaser health depleted. Kneeling down."));
 
-		// AnimInstance의 IsKneel 값을 true로 직접 변경
 		if (UNS_ChaserAnimInstance* Anim = Cast<UNS_ChaserAnimInstance>(GetMesh()->GetAnimInstance()))
 		{
 			Anim->IsKneel = true;
@@ -95,9 +118,13 @@ float ANS_Chaser::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 
 void ANS_Chaser::RecoverFromKneel()
 {
+	if (GetLocalRole() < ROLE_Authority)
+	{
+		return;
+	}
+
 	UE_LOG(LogTemp, Warning, TEXT("Chaser recovered. Standing up. Current Health: %f"), CurrentHealth);
 
-	// AnimInstance의 IsKneel 값을 false로 직접 변경
 	if (UNS_ChaserAnimInstance* Anim = Cast<UNS_ChaserAnimInstance>(GetMesh()->GetAnimInstance()))
 	{
 		Anim->IsKneel = false;

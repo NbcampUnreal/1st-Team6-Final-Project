@@ -22,6 +22,11 @@ ANS_MultiPlayMode::ANS_MultiPlayMode()
 void ANS_MultiPlayMode::BeginPlay()
 {
     UE_LOG(LogTemp, Warning, TEXT("MultiPlayMode Set !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"));
+
+    // 캐릭터 중복 방지 시스템 초기화
+    UsedPawnIndices.Empty();
+    UE_LOG(LogTemp, Log, TEXT("[MultiPlayMode] 캐릭터 중복 방지 시스템 초기화됨. 사용 가능한 캐릭터 수: %d"), MainGamePawnClassesToSpawn.Num());
+
     // 부모 클래스의 BeginPlay 호출 전에 플레이어 수 계산
     if (const ANS_GameState* GS = GetGameState<ANS_GameState>())
     {
@@ -121,9 +126,8 @@ void ANS_MultiPlayMode::PostLogin(APlayerController* NewPlayer)
             return;
         }
 
-        // 사용 가능한 폰 중에서 랜덤 인덱스를 선택합니다.
-        const int32 RandIndex = FMath::RandRange(0, MainGamePawnClassesToSpawn.Num() - 1);
-        TSubclassOf<APawn> ChosenPawnClass = MainGamePawnClassesToSpawn[RandIndex];
+        // 중복되지 않는 폰 클래스를 선택합니다.
+        TSubclassOf<APawn> ChosenPawnClass = GetUniqueRandomPawnClass();
 
         // 모든 PlayerStart를 찾아서 랜덤으로 하나를 선택합니다.
         TArray<AActor*> PlayerStarts;
@@ -152,7 +156,22 @@ void ANS_MultiPlayMode::PostLogin(APlayerController* NewPlayer)
             if (NewPawn)
             {
                 NewPlayer->Possess(NewPawn);
-                UE_LOG(LogTemp, Log, TEXT("Player %s spawned and possessed random unique pawn %s."), *NewPlayer->PlayerState->GetPlayerName(), *NewPawn->GetName());
+
+                // 선택된 폰 클래스의 인덱스를 플레이어 컨트롤러에 저장 (로그아웃 시 해제용)
+                int32 SelectedIndex = MainGamePawnClassesToSpawn.IndexOfByKey(ChosenPawnClass);
+                if (SelectedIndex != INDEX_NONE)
+                {
+                    // 플레이어 컨트롤러에 사용된 인덱스 정보 저장 (커스텀 프로퍼티 필요)
+                    if (ANS_PlayerController* PC = Cast<ANS_PlayerController>(NewPlayer))
+                    {
+                        // PlayerController에 사용된 폰 인덱스 저장하는 변수가 필요함
+                        // 임시로 로그만 출력
+                        UE_LOG(LogTemp, Log, TEXT("Player %s assigned pawn index %d"), *NewPlayer->PlayerState->GetPlayerName(), SelectedIndex);
+                    }
+                }
+
+                UE_LOG(LogTemp, Log, TEXT("Player %s spawned and possessed unique pawn %s (Index: %d)."),
+                    *NewPlayer->PlayerState->GetPlayerName(), *NewPawn->GetName(), SelectedIndex);
 
                 // Flask 서버에 플레이어 로그인 알림
                 NotifyPlayerLogin();
@@ -161,6 +180,11 @@ void ANS_MultiPlayMode::PostLogin(APlayerController* NewPlayer)
             {
                 UE_LOG(LogTemp, Error, TEXT("Failed to spawn pawn for player %s."), *NewPlayer->PlayerState->GetPlayerName());
             }
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("No unique pawn class available for player %s. All characters may be in use."),
+                *NewPlayer->PlayerState->GetPlayerName());
         }
         else
         {
@@ -227,6 +251,12 @@ void ANS_MultiPlayMode::Logout(AController* Exiting)
     if (!HasAuthority()) return;
 
     UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 플레이어 로그아웃: %s"), Exiting ? *Exiting->GetName() : TEXT("Unknown"));
+
+    // 사용된 폰 인덱스 해제
+    if (APlayerController* PC = Cast<APlayerController>(Exiting))
+    {
+        ReleasePawnIndex(PC);
+    }
 
     // Flask 서버에 플레이어 로그아웃 알림
     NotifyPlayerLogout();
@@ -805,4 +835,79 @@ void ANS_MultiPlayMode::OptimizedMultiplaySpawnCheck()
 
     // 기존 멀티플레이 스폰 로직 실행
     CheckAndSpawnZombies();
+}
+
+// 중복되지 않는 폰 클래스 선택 함수
+TSubclassOf<APawn> ANS_MultiPlayMode::GetUniqueRandomPawnClass()
+{
+    if (MainGamePawnClassesToSpawn.Num() == 0)
+    {
+        UE_LOG(LogTemp, Error, TEXT("[GetUniqueRandomPawnClass] MainGamePawnClassesToSpawn 배열이 비어있습니다."));
+        return nullptr;
+    }
+
+    // 사용 가능한 인덱스들을 찾습니다
+    TArray<int32> AvailableIndices;
+    for (int32 i = 0; i < MainGamePawnClassesToSpawn.Num(); i++)
+    {
+        if (!UsedPawnIndices.Contains(i))
+        {
+            AvailableIndices.Add(i);
+        }
+    }
+
+    // 모든 캐릭터가 사용 중인 경우
+    if (AvailableIndices.Num() == 0)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[GetUniqueRandomPawnClass] 모든 캐릭터가 사용 중입니다. 첫 번째 캐릭터를 중복 할당합니다."));
+
+        // 모든 캐릭터가 사용 중이면 첫 번째 캐릭터를 반환 (또는 랜덤 선택)
+        int32 FallbackIndex = FMath::RandRange(0, MainGamePawnClassesToSpawn.Num() - 1);
+        UsedPawnIndices.Add(FallbackIndex);
+        return MainGamePawnClassesToSpawn[FallbackIndex];
+    }
+
+    // 사용 가능한 인덱스 중에서 랜덤 선택
+    int32 RandomAvailableIndex = AvailableIndices[FMath::RandRange(0, AvailableIndices.Num() - 1)];
+
+    // 선택된 인덱스를 사용 중 목록에 추가
+    UsedPawnIndices.Add(RandomAvailableIndex);
+
+    UE_LOG(LogTemp, Log, TEXT("[GetUniqueRandomPawnClass] 선택된 폰 인덱스: %d, 사용 중인 인덱스 수: %d/%d"),
+        RandomAvailableIndex, UsedPawnIndices.Num(), MainGamePawnClassesToSpawn.Num());
+
+    return MainGamePawnClassesToSpawn[RandomAvailableIndex];
+}
+
+// 플레이어 로그아웃 시 사용된 폰 인덱스 해제
+void ANS_MultiPlayMode::ReleasePawnIndex(APlayerController* ExitingPlayer)
+{
+    if (!ExitingPlayer || !ExitingPlayer->GetPawn())
+    {
+        return;
+    }
+
+    // 플레이어가 사용하던 폰 클래스를 찾아서 인덱스 해제
+    TSubclassOf<APawn> ExitingPawnClass = ExitingPlayer->GetPawn()->GetClass();
+    int32 PawnIndex = MainGamePawnClassesToSpawn.IndexOfByKey(ExitingPawnClass);
+
+    if (PawnIndex != INDEX_NONE && UsedPawnIndices.Contains(PawnIndex))
+    {
+        UsedPawnIndices.Remove(PawnIndex);
+        UE_LOG(LogTemp, Log, TEXT("[ReleasePawnIndex] 폰 인덱스 %d 해제됨. 플레이어: %s, 남은 사용 중인 인덱스 수: %d"),
+            PawnIndex, *ExitingPlayer->PlayerState->GetPlayerName(), UsedPawnIndices.Num());
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[ReleasePawnIndex] 해제할 폰 인덱스를 찾을 수 없습니다. 플레이어: %s"),
+            ExitingPlayer->PlayerState ? *ExitingPlayer->PlayerState->GetPlayerName() : TEXT("Unknown"));
+    }
+}
+
+// 캐릭터 중복 방지 시스템 리셋 (게임 재시작 시 사용)
+void ANS_MultiPlayMode::ResetCharacterDuplicationSystem()
+{
+    UsedPawnIndices.Empty();
+    UE_LOG(LogTemp, Log, TEXT("[ResetCharacterDuplicationSystem] 캐릭터 중복 방지 시스템이 리셋되었습니다. 사용 가능한 캐릭터 수: %d"),
+        MainGamePawnClassesToSpawn.Num());
 }
