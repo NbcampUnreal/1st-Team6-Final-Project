@@ -154,7 +154,7 @@ public:
 	
 
 	// 스탯 컴포넌트
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "Components")
 	UNS_StatusComponent* StatusComp;
 
 	// 인터렉션 컴포넌트

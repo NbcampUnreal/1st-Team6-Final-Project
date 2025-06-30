@@ -38,10 +38,9 @@ public:
 	float CurrentHealth;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "Stat")
 	float BaseDamage;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "Stat")
-	bool bIsDead;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Replicated ,Category = "Stat")
-	bool bGetHit;
+	bool bIsDead;
+
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "Speed")
 	float PatrolSpeed;
@@ -61,8 +60,7 @@ public:
 	EZombieType ZombieType;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Replicated, Category = "State")
 	EZombieAttackType CurrentAttackType;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Replicated, Category = "State")
-	bool bIsGotHit;
+
 	
 	// Invoker 컴포넌트
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
