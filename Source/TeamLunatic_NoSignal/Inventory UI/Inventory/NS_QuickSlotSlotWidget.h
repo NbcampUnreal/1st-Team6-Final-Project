@@ -30,6 +30,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
     class UImage* ItemIcon;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+    class UImage* UseSelectWeapon;
+
     UPROPERTY(meta = (BindWidgetOptional))
     UTextBlock* AmountText;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
