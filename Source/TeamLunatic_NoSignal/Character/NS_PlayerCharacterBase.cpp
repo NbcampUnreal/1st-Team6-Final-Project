@@ -1204,9 +1204,9 @@ void ANS_PlayerCharacterBase::Client_NotifyInventoryUpdated_Implementation()
     }
 }
 
-void ANS_PlayerCharacterBase::Client_HideTipText_Implementation()
+void ANS_PlayerCharacterBase::Multicast_HideTipText_Implementation()
 {
-    // 클라이언트에서 TipText 숨기기 처리
+    // 모든 클라이언트에서 TipText 숨기기 처리
     if (UNS_GameInstance* GI = GetGameInstance<UNS_GameInstance>())
     {
         if (UNS_UIManager* UIManager = GI->GetUIManager())
@@ -1214,7 +1214,7 @@ void ANS_PlayerCharacterBase::Client_HideTipText_Implementation()
             if (UNS_PlayerHUD* PlayerHUD = UIManager->GetPlayerHUDWidget())
             {
                 PlayerHUD->HideTipText();
-                UE_LOG(LogTemp, Warning, TEXT("Client_HideTipText: TipText 숨김 처리 완료"));
+                UE_LOG(LogTemp, Warning, TEXT("Multicast_HideTipText: 모든 클라이언트에서 TipText 숨김 처리 완료"));
             }
         }
     }

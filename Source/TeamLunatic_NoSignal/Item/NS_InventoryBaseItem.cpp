@@ -132,6 +132,13 @@ void UNS_InventoryBaseItem::OnUseItem(ANS_PlayerCharacterBase* Character)
 	// 아이템 타입에 따른 처리
 	switch (ItemData->ItemType)
 	{
+	case EItemType::Misc: // 기타 아이템 처리 - TipText 숨기기
+		if (Character)
+		{
+			Character->Multicast_HideTipText();
+			UE_LOG(LogTemp, Warning, TEXT("[OnUseItem] 기타 아이템 사용 - TipText 숨김 처리"));
+		}
+		break;
 	case EItemType::Consumable:
 	case EItemType::Medical:
 	case EItemType::Utility: // 소모품 처리

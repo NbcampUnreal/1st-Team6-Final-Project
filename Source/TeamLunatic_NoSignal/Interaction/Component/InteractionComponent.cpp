@@ -155,10 +155,7 @@ void UInteractionComponent::FoundInteractable(AActor* NewInteractable)
 	{
 		HUD->UpdateInteractionWidget(&TargetInteractable->InteractableData);
 	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("[FoundInteractable] HUD가 nullptr입니다."));
-	}
+	
 	// 포커스 시작
 	TargetInteractable->BeginFocus();
 }
