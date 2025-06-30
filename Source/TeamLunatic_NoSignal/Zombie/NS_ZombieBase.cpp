@@ -398,6 +398,9 @@ void ANS_ZombieBase::OnDeadState()
 		bIsDead = true;
 		Die_Multicast();
 	}
+
+	// 사운드 타이머핸들 초기화
+	GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
 }
 
 void ANS_ZombieBase::OnFrozenState()
@@ -443,7 +446,7 @@ void ANS_ZombieBase::Multicast_PlaySound_Implementation(USoundCue* Sound)
 
 void ANS_ZombieBase::ScheduleSound(USoundCue* SoundCue)
 {
-	if (!SoundCue || !GetWorld() || GetWorld()->bIsTearingDown)
+	if (!SoundCue || !GetWorld() || GetWorld()->bIsTearingDown|| bIsDead)
 	{
 		return;
 	}
@@ -451,10 +454,6 @@ void ANS_ZombieBase::ScheduleSound(USoundCue* SoundCue)
 	float RandomTime = FMath::FRandRange(5.f,8.f);
 	GetWorldTimerManager().SetTimer(AmbientSoundTimer,[this, SoundCue]()
 	{
-		if (!GetWorld() || GetWorld()->bIsTearingDown)
-		{
-			return;
-		}
 		float PlayPercent = 0.5f;
 		float ActualPercent = FMath::FRandRange(0.0f, 1.0f);
 		if (PlayPercent > ActualPercent)
