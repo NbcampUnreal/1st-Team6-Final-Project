@@ -196,6 +196,18 @@ void ANS_MultiPlayMode::OnPlayerCharacterDied_Implementation(ANS_PlayerCharacter
     }
 }
 
+void ANS_MultiPlayMode::Logout(AController* Exiting)
+{
+    Super::Logout(Exiting);
+
+    if (!HasAuthority()) return;
+
+    UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 플레이어 로그아웃: %s"), Exiting ? *Exiting->GetName() : TEXT("Unknown"));
+
+    // 플레이어 로그아웃 후 플레이어 수 체크
+    CheckPlayerCountAndEndSession();
+}
+
 // 주기적으로 플레이어 수를 체크하고 세션을 종료하는 함수 구현
 void ANS_MultiPlayMode::CheckPlayerCountAndEndSession()
 {
@@ -207,18 +219,17 @@ void ANS_MultiPlayMode::CheckPlayerCountAndEndSession()
 
     int32 ConnectedPlayerCount = GetNumPlayers();
 
+    UE_LOG(LogTemp, Warning, TEXT("[CheckPlayerCount] 현재 플레이어 수: %d"), ConnectedPlayerCount);
+
     if (ConnectedPlayerCount == 0)
     {
-        UE_LOG(LogTemp, Warning, TEXT("[CheckPlayerCount] 모든 플레이어가 나갔습니다. 세션 종료를 요청합니다."));
+        UE_LOG(LogTemp, Warning, TEXT("[CheckPlayerCount] 모든 플레이어가 나갔습니다. 세션을 'closed' 상태로 변경합니다."));
 
         if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
         {
             if (GI->MyServerPort > 0)
             {
                 GI->RequestUpdateSessionStatus(GI->MyServerPort, TEXT("closed"));
-
-                GetWorldTimerManager().ClearTimer(PlayerCountCheckTimer);
-                GetWorldTimerManager().ClearTimer(ZombieSpawnTimer);
             }
             else
             {

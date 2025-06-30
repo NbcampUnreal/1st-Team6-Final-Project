@@ -16,6 +16,7 @@ public:
     virtual FVector GetPlayerLocation_Implementation() const override;
     virtual void OnPlayerCharacterDied_Implementation(ANS_PlayerCharacterBase* DeadCharacter) override;
     void PostLogin(APlayerController* NewPlayer);
+    virtual void Logout(AController* Exiting) override;  // 플레이어 로그아웃 시 호출
     virtual void CheckAndSpawnZombies() override;
     virtual void CleanupDistantZombies() override;
 
