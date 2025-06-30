@@ -43,7 +43,7 @@ void ANS_ZombieActivationManager::BeginPlay()
             }
         }
         
-        GetWorldTimerManager().SetTimer(ActivationUpdateTimerHandle, this, &ANS_ZombieActivationManager::PerformActivationUpdate, UpdateInterval, true);
+        //GetWorldTimerManager().SetTimer(ActivationUpdateTimerHandle, this, &ANS_ZombieActivationManager::PerformActivationUpdate, UpdateInterval, true);
     }
     else
     {

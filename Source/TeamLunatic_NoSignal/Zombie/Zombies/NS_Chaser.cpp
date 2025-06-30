@@ -115,5 +115,5 @@ void ANS_Chaser::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ANS_Chaser, CurrentHealth);
-	
+	DOREPLIFETIME(ANS_Chaser, MaxHealth);
 }
