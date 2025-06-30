@@ -37,7 +37,11 @@ public:
     // 조준점 표시/숨김 설정
     UFUNCTION(BlueprintCallable, Category = "UI")
     void SetCrosshairVisibility(bool bVisible);
-
+    
+    // 팁 텍스트 숨기기
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    void HideTipText();
+    
     // 퀵슬롯 패널 위젯
     UPROPERTY(meta = (BindWidget))
     class UNS_QuickSlotPanel* NS_QuickSlotPanel;
@@ -98,6 +102,4 @@ private:
 
     float BGHpPercent;
     float BGStPercent;
-
-    bool bSprintcheck = false;
 };

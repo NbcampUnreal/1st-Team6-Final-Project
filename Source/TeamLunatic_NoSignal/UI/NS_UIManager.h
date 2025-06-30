@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "Containers/Ticker.h"
+#include "Blueprint/UserWidget.h"
+#include "Engine/World.h"
 #include "NS_UIManager.generated.h"
 
 // 전방 선언
@@ -67,6 +69,14 @@ public:
     UFUNCTION(BlueprintCallable, Category = "UI")
     bool ShowGameOverWidget(UWorld* World);
 
+
+UFUNCTION(BlueprintCallable, Category = "UI")
+TSubclassOf<UUserWidget> GetOpenMapClass() const { return OpenMapClass; }
+
+UPROPERTY(EditAnywhere, Category = "UI")
+TSubclassOf<UUserWidget> OpenMapClass;
+
+    
     // 게임 오버 위젯 숨기기
     UFUNCTION(BlueprintCallable, Category = "UI")
     void HideGameOverWidget(UWorld* World);
@@ -99,7 +109,23 @@ public:
 
     // 로딩 화면 표시
     void LoadingScreen(UWorld* World);
-    
+
+    // 로딩 화면 표시 (레벨 전환용)
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    void ShowLoadingScreen(UWorld* World);
+
+    // 로딩 화면 숨기기 및 게임 모드 복원
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    void HideLoadingScreen(UWorld* World);
+
+    // 로딩 스크린에서 실제 프레임률 체크 시작
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    void StartFrameRateCheck();
+
+    // LoadingScreenClass getter 함수
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    TSubclassOf<UNS_LoadingScreen> GetLoadingScreenClass() const { return NS_LoadingScreenClass; }
+
     // 로딩 UI 닫기
     void CloseLoadingUI();
 

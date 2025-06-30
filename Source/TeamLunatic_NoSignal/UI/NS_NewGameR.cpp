@@ -2,7 +2,10 @@
 #include "UI/NS_NewGameR.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFlow/NS_GameInstance.h"
+#include "Engine/World.h"
+#include "TimerManager.h"
 #include "UI/NS_SaveGame.h"
+#include "UI/NS_UIManager.h"
 #include "UI/NS_CommonType.h"
 #include "UI/NS_MainMenu.h"
 #include "UI/NS_SaveGameMetaData.h"
@@ -14,8 +17,6 @@
 #include "Components/ComboBoxString.h"
 #include "UI/NS_SaveLoadHelper.h"
 #include "UI/NS_UIManager.h"
-#include "AsyncLoadingScreenLibrary.h"
-//#include "AsyncLoadingScreen/Public/LoadingScreenFunctionLibrary.h"
 
 
 void UNS_NewGameR::OnStartGameClicked()
@@ -92,8 +93,23 @@ void UNS_NewGameR::StartGame()
     FString GameModePath = TEXT("Game=/Game/GameFlowBP/BP_NS_SinglePlayMode.BP_NS_SinglePlayMode_C");
     if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
-        UAsyncLoadingScreenLibrary::SetEnableLoadingScreen(true);
-        UGameplayStatics::OpenLevel(GI->GetWorld(), FName(*SelectedLevelName), true, GameModePath);
+        // 임시: UIManager 방식과 GameInstance 방식 둘 다 시도
+        if (UNS_UIManager* UIManager = GI->GetUIManager())
+        {
+            UIManager->ShowLoadingScreen(GetWorld());
+            UE_LOG(LogTemp, Warning, TEXT("StartGame: UIManager 로딩 스크린 표시"));
+        }
+
+        // GameInstance에서도 영구 로딩 스크린 생성
+        GI->CreatePersistentLoadingScreen();
+        UE_LOG(LogTemp, Warning, TEXT("StartGame: 영구 로딩 스크린 생성"));
+
+        // 다음 틱에 실행 - 로딩 스크린 렌더링 완료 보장
+        GetWorld()->GetTimerManager().SetTimerForNextTick([GI, SelectedLevelName, GameModePath]()
+        {
+            UE_LOG(LogTemp, Error, TEXT("=== 레벨 전환 시작 (다음 틱) ==="));
+            UGameplayStatics::OpenLevel(GI->GetWorld(), FName(*SelectedLevelName), true, GameModePath);
+        });
     }
 }
 

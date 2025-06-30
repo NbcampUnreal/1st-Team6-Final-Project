@@ -23,7 +23,7 @@ public:
 
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Common")
     void OnPlayerCharacterDied(class ANS_PlayerCharacterBase* DeadCharacter);
-    virtual void OnPlayerCharacterDied_Implementation(class ANS_PlayerCharacterBase* DeadCharacter) PURE_VIRTUAL(ANS_GameModeBase::OnPlayerCharacterDied, );
+    virtual void OnPlayerCharacterDied_Implementation(class ANS_PlayerCharacterBase* DeadCharacter);
 protected:
     // 타이머로 주기적으로 현재 좀비를 체크해서 좀비를 스폰하는 함수
     virtual void CheckAndSpawnZombies();

@@ -4,6 +4,7 @@
 #include "NS_GameInstance.h"
 #include "NS_MainGamePlayerState.h"
 #include "NS_GameState.h"
+#include "NS_LobbyController.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "GameFramework/PlayerStart.h"
 #include "Zombie/NS_ZombieBase.h"
@@ -54,11 +55,11 @@ void ANS_MultiPlayMode::BeginPlay()
     float AdjustedMaxZombies = (BaseMaxZombieCount * PlayerCount) / 1.5f;
     MaxZombieCount = FMath::CeilToInt(AdjustedMaxZombies); // 올림 처리하여 정수로 변환
 
-    UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 플레이어 수에 따라 최대 좀비 수 조정: %d (기본: %d × 플레이어 수: %d ÷ 1.5)"),
-        MaxZombieCount, BaseMaxZombieCount, PlayerCount);
+   /* UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 플레이어 수에 따라 최대 좀비 수 조정: %d (기본: %d × 플레이어 수: %d ÷ 1.5)"),
+        MaxZombieCount, BaseMaxZombieCount, PlayerCount);*/
 
     // 기존 MultiPlayMode의 BeginPlay 로직
-    UE_LOG(LogTemp, Warning, TEXT("MultiPlayMode BeginPlay 실행"));
+    //UE_LOG(LogTemp, Warning, TEXT("MultiPlayMode BeginPlay 실행"));
 
 
     if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
@@ -82,8 +83,8 @@ void ANS_MultiPlayMode::BeginPlay()
     GetWorldTimerManager().ClearTimer(ZombieSpawnTimer);
     GetWorldTimerManager().SetTimer(ZombieSpawnTimer, this, &ANS_MultiPlayMode::CheckAndSpawnZombies, ZombieSpawnInterval, true);
 
-    UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 좀비 스폰 타이머 설정 완료 (%.1f초마다 %d마리)"),
-        ZombieSpawnInterval, ZombiesPerSpawn);
+   /* UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 좀비 스폰 타이머 설정 완료 (%.1f초마다 %d마리)"),
+        ZombieSpawnInterval, ZombiesPerSpawn);*/
 }
 
 
@@ -227,6 +228,57 @@ void ANS_MultiPlayMode::CheckPlayerCountAndEndSession()
     }
 }
 
+void ANS_MultiPlayMode::OnPlayerLoadingComplete(APlayerController* Player)
+{
+    if (!HasAuthority()) return;
+
+    // 이미 완료된 플레이어인지 확인
+    if (LoadingCompletedPlayers.Contains(Player))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("플레이어 %s는 이미 로딩 완료 목록에 있음"), *Player->GetName());
+        return;
+    }
+
+    // 완료된 플레이어 목록에 추가
+    LoadingCompletedPlayers.Add(Player);
+    UE_LOG(LogTemp, Warning, TEXT("플레이어 %s 로딩 완료 (%d/%d)"),
+        *Player->GetName(), LoadingCompletedPlayers.Num(), GetNumPlayers());
+
+    // 모든 플레이어가 완료되었는지 확인
+    CheckAllPlayersLoadingComplete();
+}
+
+void ANS_MultiPlayMode::CheckAllPlayersLoadingComplete()
+{
+    if (!HasAuthority()) return;
+
+    int32 TotalPlayers = GetNumPlayers();
+    int32 CompletedPlayers = LoadingCompletedPlayers.Num();
+
+    UE_LOG(LogTemp, Warning, TEXT("로딩 완료 체크: %d/%d 플레이어"), CompletedPlayers, TotalPlayers);
+
+    // 모든 플레이어가 로딩 완료되었으면
+    if (CompletedPlayers >= TotalPlayers && TotalPlayers > 0)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("=== 모든 플레이어 로딩 완료! 동시에 로딩 스크린 숨기기 ==="));
+
+        // 모든 클라이언트에게 로딩 스크린 숨기기 명령
+        for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+        {
+            if (APlayerController* PC = It->Get())
+            {
+                if (ANS_LobbyController* LC = Cast<ANS_LobbyController>(PC))
+                {
+                    LC->Client_HideLoadingScreen();
+                }
+            }
+        }
+
+        // 완료된 플레이어 목록 초기화
+        LoadingCompletedPlayers.Empty();
+    }
+}
+
 // 랜덤한 살아있는 플레이어의 위치를 반환하는 함수
 FVector ANS_MultiPlayMode::GetRandomPlayerLocation() const
 {
@@ -310,8 +362,8 @@ void ANS_MultiPlayMode::CheckAndSpawnZombies()
     // 한 번에 스폰할 좀비 수 계산 (최대 Missing까지)
     int32 SpawnCount = FMath::Min(ZombiesPerSpawn, Missing);
 
-    UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 좀비 스폰 시작: 현재 좀비 %d/%d, 살아있는 플레이어 %d명, 스폰 예정 좀비 %d마리"),
-        CurrentZombieCount, MaxZombieCount, PlayerLocations.Num(), SpawnCount);
+   /* UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 좀비 스폰 시작: 현재 좀비 %d/%d, 살아있는 플레이어 %d명, 스폰 예정 좀비 %d마리"),
+        CurrentZombieCount, MaxZombieCount, PlayerLocations.Num(), SpawnCount);*/
 
     // 각 플레이어 주변에 좀비 스폰 (계산된 수만큼)
     int32 SpawnedCount = 0;
@@ -329,7 +381,7 @@ void ANS_MultiPlayMode::CheckAndSpawnZombies()
         // 적합한 스포너가 없으면 다음 플레이어로
         if (SuitableSpawners.Num() <= 0)
         {
-            UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] %s 주변에 적합한 스포너가 없음"), *PlayerName);
+            //UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] %s 주변에 적합한 스포너가 없음"), *PlayerName);
             PlayerIndex = (PlayerIndex + 1) % PlayerLocations.Num(); // 다음 플레이어로 순환
             continue;
         }
@@ -342,28 +394,28 @@ void ANS_MultiPlayMode::CheckAndSpawnZombies()
         FVector SpawnerLocation = SelectedSpawner->GetActorLocation();
         float DistanceToPlayer = FVector::Dist(CurrentPlayerLocation, SpawnerLocation);
 
-        UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] %s 주변 %.1f 거리에 있는 스포너에서 좀비 스폰 시도"),
-            *PlayerName, DistanceToPlayer);
+       /* UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] %s 주변 %.1f 거리에 있는 스포너에서 좀비 스폰 시도"),
+            *PlayerName, DistanceToPlayer);*/
 
         SpawnZombieAtPoint(SelectedSpawner);
         SpawnedCount++;
 
-        UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] %s 주변에 좀비 스폰 성공 (%d/%d)"),
-            *PlayerName, SpawnedCount, SpawnCount);
+       /* UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] %s 주변에 좀비 스폰 성공 (%d/%d)"),
+            *PlayerName, SpawnedCount, SpawnCount);*/
 
         // 다음 플레이어로 순환 (공평하게 분배)
         PlayerIndex = (PlayerIndex + 1) % PlayerLocations.Num();
     }
 
-    UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 좀비 스폰 완료: %d마리 스폰됨, 현재 좀비 %d/%d"),
-        SpawnedCount, CurrentZombieCount, MaxZombieCount);
+   /* UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 좀비 스폰 완료: %d마리 스폰됨, 현재 좀비 %d/%d"),
+        SpawnedCount, CurrentZombieCount, MaxZombieCount);*/
 }
 
 // 플레이어로부터 너무 멀리 있는 좀비 제거 함수 (멀티플레이 버전)
 void ANS_MultiPlayMode::CleanupDistantZombies()
 {
     // 함수 호출 확인 로그
-    UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] CleanupDistantZombies 함수 호출됨"));
+   // UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] CleanupDistantZombies 함수 호출됨"));
 
     // 살아있는 플레이어 위치 수집
     TArray<FVector> PlayerLocations;
@@ -384,12 +436,12 @@ void ANS_MultiPlayMode::CleanupDistantZombies()
         }
     }
 
-    UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 살아있는 플레이어 수: %d"), PlayerLocations.Num());
+    //UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 살아있는 플레이어 수: %d"), PlayerLocations.Num());
 
     // 살아있는 플레이어가 없으면 기본 로직 사용
     if (PlayerLocations.Num() <= 0)
     {
-        UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 살아있는 플레이어가 없어 기본 로직 사용"));
+       // UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 살아있는 플레이어가 없어 기본 로직 사용"));
         Super::CleanupDistantZombies();
         return;
     }
@@ -398,7 +450,7 @@ void ANS_MultiPlayMode::CleanupDistantZombies()
     TArray<AActor*> AllZombies;
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), ANS_ZombieBase::StaticClass(), AllZombies);
 
-    UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 현재 좀비 수: %d"), AllZombies.Num());
+   // UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 현재 좀비 수: %d"), AllZombies.Num());
 
     int32 DestroyedCount = 0;
 
@@ -435,14 +487,14 @@ void ANS_MultiPlayMode::CleanupDistantZombies()
         // 거리 디버깅
         if (MinDistance > ZombieDestroyDistance * 0.9f)  // 90% 이상 거리에 있는 좀비 로그
         {
-            UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 좀비 거리: %.2f (제거 거리: %.2f)"), MinDistance, ZombieDestroyDistance);
+           // UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 좀비 거리: %.2f (제거 거리: %.2f)"), MinDistance, ZombieDestroyDistance);
         }
 
         // 모든 플레이어로부터 설정된 거리보다 멀리 있으면 제거
         if (MinDistance > ZombieDestroyDistance)
         {
             // 좀비 제거 (OnZombieDestroyed 이벤트가 자동으로 호출됨)
-            UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 좀비 제거: 거리 %.2f"), MinDistance);
+           // UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 좀비 제거: 거리 %.2f"), MinDistance);
             ZombieActor->Destroy();
             DestroyedCount++;
         }
@@ -460,11 +512,11 @@ void ANS_MultiPlayMode::CleanupDistantZombies()
     // 제거된 좀비가 있으면 로그 출력
     if (DestroyedCount > 0)
     {
-        UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] %d개의 멀리 있는 좀비 제거됨 (총 %d개 제거됨)"), DestroyedCount, ZombiesRemoved);
+        //UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] %d개의 멀리 있는 좀비 제거됨 (총 %d개 제거됨)"), DestroyedCount, ZombiesRemoved);
     }
     else
     {
-        UE_LOG(LogTemp, Display, TEXT("[MultiPlayMode] 제거할 좀비가 없음"));
+       // UE_LOG(LogTemp, Display, TEXT("[MultiPlayMode] 제거할 좀비가 없음"));
     }
 }
 
@@ -588,8 +640,8 @@ TArray<AANS_ZombieSpawner*> ANS_MultiPlayMode::FindSuitableSpawnersForMultiplay(
                 TooCloseToOtherPlayerSpawners++;
 
                 // 디버그 로그 추가
-                UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 플레이어 %d의 스폰 가능 구역(거리: %.1f)에 플레이어 %d가 너무 가까이 있어서(거리: %.1f < %.1f) 좀비 스폰 불가"),
-                    CurrentPlayerIndex, DistanceToCurrentPlayer, TooClosePlayerIndex, TooCloseDistance, MinSpawnDistance);
+                /*UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 플레이어 %d의 스폰 가능 구역(거리: %.1f)에 플레이어 %d가 너무 가까이 있어서(거리: %.1f < %.1f) 좀비 스폰 불가"),
+                    CurrentPlayerIndex, DistanceToCurrentPlayer, TooClosePlayerIndex, TooCloseDistance, MinSpawnDistance);*/
 
                 continue;
             }
@@ -603,10 +655,10 @@ TArray<AANS_ZombieSpawner*> ANS_MultiPlayMode::FindSuitableSpawnersForMultiplay(
     }
 
     // 종합 디버그 로그
-    UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 플레이어 %d 스포너 검색 결과: 총 %d개 중 적합한 스포너 %d개"),
+   /* UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 플레이어 %d 스포너 검색 결과: 총 %d개 중 적합한 스포너 %d개"),
         CurrentPlayerIndex, TotalSpawners, SuitableSpawners.Num());
     UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 제외된 스포너: 비활성화 %d개, 사용중 %d개, 범위 밖 %d개, 다른 플레이어 근처 %d개"),
-        DisabledSpawners, OccupiedSpawners, OutOfRangeSpawners, TooCloseToOtherPlayerSpawners);
+        DisabledSpawners, OccupiedSpawners, OutOfRangeSpawners, TooCloseToOtherPlayerSpawners);*/
 
     return SuitableSpawners;
 }

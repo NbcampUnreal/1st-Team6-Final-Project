@@ -8,7 +8,6 @@
 #include "Kismet/GameplayStatics.h"  
 #include "GameFlow/NS_GameInstance.h"
 #include "UI/NS_UIManager.h"
-#include "AsyncLoadingScreenLibrary.h"
 
 void UNS_Msg_GameOver::NativeConstruct()
 {
@@ -70,11 +69,14 @@ void UNS_Msg_GameOver::OnMainMenuBtnClicked()
 	if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
 	{
 		if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
+		{
 			UIManager->HideGameOverWidget(GetWorld());
+			UIManager->ShowLoadingScreen(GetWorld()); // 로딩 스크린 표시
+		}
 	}
 
-	UAsyncLoadingScreenLibrary::SetEnableLoadingScreen(false);
-	UGameplayStatics::OpenLevel(GetWorld(), FName(TEXT("MainTitle")));//MenuMap / MainTitle
+	// 메인 메뉴로 이동
+	UGameplayStatics::OpenLevel(GetWorld(), FName(TEXT("MainTitle")));
 }
 
 void UNS_Msg_GameOver::UpdateBoxVisibility()

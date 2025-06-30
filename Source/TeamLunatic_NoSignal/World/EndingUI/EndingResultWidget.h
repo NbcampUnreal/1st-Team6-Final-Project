@@ -35,4 +35,10 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	class UButton* ReturnToLobbyButton;
+
+	UPROPERTY(meta=(BindWidget))
+	class UTextBlock* RadionEndingText;
+
+	UPROPERTY(meta=(BindWidget))
+	class UTextBlock* CarEndingText;
 };

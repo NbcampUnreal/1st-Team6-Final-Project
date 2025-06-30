@@ -6,6 +6,7 @@
 #include "EngineUtils.h"
 #include "Camera/CameraActor.h"
 #include "GameFlow/NS_GameInstance.h"
+#include "GameFlow/NS_MultiPlayMode.h"
 #include "UI/NS_UIManager.h"
 
 void ANS_LobbyController::BeginPlay()
@@ -61,8 +62,51 @@ void ANS_LobbyController::OnPossess(APawn* InPawn)
 
 void ANS_LobbyController::Client_ShowWait_Implementation()
 {
+	// Client_ShowWait 완전 비활성화 - 중복 로딩 스크린 방지
+	UE_LOG(LogTemp, Error, TEXT("=== Client_ShowWait 호출됨 - 완전 비활성화됨 ==="));
+
+	// 아무것도 하지 않음 (NS_LoadingScreen은 다른 곳에서 관리)
+	return;
+}
+
+void ANS_LobbyController::Client_ShowLoadingScreen_Implementation()
+{
 	if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
 	{
-		GI->ShowWait();
+		if (UNS_UIManager* UIManager = GI->GetUIManager())
+		{
+			// Ready UI 숨기기
+			GI->HideReadyUI();
+
+			// 로딩 스크린 표시
+			UIManager->ShowLoadingScreen(GetWorld());
+
+			UE_LOG(LogTemp, Log, TEXT("멀티플레이 로딩 스크린 표시"));
+		}
+	}
+}
+
+void ANS_LobbyController::Server_NotifyLoadingComplete_Implementation()
+{
+	UE_LOG(LogTemp, Warning, TEXT("클라이언트 로딩 완료 알림 받음: %s"), *GetName());
+
+	// MultiPlayMode에게 이 플레이어가 로딩 완료되었음을 알림
+	if (ANS_MultiPlayMode* MultiMode = Cast<ANS_MultiPlayMode>(GetWorld()->GetAuthGameMode()))
+	{
+		MultiMode->OnPlayerLoadingComplete(this);
+	}
+}
+
+void ANS_LobbyController::Client_HideLoadingScreen_Implementation()
+{
+	UE_LOG(LogTemp, Warning, TEXT("서버로부터 로딩 스크린 숨기기 명령 받음"));
+
+	if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+	{
+		if (UNS_UIManager* UIManager = GI->GetUIManager())
+		{
+			UIManager->HideLoadingScreen(GetWorld());
+			UE_LOG(LogTemp, Log, TEXT("동기화된 로딩 스크린 숨김"));
+		}
 	}
 }

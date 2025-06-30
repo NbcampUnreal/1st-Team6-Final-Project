@@ -9,6 +9,7 @@
 #include "GameFlow/NS_GameModeBase.h"
 #include "GameFlow/NS_MainGamePlayerState.h"
 #include "Character/ThrowActor/NS_ThrowActor.h"
+#include "UI/NS_OpenLevelMap.h"
 #include "NS_PlayerCharacterBase.generated.h"
 
 class UInputMappingContext;
@@ -22,6 +23,7 @@ class UNS_EquipedWeaponComponent;
 class UNS_QuickSlotPanel;
 class UNS_QuickSlotComponent;
 class UNS_PlayerController;
+class UNS_OpenLevelMap;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
@@ -194,9 +196,14 @@ public:
 
 	// 점프가 가능하게 하는 변수 
 	bool IsCanJump = true;
-	// ====================================
+	// =================================================================================================
+	
+	// ==================================== 데미지 받을 때 재생할 사운드 =========================================
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	USoundBase* DamageSound;
+	// =================================================================================================
 
-
+	
 	// =================================Turn In Place관련 변수들 ===============================
 	// Turn In Place가 가능한 Yaw회전 값
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
@@ -380,9 +387,13 @@ public:
 	void PlayDeath_Multicast();
 
 	// 카메라 Yaw값, Pitch값 서버로 전송
-	UFUNCTION(BlueprintCallable, Server, Reliable)
+	UFUNCTION(BlueprintCallable, Server, Unreliable)
 	void UpdateAim_Server(float NewCamYaw, float NewCamPitch);
-
+	
+	// 현재 캐릭터가 바라보는 카메라 Yaw값 업데이트 함수
+	UFUNCTION(NetMulticast, Unreliable)
+	void UpdateAim_Multicast(float Yaw, float Pitch);
+	
 	// 헤드램프 켜고 끄는 함수
 	UFUNCTION(BlueprintCallable, Category = "Flashlight")
 	void ToggleFlashlight();
@@ -393,10 +404,6 @@ public:
 	// 헤드램프 켜고 끄는 멀티캐스트 전송 함수
 	UFUNCTION(NetMulticast, Reliable)
 	void ToggleFlashlight_Multicast();
-
-	// 현재 캐릭터가 바라보는 카메라 Yaw값 업데이트 함수
-	UFUNCTION(NetMulticast, Unreliable)
-	void UpdateAim_Multicast(float Yaw, float Pitch);
 
 	// 캐릭터가 병투척해서 날아가는 속도/방향/궤도 함수
 	UFUNCTION(BlueprintCallable)
@@ -411,30 +418,38 @@ public:
 	void OnTurnInPlaceFinished();
 
 	// Turn In Place 상태를 서버에 업데이트하는 함수
-	UFUNCTION(Server, Reliable)
+	UFUNCTION(Server, unreliable)
 	void Server_UpdateTurnInPlaceState(bool bInTurnLeft, bool bInTurnRight, bool bInUseControllerDesiredRotation);
 	// Turn In Place 상태를 모든 클라이언트에 멀티캐스트하는 함수
-	UFUNCTION(NetMulticast, Reliable)
+	UFUNCTION(NetMulticast, unreliable)
 	void Multicast_UpdateTurnInPlaceState(bool bInTurnLeft, bool bInTurnRight, bool bInUseControllerDesiredRotation);
 
 	// Yaw 리셋 관련 함수
 	void UpdateYawReset(float DeltaTime);
 	// ======================== Turn In Place 끝! =================================
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OpenLevelMap")
+	TSubclassOf<UNS_OpenLevelMap> OpenLevelMapWidgetClass;
+	
+	UPROPERTY()
+	UNS_OpenLevelMap* CurrentOpenMapWidget;
+
+	void OpenMapAction(const FInputActionValue& Value);
+	
 	//환각 관련
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PostProcess")
 	UMaterialInterface* HallucinationMaterial;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PostProcess")
 	UMaterialInstanceDynamic* HallucinationMID;
-
-
+	
 	// 환각효과 켜기
 	void ActivateHallucinationEffect(float Duration);
 
+	// 사운드 멀티캐스트
 	UFUNCTION(NetMulticast, Reliable)
 	void PlaySoundOnCharacter_Multicast(USoundBase* SoundToPlay);
-
+	
 	// 캐릭터가 현재 조준 중인지 확인하는 함수
 	UFUNCTION(BlueprintCallable, Category = "Character")
 	bool IsAimingChange() const { return IsAiming; }

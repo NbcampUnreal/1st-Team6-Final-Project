@@ -5,7 +5,9 @@
 #include "Net/UnrealNetwork.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Item/NS_InventoryBaseItem.h"
-
+#include "GameFlow/NS_GameInstance.h"
+#include "UI/NS_PlayerHUD.h"
+#include "UI/NS_UIManager.h"
 #include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
 #include "Engine/ActorChannel.h"
 
@@ -376,26 +378,28 @@ void UInventoryComponent::AddNewItem(UNS_InventoryBaseItem* Item, const int32 Am
 	UE_LOG(LogTemp, Warning, TEXT("[Inventory] Added %s"), *NewItem->GetName());
 	UE_LOG(LogTemp, Warning, TEXT("[Inventory] NewItem OwingInventory: %s"), *GetNameSafe(NewItem->OwingInventory));
 
-	// 아래 코드 제거 또는 주석 처리 - Pickup.cpp에서 처리하므로 중복 방지
-	/*
-	AActor* OwnerActor = GetOwner();
-	if (OwnerActor)
-	{
-		ANS_PlayerCharacterBase* Player = Cast<ANS_PlayerCharacterBase>(OwnerActor); 
-		if (Player && Player->QuickSlotComponent)
-		{
-			if (NewItem->ItemType == EItemType::Equipment &&
-				NewItem->WeaponType != EWeaponType::Ammo &&
-				!Player->QuickSlotComponent->IsItemAlreadyAssigned(NewItem))
-			{
-				if (Player->QuickSlotComponent->AssignToFirstEmptySlot(NewItem))
-				{
-					UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 자동 등록 완료: %s"), *NewItem->GetName());
-				}
-			}
-		}
-	}
-	*/
+	// 쪽지 아이템 획득 시 PlayerHUD의 TipText 숨기기 처리
+    	if (NewItem->ItemType == EItemType::Misc)
+    	{
+    		AActor* OwnerActor = GetOwner();
+    		if (OwnerActor)
+    		{
+    			ANS_PlayerCharacterBase* Player = Cast<ANS_PlayerCharacterBase>(OwnerActor);
+    			if (Player)
+    			{
+    				if (UNS_GameInstance* GI = Player->GetGameInstance<UNS_GameInstance>())
+    				{
+    					if (UNS_UIManager* UIManager = GI->GetUIManager())
+    					{
+    						if (UNS_PlayerHUD* PlayerHUD = UIManager->GetPlayerHUDWidget())
+    						{
+    							PlayerHUD->HideTipText();
+    						}
+    					}
+    				}
+    			}
+    		}
+    	}
 }
 
 void UInventoryComponent::CleanUpZeroQuantityItems()

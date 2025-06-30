@@ -85,7 +85,7 @@ public:
 	void InitializingSightConfig();
 	void InitializingHearingConfig();
 
-	FORCEINLINE FVector GetTargetLocation() const { return TargetLocation; }
+	FORCEINLINE FVector GetCurrentTargetLocation() const { return TargetLocation; }
 };
 
 

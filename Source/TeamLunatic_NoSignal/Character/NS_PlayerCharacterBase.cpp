@@ -19,6 +19,9 @@
 #include <Net/UnrealNetwork.h>
 #include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
 #include "Item/NS_BaseWeapon.h"
+#include "UI/NS_UIManager.h"
+#include "Blueprint/UserWidget.h"
+#include "UI/NS_OpenLevelMap.h"
 #include "Character/NS_PlayerController.h"
 #include "Sound/SoundBase.h"
 
@@ -314,6 +317,16 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                 &ANS_PlayerCharacterBase::QuickSlot5Selected
                 );
         }
+
+        if (InputOpenMapAction)
+        {
+            EnhancedInput->BindAction(
+                InputOpenMapAction,
+                ETriggerEvent::Started,
+                this,
+                &ANS_PlayerCharacterBase::OpenMapAction
+                );
+        }
     }
 }
 
@@ -384,7 +397,14 @@ float ANS_PlayerCharacterBase::TakeDamage(
     {
         // 캐릭터 체력 감소
         StatusComp->AddHealthGauge(-ActualDamage);
-        
+
+        // 데미지 사운드 재생 (모든 클라이언트에서)
+        if (DamageSound)
+        {
+            PlaySoundOnCharacter_Multicast(DamageSound);
+            UE_LOG(LogTemp, Warning, TEXT("TakeDamage: 데미지 사운드 재생 - %s"), *GetName());
+        }
+
         // 모든 클라이언트에 데미지 처리 결과 전파
         Multicast_TakeDmage(ActualDamage);
         
@@ -564,21 +584,36 @@ void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputAct
 {
     // 낙하 중에는 아이템 줍기 불가
     if (GetCharacterMovement()->IsFalling()) { return; }
-    
-    // 이미 아이템 줍기 중이면 무시
-    if (IsPickUp) { return; }
-    
+
+    // 이미 아이템 줍기 중이면 무시 (중복 체크 강화)
+    if (IsPickUp) {
+        UE_LOG(LogTemp, Warning, TEXT("PickUpAction_Server: 이미 아이템 획득 중 - 입력 무시 (IsPickUp = true)"));
+        return;
+    }
+
     // 재장전 중이면 무시
-    if (IsReload) { return; }
-    
+    if (IsReload) {
+        UE_LOG(LogTemp, Warning, TEXT("PickUpAction_Server: 재장전 중 - 입력 무시 (IsReload = true)"));
+        return;
+    }
+
     // 무기 교체 애니메이션 중이면 무시
-    if (IsChangeAnim) { return; }
-    
+    if (IsChangeAnim) {
+        UE_LOG(LogTemp, Warning, TEXT("PickUpAction_Server: 무기 교체 중 - 입력 무시 (IsChangeAnim = true)"));
+        return;
+    }
+
     // 공격 중이면 무시
-    if (EquipedWeaponComp && EquipedWeaponComp->IsAttack) { return; }
-    
+    if (EquipedWeaponComp && EquipedWeaponComp->IsAttack) {
+        UE_LOG(LogTemp, Warning, TEXT("PickUpAction_Server: 공격 중 - 입력 무시 (IsAttack = true)"));
+        return;
+    }
+
     // 투척 중이면 무시
-    if (IsThrow) { return; }
+    if (IsThrow) {
+        UE_LOG(LogTemp, Warning, TEXT("PickUpAction_Server: 투척 중 - 입력 무시 (IsThrow = true)"));
+        return;
+    }
 
     if (UInteractionComponent* InteractComp = FindComponentByClass<UInteractionComponent>())
     {
@@ -1336,7 +1371,8 @@ void ANS_PlayerCharacterBase::Server_UpdateTurnInPlaceState_Implementation(bool 
     Multicast_UpdateTurnInPlaceState(bInTurnLeft, bInTurnRight, bInUseControllerDesiredRotation);
 }
 
-void ANS_PlayerCharacterBase::Multicast_UpdateTurnInPlaceState_Implementation(bool bInTurnLeft, bool bInTurnRight, bool bInUseControllerDesiredRotation)
+void ANS_PlayerCharacterBase::Multicast_UpdateTurnInPlaceState_Implementation(bool bInTurnLeft, bool bInTurnRight,
+    bool bInUseControllerDesiredRotation)
 {
     // 로컬 플레이어가 아닌 경우에만 적용
     if (!IsLocallyControlled())
@@ -1385,5 +1421,48 @@ void ANS_PlayerCharacterBase::PlaySoundOnCharacter_Multicast_Implementation(USou
     if (SoundToPlay)
     {
         UGameplayStatics::PlaySoundAtLocation(this, SoundToPlay, GetActorLocation());
+    }
+}
+
+
+void ANS_PlayerCharacterBase::OpenMapAction(const FInputActionValue& Value)
+{
+    if (!IsLocallyControlled()) return;
+    
+    // 맵 위젯이 이미 열려있으면 닫기
+    if (CurrentOpenMapWidget && CurrentOpenMapWidget->IsInViewport())
+    {
+        CurrentOpenMapWidget->RemoveFromParent();
+        CurrentOpenMapWidget = nullptr;
+        
+        // 마우스 커서 숨기기 및 입력 모드 복원
+        if (APlayerController* PC = Cast<APlayerController>(GetController()))
+        {
+            PC->SetInputMode(FInputModeGameOnly());
+            PC->SetShowMouseCursor(false);
+        }
+        return;
+    }
+    
+    // 맵 위젯 새로 생성하여 열기
+    if (OpenLevelMapWidgetClass)
+    {
+        CurrentOpenMapWidget = CreateWidget<UNS_OpenLevelMap>(GetWorld(), OpenLevelMapWidgetClass);
+    }
+    else
+    {
+        CurrentOpenMapWidget = CreateWidget<UNS_OpenLevelMap>(GetWorld(), UNS_OpenLevelMap::StaticClass());
+    }
+    
+    if (CurrentOpenMapWidget)
+    {
+        CurrentOpenMapWidget->AddToViewport();
+        
+        // 마우스 커서 표시 및 입력 모드 변경
+        if (APlayerController* PC = Cast<APlayerController>(GetController()))
+        {
+            PC->SetInputMode(FInputModeGameAndUI());
+            PC->SetShowMouseCursor(false);
+        }
     }
 }

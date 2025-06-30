@@ -12,17 +12,12 @@
 #include "Zombie/ZombieActivateManager/NS_ZombieActivationManager.h"
 #include "Zombie/ZombieSpawner/NS_ZombieSpawner.h"
 #include "GameFramework/Character.h"
+#include "Character/NS_PlayerCharacterBase.h"
+#include "GameFlow/NS_MainGamePlayerState.h"
 
 
 ANS_GameModeBase::ANS_GameModeBase()
 {
-    // 기본 설정
-    PlayerCount = 1;
-    ZombiesPerSpawn = 3;  // 한 번에 3마리씩 스폰
-    ZombieSpawnInterval = 1.f;  // 1초마다 스폰
-    MinSpawnDistance = 4000.0f;
-    MaxSpawnDistance = 8000.0f;
-    ZombieDestroyDistance = 8001.0f;
 }
 
 void ANS_GameModeBase::BeginPlay()
@@ -482,4 +477,25 @@ void ANS_GameModeBase::DebugZombieDistances()
     UE_LOG(LogTemp, Warning, TEXT("[좀비 디버그] 4000-8000 사이 좀비: %d"), ZombiesInMidRange);
     UE_LOG(LogTemp, Warning, TEXT("[좀비 디버그] 8000 초과 좀비: %d"), AllZombies.Num() - ZombiesInCloseRange - ZombiesInMidRange);
     UE_LOG(LogTemp, Warning, TEXT("[좀비 디버그] 누적 제거된 좀비: %d"), ZombiesRemoved);*/
+}
+
+void ANS_GameModeBase::OnPlayerCharacterDied_Implementation(ANS_PlayerCharacterBase* DeadCharacter)
+{
+    // 기본 구현: 플레이어가 죽었을 때의 기본 처리
+    if (!DeadCharacter)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] OnPlayerCharacterDied: DeadCharacter is null"));
+        return;
+    }
+
+    UE_LOG(LogTemp, Warning, TEXT("[GameModeBase] Player character died: %s"), *DeadCharacter->GetName());
+
+    // 플레이어 상태 업데이트
+    if (AController* Controller = DeadCharacter->GetController())
+    {
+        if (ANS_MainGamePlayerState* PS = Controller->GetPlayerState<ANS_MainGamePlayerState>())
+        {
+            PS->bIsAlive = false;
+        }
+    }
 }
