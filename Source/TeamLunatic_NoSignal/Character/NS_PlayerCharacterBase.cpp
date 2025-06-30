@@ -534,11 +534,21 @@ void ANS_PlayerCharacterBase::JumpAction(const FInputActionValue& Value)
         Jump(); 
         IsCanJump = false; 
 
+        // 기존 타이머가 있다면 클리어
+        if (GetWorldTimerManager().IsTimerActive(JumpTimerHandle))
+        {
+            GetWorldTimerManager().ClearTimer(JumpTimerHandle);
+        }
+
         // 점프한 뒤로 1.3초동안은 점프를 못함
-        FTimerHandle RestartJumpTime; 
         GetWorldTimerManager().SetTimer( 
-            RestartJumpTime, 
-            FTimerDelegate::CreateLambda([this]() { IsCanJump = true; }), 
+            JumpTimerHandle, 
+            FTimerDelegate::CreateLambda([this]() { 
+                if (IsValid(this))
+                {
+                    IsCanJump = true; 
+                }
+            }), 
             1.3f, 
             false 
         );
