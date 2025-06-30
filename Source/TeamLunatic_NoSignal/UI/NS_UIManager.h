@@ -69,6 +69,8 @@ public:
     UFUNCTION(BlueprintCallable, Category = "UI")
     bool ShowGameOverWidget(UWorld* World);
     
+
+    
     // 게임 오버 위젯 숨기기
     UFUNCTION(BlueprintCallable, Category = "UI")
     void HideGameOverWidget(UWorld* World);

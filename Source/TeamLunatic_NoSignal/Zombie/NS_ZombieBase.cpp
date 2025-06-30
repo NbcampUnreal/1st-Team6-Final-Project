@@ -398,6 +398,9 @@ void ANS_ZombieBase::OnDeadState()
 		bIsDead = true;
 		Die_Multicast();
 	}
+
+	// 사운드 타이머핸들 초기화
+	GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
 }
 
 void ANS_ZombieBase::OnFrozenState()
@@ -443,7 +446,7 @@ void ANS_ZombieBase::Multicast_PlaySound_Implementation(USoundCue* Sound)
 
 void ANS_ZombieBase::ScheduleSound(USoundCue* SoundCue)
 {
-	if (!SoundCue || !GetWorld() || GetWorld()->bIsTearingDown)
+	if (!SoundCue || !GetWorld() || GetWorld()->bIsTearingDown|| bIsDead)
 	{
 		return;
 	}
@@ -452,27 +455,13 @@ void ANS_ZombieBase::ScheduleSound(USoundCue* SoundCue)
 	TWeakObjectPtr<ANS_ZombieBase> WeakZombie(this);
 	GetWorldTimerManager().SetTimer(AmbientSoundTimer,[WeakZombie, SoundCue]()
 	{
-			if (!WeakZombie.IsValid())
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Zombie already destroyed, skipping sound timer."));
-				return;
-			}
-
-			ANS_ZombieBase* Zombie = WeakZombie.Get();
-
-			if (!Zombie->GetWorld() || Zombie->GetWorld()->bIsTearingDown)
-			{
-				return;
-			}
-
-			float PlayPercent = 0.5f;
-			float ActualPercent = FMath::FRandRange(0.0f, 1.0f);
-			if (PlayPercent > ActualPercent)
-			{
-				Zombie->Server_PlaySound(SoundCue);
-			}
-
-			Zombie->ScheduleSound(SoundCue);
+		float PlayPercent = 0.5f;
+		float ActualPercent = FMath::FRandRange(0.0f, 1.0f);
+		if (PlayPercent > ActualPercent)
+		{
+			Server_PlaySound(SoundCue);
+		}
+		ScheduleSound(SoundCue);
 	}, RandomTime, false);
 }
 
@@ -506,6 +495,7 @@ void ANS_ZombieBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(ANS_ZombieBase, CurrentAttackType);
 	DOREPLIFETIME(ANS_ZombieBase, CurrentState);
 	DOREPLIFETIME(ANS_ZombieBase, bGetHit);
+	DOREPLIFETIME(ANS_ZombieBase, bIsGotHit); // 누락된 속성 추가
 }
 
 void ANS_ZombieBase::InitializePhysics()

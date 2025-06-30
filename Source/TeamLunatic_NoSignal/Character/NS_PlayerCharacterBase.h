@@ -123,6 +123,9 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_NotifyInventoryUpdated();
 
+	UFUNCTION(Client, Reliable)
+	void Client_HideTipText();
+
 	UFUNCTION(Server, Reliable)
 	void Server_UseInventoryItem(FName ItemRowName);
 protected:
@@ -196,6 +199,9 @@ public:
 
 	// 점프가 가능하게 하는 변수 
 	bool IsCanJump = true;
+	
+	// 점프 타이머 핸들
+	FTimerHandle JumpTimerHandle;
 	// =================================================================================================
 	
 	// ==================================== 데미지 받을 때 재생할 사운드 =========================================

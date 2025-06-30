@@ -20,6 +20,8 @@
 #include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
 #include "Item/NS_BaseWeapon.h"
 #include "UI/NS_UIManager.h"
+#include "UI/NS_PlayerHUD.h"
+#include "GameFlow/NS_GameInstance.h"
 #include "Blueprint/UserWidget.h"
 #include "UI/NS_OpenLevelMap.h"
 #include "Character/NS_PlayerController.h"
@@ -534,11 +536,21 @@ void ANS_PlayerCharacterBase::JumpAction(const FInputActionValue& Value)
         Jump(); 
         IsCanJump = false; 
 
+        // 기존 타이머가 있다면 클리어
+        if (GetWorldTimerManager().IsTimerActive(JumpTimerHandle))
+        {
+            GetWorldTimerManager().ClearTimer(JumpTimerHandle);
+        }
+
         // 점프한 뒤로 1.3초동안은 점프를 못함
-        FTimerHandle RestartJumpTime; 
         GetWorldTimerManager().SetTimer( 
-            RestartJumpTime, 
-            FTimerDelegate::CreateLambda([this]() { IsCanJump = true; }), 
+            JumpTimerHandle, 
+            FTimerDelegate::CreateLambda([this]() { 
+                if (IsValid(this))
+                {
+                    IsCanJump = true; 
+                }
+            }), 
             1.3f, 
             false 
         );
@@ -1186,6 +1198,22 @@ void ANS_PlayerCharacterBase::Client_NotifyInventoryUpdated_Implementation()
                     QuickSlotComponent->BroadcastSlotUpdate();
                 }
             }), 0.05f, false);
+    }
+}
+
+void ANS_PlayerCharacterBase::Client_HideTipText_Implementation()
+{
+    // 클라이언트에서 TipText 숨기기 처리
+    if (UNS_GameInstance* GI = GetGameInstance<UNS_GameInstance>())
+    {
+        if (UNS_UIManager* UIManager = GI->GetUIManager())
+        {
+            if (UNS_PlayerHUD* PlayerHUD = UIManager->GetPlayerHUDWidget())
+            {
+                PlayerHUD->HideTipText();
+                UE_LOG(LogTemp, Warning, TEXT("Client_HideTipText: TipText 숨김 처리 완료"));
+            }
+        }
     }
 }
 

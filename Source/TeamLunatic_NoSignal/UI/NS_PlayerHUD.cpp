@@ -145,72 +145,8 @@ void UNS_PlayerHUD::ShowWidget()
     CachedPlayerCharacter = Cast<ANS_PlayerCharacterBase>(MyPawn);
     if (!CachedPlayerCharacter) return;
 
+    // 타이머 핸들 정리 (NativeTick에서 처리하므로 더 이상 필요 없음)
     GetWorld()->GetTimerManager().ClearTimer(UpdatePlayerStausHandle);
-    TWeakObjectPtr<UNS_PlayerHUD> SafeThis = this;
-    
-    // 플레이어 체력이랑 스테미너 업데이트는 0.016초마다 타이머핸들로 업데이트
-    GetWorld()->GetTimerManager().SetTimer
-    (
-        UpdatePlayerStausHandle,
-        FTimerDelegate::CreateLambda([SafeThis]() mutable
-    {
-        if (!SafeThis.IsValid()) return;
-        if (!SafeThis->GetWorld()) return;
-        if (!SafeThis->CachedPlayerCharacter || !SafeThis->CachedPlayerCharacter->StatusComp) return;
-
-        // 목표값
-        const float NewHpPercent = SafeThis->CachedPlayerCharacter->StatusComp->Health / SafeThis->CachedPlayerCharacter->StatusComp->MaxHealth;
-        const float NewStPercent = SafeThis->CachedPlayerCharacter->StatusComp->Stamina / SafeThis->CachedPlayerCharacter->StatusComp->MaxStamina;
-        const bool bIsCurrentlySprint = SafeThis->CachedPlayerCharacter->IsSprint;
-
-        // 체력 바 업데이트
-        if (SafeThis->ProgressBar_Health)
-        {
-            SafeThis->CurrentHpPercent = FMath::Lerp(SafeThis->CurrentHpPercent, NewHpPercent, 0.2f);
-            SafeThis->ProgressBar_Health->SetPercent(SafeThis->CurrentHpPercent);
-        }
-
-        // if (SafeThis->ProgressBarBG_Health)
-        // {
-        //     SafeThis->BGHpPercent = FMath::Lerp(SafeThis->BGHpPercent, NewHpPercent, 0.05f);
-        //     SafeThis->ProgressBarBG_Health->SetPercent(SafeThis->BGHpPercent);
-        // }
-
-        // 스태미너 바 업데이트
-        if (SafeThis->ProgressBar_Stamina)
-        {
-            if (bIsCurrentlySprint) // 현재 스프린트 중일 때
-            {
-                SafeThis->ProgressBar_Stamina->SetPercent(NewStPercent);
-                // 스프린트 중에는 배경 바를 현재 스태미너와 동일하게 유지하거나, 빠르게 따라가게 할 수 있습니다.
-                // 여기서는 현재 스태미너와 동일하게 설정합니다.
-                // SafeThis->ProgressBarBG_Stamina->SetPercent(NewStPercent);
-                SafeThis->CurrentStPercent = NewStPercent; // 보간 없이 즉시 적용
-                // SafeThis->BGStPercent = NewStPercent; // 보간 없이 즉시 적용
-            }
-            else // 현재 대쉬 중이 아닐 때 (스태미너 회복 또는 일반 상태)
-            {
-                SafeThis->CurrentStPercent = FMath::Lerp(SafeThis->CurrentStPercent, NewStPercent, 0.2f);
-                SafeThis->ProgressBar_Stamina->SetPercent(SafeThis->CurrentStPercent);
-                
-                // // 스태미너 배경 바는 현재 스태미너보다 뒤쳐지게 (즉, 감소 효과) 또는 부드럽게 따라가게 합니다.
-                // // NewStPercent는 항상 목표값이므로, Lerp를 사용하여 부드럽게 업데이트합니다.
-                // SafeThis->BGStPercent = FMath::Lerp(SafeThis->BGStPercent, NewStPercent, 0.05f);
-                // SafeThis->ProgressBarBG_Stamina->SetPercent(SafeThis->BGStPercent);
-            }
-        }
-
-        // 조준 상태에 따라 조준점 표시/숨김 처리
-        if (SafeThis->CachedPlayerCharacter && SafeThis->Crosshair)
-        {
-            // 캐릭터가 조준 중이면 조준점 숨김
-            bool bIsAiming = SafeThis->CachedPlayerCharacter->IsAimingChange();
-            SafeThis->SetCrosshairVisibility(!bIsAiming);
-        }
-    }),
-        0.016f,  
-        true
-    );
 }
 
 void UNS_PlayerHUD::HideWidget()
@@ -312,6 +248,60 @@ void UNS_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
             {
                 Elem->Image_Arrow->SetVisibility(bHighlight ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
             }
+        }
+    }
+
+    // 플레이어 상태 업데이트 (이전에 타이머로 처리하던 부분을 NativeTick으로 이동)
+    if (CachedPlayerCharacter && CachedPlayerCharacter->StatusComp)
+    {
+        // 목표값
+        const float NewHpPercent = CachedPlayerCharacter->StatusComp->Health / CachedPlayerCharacter->StatusComp->MaxHealth;
+        const float NewStPercent = CachedPlayerCharacter->StatusComp->Stamina / CachedPlayerCharacter->StatusComp->MaxStamina;
+        const bool bIsCurrentlySprint = CachedPlayerCharacter->IsSprint;
+
+        // 체력 바 업데이트
+        if (ProgressBar_Health)
+        {
+            CurrentHpPercent = FMath::Lerp(CurrentHpPercent, NewHpPercent, 0.2f);
+            ProgressBar_Health->SetPercent(CurrentHpPercent);
+        }
+
+        // if (ProgressBarBG_Health)
+        // {
+        //     BGHpPercent = FMath::Lerp(BGHpPercent, NewHpPercent, 0.05f);
+        //     ProgressBarBG_Health->SetPercent(BGHpPercent);
+        // }
+
+        // 스태미너 바 업데이트
+        if (ProgressBar_Stamina)
+        {
+            if (bIsCurrentlySprint) // 현재 스프린트 중일 때
+            {
+                ProgressBar_Stamina->SetPercent(NewStPercent);
+                // 스프린트 중에는 배경 바를 현재 스태미너와 동일하게 유지하거나, 빠르게 따라가게 할 수 있습니다.
+                // 여기서는 현재 스태미너와 동일하게 설정합니다.
+                // ProgressBarBG_Stamina->SetPercent(NewStPercent);
+                CurrentStPercent = NewStPercent; // 보간 없이 즉시 적용
+                // BGStPercent = NewStPercent; // 보간 없이 즉시 적용
+            }
+            else // 현재 대쉬 중이 아닐 때 (스태미너 회복 또는 일반 상태)
+            {
+                CurrentStPercent = FMath::Lerp(CurrentStPercent, NewStPercent, 0.2f);
+                ProgressBar_Stamina->SetPercent(CurrentStPercent);
+                
+                // // 스태미너 배경 바는 현재 스태미너보다 뒤쳐지게 (즉, 감소 효과) 또는 부드럽게 따라가게 합니다.
+                // // NewStPercent는 항상 목표값이므로, Lerp를 사용하여 부드럽게 업데이트합니다.
+                // BGStPercent = FMath::Lerp(BGStPercent, NewStPercent, 0.05f);
+                // ProgressBarBG_Stamina->SetPercent(BGStPercent);
+            }
+        }
+
+        // 조준 상태에 따라 조준점 표시/숨김 처리
+        if (Crosshair)
+        {
+            // 캐릭터가 조준 중이면 조준점 숨김
+            bool bIsAiming = CachedPlayerCharacter->IsAimingChange();
+            SetCrosshairVisibility(!bIsAiming);
         }
     }
 }
