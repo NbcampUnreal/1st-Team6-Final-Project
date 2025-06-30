@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Net/UnrealNetwork.h"
 #include "NS_StatusComponent.generated.h"
 
 class ANS_PlayerCharacterBase; // 플레이어 캐릭터 기본 클래스의 전방 선언
@@ -31,13 +32,13 @@ protected:
 
 public:
     // --- 체력 및 스태미너 ---
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Status|Health")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category="Status|Health")
     float MaxHealth = 100.f; // 캐릭터의 최대 체력
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Status|Health")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category="Status|Health")
     float Health; // 캐릭터의 현재 체력
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status|Stamina")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Status|Stamina")
     float MaxStamina = 100.f; // 캐릭터의 최대 스태미너
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Status|Stamina")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category="Status|Stamina")
     float Stamina; // 캐릭터의 현재 스태미너
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status|Stamina")
 	float DefalutStaminaRegenRate = 10.f; // 스태미너 기본 재생 속도
@@ -53,6 +54,9 @@ public:
     void AddStamina(float Value); // 스태미너를 증가 또는 감소시킵니다.
     void AddStaminaRegenRate(float Value); // 스태미너 재생 속도를 변경합니다.
     bool CheckEnableSprint(); // 현재 스프린트가 가능한지 확인합니다.
+
+    // 네트워크 복제 설정
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
     bool bEnableSprint = true; // 스프린트 허용 여부를 결정하는 플래그
