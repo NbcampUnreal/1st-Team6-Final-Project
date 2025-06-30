@@ -495,6 +495,7 @@ void ANS_ZombieBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(ANS_ZombieBase, CurrentAttackType);
 	DOREPLIFETIME(ANS_ZombieBase, CurrentState);
 	DOREPLIFETIME(ANS_ZombieBase, bGetHit);
+	DOREPLIFETIME(ANS_ZombieBase, bIsGotHit); // 누락된 속성 추가
 }
 
 void ANS_ZombieBase::InitializePhysics()
