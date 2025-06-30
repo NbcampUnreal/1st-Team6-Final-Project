@@ -16,8 +16,6 @@ ANS_Chaser::ANS_Chaser()
 	CurrentHealth = 1000.0f;
 	bEnableAutoDamageTest = false;
 
-	//// 체이서 좀비는 항상 보이도록 설정
-	//SetActorHiddenInGame(false);
 }
 
 void ANS_Chaser::BeginPlay()
@@ -39,8 +37,6 @@ void ANS_Chaser::BeginPlay()
 		GetWorld()->GetTimerManager().SetTimer(AutoDamageTimerHandle, this, &ANS_Chaser::ApplyAutoDamage, 1.0f, true, 1.0f);
 	}
 
-	// 체이서 좀비 활성화 로그
-	UE_LOG(LogTemp, Warning, TEXT("체이서 좀비 활성화: %s"), *GetName());
 }
 
 void ANS_Chaser::Tick(float DeltaTime)
@@ -62,12 +58,15 @@ float ANS_Chaser::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	{
 		if (Anim->IsKneel)
 		{
-			return 0.0f; // 이미 무릎 꿇었으면 데미지 안받음
+			// 이미 무릎 꿇었으면 데미지 안받음
+			UE_LOG(LogTemp, Warning, TEXT("Chaser is already kneeling, no damage taken. Current Health: %f"), CurrentHealth);
+			return 0.0f;
 		}
 	}
 
 	CurrentHealth -= ActualDamage;
-	UE_LOG(LogTemp, Warning, TEXT("Chaser damaged. Current Health: %f"), CurrentHealth);
+	// 체력이 닳을 때마다 로그 출력
+	UE_LOG(LogTemp, Warning, TEXT("Chaser damaged. Current Health: %f (Damage Taken: %f)"), CurrentHealth, ActualDamage);
 
 	if (CurrentHealth <= 0.0f)
 	{
@@ -96,7 +95,7 @@ float ANS_Chaser::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 
 void ANS_Chaser::RecoverFromKneel()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Chaser recovered. Standing up."));
+	UE_LOG(LogTemp, Warning, TEXT("Chaser recovered. Standing up. Current Health: %f"), CurrentHealth);
 
 	// AnimInstance의 IsKneel 값을 false로 직접 변경
 	if (UNS_ChaserAnimInstance* Anim = Cast<UNS_ChaserAnimInstance>(GetMesh()->GetAnimInstance()))

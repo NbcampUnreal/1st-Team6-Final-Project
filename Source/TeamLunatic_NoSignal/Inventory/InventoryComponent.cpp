@@ -388,7 +388,7 @@ void UInventoryComponent::AddNewItem(UNS_InventoryBaseItem* Item, const int32 Am
     			if (Player)
     			{
     				// 클라이언트 RPC를 통해 TipText 숨기기 처리
-    				Player->Client_HideTipText();
+    				Player->Multicast_HideTipText();
     				UE_LOG(LogTemp, Warning, TEXT("AddNewItem: Misc 아이템 획득으로 Client_HideTipText() 호출"));
     			}
     		}

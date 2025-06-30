@@ -54,4 +54,8 @@ protected:
 private:
     FTimerHandle PlayerCountCheckTimer;
     void CheckPlayerCountAndEndSession();
+
+    // Flask 서버에 플레이어 로그인/로그아웃 알림 함수들
+    void NotifyPlayerLogin();
+    void NotifyPlayerLogout();
 };

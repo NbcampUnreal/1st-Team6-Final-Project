@@ -132,6 +132,8 @@ void ANS_MultiPlayMode::PostLogin(APlayerController* NewPlayer)
             if (NewPawn)
             {
                 NewPlayer->Possess(NewPawn);
+                NotifyPlayerLogin();
+                // Flask 서버에 플레이어 로그인 알림
             }
         }
     }
@@ -194,6 +196,8 @@ void ANS_MultiPlayMode::Logout(AController* Exiting)
 
     if (!HasAuthority()) return;
 
+    NotifyPlayerLogout();
+    // Flask 서버에 플레이어 로그아웃 알림
     // 플레이어 로그아웃 후 플레이어 수 체크
     CheckPlayerCountAndEndSession();
 }
@@ -217,6 +221,94 @@ void ANS_MultiPlayMode::CheckPlayerCountAndEndSession()
             {
                 GI->RequestUpdateSessionStatus(GI->MyServerPort, TEXT("closed"));
             }
+        }
+    }
+}
+
+// Flask 서버에 플레이어 로그인 알림
+void ANS_MultiPlayMode::NotifyPlayerLogin()
+{
+    if (!HasAuthority()) return;
+
+    if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+    {
+        if (GI->MyServerPort > 0)
+        {
+            // HTTP 요청으로 플레이어 로그인 알림
+            FHttpModule& HttpModule = FHttpModule::Get();
+            TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = HttpModule.CreateRequest();
+
+            Request->SetURL(TEXT("http://121.163.249.108:5000/player_login"));
+            Request->SetVerb(TEXT("POST"));
+            Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+
+            // JSON 데이터 생성
+            TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
+            JsonObject->SetNumberField(TEXT("port"), GI->MyServerPort);
+
+            FString OutputString;
+            TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&OutputString);
+            FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer);
+
+            Request->SetContentAsString(OutputString);
+
+            Request->OnProcessRequestComplete().BindLambda([](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+            {
+                if (bWasSuccessful && Response.IsValid())
+                {
+                    UE_LOG(LogTemp, Log, TEXT("[NotifyPlayerLogin] 플레이어 로그인 알림 성공"));
+                }
+                else
+                {
+                    UE_LOG(LogTemp, Warning, TEXT("[NotifyPlayerLogin] 플레이어 로그인 알림 실패"));
+                }
+            });
+
+            Request->ProcessRequest();
+        }
+    }
+}
+
+// Flask 서버에 플레이어 로그아웃 알림
+void ANS_MultiPlayMode::NotifyPlayerLogout()
+{
+    if (!HasAuthority()) return;
+
+    if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+    {
+        if (GI->MyServerPort > 0)
+        {
+            // HTTP 요청으로 플레이어 로그아웃 알림
+            FHttpModule& HttpModule = FHttpModule::Get();
+            TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = HttpModule.CreateRequest();
+
+            Request->SetURL(TEXT("http://121.163.249.108:5000/player_logout"));
+            Request->SetVerb(TEXT("POST"));
+            Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+
+            // JSON 데이터 생성
+            TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
+            JsonObject->SetNumberField(TEXT("port"), GI->MyServerPort);
+
+            FString OutputString;
+            TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&OutputString);
+            FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer);
+
+            Request->SetContentAsString(OutputString);
+
+            Request->OnProcessRequestComplete().BindLambda([](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+            {
+                if (bWasSuccessful && Response.IsValid())
+                {
+                    UE_LOG(LogTemp, Log, TEXT("[NotifyPlayerLogout] 플레이어 로그아웃 알림 성공"));
+                }
+                else
+                {
+                    UE_LOG(LogTemp, Warning, TEXT("[NotifyPlayerLogout] 플레이어 로그아웃 알림 실패"));
+                }
+            });
+
+            Request->ProcessRequest();
         }
     }
 }

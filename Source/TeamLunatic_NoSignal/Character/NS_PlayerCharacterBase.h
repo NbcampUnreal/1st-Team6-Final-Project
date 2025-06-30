@@ -123,8 +123,8 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_NotifyInventoryUpdated();
 
-	UFUNCTION(Client, Reliable)
-	void Client_HideTipText();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_HideTipText();
 
 	UFUNCTION(Server, Reliable)
 	void Server_UseInventoryItem(FName ItemRowName);
@@ -154,7 +154,7 @@ public:
 	
 
 	// 스탯 컴포넌트
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "Components")
 	UNS_StatusComponent* StatusComp;
 
 	// 인터렉션 컴포넌트
