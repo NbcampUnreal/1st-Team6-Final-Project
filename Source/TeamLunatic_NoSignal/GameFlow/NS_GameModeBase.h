@@ -13,10 +13,7 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_GameModeBase : public AGameModeBase
 
 public:
     ANS_GameModeBase();
-protected:
-	
-	virtual void BeginPlay() override;
-public:
+
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Common")
     FVector GetPlayerLocation() const; 
     virtual FVector GetPlayerLocation_Implementation() const; 
@@ -24,7 +21,11 @@ public:
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Common")
     void OnPlayerCharacterDied(class ANS_PlayerCharacterBase* DeadCharacter);
     virtual void OnPlayerCharacterDied_Implementation(class ANS_PlayerCharacterBase* DeadCharacter);
+    // 캐시된 좀비 리스트 (약한 참조 사용)
+
 protected:
+
+    virtual void BeginPlay() override;
     // 타이머로 주기적으로 현재 좀비를 체크해서 좀비를 스폰하는 함수
     virtual void CheckAndSpawnZombies();
 
@@ -96,6 +97,17 @@ protected:
     int32 ZombiesInCloseRange = 0;    // 4000 이내
     int32 ZombiesInMidRange = 0;      // 4000-8000 사이
     int32 ZombiesRemoved = 0;         // 제거된 좀비 수
+
+    // 좀비 캐싱 시스템 변수들
+    UPROPERTY()
+    TArray<TWeakObjectPtr<ANS_ZombieBase>> CachedZombies;
+
+    // 마지막 업데이트 시간
+    float LastZombieListUpdateTime = 0.0f;
+
+    // 업데이트 간격 (초)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie Caching")
+    float ZombieListUpdateInterval = 5.0f;
     
 
     UFUNCTION()
@@ -122,4 +134,7 @@ protected:
     // 좀비 거리 디버그 함수
     UFUNCTION()
     void DebugZombieDistances();
+
+    // 캐시된 좀비 리스트 반환 함수
+    TArray<ANS_ZombieBase*> GetValidZombies();
 };

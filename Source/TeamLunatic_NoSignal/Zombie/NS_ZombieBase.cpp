@@ -460,8 +460,7 @@ void ANS_ZombieBase::ScheduleSound(USoundCue* SoundCue)
 		{
 			Server_PlaySound(SoundCue);
 		}
-		ScheduleSound(SoundCue);
-	}, RandomTime, false);
+	}, RandomTime, true);
 }
 
 void ANS_ZombieBase::Die_Multicast_Implementation()
@@ -521,6 +520,8 @@ void ANS_ZombieBase::SetState(EZombieState NewState)
 {
 	if (CurrentState == NewState) return;
 	
+	GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
+	
 	if (HasAuthority())
 	{
 		CurrentState = NewState;
@@ -534,11 +535,6 @@ void ANS_ZombieBase::SetState(EZombieState NewState)
 
 void ANS_ZombieBase::OnStateChanged(EZombieState State)
 {
-	if (State ==EZombieState::DEAD)
-	{
-		GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
-	}
-	
 	switch (State)
 	{
 	case EZombieState::IDLE:
