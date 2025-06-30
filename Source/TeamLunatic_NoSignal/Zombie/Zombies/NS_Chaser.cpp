@@ -58,12 +58,15 @@ float ANS_Chaser::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	{
 		if (Anim->IsKneel)
 		{
-			return 0.0f; // 이미 무릎 꿇었으면 데미지 안받음
+			// 이미 무릎 꿇었으면 데미지 안받음
+			UE_LOG(LogTemp, Warning, TEXT("Chaser is already kneeling, no damage taken. Current Health: %f"), CurrentHealth);
+			return 0.0f;
 		}
 	}
 
 	CurrentHealth -= ActualDamage;
-	UE_LOG(LogTemp, Warning, TEXT("Chaser damaged. Current Health: %f"), CurrentHealth);
+	// 체력이 닳을 때마다 로그 출력
+	UE_LOG(LogTemp, Warning, TEXT("Chaser damaged. Current Health: %f (Damage Taken: %f)"), CurrentHealth, ActualDamage);
 
 	if (CurrentHealth <= 0.0f)
 	{
@@ -92,7 +95,7 @@ float ANS_Chaser::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 
 void ANS_Chaser::RecoverFromKneel()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Chaser recovered. Standing up."));
+	UE_LOG(LogTemp, Warning, TEXT("Chaser recovered. Standing up. Current Health: %f"), CurrentHealth);
 
 	// AnimInstance의 IsKneel 값을 false로 직접 변경
 	if (UNS_ChaserAnimInstance* Anim = Cast<UNS_ChaserAnimInstance>(GetMesh()->GetAnimInstance()))
