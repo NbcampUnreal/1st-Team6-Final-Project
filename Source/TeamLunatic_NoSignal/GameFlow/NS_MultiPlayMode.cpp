@@ -21,6 +21,7 @@ ANS_MultiPlayMode::ANS_MultiPlayMode()
 
 void ANS_MultiPlayMode::BeginPlay()
 {
+    UE_LOG(LogTemp, Warning, TEXT("MultiPlayMode Set !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"));
     // 부모 클래스의 BeginPlay 호출 전에 플레이어 수 계산
     if (const ANS_GameState* GS = GetGameState<ANS_GameState>())
     {
@@ -79,12 +80,32 @@ void ANS_MultiPlayMode::BeginPlay()
         }
     }
 
-    // 좀비 스폰 타이머 설정 (기존 타이머 제거 후 새로 설정)
-    GetWorldTimerManager().ClearTimer(ZombieSpawnTimer);
-    GetWorldTimerManager().SetTimer(ZombieSpawnTimer, this, &ANS_MultiPlayMode::CheckAndSpawnZombies, ZombieSpawnInterval, true);
+    // 멀티플레이 최적화된 타이머 설정
+    UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 최적화된 타이머 시스템 활성화"));
 
-   /* UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 좀비 스폰 타이머 설정 완료 (%.1f초마다 %d마리)"),
-        ZombieSpawnInterval, ZombiesPerSpawn);*/
+    // 플레이어 수가 적을 때만 타이머 활성화 (4명 이하)
+    if (PlayerCount <= 4)
+    {
+        // 안전한 주기로 타이머 설정 (최소 3초 보장)
+        float SafeSpawnInterval = FMath::Max(ZombieSpawnInterval, 3.0f);
+        GetWorldTimerManager().ClearTimer(ZombieSpawnTimer);
+        GetWorldTimerManager().SetTimer(ZombieSpawnTimer, this,
+            &ANS_MultiPlayMode::OptimizedMultiplaySpawnCheck, SafeSpawnInterval, true);
+
+        UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 안전 모드 타이머 활성화 (%.1f초 주기, %d마리씩)"),
+            SafeSpawnInterval, ZombiesPerSpawn);
+    }
+    else
+    {
+        // 플레이어가 많으면 더 긴 주기로 설정
+        float ExtendedSpawnInterval = ZombieSpawnInterval * 2.0f; // 4초로 증가
+        GetWorldTimerManager().ClearTimer(ZombieSpawnTimer);
+        GetWorldTimerManager().SetTimer(ZombieSpawnTimer, this,
+            &ANS_MultiPlayMode::OptimizedMultiplaySpawnCheck, ExtendedSpawnInterval, true);
+
+        UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 확장 모드 타이머 활성화 (%.1f초 주기, 플레이어 %d명)"),
+            ExtendedSpawnInterval, PlayerCount);
+    }
 }
 
 
@@ -196,6 +217,18 @@ void ANS_MultiPlayMode::OnPlayerCharacterDied_Implementation(ANS_PlayerCharacter
     }
 }
 
+void ANS_MultiPlayMode::Logout(AController* Exiting)
+{
+    Super::Logout(Exiting);
+
+    if (!HasAuthority()) return;
+
+    UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 플레이어 로그아웃: %s"), Exiting ? *Exiting->GetName() : TEXT("Unknown"));
+
+    // 플레이어 로그아웃 후 플레이어 수 체크
+    CheckPlayerCountAndEndSession();
+}
+
 // 주기적으로 플레이어 수를 체크하고 세션을 종료하는 함수 구현
 void ANS_MultiPlayMode::CheckPlayerCountAndEndSession()
 {
@@ -207,18 +240,17 @@ void ANS_MultiPlayMode::CheckPlayerCountAndEndSession()
 
     int32 ConnectedPlayerCount = GetNumPlayers();
 
+    UE_LOG(LogTemp, Warning, TEXT("[CheckPlayerCount] 현재 플레이어 수: %d"), ConnectedPlayerCount);
+
     if (ConnectedPlayerCount == 0)
     {
-        UE_LOG(LogTemp, Warning, TEXT("[CheckPlayerCount] 모든 플레이어가 나갔습니다. 세션 종료를 요청합니다."));
+        UE_LOG(LogTemp, Warning, TEXT("[CheckPlayerCount] 모든 플레이어가 나갔습니다. 세션을 'closed' 상태로 변경합니다."));
 
         if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
         {
             if (GI->MyServerPort > 0)
             {
                 GI->RequestUpdateSessionStatus(GI->MyServerPort, TEXT("closed"));
-
-                GetWorldTimerManager().ClearTimer(PlayerCountCheckTimer);
-                GetWorldTimerManager().ClearTimer(ZombieSpawnTimer);
             }
             else
             {
@@ -446,9 +478,8 @@ void ANS_MultiPlayMode::CleanupDistantZombies()
         return;
     }
 
-    // 현재 레벨의 모든 좀비 찾기
-    TArray<AActor*> AllZombies;
-    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ANS_ZombieBase::StaticClass(), AllZombies);
+    // 캐시된 좀비 리스트 사용 (GetAllActorsOfClass 대신)
+    TArray<ANS_ZombieBase*> AllZombies = GetCachedZombies();
 
    // UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 현재 좀비 수: %d"), AllZombies.Num());
 
@@ -458,44 +489,42 @@ void ANS_MultiPlayMode::CleanupDistantZombies()
     ZombiesInCloseRange = 0;
     ZombiesInMidRange = 0;
 
-    // 각 좀비의 거리 확인 및 제거
-    for (AActor* ZombieActor : AllZombies)
+    // 각 좀비의 거리 확인 및 제거 (최적화된 버전)
+    float ZombieDestroyDistanceSquared = ZombieDestroyDistance * ZombieDestroyDistance;
+
+    for (ANS_ZombieBase* Zombie : AllZombies)
     {
-        if (!IsValid(ZombieActor))
+        if (!IsValid(Zombie))
         {
             continue;
         }
 
-        // 모든 플레이어와의 최소 거리 계산
-        float MinDistance = MAX_FLT;
+        // 모든 플레이어와의 최소 거리 계산 (DistSquared 사용)
+        float MinDistanceSquared = MAX_FLT;
+        FVector ZombieLocation = Zombie->GetActorLocation();
+
         for (const FVector& PlayerLoc : PlayerLocations)
         {
-            float Distance = FVector::Dist(PlayerLoc, ZombieActor->GetActorLocation());
-            MinDistance = FMath::Min(MinDistance, Distance);
+            float DistanceSquared = FVector::DistSquared(PlayerLoc, ZombieLocation);
+            MinDistanceSquared = FMath::Min(MinDistanceSquared, DistanceSquared);
         }
 
-        // 거리에 따라 카운트
-        if (MinDistance <= 4000.0f)
+        // 거리에 따라 카운트 (DistSquared 기준으로 변경)
+        if (MinDistanceSquared <= 16000000.0f) // 4000^2
         {
             ZombiesInCloseRange++;
         }
-        else if (MinDistance <= 8000.0f)
+        else if (MinDistanceSquared <= 64000000.0f) // 8000^2
         {
             ZombiesInMidRange++;
         }
 
-        // 거리 디버깅
-        if (MinDistance > ZombieDestroyDistance * 0.9f)  // 90% 이상 거리에 있는 좀비 로그
-        {
-           // UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 좀비 거리: %.2f (제거 거리: %.2f)"), MinDistance, ZombieDestroyDistance);
-        }
-
         // 모든 플레이어로부터 설정된 거리보다 멀리 있으면 제거
-        if (MinDistance > ZombieDestroyDistance)
+        if (MinDistanceSquared > ZombieDestroyDistanceSquared)
         {
             // 좀비 제거 (OnZombieDestroyed 이벤트가 자동으로 호출됨)
-           // UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 좀비 제거: 거리 %.2f"), MinDistance);
-            ZombieActor->Destroy();
+           // UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 좀비 제거: 거리 %.2f"), FMath::Sqrt(MinDistanceSquared));
+            Zombie->Destroy();
             DestroyedCount++;
         }
     }
@@ -526,9 +555,8 @@ TArray<AANS_ZombieSpawner*> ANS_MultiPlayMode::FindSuitableSpawnersForMultiplay(
     TArray<AANS_ZombieSpawner*> SuitableSpawners;
     TMap<AANS_ZombieSpawner*, bool> SpawnerHasZombie;
 
-    // 현재 좀비 위치 확인
-    TArray<AActor*> ExistingZombies;
-    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ANS_ZombieBase::StaticClass(), ExistingZombies);
+    // 캐시된 좀비 위치 확인 (GetAllActorsOfClass 대신)
+    TArray<ANS_ZombieBase*> ExistingZombies = GetCachedZombies();
 
     // 디버그 카운터 초기화
     int32 TotalSpawners = 0;
@@ -540,30 +568,32 @@ TArray<AANS_ZombieSpawner*> ANS_MultiPlayMode::FindSuitableSpawnersForMultiplay(
     // 월드에 좀비가 있으면
     if (ExistingZombies.Num() > 0)
     {
-        // 각 좀비의 가장 가까운 스포너 찾기
-        for (AActor* ZombieActor : ExistingZombies)
+        // 각 좀비의 가장 가까운 스포너 찾기 (최적화된 버전)
+        TArray<AANS_ZombieSpawner*> CachedSpawnerList = GetCachedSpawners();
+
+        for (ANS_ZombieBase* Zombie : ExistingZombies)
         {
-            ANS_ZombieBase* Zombie = Cast<ANS_ZombieBase>(ZombieActor);
-            if (!Zombie) continue;
+            if (!IsValid(Zombie)) continue;
 
             FVector ZombieLocation = Zombie->GetActorLocation();
-            float ClosestDistance = MAX_FLT;
+            float ClosestDistanceSquared = MAX_FLT;
             AANS_ZombieSpawner* ClosestSpawner = nullptr;
 
-            for (AANS_ZombieSpawner* Spawner : ZombieSpawnPoints)
+            // 캐시된 스포너 리스트 사용 및 DistSquared로 최적화
+            for (AANS_ZombieSpawner* Spawner : CachedSpawnerList)
             {
                 if (!IsValid(Spawner)) continue;
 
-                float Distance = FVector::Dist(ZombieLocation, Spawner->GetActorLocation());
-                if (Distance < ClosestDistance)
+                float DistanceSquared = FVector::DistSquared(ZombieLocation, Spawner->GetActorLocation());
+                if (DistanceSquared < ClosestDistanceSquared)
                 {
-                    ClosestDistance = Distance;
+                    ClosestDistanceSquared = DistanceSquared;
                     ClosestSpawner = Spawner;
                 }
             }
 
-            // 좀비가 스포너 근처에 있으면 해당 스포너는 사용 중으로 표시
-            if (ClosestSpawner && ClosestDistance < 500.0f)
+            // 좀비가 스포너 근처에 있으면 해당 스포너는 사용 중으로 표시 (500^2 = 250000)
+            if (ClosestSpawner && ClosestDistanceSquared < 250000.0f)
             {
                 SpawnerHasZombie.Add(ClosestSpawner, true);
             }
@@ -661,4 +691,24 @@ TArray<AANS_ZombieSpawner*> ANS_MultiPlayMode::FindSuitableSpawnersForMultiplay(
         DisabledSpawners, OccupiedSpawners, OutOfRangeSpawners, TooCloseToOtherPlayerSpawners);*/
 
     return SuitableSpawners;
+}
+
+// 최적화된 멀티플레이 스폰 체크
+void ANS_MultiPlayMode::OptimizedMultiplaySpawnCheck()
+{
+    // 서버 부하 체크 - 프레임 시간이 33ms(30FPS) 이상이면 건너뜀
+    if (GetWorld()->GetDeltaSeconds() > 0.033f)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[MultiPlayMode] 서버 부하로 인해 스폰 체크 건너뜀"));
+        return;
+    }
+
+    // 게임 오버 상태면 스폰 중단
+    if (bIsGameOver)
+    {
+        return;
+    }
+
+    // 기존 멀티플레이 스폰 로직 실행
+    CheckAndSpawnZombies();
 }
