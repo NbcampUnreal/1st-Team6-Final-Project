@@ -350,6 +350,7 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
     DOREPLIFETIME(ANS_PlayerCharacterBase, bFlashlightOnOff);    // 헤드램프 키고 끄는 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, PlayerInventory);
     DOREPLIFETIME(ANS_PlayerCharacterBase, QuickSlotComponent);
+    DOREPLIFETIME(ANS_PlayerCharacterBase, StatusComp);          // 상태 컴포넌트 복제
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsChangeAnim);        // 퀵슬롯 눌렀을때 무기 장착하는 애니메이션 재생 용 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsDead);	             // 캐릭터가 죽었는지 확인 변수
 }

@@ -1,14 +1,18 @@
 ﻿#include "NS_StatusComponent.h"
 #include "Character/NS_PlayerCharacterBase.h"
-#include "TimerManager.h" 
+#include "TimerManager.h"
 #include "Kismet/GameplayStatics.h" // 이 파일에서 사용되지 않으므로, 게임플레이 스태틱이 사용되지 않으면 제거를 고려하십시오.
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Net/UnrealNetwork.h"
 
 // 이 컴포넌트의 기본 속성들을 설정합니다.
 UNS_StatusComponent::UNS_StatusComponent()
 {
     PrimaryComponentTick.bCanEverTick = true;
     PrimaryComponentTick.bStartWithTickEnabled = true;
+
+    // 네트워크 복제 활성화
+    SetIsReplicatedByDefault(true);
 }
 
 // 게임이 시작될 때 호출됩니다.
@@ -100,5 +104,17 @@ void UNS_StatusComponent::AddStaminaRegenRate(float Value)
 bool UNS_StatusComponent::CheckEnableSprint()
 {
 	return bEnableSprint;
+}
+
+// 네트워크 복제 설정
+void UNS_StatusComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+    // 체력과 스태미너 관련 변수들을 복제
+    DOREPLIFETIME(UNS_StatusComponent, Health);
+    DOREPLIFETIME(UNS_StatusComponent, MaxHealth);
+    DOREPLIFETIME(UNS_StatusComponent, Stamina);
+    DOREPLIFETIME(UNS_StatusComponent, MaxStamina);
 }
 //================================================================
