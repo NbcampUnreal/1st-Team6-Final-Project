@@ -452,8 +452,7 @@ void ANS_ZombieBase::ScheduleSound(USoundCue* SoundCue)
 	}
 	
 	float RandomTime = FMath::FRandRange(5.f,8.f);
-	TWeakObjectPtr<ANS_ZombieBase> WeakZombie(this);
-	GetWorldTimerManager().SetTimer(AmbientSoundTimer,[WeakZombie, SoundCue]()
+	GetWorldTimerManager().SetTimer(AmbientSoundTimer,[this, SoundCue]()
 	{
 		float PlayPercent = 0.5f;
 		float ActualPercent = FMath::FRandRange(0.0f, 1.0f);
