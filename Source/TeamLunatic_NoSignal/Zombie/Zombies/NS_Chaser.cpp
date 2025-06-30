@@ -16,8 +16,6 @@ ANS_Chaser::ANS_Chaser()
 	CurrentHealth = 1000.0f;
 	bEnableAutoDamageTest = false;
 
-	//// 체이서 좀비는 항상 보이도록 설정
-	//SetActorHiddenInGame(false);
 }
 
 void ANS_Chaser::BeginPlay()
@@ -39,8 +37,6 @@ void ANS_Chaser::BeginPlay()
 		GetWorld()->GetTimerManager().SetTimer(AutoDamageTimerHandle, this, &ANS_Chaser::ApplyAutoDamage, 1.0f, true, 1.0f);
 	}
 
-	// 체이서 좀비 활성화 로그
-	UE_LOG(LogTemp, Warning, TEXT("체이서 좀비 활성화: %s"), *GetName());
 }
 
 void ANS_Chaser::Tick(float DeltaTime)

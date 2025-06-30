@@ -168,12 +168,23 @@ void UNS_GameInstance::SendHeartbeat()
 	TSharedPtr<FJsonObject> Json = MakeShareable(new FJsonObject);
 	Json->SetNumberField("port", MyServerPort);
 
+	// 현재 플레이어 수 추가
+	int32 CurrentPlayerCount = 0;
+	if (UWorld* World = GetWorld())
+	{
+		if (AGameModeBase* GameMode = World->GetAuthGameMode())
+		{
+			CurrentPlayerCount = GameMode->GetNumPlayers();
+		}
+	}
+	Json->SetNumberField("current_players", CurrentPlayerCount);
+
 	FString Body;
 	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&Body);
 	FJsonSerializer::Serialize(Json.ToSharedRef(), Writer);
 	Request->SetContentAsString(Body);
 
-	Request->OnProcessRequestComplete().BindLambda([](FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess)
+	Request->OnProcessRequestComplete().BindLambda([CurrentPlayerCount](FHttpRequestPtr Req, FHttpResponsePtr Res, bool bSuccess)
 	{
 		if (!bSuccess || !Res.IsValid())
 		{
@@ -181,7 +192,7 @@ void UNS_GameInstance::SendHeartbeat()
 		}
 		else
 		{
-			UE_LOG(LogTemp, Log, TEXT("[Heartbeat] Response: %s"), *Res->GetContentAsString());
+			UE_LOG(LogTemp, Log, TEXT("[Heartbeat] Response: %s (Players: %d)"), *Res->GetContentAsString(), CurrentPlayerCount);
 		}
 	});
 
