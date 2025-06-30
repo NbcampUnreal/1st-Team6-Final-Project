@@ -20,6 +20,10 @@ public:
     virtual void CheckAndSpawnZombies() override;
     virtual void CleanupDistantZombies() override;
 
+    // 최적화된 스폰 체크 함수
+    UFUNCTION()
+    void OptimizedMultiplaySpawnCheck();
+
     UPROPERTY(BlueprintReadWrite, Category = "Game State")
     bool bIsGameOver = false;
 
