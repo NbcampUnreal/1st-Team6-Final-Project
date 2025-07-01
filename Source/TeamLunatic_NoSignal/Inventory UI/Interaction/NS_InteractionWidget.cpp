@@ -26,7 +26,8 @@ void UNS_InteractionWidget::UpdateWidget(const FInteractableData* InteractableDa
 	switch (InteractableData->InteractableType)
 	{
 	case EInteractableType::Pickup:
-		KeyPressText->SetText(FText::FromString("Press"));
+		KeyPressText->SetText(NSLOCTEXT("InteractionWidget", "KeyPressText_Press", "눌러서"));
+		ActionText->SetText(NSLOCTEXT("InteractionWidget", "ActionText_Use", "획득한다"));
 		InteractionProgressBar->SetVisibility(ESlateVisibility::Collapsed);
 
 		if (InteractableData->Quantity == 1)
@@ -35,24 +36,24 @@ void UNS_InteractionWidget::UpdateWidget(const FInteractableData* InteractableDa
 		}
 		else
 		{
-			QuantityText->SetText(FText::Format(NSLOCTEXT("InteractionWidget", "QuantityText", "x{0}"),
+			QuantityText->SetText(FText::Format(NSLOCTEXT("InteractionWidget", "QuantityText", "{0}개"),
 				InteractableData->Quantity));
 			QuantityText->SetVisibility(ESlateVisibility::Visible);
 		}
 		break;
 
 	case EInteractableType::Device:
-		KeyPressText->SetText(FText::FromString("Press"));
+		KeyPressText->SetText(NSLOCTEXT("InteractionWidget", "KeyPressText_Press", "눌러서"));
 		InteractionProgressBar->SetVisibility(ESlateVisibility::Collapsed);
 		QuantityText->SetVisibility(ESlateVisibility::Collapsed);
 		break;
 
 	case EInteractableType::None:
-		KeyPressText->SetText(FText::FromString("Press"));
+		KeyPressText->SetText(NSLOCTEXT("InteractionWidget", "KeyPressText_Press", "눌러서"));
 		InteractionProgressBar->SetVisibility(ESlateVisibility::Collapsed);
 		QuantityText->SetVisibility(ESlateVisibility::Collapsed);
-		NameText->SetText(FText::FromString("Door"));
-		ActionText->SetText(FText::FromString("OPEN"));
+		NameText->SetText(NSLOCTEXT("InteractionWidget", "NameText_Door", "문을"));
+		ActionText->SetText(NSLOCTEXT("InteractionWidget", "ActionText_Use", "사용한다"));
 		break;
 
 		// 추후 다른 타입도 확장 가능
