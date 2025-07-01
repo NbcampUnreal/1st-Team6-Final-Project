@@ -85,10 +85,9 @@
   - BoneName 을 가져와 AttachToActor()로연출
 
 #### 2. PhysicsSimulate.
-- ApplyPointDamage 이벤트를 통해 피격 부위의 BoneName을 획득
-- 해당 본(Bone)에 대해:
-  -> 물리 시뮬레이션(Physics Simulation)을 부분적으로 활성화
-  -> 충격 방향(Impulse)을 계산하여 자연스러운 리액션 적용
+
+- ApplyPointDamage 이벤트를 통해 피격 부위의 HitInfo을 획득
+  - 해당 본(Bone)과 Direction을 계산.
 - SetAllBodiesBelowSimulatePhysics() + AddImpulse() 조합으로 피격 부위에만 집중된 물리 반응 구현
 
     
