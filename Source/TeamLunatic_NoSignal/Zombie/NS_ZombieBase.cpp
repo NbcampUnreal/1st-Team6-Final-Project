@@ -29,15 +29,15 @@
 
 ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), CurrentState(EZombieState::IDLE),
                                    BaseDamage(20.f),PatrolSpeed(20.f), ChaseSpeed(100.f),AccelerationSpeed(200.f),
-                                   ZombieType(EZombieType::BASIC), bIsDead(false), bIsGotHit(false), SafeBones({"clavicle_r","clavicle_l","upperarm_r","upperarm_r","lowerarm_r","lowerarm_r","neck_01","head","spine_02","spine_03"})
+                                   ZombieType(EZombieType::BASIC), bIsDead(false), SafeBones({"clavicle_r","clavicle_l","upperarm_r","upperarm_r","lowerarm_r","lowerarm_r","neck_01","head","spine_02","spine_03"})
 {
 	PrimaryActorTick.bCanEverTick = false;
 	bUseControllerRotationYaw = false;
-
+	
 	PhysicsComponent = CreateDefaultSubobject<UPhysicalAnimationComponent>(FName("PhysicsComponent"));
 	NavigationInvoker = CreateDefaultSubobject<UNavigationInvokerComponent>(TEXT("NavigationInvoker"));
 
-	NavigationInvoker->SetGenerationRadii(1500.f, 2000.f);
+	NavigationInvoker->SetGenerationRadii(1000.f, 1500.f);
 	NavigationInvoker->SetAutoActivate(false);
 	
 	GetCharacterMovement()->MaxWalkSpeed = 300.f;
@@ -123,8 +123,8 @@ void ANS_ZombieBase::BeginDestroy()
 {
 	if (GetWorld())
 	{
-		GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
-		GetWorldTimerManager().ClearTimer(HitTimer);
+		if (GetWorldTimerManager().IsTimerActive(AmbientSoundTimer) )GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
+		if (GetWorldTimerManager().IsTimerActive(HitTimer)) GetWorldTimerManager().ClearTimer(HitTimer);
 	}
 	Super::BeginDestroy();
 }
@@ -259,7 +259,7 @@ void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 		GetMesh()->SetHiddenInGame(true, true); // 추가: 명시적으로 메쉬 숨김
 
 		// 충돌 비활성화
-		SetActorEnableCollision(false);
+		SetActorEnableCollision(true);
 
 		// 액터 틱 비활성화 (단, 렌더링은 유지)
 		SetActorTickEnabled(false);
@@ -317,7 +317,7 @@ void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 				
 			}
 		}
-		UE_LOG(LogTemp, Warning, TEXT("Zombie %s is now fully INACTIVE."), *GetName());
+
 	}
 
 	// 멀티플레이에서 메쉬 가시성 강제 업데이트
@@ -335,9 +335,6 @@ void ANS_ZombieBase::ForceUpdateMeshVisibility_Multicast_Implementation(bool bVi
 
 		// 렌더링 상태 강제 업데이트
 		MeshComp->MarkRenderStateDirty();
-
-		UE_LOG(LogTemp, Verbose, TEXT("[ForceUpdateMeshVisibility] 좀비 %s 메쉬 가시성: %s"),
-			*GetName(), bVisible ? TEXT("보임") : TEXT("숨김"));
 	}
 }
 
@@ -399,28 +396,11 @@ void ANS_ZombieBase::ApplyPhysics_Implementation(FName Bone, FVector Impulse)
 	if (SafeBones.Contains(Bone))
 	{
 		USkeletalMeshComponent* MeshComp = GetMesh();
-		// FBodyInstance* BodyInstance = MeshComp->GetBodyInstance(Bone);
-		// if (BodyInstance)
-		// {
-		// 	BodyInstance->SetInstanceSimulatePhysics(true);
-		// 	BodyInstance->PhysicsBlendWeight = 1.f;
-		// 	BodyInstance->AddImpulse(Impulse,true);
-		// }
+
 		GetMesh()->SetAllBodiesBelowSimulatePhysics(Bone,true,true);
 		GetMesh()->SetAllBodiesBelowPhysicsBlendWeight(Bone, 1.f, false);
 	
 		GetMesh()->AddImpulse(Impulse, Bone, false);
-
-		// if (HitTimers.Contains(Bone))
-		// {
-		// 	GetWorldTimerManager().ClearTimer(HitTimers[Bone]);
-		// }
-
-		// FTimerHandle& NewTimer = HitTimers.FindOrAdd(Bone);
-		// GetWorldTimerManager().SetTimer(NewTimer, [this, Bone]()
-		// {
-		// 	ResetPhysics(Bone);
-		// }, 1.f, false);
 	}
 }
 
@@ -563,8 +543,7 @@ void ANS_ZombieBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(ANS_ZombieBase, CurrentHealth);
 	DOREPLIFETIME(ANS_ZombieBase, CurrentAttackType);
 	DOREPLIFETIME(ANS_ZombieBase, CurrentState);
-	DOREPLIFETIME(ANS_ZombieBase, bGetHit);
-	DOREPLIFETIME(ANS_ZombieBase, bIsGotHit); // 누락된 속성 추가
+	DOREPLIFETIME(ANS_ZombieBase, bIsDead);
 }
 
 void ANS_ZombieBase::InitializePhysics()

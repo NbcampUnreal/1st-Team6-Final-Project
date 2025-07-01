@@ -43,7 +43,7 @@ protected:
     
     // 한 번에 스폰할 좀비 수
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie Spawning")
-    int32 ZombiesPerSpawn = 3;
+    int32 ZombiesPerSpawn = 4;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie")
     // 현재 좀비 수
@@ -51,7 +51,7 @@ protected:
 
     // 최대 좀비 수
     UPROPERTY(EditAnywhere,BlueprintReadWrite ,Category = "Zombie")
-    int32 MaxZombieCount = 60;
+    int32 MaxZombieCount = 50;
     
     // 플레이어 수
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie Spawning")
@@ -75,14 +75,14 @@ protected:
 
     // 스폰 거리 관련 변수 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie Spawning")
-    float MinSpawnDistance = 4000.0f; // 플레이어로부터 좀비가 스폰될 수 있는 최소 거리
+    float MinSpawnDistance = 3000.0f; // 플레이어로부터 좀비가 스폰될 수 있는 최소 거리
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie Spawning")
-    float MaxSpawnDistance = 8000.0f; // 플레이어로부터 좀비가 스폰될 수 있는 최대 거리;
+    float MaxSpawnDistance = 6000.0f; // 플레이어로부터 좀비가 스폰될 수 있는 최대 거리;
 
     // 좀비 제거 거리
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie Spawning")
-    float ZombieDestroyDistance = 8001.0f;
+    float ZombieDestroyDistance = 5001.0f;
     
     // 타이머 핸들
     FTimerHandle ZombieCleanupTimer;
