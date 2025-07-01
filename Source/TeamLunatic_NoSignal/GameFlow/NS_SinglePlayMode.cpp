@@ -15,7 +15,6 @@ ANS_SinglePlayMode::ANS_SinglePlayMode()
 	PlayerControllerClass = ANS_PlayerController::StaticClass();
 	// 싱글플레이 모드에서는 플레이어 수를 1로 설정
 	PlayerCount = 1;
-	ZombiesPerSpawn = 1;
 }
 
 
@@ -105,59 +104,6 @@ void ANS_SinglePlayMode::BeginPlay()
 	{
 		GI->SetGameModeType(EGameModeType::SinglePlayMode);
 	}
-
-	// 싱글플레이 최적화된 타이머 설정
-	UE_LOG(LogTemp, Warning, TEXT("[SinglePlayMode] 최적화된 타이머 시스템 활성화"));
-
-	// 싱글플레이는 더 짧은 주기로 설정 (2초로 증가)
-	float SafeSpawnInterval = 2.0f;
-	GetWorldTimerManager().ClearTimer(ZombieSpawnTimer);
-	GetWorldTimerManager().SetTimer(ZombieSpawnTimer, this,
-		&ANS_SinglePlayMode::OptimizedSingleSpawnCheck, SafeSpawnInterval, true);
-
-	UE_LOG(LogTemp, Warning, TEXT("[SinglePlayMode] 안전 모드 타이머 활성화 (%.1f초 주기)"),
-		SafeSpawnInterval);
 }
 
 
-void ANS_SinglePlayMode::CheckAndSpawnZombies()
-{
-	// 게임 오버 상태면 좀비 스폰 중단
-	if (bIsGameOver)
-	{
-		return;
-	}
-	
-	// 현재 좀비 수가 최대치에 도달했는지 확인
-	int32 Missing = MaxZombieCount - CurrentZombieCount;
-	if (Missing <= 0)
-	{
-		return;
-	}
-	
-	// 부모 클래스의 좀비 스폰 로직 사용
-	Super::CheckAndSpawnZombies();
-	
-	UE_LOG(LogTemp, Verbose, TEXT("[SinglePlayMode] 좀비 스폰 체크 완료. 현재 좀비 수: %d, 최대 좀비 수: %d"),
-		CurrentZombieCount, MaxZombieCount);
-}
-
-// 최적화된 싱글플레이 스폰 체크
-void ANS_SinglePlayMode::OptimizedSingleSpawnCheck()
-{
-	// 서버 부하 체크 - 프레임 시간이 33ms(30FPS) 이상이면 건너뜀
-	if (GetWorld()->GetDeltaSeconds() > 0.033f)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[SinglePlayMode] 서버 부하로 인해 스폰 체크 건너뜀"));
-		return;
-	}
-
-	// 게임 오버 상태면 스폰 중단
-	if (bIsGameOver)
-	{
-		return;
-	}
-
-	// 기존 싱글플레이 스폰 로직 실행
-	CheckAndSpawnZombies();
-}

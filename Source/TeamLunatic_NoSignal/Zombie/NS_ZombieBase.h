@@ -29,8 +29,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	virtual void BeginDestroy() override;
-
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 public:
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite, Category = "Stat")
 	float MaxHealth;
@@ -38,10 +37,8 @@ public:
 	float CurrentHealth;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "Stat")
 	float BaseDamage;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "Stat")
-	bool bIsDead;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Replicated ,Category = "Stat")
-	bool bGetHit;
+	bool bIsDead;
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "Speed")
 	float PatrolSpeed;
@@ -55,30 +52,31 @@ public:
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "Hit Reaction")
 	UPhysicalAnimationComponent* PhysicsComponent;
 
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Replicated, Category = "State")
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, ReplicatedUsing = OnRep_CurrentState, Category = "State")
 	EZombieState CurrentState;
+
+	UFUNCTION()
+	void OnRep_CurrentState();
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "State")
 	EZombieType ZombieType;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Replicated, Category = "State")
 	EZombieAttackType CurrentAttackType;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Replicated, Category = "State")
-	bool bIsGotHit;
+
 	
 	// Invoker 컴포넌트
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
 	class UNavigationInvokerComponent* NavigationInvoker;
 	
 	// 이 좀비가 활성화 되었는지 확인 변수
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "Activation")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_bIsActive, Category = "Activation")
 	bool bIsActive; // 기본적으로 비활성화 상태로 시작
 
-	// bIsActive가 리플리케이트될 때 호출될 함수
-	UFUNCTION(NetMulticast, Reliable)
-	void SetActive_Multicast(bool setActive);
+	UFUNCTION()
+	void OnRep_bIsActive();
 
 	// 메쉬 가시성 강제 업데이트 (멀티플레이 문제 해결용)
-	UFUNCTION(NetMulticast, Reliable)
-	void ForceUpdateMeshVisibility_Multicast(bool bVisible);
+	// UFUNCTION(NetMulticast, Reliable)
+	// void ForceUpdateMeshVisibility_Multicast(bool bVisible);
 	
 	//피격관련
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
@@ -118,6 +116,16 @@ public:
 	UFUNCTION()
 	void SetAttackType(EZombieAttackType NewAttackType);
 
+	UFUNCTION()
+	void SetActive(bool NewIsActive);
+	UFUNCTION(Server, Reliable)
+	void Server_SetActive(bool NewIsActive);
+	
+	UFUNCTION(Server, Reliable)
+	void Server_SetState(EZombieState NewState);
+	UFUNCTION(Server, Reliable)
+	void Server_SetAttackType(EZombieAttackType NewAttackType);
+
 	//상태 별 전환 함수.
 	void OnIdleState();
 	void OnPatrolState();
@@ -136,13 +144,7 @@ public:
 	USphereComponent* R_SphereComp;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Attack")
 	USphereComponent* L_SphereComp;
-	
-	//공격 관련
-	UFUNCTION(Server, Reliable)
-	void Server_SetState(EZombieState NewState);
-	UFUNCTION(Server, Reliable)
-	void Server_SetAttackType(EZombieAttackType NewAttackType);
-	
+
 	UFUNCTION(BlueprintCallable, Category = "Attack")
 	virtual void OnOverlapSphere(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 								UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
@@ -166,6 +168,11 @@ public:
 	USoundCue* DeathSound;
 	
 	FTimerHandle AmbientSoundTimer;
+
+	//캐시 변수들
+	UPROPERTY()
+	TArray<UActorComponent*> Components;
+	void CacheComponents();
 	
 	//Get함수
 	FORCEINLINE const EZombieAttackType GetZombieAttackType() {return CurrentAttackType;}

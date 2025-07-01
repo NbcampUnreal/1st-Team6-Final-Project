@@ -252,11 +252,14 @@ void UNS_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
     }
 
     // 플레이어 상태 업데이트 (이전에 타이머로 처리하던 부분을 NativeTick으로 이동)
-    if (CachedPlayerCharacter && CachedPlayerCharacter->StatusComp)
+    // 로컬 플레이어만 UI 업데이트 (멀티플레이어에서 다른 플레이어의 UI는 업데이트하지 않음)
+    if (CachedPlayerCharacter && CachedPlayerCharacter->StatusComp && CachedPlayerCharacter->IsLocallyControlled())
     {
-        // 목표값
-        const float NewHpPercent = CachedPlayerCharacter->StatusComp->Health / CachedPlayerCharacter->StatusComp->MaxHealth;
-        const float NewStPercent = CachedPlayerCharacter->StatusComp->Stamina / CachedPlayerCharacter->StatusComp->MaxStamina;
+        // 목표값 (0으로 나누기 방지)
+        const float NewHpPercent = CachedPlayerCharacter->StatusComp->MaxHealth > 0.f ?
+            CachedPlayerCharacter->StatusComp->Health / CachedPlayerCharacter->StatusComp->MaxHealth : 0.f;
+        const float NewStPercent = CachedPlayerCharacter->StatusComp->MaxStamina > 0.f ?
+            CachedPlayerCharacter->StatusComp->Stamina / CachedPlayerCharacter->StatusComp->MaxStamina : 0.f;
         const bool bIsCurrentlySprint = CachedPlayerCharacter->IsSprint;
 
         // 체력 바 업데이트
