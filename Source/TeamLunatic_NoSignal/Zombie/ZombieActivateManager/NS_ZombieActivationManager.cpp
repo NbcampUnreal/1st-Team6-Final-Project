@@ -33,15 +33,13 @@ void ANS_ZombieActivationManager::BeginPlay()
             // 체이서 좀비는 즉시 활성화
             if (Cast<ANS_Chaser>(Zombie))
             {
-                Zombie->SetActive_Multicast(true);
-                Zombie->SetActorTickEnabled(true);
+                Zombie->bIsActive=true;
                 if (AAIController* AIController = Cast<AAIController>(Zombie->GetController()))
                 {
                     AIController->SetActorTickEnabled(true);
                 }
             }
         }
-        
         GetWorldTimerManager().SetTimer(ActivationUpdateTimerHandle, this, &ANS_ZombieActivationManager::PerformActivationUpdate, UpdateInterval, true);
     }
     else
@@ -77,7 +75,7 @@ void ANS_ZombieActivationManager::PerformActivationUpdate_Implementation()
         {
             if (!Zombie->bIsActive)
             {
-                Zombie->SetActive_Multicast(true);
+                Zombie->SetActive(true);
                 if (AAIController* AIController = Cast<AAIController>(Zombie->GetController()))
                 {
                     AIController->SetActorTickEnabled(true);
@@ -109,14 +107,15 @@ void ANS_ZombieActivationManager::PerformActivationUpdate_Implementation()
         {
             if (!Zombie->bIsActive) // 현재 비활성 상태인데 활성화되어야 한다면
             {
-                Zombie->SetActive_Multicast(true);
+                Zombie->SetActive(true);
+
             }
         }
         else // 비활성화되어야 한다면
         {
             if (Zombie->bIsActive) // 현재 활성 상태인데 비활성화되어야 한다면
             {
-                Zombie->SetActive_Multicast(false);
+                Zombie->SetActive(false);
             }
         }
     }

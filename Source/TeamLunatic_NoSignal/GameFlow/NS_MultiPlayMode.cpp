@@ -213,8 +213,8 @@ void ANS_MultiPlayMode::Logout(AController* Exiting)
 
     if (APlayerController* PC = Cast<APlayerController>(Exiting))
     {
-    }
         ReleasePawnIndex(PC);
+    }
     NotifyPlayerLogout();
     // Flask 서버에 플레이어 로그아웃 알림
     // 플레이어 로그아웃 후 플레이어 수 체크
