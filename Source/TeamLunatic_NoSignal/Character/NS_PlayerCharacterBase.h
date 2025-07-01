@@ -361,6 +361,8 @@ public:
 	//////////////CharacterMovmentComponent를 사용안함////////////////
 
 	// 달리기
+	void StartSprint(const FInputActionValue& Value);
+	void StopSprint(const FInputActionValue& Value);
 	UFUNCTION(server, Reliable)
 	void StartSprint_Server(const FInputActionValue& Value);
 	UFUNCTION(Server, Reliable)

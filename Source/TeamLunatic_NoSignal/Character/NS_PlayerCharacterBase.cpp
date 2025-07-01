@@ -198,12 +198,12 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
             InputSprintAction,
              ETriggerEvent::Triggered,
               this,
-               &ANS_PlayerCharacterBase::StartSprint_Server);
+               &ANS_PlayerCharacterBase::StartSprint);
             EnhancedInput->BindAction(
             InputSprintAction,
              ETriggerEvent::Completed,
               this,
-               &ANS_PlayerCharacterBase::StopSprint_Server);
+               &ANS_PlayerCharacterBase::StopSprint);
         }
 
         if (InteractAction)
@@ -571,6 +571,49 @@ void ANS_PlayerCharacterBase::StartCrouch(const FInputActionValue& Value)
 void ANS_PlayerCharacterBase::StopCrouch(const FInputActionValue& Value)
 {
     UnCrouch(); 
+}
+
+void ANS_PlayerCharacterBase::StartSprint(const FInputActionValue& Value)
+{
+    if (StatusComp->CheckEnableSprint())
+    {
+        // 로컬에서 즉시 적용
+        if (IsLocallyControlled())
+        {
+            GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier * SpeedMultiAtStat;
+        }
+        
+        // 서버에 상태 변경 알림 (Unreliable)
+        if (!HasAuthority())
+        {
+            StartSprint_Server(Value);
+        }
+        else
+        {
+            // 서버에서는 직접 상태 변경
+            IsSprint = true;
+        }
+    }
+}
+
+void ANS_PlayerCharacterBase::StopSprint(const FInputActionValue& Value)
+{
+    // 로컬에서 즉시 적용
+    if (IsLocallyControlled())
+    {
+        GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SpeedMultiAtStat;
+    }
+    
+    // 서버에 상태 변경 알림 (Unreliable)
+    if (!HasAuthority())
+    {
+        StopSprint_Server(Value);
+    }
+    else
+    {
+        // 서버에서는 직접 상태 변경
+        IsSprint = false;
+    }
 }
 
 void ANS_PlayerCharacterBase::StartSprint_Server_Implementation(const FInputActionValue& Value)
