@@ -69,11 +69,17 @@ void UNS_ServerBrowserR::OnRefreshButtonClicked()
 
 void UNS_ServerBrowserR::RefreshServerList()
 {
+    UE_LOG(LogTemp, Log, TEXT("[ServerBrowserR] RefreshServerList 시작"));
+
     if (CircularThrobber_Image)
         CircularThrobber_Image->SetVisibility(ESlateVisibility::Visible);
 
     if (ServerVerticalBox)
+    {
+        int32 ChildrenCount = ServerVerticalBox->GetChildrenCount();
         ServerVerticalBox->ClearChildren();
+        UE_LOG(LogTemp, Log, TEXT("[ServerBrowserR] 기존 서버 목록 정리됨 (%d개)"), ChildrenCount);
+    }
 
     if (UNS_GameInstance* NSGI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
@@ -81,8 +87,17 @@ void UNS_ServerBrowserR::RefreshServerList()
 
         NSGI->OnSessionListReceived.AddLambda([this](const TArray<TSharedPtr<FJsonObject>>& Sessions)
         {
+            UE_LOG(LogTemp, Log, TEXT("[ServerBrowserR] 세션 리스트 받음. 세션 수: %d"), Sessions.Num());
+
+            int32 AddedSessions = 0;
             for (const TSharedPtr<FJsonObject>& SessionObj : Sessions)
             {
+                if (!SessionObj.IsValid())
+                {
+                    UE_LOG(LogTemp, Warning, TEXT("[ServerBrowserR] 유효하지 않은 세션 객체"));
+                    continue;
+                }
+
                 FString ServerName = SessionObj->GetStringField("name");
                 FString IP = SessionObj->GetStringField("ip");
                 int32 Port = SessionObj->GetIntegerField("port");
@@ -94,15 +109,25 @@ void UNS_ServerBrowserR::RefreshServerList()
 
                 FString PlayerInfo = FString::Printf(TEXT("%d/%d"), CurrentPlayers, MaxPlayers);
 
+                UE_LOG(LogTemp, Log, TEXT("[ServerBrowserR] 세션 추가: %s (%s) - %s"),
+                    *ServerName, *Address, *PlayerInfo);
+
                 AddServerEntryAddress(ServerName, Address, PlayerInfo);
+                AddedSessions++;
             }
+
+            UE_LOG(LogTemp, Log, TEXT("[ServerBrowserR] 총 %d개 세션이 UI에 추가됨"), AddedSessions);
 
             if (CircularThrobber_Image)
                 CircularThrobber_Image->SetVisibility(ESlateVisibility::Hidden);
         });
 
-
+        UE_LOG(LogTemp, Log, TEXT("[ServerBrowserR] GameInstance에서 세션 리스트 요청 시작"));
         NSGI->RequestSessionListFromServer();
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("[ServerBrowserR] GameInstance 캐스팅 실패"));
     }
 }
 

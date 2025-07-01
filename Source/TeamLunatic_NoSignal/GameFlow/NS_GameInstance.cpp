@@ -164,6 +164,7 @@ void UNS_GameInstance::SendHeartbeat()
 	Request->SetURL(TEXT("http://121.163.249.108:5000/heartbeat"));
 	Request->SetVerb(TEXT("POST"));
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+	Request->SetTimeout(10.0f); // 타임아웃 시간 증가 (기본 5초 → 10초)
 
 	TSharedPtr<FJsonObject> Json = MakeShareable(new FJsonObject);
 	Json->SetNumberField("port", MyServerPort);
@@ -238,43 +239,92 @@ void UNS_GameInstance::OnUpdateSessionStatusResponse(FHttpRequestPtr Request, FH
 
 void UNS_GameInstance::RequestSessionListFromServer()
 {
+	UE_LOG(LogTemp, Log, TEXT("[RequestSessionListFromServer] 세션 리스트 요청 시작"));
+
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
 	Request->SetURL(TEXT("http://121.163.249.108:5000/session_list"));
 	Request->SetVerb(TEXT("GET"));
+	Request->SetTimeout(10.0f); // 타임아웃 시간 설정
+	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 	Request->OnProcessRequestComplete().BindUObject(this, &UNS_GameInstance::OnReceiveSessionList);
-	Request->ProcessRequest();
+
+	bool bRequestStarted = Request->ProcessRequest();
+	UE_LOG(LogTemp, Log, TEXT("[RequestSessionListFromServer] HTTP 요청 시작됨: %s"), bRequestStarted ? TEXT("성공") : TEXT("실패"));
 }
 
 void UNS_GameInstance::OnReceiveSessionList(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 {
-	if (!bWasSuccessful || !Response.IsValid())
+	if (!bWasSuccessful)
 	{
-		UE_LOG(LogTemp, Error, TEXT("[OnReceiveSessionList] HTTP 요청 실패"));
+		UE_LOG(LogTemp, Error, TEXT("[OnReceiveSessionList] HTTP 요청 실패 - bWasSuccessful: false"));
 		return;
 	}
 
+	if (!Response.IsValid())
+	{
+		UE_LOG(LogTemp, Error, TEXT("[OnReceiveSessionList] HTTP 응답이 유효하지 않음"));
+		return;
+	}
+
+	int32 ResponseCode = Response->GetResponseCode();
 	FString ResponseString = Response->GetContentAsString();
-	UE_LOG(LogTemp, Log, TEXT("[OnReceiveSessionList] HTTP Response: %s"), *ResponseString);
+
+	UE_LOG(LogTemp, Log, TEXT("[OnReceiveSessionList] HTTP 응답 코드: %d"), ResponseCode);
+	UE_LOG(LogTemp, Log, TEXT("[OnReceiveSessionList] HTTP 응답 내용: %s"), *ResponseString);
+
+	if (ResponseCode != 200)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[OnReceiveSessionList] HTTP 응답 코드 오류: %d"), ResponseCode);
+		return;
+	}
+
+	// 빈 응답 체크
+	if (ResponseString.IsEmpty())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[OnReceiveSessionList] 빈 응답 받음"));
+		// 빈 배열로 처리
+		TArray<TSharedPtr<FJsonObject>> EmptySessionList;
+		OnSessionListReceived.Broadcast(EmptySessionList);
+		return;
+	}
 
 	TArray<TSharedPtr<FJsonValue>> JsonArray;
 	TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(ResponseString);
 	if (!FJsonSerializer::Deserialize(Reader, JsonArray))
 	{
-		UE_LOG(LogTemp, Error, TEXT("[OnReceiveSessionList] JSON 배열 파싱 실패"));
+		UE_LOG(LogTemp, Error, TEXT("[OnReceiveSessionList] JSON 배열 파싱 실패. 응답 내용: %s"), *ResponseString);
 		return;
 	}
 
+	UE_LOG(LogTemp, Log, TEXT("[OnReceiveSessionList] JSON 배열 파싱 성공. 세션 수: %d"), JsonArray.Num());
+
 	TArray<TSharedPtr<FJsonObject>> ParsedSessions;
-	for (const TSharedPtr<FJsonValue>& Value : JsonArray)
+	for (int32 i = 0; i < JsonArray.Num(); i++)
 	{
+		const TSharedPtr<FJsonValue>& Value = JsonArray[i];
 		TSharedPtr<FJsonObject> SessionObj = Value->AsObject();
 		if (SessionObj.IsValid())
 		{
+			// 세션 정보 로깅
+			FString SessionName = SessionObj->GetStringField(TEXT("name"));
+			FString SessionIP = SessionObj->GetStringField(TEXT("ip"));
+			int32 SessionPort = SessionObj->GetIntegerField(TEXT("port"));
+			int32 CurrentPlayers = SessionObj->GetIntegerField(TEXT("current_players"));
+			int32 MaxPlayers = SessionObj->GetIntegerField(TEXT("max_players"));
+
+			UE_LOG(LogTemp, Log, TEXT("[OnReceiveSessionList] 세션 %d: %s (%s:%d) - %d/%d 플레이어"),
+				i, *SessionName, *SessionIP, SessionPort, CurrentPlayers, MaxPlayers);
+
 			ParsedSessions.Add(SessionObj);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[OnReceiveSessionList] 세션 %d: JSON 객체 파싱 실패"), i);
 		}
 	}
 
-	OnSessionListReceived.Broadcast(ParsedSessions); 
+	UE_LOG(LogTemp, Log, TEXT("[OnReceiveSessionList] 파싱된 세션 수: %d, 브로드캐스트 시작"), ParsedSessions.Num());
+	OnSessionListReceived.Broadcast(ParsedSessions);
 }
 
 void UNS_GameInstance::SetCurrentSaveSlot(FString SlotNameInfo)
