@@ -111,20 +111,17 @@ void ANS_ZombieBase::BeginPlay()
 	}
 }
 
+void ANS_ZombieBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	GetWorldTimerManager().ClearAllTimersForObject(this);
+}
+
 void ANS_ZombieBase::CacheComponents()
 {
 	GetComponents(Components);
 }
 
-void ANS_ZombieBase::BeginDestroy()
-{
-	if (GetWorld())
-	{
-		if (GetWorldTimerManager().IsTimerActive(AmbientSoundTimer) )GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
-		if (GetWorldTimerManager().IsTimerActive(HitTimer)) GetWorldTimerManager().ClearTimer(HitTimer);
-	}
-	Super::BeginDestroy();
-}
 
 void ANS_ZombieBase::Multicast_PlayMontage_Implementation(UAnimMontage* MontageToPlay)
 {
@@ -449,9 +446,9 @@ void ANS_ZombieBase::OnDeadState()
 		bIsDead = true;
 		Die_Multicast();
 	}
-
 	// 사운드 타이머핸들 초기화
 	GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
+	GetWorldTimerManager().ClearTimer(HitTimer);
 }
 
 void ANS_ZombieBase::OnFrozenState()
@@ -502,19 +499,22 @@ void ANS_ZombieBase::ScheduleSound(USoundCue* SoundCue)
 		return;
 	}
 	
+	TWeakObjectPtr<ANS_ZombieBase> WeakThis(this);
+	
 	float RandomTime = FMath::FRandRange(5.f,8.f);
-	GetWorldTimerManager().SetTimer(AmbientSoundTimer,[this, SoundCue]()
+	GetWorldTimerManager().SetTimer(AmbientSoundTimer,[WeakThis, SoundCue]()
 	{
-		float PlayPercent = 0.5f;
-		float ActualPercent = FMath::FRandRange(0.0f, 1.0f);
-		if (PlayPercent > ActualPercent)
+		if (WeakThis.IsValid())
 		{
-			Server_PlaySound(SoundCue);
+			float PlayPercent = 0.5f;
+			float ActualPercent = FMath::FRandRange(0.0f, 1.0f);
+			if (PlayPercent > ActualPercent)
+			{
+				WeakThis->Multicast_PlaySound(SoundCue);
+			}
 		}
 	}, RandomTime, true);
 }
-
-
 
 void ANS_ZombieBase::Die_Multicast_Implementation()
 {
