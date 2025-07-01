@@ -49,13 +49,6 @@ protected:
 
     virtual void OnPlayerCharacterDied_Implementation(ANS_PlayerCharacterBase* DeadCharacter) override;
 
-    // 좀비 스폰 체크 함수 오버라이드
-    virtual void CheckAndSpawnZombies() override;
-
-    // 최적화된 스폰 체크 함수
-    UFUNCTION()
-    void OptimizedSingleSpawnCheck();
-
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spawn")
     TArray<TSubclassOf<APawn>> SinglePlayPawnClasses; 
 
