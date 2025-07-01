@@ -189,15 +189,24 @@ void ANS_ZombieBase::OnRep_bIsActive()
 		// 필수 컴포넌트들만 선택적으로 활성화
 		for (UActorComponent* Component : Components)
 		{
-			// 스켈레탈 메쉬, 콜리전, AI 관련 컴포넌트만 활성화
-			if (Component->IsA<USkeletalMeshComponent>() ||
-				Component->IsA<UCapsuleComponent>() ||
-				Component->IsA<USphereComponent>() ||
-				Component->GetName().Contains(TEXT("AI")) ||
-				Component->GetName().Contains(TEXT("Navigation")))
+
+			//// 스켈레탈 메쉬 컴포넌트는 이미 위에서 처리했으므로 제외
+			if (Component->IsA<USkeletalMeshComponent>())
 			{
-				Component->SetComponentTickEnabled(true);
+				continue;
 			}
+
+			Component->SetComponentTickEnabled(true);
+			//{
+			//	// AI, 네비게이션, 콜리전 관련 컴포넌트만 비활성화
+			//	if (Component->IsA<USphereComponent>() ||
+			//		Component->GetName().Contains(TEXT("AI")) ||
+			//		Component->GetName().Contains(TEXT("Navigation")) ||
+			//		Component->GetName().Contains(TEXT("Collision")))
+			//	{
+			//		Component->SetComponentTickEnabled(false);
+			//	}
+			//}
 		}
 
 		// AI 컨트롤러 확인 및 재생성 로직
@@ -280,18 +289,24 @@ void ANS_ZombieBase::OnRep_bIsActive()
 		// 필수가 아닌 컴포넌트들만 비활성화
 		for (UActorComponent* Component : Components)
 		{
-			// 스켈레탈 메쉬 컴포넌트는 이미 위에서 처리했으므로 제외
-			if (!Component->IsA<USkeletalMeshComponent>())
+			
+			//// 스켈레탈 메쉬 컴포넌트는 이미 위에서 처리했으므로 제외
+			if (Component->IsA<USkeletalMeshComponent>())
 			{
-				// AI, 네비게이션, 콜리전 관련 컴포넌트만 비활성화
-				if (Component->IsA<USphereComponent>() ||
-					Component->GetName().Contains(TEXT("AI")) ||
-					Component->GetName().Contains(TEXT("Navigation")) ||
-					Component->GetName().Contains(TEXT("Collision")))
-				{
-					Component->SetComponentTickEnabled(false);
-				}
+				continue;
 			}
+
+			Component->SetComponentTickEnabled(false);
+			//{
+			//	// AI, 네비게이션, 콜리전 관련 컴포넌트만 비활성화
+			//	if (Component->IsA<USphereComponent>() ||
+			//		Component->GetName().Contains(TEXT("AI")) ||
+			//		Component->GetName().Contains(TEXT("Navigation")) ||
+			//		Component->GetName().Contains(TEXT("Collision")))
+			//	{
+			//		Component->SetComponentTickEnabled(false);
+			//	}
+			//}
 		}
 
 		// AI 컨트롤러가 있다면, 그 컨트롤러의 틱도 비활성화합니다.
