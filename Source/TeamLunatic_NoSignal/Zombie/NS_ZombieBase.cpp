@@ -275,6 +275,10 @@ void ANS_ZombieBase::OnRep_bIsActive()
 		// 필수가 아닌 컴포넌트들만 비활성화
 		for (UActorComponent* Component : Components)
 		{
+			if (Component->IsA<USkeletalMeshComponent>())
+			{
+				continue;
+			}
 			Component->SetComponentTickEnabled(false);
 		}
 
