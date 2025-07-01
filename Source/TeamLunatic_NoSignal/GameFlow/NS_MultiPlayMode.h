@@ -17,7 +17,8 @@ public:
     virtual void OnPlayerCharacterDied_Implementation(ANS_PlayerCharacterBase* DeadCharacter) override;
     void PostLogin(APlayerController* NewPlayer);
     virtual void Logout(AController* Exiting) override;  // 플레이어 로그아웃 시 호출
-
+    virtual void CheckAndSpawnZombies() override;
+    virtual void CleanupDistantZombies() override;
 
     // 최적화된 스폰 체크 함수
     UFUNCTION()
@@ -25,10 +26,19 @@ public:
 
     UPROPERTY(BlueprintReadWrite, Category = "Game State")
     bool bIsGameOver = false;
-    
+
+    UPROPERTY()
+    int32 ZombiesRemoved = 0;
+
     // 로딩 동기화 시스템
     UPROPERTY()
     TArray<APlayerController*> LoadingCompletedPlayers;
+
+    // PlayerStart 캐싱 시스템
+    UPROPERTY()
+    TArray<TWeakObjectPtr<APlayerStart>> CachedPlayerStarts;
+
+    bool bPlayerStartsCached = false;
 
     UFUNCTION()
     void OnPlayerLoadingComplete(APlayerController* Player);
@@ -39,6 +49,11 @@ public:
 protected:
     virtual void BeginPlay() override;
     FVector GetRandomPlayerLocation() const;
+    TArray<AANS_ZombieSpawner*> FindSuitableSpawnersForMultiplay(const FVector& CurrentPlayerLocation, const TArray<FVector>& AllPlayerLocations);
+
+    // PlayerStart 캐싱 함수들
+    void InitializePlayerStartCache();
+    APlayerStart* GetRandomCachedPlayerStart();
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spawn")
     TArray<TSubclassOf<APawn>> MainGamePawnClassesToSpawn;
