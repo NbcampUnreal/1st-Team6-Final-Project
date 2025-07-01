@@ -63,7 +63,8 @@ void UNS_HostNewGameServerR::StartGame()
 
     if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
-        // ShowWait 비활성화 - NS_LoadingScreen 사용
+        GI->ShowWait();
+
         UE_LOG(LogTemp, Error, TEXT("=== HostNewGameServerR ShowWait 호출 - 비활성화됨 ==="));
 
         GI->SetGameModeType(EGameModeType::MultiPlayMode);
