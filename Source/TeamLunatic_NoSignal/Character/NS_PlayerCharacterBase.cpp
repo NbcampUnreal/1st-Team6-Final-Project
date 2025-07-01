@@ -352,6 +352,9 @@ void ANS_PlayerCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimePropert
     DOREPLIFETIME(ANS_PlayerCharacterBase, QuickSlotComponent);
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsChangeAnim);        // 퀵슬롯 눌렀을때 무기 장착하는 애니메이션 재생 용 변수
     DOREPLIFETIME(ANS_PlayerCharacterBase, IsDead);	             // 캐릭터가 죽었는지 확인 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsChangingWeapon);    // 무기 교체중인지 확인 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, bHasThrown);          // 한번만 던져지도록 실행하는 변수
+    DOREPLIFETIME(ANS_PlayerCharacterBase, IsThrow);             // 병 던질 수 있는지 확인 변수
 }
 
 void ANS_PlayerCharacterBase::SetMovementLockState_Server_Implementation(bool bLock)
@@ -1201,9 +1204,9 @@ void ANS_PlayerCharacterBase::Client_NotifyInventoryUpdated_Implementation()
     }
 }
 
-void ANS_PlayerCharacterBase::Client_HideTipText_Implementation()
+void ANS_PlayerCharacterBase::Multicast_HideTipText_Implementation()
 {
-    // 클라이언트에서 TipText 숨기기 처리
+    // 모든 클라이언트에서 TipText 숨기기 처리
     if (UNS_GameInstance* GI = GetGameInstance<UNS_GameInstance>())
     {
         if (UNS_UIManager* UIManager = GI->GetUIManager())
@@ -1211,7 +1214,7 @@ void ANS_PlayerCharacterBase::Client_HideTipText_Implementation()
             if (UNS_PlayerHUD* PlayerHUD = UIManager->GetPlayerHUDWidget())
             {
                 PlayerHUD->HideTipText();
-                UE_LOG(LogTemp, Warning, TEXT("Client_HideTipText: TipText 숨김 처리 완료"));
+                UE_LOG(LogTemp, Warning, TEXT("Multicast_HideTipText: 모든 클라이언트에서 TipText 숨김 처리 완료"));
             }
         }
     }
@@ -1220,10 +1223,6 @@ void ANS_PlayerCharacterBase::Client_HideTipText_Implementation()
 // 클라이언트면 서버로 클라이언트 자신에 Yaw값과 Pitch값을 서버로 전송
 void ANS_PlayerCharacterBase::UpdateAim_Server_Implementation(float Yaw, float Pitch)
 {
-    // 서버에서 변수 업데이트
-    CamYaw = Yaw;
-    CamPitch = Pitch;
-    
     // 모든 클라이언트에 전파
     UpdateAim_Multicast(Yaw, Pitch);
 }
@@ -1237,14 +1236,12 @@ void ANS_PlayerCharacterBase::UpdateAim_Multicast_Implementation(float Yaw, floa
     // 손전등이 켜져 있다면 회전도 업데이트
     if (bFlashlightOnOff && FlashlightComponent)
     {
-        // 카메라 회전 계산 (캐릭터 회전 + Yaw/Pitch 오프셋)
-        FRotator ActorRotation = GetActorRotation();
-        FRotator CameraRot = ActorRotation;
-        CameraRot.Yaw += Yaw;
-        CameraRot.Pitch = Pitch; // Pitch는 직접 설정 (상대적이지 않음)
-        
-        // 손전등 회전 업데이트
-        FlashlightComponent->SetWorldRotation(CameraRot);
+        // 컨트롤러 회전을 직접 사용 (카메라와 동일한 방향)
+        if (Controller)
+        {
+            FRotator ControlRotation = Controller->GetControlRotation();
+            FlashlightComponent->SetWorldRotation(ControlRotation);
+        }
     }
 }
 

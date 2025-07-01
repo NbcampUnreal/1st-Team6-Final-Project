@@ -76,9 +76,21 @@ ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), C
 void ANS_ZombieBase::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	// 멀티플레이에서 초기 상태를 명확히 설정
+	bIsActive = false;
 	SetActive_Multicast(false);
 	SetState(CurrentState);
+
+	// 멀티플레이에서 메쉬 초기화 지연 실행 (네트워크 동기화 보장)
+	if (GetWorld())
+	{
+		FTimerHandle InitMeshTimer;
+		GetWorld()->GetTimerManager().SetTimer(InitMeshTimer, [this]()
+		{
+			ForceUpdateMeshVisibility_Multicast(bIsActive);
+		}, 0.1f, false);
+	}
 	
 	GetMesh()->GetAnimInstance()->RootMotionMode = ERootMotionMode::RootMotionFromEverything;
 	
@@ -140,34 +152,52 @@ void ANS_ZombieBase::OnOverlapSphere(UPrimitiveComponent* OverlappedComp, AActor
 void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 {
 	bIsActive = setActive;
-	
+
 	if (bIsActive) // 활성화 상태로 전환 (true)
 	{
 		if (NavigationInvoker)
 		{
 			NavigationInvoker->Activate(true);
 		}
-		SetActorHiddenInGame(false); // 액터를 숨기지 않고 보이게 함
-		GetMesh()->SetVisibility(true, true); // 좀비 메쉬를 보이게 함 (자식 컴포넌트 포함)
-		SetActorEnableCollision(true); // 충돌을 활성화함 (다른 액터와 상호작용 가능)
-		
-		// 액터 자체의 Tick 활성화
+
+		// 메쉬 가시성 설정 (멀티플레이 호환)
+		SetActorHiddenInGame(false);
+		GetMesh()->SetVisibility(true, true);
+		GetMesh()->SetHiddenInGame(false, true); // 추가: 명시적으로 메쉬 표시
+
+		// 충돌 활성화
+		SetActorEnableCollision(true);
+
+		// 액터 틱 활성화
 		SetActorTickEnabled(true);
-		
-		// 모든 컴포넌트의 Tick 활성화
+
+		// 스켈레탈 메쉬 컴포넌트만 선택적으로 활성화 (성능 최적화)
+		if (USkeletalMeshComponent* MeshComp = GetMesh())
+		{
+			MeshComp->SetComponentTickEnabled(true);
+			MeshComp->SetVisibility(true, true);
+			MeshComp->SetHiddenInGame(false, true);
+
+			// 애니메이션 인스턴스 활성화
+			if (UAnimInstance* AnimInst = MeshComp->GetAnimInstance())
+			{
+				AnimInst->EnableUpdateAnimation(true);
+			}
+		}
+
+		// 필수 컴포넌트들만 선택적으로 활성화
 		TArray<UActorComponent*> Components;
 		GetComponents(Components);
 		for (UActorComponent* Component : Components)
 		{
-			Component->SetComponentTickEnabled(true);
-
-			// ABP 활성화
-			if (USkeletalMeshComponent* SkeletalMeshComp = Cast<USkeletalMeshComponent>(Component))
+			// 스켈레탈 메쉬, 콜리전, AI 관련 컴포넌트만 활성화
+			if (Component->IsA<USkeletalMeshComponent>() ||
+				Component->IsA<UCapsuleComponent>() ||
+				Component->IsA<USphereComponent>() ||
+				Component->GetName().Contains(TEXT("AI")) ||
+				Component->GetName().Contains(TEXT("Navigation")))
 			{
-				if (UAnimInstance* AnimInst = SkeletalMeshComp->GetAnimInstance())
-				{
-					AnimInst->EnableUpdateAnimation(true);
-				}
+				Component->SetComponentTickEnabled(true);
 			}
 		}
 
@@ -218,30 +248,51 @@ void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 	{
 		if (NavigationInvoker)
 		{
-		NavigationInvoker->Activate(false);
-	    }
-		
+			NavigationInvoker->Activate(false);
+		}
+
 		GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
-		SetActorHiddenInGame(true); // 액터를 숨김
-		GetMesh()->SetVisibility(false, true); // 좀비 메쉬를 숨김 (자식 컴포넌트 포함)
-		SetActorEnableCollision(false); // 충돌을 비활성화함 (다른 액터가 통과 가능)
-		
-		// 액터 자체의 Tick 비활성화
+
+		// 메쉬 숨김 (멀티플레이 호환)
+		SetActorHiddenInGame(true);
+		GetMesh()->SetVisibility(false, true);
+		GetMesh()->SetHiddenInGame(true, true); // 추가: 명시적으로 메쉬 숨김
+
+		// 충돌 비활성화
+		SetActorEnableCollision(false);
+
+		// 액터 틱 비활성화 (단, 렌더링은 유지)
 		SetActorTickEnabled(false);
-		
-		// 모든 컴포넌트의 Tick 비활성화
+
+		// 스켈레탈 메쉬 컴포넌트는 렌더링을 위해 부분적으로만 비활성화
+		if (USkeletalMeshComponent* MeshComp = GetMesh())
+		{
+			// 애니메이션만 일시정지, 렌더링은 유지
+			if (UAnimInstance* AnimInst = MeshComp->GetAnimInstance())
+			{
+				// 완전히 비활성화하지 않고 일시정지만
+				AnimInst->EnableUpdateAnimation(false);
+			}
+
+			// 메쉬 컴포넌트 틱은 비활성화하되, 가시성 설정은 유지
+			MeshComp->SetComponentTickEnabled(false);
+		}
+
+		// 필수가 아닌 컴포넌트들만 비활성화
 		TArray<UActorComponent*> Components;
 		GetComponents(Components);
 		for (UActorComponent* Component : Components)
 		{
-			Component->SetComponentTickEnabled(false);
-
-			// ABP 비활성화
-			if (USkeletalMeshComponent* SkeletalMeshComp = Cast<USkeletalMeshComponent>(Component))
+			// 스켈레탈 메쉬 컴포넌트는 이미 위에서 처리했으므로 제외
+			if (!Component->IsA<USkeletalMeshComponent>())
 			{
-				if (UAnimInstance* AnimInst = SkeletalMeshComp->GetAnimInstance())
+				// AI, 네비게이션, 콜리전 관련 컴포넌트만 비활성화
+				if (Component->IsA<USphereComponent>() ||
+					Component->GetName().Contains(TEXT("AI")) ||
+					Component->GetName().Contains(TEXT("Navigation")) ||
+					Component->GetName().Contains(TEXT("Collision")))
 				{
-					AnimInst->EnableUpdateAnimation(false);
+					Component->SetComponentTickEnabled(false);
 				}
 			}
 		}
@@ -267,6 +318,26 @@ void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 			}
 		}
 		UE_LOG(LogTemp, Warning, TEXT("Zombie %s is now fully INACTIVE."), *GetName());
+	}
+
+	// 멀티플레이에서 메쉬 가시성 강제 업데이트
+	ForceUpdateMeshVisibility_Multicast(bIsActive);
+}
+
+// 메쉬 가시성 강제 업데이트 함수 (멀티플레이 문제 해결용)
+void ANS_ZombieBase::ForceUpdateMeshVisibility_Multicast_Implementation(bool bVisible)
+{
+	if (USkeletalMeshComponent* MeshComp = GetMesh())
+	{
+		// 모든 클라이언트에서 메쉬 가시성 강제 업데이트
+		MeshComp->SetVisibility(bVisible, true);
+		MeshComp->SetHiddenInGame(!bVisible, true);
+
+		// 렌더링 상태 강제 업데이트
+		MeshComp->MarkRenderStateDirty();
+
+		UE_LOG(LogTemp, Verbose, TEXT("[ForceUpdateMeshVisibility] 좀비 %s 메쉬 가시성: %s"),
+			*GetName(), bVisible ? TEXT("보임") : TEXT("숨김"));
 	}
 }
 
@@ -460,8 +531,7 @@ void ANS_ZombieBase::ScheduleSound(USoundCue* SoundCue)
 		{
 			Server_PlaySound(SoundCue);
 		}
-		ScheduleSound(SoundCue);
-	}, RandomTime, false);
+	}, RandomTime, true);
 }
 
 void ANS_ZombieBase::Die_Multicast_Implementation()
@@ -521,6 +591,8 @@ void ANS_ZombieBase::SetState(EZombieState NewState)
 {
 	if (CurrentState == NewState) return;
 	
+	GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
+	
 	if (HasAuthority())
 	{
 		CurrentState = NewState;
@@ -534,11 +606,6 @@ void ANS_ZombieBase::SetState(EZombieState NewState)
 
 void ANS_ZombieBase::OnStateChanged(EZombieState State)
 {
-	if (State ==EZombieState::DEAD)
-	{
-		GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
-	}
-	
 	switch (State)
 	{
 	case EZombieState::IDLE:
