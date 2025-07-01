@@ -2,6 +2,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "NS_GameInstance.h"
+#include "Character/NS_PlayerController.h"
 #include "NS_MainGamePlayerState.h"
 #include "NS_GameState.h"
 #include "NS_LobbyController.h"
@@ -155,7 +156,6 @@ void ANS_MultiPlayMode::PostLogin(APlayerController* NewPlayer)
                     *NewPlayer->PlayerState->GetPlayerName(), *NewPawn->GetName(), SelectedIndex);
 
                 NotifyPlayerLogin();
-                // Flask 서버에 플레이어 로그인 알림
             }
         }
         else
@@ -163,10 +163,7 @@ void ANS_MultiPlayMode::PostLogin(APlayerController* NewPlayer)
             UE_LOG(LogTemp, Error, TEXT("No unique pawn class available for player %s. All characters may be in use."),
                 *NewPlayer->PlayerState->GetPlayerName());
         }
-        else
-        {
-            UE_LOG(LogTemp, Error, TEXT("PawnClass is null. Check MainGamePawnClassesToSpawn in BP."));
-        }
+
     }
 }
 

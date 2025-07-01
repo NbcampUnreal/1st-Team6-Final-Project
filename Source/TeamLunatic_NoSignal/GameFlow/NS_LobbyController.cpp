@@ -56,7 +56,7 @@ void ANS_LobbyController::OnPossess(APawn* InPawn)
 	{
 		if (It->ActorHasTag(FName("LobbyCamera")))
 		{
-			SetViewTargetWithBlend(*It, 0.5f); // 0.5초 딜레이
+			SetViewTargetWithBlend(*It, 1.0f); // 0.5초 딜레이
 			break;
 		}
 	}
