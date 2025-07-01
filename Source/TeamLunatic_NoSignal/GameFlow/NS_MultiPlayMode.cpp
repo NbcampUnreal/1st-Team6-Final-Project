@@ -9,6 +9,7 @@
 #include "GameFramework/PlayerStart.h"
 #include "Zombie/NS_ZombieBase.h"
 #include "Algo/RandomShuffle.h"
+#include "Character/NS_PlayerController.h"
 #include "Engine/World.h"
 
 ANS_MultiPlayMode::ANS_MultiPlayMode()
@@ -185,10 +186,6 @@ void ANS_MultiPlayMode::PostLogin(APlayerController* NewPlayer)
         {
             UE_LOG(LogTemp, Error, TEXT("No unique pawn class available for player %s. All characters may be in use."),
                 *NewPlayer->PlayerState->GetPlayerName());
-        }
-        else
-        {
-            UE_LOG(LogTemp, Error, TEXT("PawnClass is null. Check MainGamePawnClassesToSpawn in BP."));
         }
     }
 }
