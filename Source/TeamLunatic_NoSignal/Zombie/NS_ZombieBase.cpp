@@ -62,6 +62,9 @@ ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), C
 	R_SphereComp->SetupAttachment(GetMesh(), FName("attack_r"));
 	R_SphereComp->OnComponentBeginOverlap.AddDynamic(this,&ANS_ZombieBase::OnOverlapSphere);
 	R_SphereComp->SetGenerateOverlapEvents(false);
+	R_SphereComp->bDrawOnlyIfSelected = true;
+	R_SphereComp->SetHiddenInGame(false);
+	R_SphereComp->SetVisibility(true);
 	
 	L_SphereComp = CreateDefaultSubobject<USphereComponent>("LeftAttack");
 	L_SphereComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -69,6 +72,9 @@ ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), C
 	L_SphereComp->OnComponentBeginOverlap.AddDynamic(this,&ANS_ZombieBase::OnOverlapSphere);
 	L_SphereComp->SetGenerateOverlapEvents(false);
 	
+	L_SphereComp->bDrawOnlyIfSelected = true;
+	L_SphereComp->SetHiddenInGame(false);
+	L_SphereComp->SetVisibility(true);
 	// bIsActive의 초기값은 false로 설정해서 처음부터 캐릭터가 활성화 거리 밖에있으면 안보이도록 설정
 	bIsActive = false;
 }
@@ -97,7 +103,7 @@ void ANS_ZombieBase::BeginPlay()
 	// 		ForceUpdateMeshVisibility_Multicast(bIsActive);
 	// 	}, 0.1f, false);
 	// }
-
+	
 	if (!Controller)
 	{
 		// AIController를 스폰
@@ -166,18 +172,13 @@ void ANS_ZombieBase::OnRep_bIsActive()
 		{
 			NavigationInvoker->Activate(true);
 		}
-
-		// 메쉬 가시성 설정 (멀티플레이 호환)
-		SetActorHiddenInGame(false);
-		GetMesh()->SetVisibility(true, true);
-		GetMesh()->SetHiddenInGame(false, true); // 추가: 명시적으로 메쉬 표시
 		
 		// 스켈레탈 메쉬 컴포넌트만 선택적으로 활성화 (성능 최적화)
 		if (USkeletalMeshComponent* MeshComp = GetMesh())
 		{
 			MeshComp->SetComponentTickEnabled(true);
-			MeshComp->SetVisibility(true, true);
-			MeshComp->SetHiddenInGame(false, true);
+			MeshComp->SetVisibility(true, false);
+			MeshComp->SetHiddenInGame(false, false);
 
 			// 애니메이션 인스턴스 활성화
 			if (UAnimInstance* AnimInst = MeshComp->GetAnimInstance())
@@ -189,26 +190,11 @@ void ANS_ZombieBase::OnRep_bIsActive()
 		// 필수 컴포넌트들만 선택적으로 활성화
 		for (UActorComponent* Component : Components)
 		{
-
-			//// 스켈레탈 메쉬 컴포넌트는 이미 위에서 처리했으므로 제외
-			if (Component->IsA<USkeletalMeshComponent>())
-			{
-				continue;
-			}
-
+			if (Component == GetMesh()|| Component->IsA<USphereComponent>()) continue;
 			Component->SetComponentTickEnabled(true);
-			//{
-			//	// AI, 네비게이션, 콜리전 관련 컴포넌트만 비활성화
-			//	if (Component->IsA<USphereComponent>() ||
-			//		Component->GetName().Contains(TEXT("AI")) ||
-			//		Component->GetName().Contains(TEXT("Navigation")) ||
-			//		Component->GetName().Contains(TEXT("Collision")))
-			//	{
-			//		Component->SetComponentTickEnabled(false);
-			//	}
-			//}
 		}
-
+		
+		
 		// AI 컨트롤러 확인 및 재생성 로직
 		if (HasAuthority())
 		{
@@ -262,7 +248,7 @@ void ANS_ZombieBase::OnRep_bIsActive()
 		GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
 
 		// 메쉬 숨김 (멀티플레이 호환)
-		SetActorHiddenInGame(true);
+		// SetActorHiddenInGame(true);
 		GetMesh()->SetVisibility(false, true);
 		GetMesh()->SetHiddenInGame(true, true); // 추가: 명시적으로 메쉬 숨김
 
@@ -289,24 +275,11 @@ void ANS_ZombieBase::OnRep_bIsActive()
 		// 필수가 아닌 컴포넌트들만 비활성화
 		for (UActorComponent* Component : Components)
 		{
-			
-			//// 스켈레탈 메쉬 컴포넌트는 이미 위에서 처리했으므로 제외
 			if (Component->IsA<USkeletalMeshComponent>())
 			{
 				continue;
 			}
-
 			Component->SetComponentTickEnabled(false);
-			//{
-			//	// AI, 네비게이션, 콜리전 관련 컴포넌트만 비활성화
-			//	if (Component->IsA<USphereComponent>() ||
-			//		Component->GetName().Contains(TEXT("AI")) ||
-			//		Component->GetName().Contains(TEXT("Navigation")) ||
-			//		Component->GetName().Contains(TEXT("Collision")))
-			//	{
-			//		Component->SetComponentTickEnabled(false);
-			//	}
-			//}
 		}
 
 		// AI 컨트롤러가 있다면, 그 컨트롤러의 틱도 비활성화합니다.
