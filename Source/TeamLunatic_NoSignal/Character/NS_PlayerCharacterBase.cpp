@@ -514,7 +514,6 @@ void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
                     // 서버에서 직접 설정하고 멀티캐스트
                     TurnLeft = bNewTurnLeft;
                     TurnRight = bNewTurnRight;
-                    Multicast_UpdateTurnInPlaceState(bNewTurnLeft, bNewTurnRight, true);
                 }
                 else
                 {
@@ -1421,7 +1420,6 @@ void ANS_PlayerCharacterBase::OnTurnInPlaceFinished()
         // 서버에서 직접 설정하고 멀티캐스트
         TurnLeft = false;
         TurnRight = false;
-        Multicast_UpdateTurnInPlaceState(false, false, false);
     }
     else
     {
@@ -1436,21 +1434,6 @@ void ANS_PlayerCharacterBase::Server_UpdateTurnInPlaceState_Implementation(bool 
     TurnLeft = bInTurnLeft;
     TurnRight = bInTurnRight;
     GetCharacterMovement()->bUseControllerDesiredRotation = bInUseControllerDesiredRotation;
-    
-    // 모든 클라이언트에 멀티캐스트
-    Multicast_UpdateTurnInPlaceState(bInTurnLeft, bInTurnRight, bInUseControllerDesiredRotation);
-}
-
-void ANS_PlayerCharacterBase::Multicast_UpdateTurnInPlaceState_Implementation(bool bInTurnLeft, bool bInTurnRight,
-    bool bInUseControllerDesiredRotation)
-{
-    // 로컬 플레이어가 아닌 경우에만 적용
-    if (!IsLocallyControlled())
-    {
-        TurnLeft = bInTurnLeft;
-        TurnRight = bInTurnRight;
-        GetCharacterMovement()->bUseControllerDesiredRotation = bInUseControllerDesiredRotation;
-    }
 }
 
 void ANS_PlayerCharacterBase::UpdateYawReset(float DeltaTime)
