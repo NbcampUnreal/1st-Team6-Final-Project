@@ -491,43 +491,24 @@ void ANS_PlayerCharacterBase::LookAction(const FInputActionValue& Value)
         }
         
         // 회전 시작 조건 확인
-        if (!TurnLeft && !TurnRight)
+        if (FMath::Abs(CamYaw) >= TurnInPlaceThreshold)
         {
-            if (FMath::Abs(CamYaw) >= TurnInPlaceThreshold)
-            {
-                // 회전 시작 - 현재 Yaw 값 저장
-                CurrentTurnYaw = CamYaw;
-                LastTurnYaw = CamYaw;
-                bIsTurningInPlace = true;
-                bIsResettingYaw = false;
-                
-                // 왼쪽/오른쪽 회전 설정
-                bool bNewTurnLeft = CamYaw < 0;
-                bool bNewTurnRight = CamYaw > 0;
-                
-                // bUseControllerDesiredRotation 활성화
-                GetCharacterMovement()->bUseControllerDesiredRotation = true;
-                
-                // 서버에 상태 업데이트 요청
-                if (HasAuthority())
-                {
-                    // 서버에서 직접 설정하고 멀티캐스트
-                    TurnLeft = bNewTurnLeft;
-                    TurnRight = bNewTurnRight;
-                }
-                else
-                {
-                    // 클라이언트에서는 서버에 요청
-                    Server_UpdateTurnInPlaceState(bNewTurnLeft, bNewTurnRight, true);
-                }
-            }
+            // 서버에 회전 시작을 요청합니다.
+            Server_StartTurn(CamYaw < 0, CamYaw > 0);
+
+            // 클라이언트에서도 즉시 상태를 업데이트하여 부드러운 전환을 만듭니다.
+            bIsTurningInPlace = true;
+            bIsResettingYaw = false;
+            CurrentTurnYaw = CamYaw;
+            LastTurnYaw = CamYaw;
+            GetCharacterMovement()->bUseControllerDesiredRotation = true;
         }
     }
     
     CamPitch = FMath::FInterpTo(CamPitch, DeltaRot.Pitch, DeltaTime, AimSendInterpSpeed); 
 
-    // 카메라 회전 정보를 서버로 전송 (손전등 회전도 함께 처리됨)
-    UpdateAim_Server(CamYaw, CamPitch);
+    // 조준 정보 전송 요청
+    RequestUpdateAim();
 }
 
 void ANS_PlayerCharacterBase::JumpAction(const FInputActionValue& Value)
@@ -575,69 +556,55 @@ void ANS_PlayerCharacterBase::StopCrouch(const FInputActionValue& Value)
 
 void ANS_PlayerCharacterBase::StartSprint(const FInputActionValue& Value)
 {
-    if (StatusComp->CheckEnableSprint())
+    // 서버 권한이 없으면(클라이언트이면) 서버에 RPC를 호출합니다.
+    if (!HasAuthority())
     {
-        // 로컬에서 즉시 적용
-        if (IsLocallyControlled())
+        Server_StartSprint(Value);
+    }
+    // 서버 권한이 있으면 직접 로직을 실행합니다.
+    else
+    {
+        if (StatusComp->CheckEnableSprint())
         {
-            GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier * SpeedMultiAtStat;
-        }
-        
-        // 서버에 상태 변경 알림 (Unreliable)
-        if (!HasAuthority())
-        {
-            StartSprint_Server(Value);
-        }
-        else
-        {
-            // 서버에서는 직접 상태 변경
             IsSprint = true;
+            OnRep_IsSprint(); // 서버에서도 OnRep을 수동으로 호출하여 즉시 적용합니다.
         }
     }
 }
 
 void ANS_PlayerCharacterBase::StopSprint(const FInputActionValue& Value)
 {
-    // 로컬에서 즉시 적용
-    if (IsLocallyControlled())
-    {
-        GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SpeedMultiAtStat;
-    }
-    
-    // 서버에 상태 변경 알림 (Unreliable)
+    // 서버 권한이 없으면(클라이언트이면) 서버에 RPC를 호출합니다.
     if (!HasAuthority())
     {
-        StopSprint_Server(Value);
+        Server_StopSprint(Value);
     }
+    // 서버 권한이 있으면 직접 로직을 실행합니다.
     else
     {
-        // 서버에서는 직접 상태 변경
         IsSprint = false;
+        OnRep_IsSprint(); // 서버에서도 OnRep을 수동으로 호출하여 즉시 적용합니다.
     }
 }
-
-void ANS_PlayerCharacterBase::StartSprint_Server_Implementation(const FInputActionValue& Value)
+ 
+void ANS_PlayerCharacterBase::Server_StartSprint_Implementation(const FInputActionValue& Value)
 {
+    // 클라이언트의 요청을 받아 서버에서 실행되는 실제 로직입니다.
     if (StatusComp->CheckEnableSprint())
     {
         IsSprint = true;
-        if (GetCharacterMovement())
-            GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier * SpeedMultiAtStat;
-    }
-    else
-    {
-        IsSprint = false;
-        if (GetCharacterMovement())
-            GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SpeedMultiAtStat;
+        OnRep_IsSprint(); // 상태 변경 후 모든 클라이언트에 전파합니다.
     }
 }
 
-void ANS_PlayerCharacterBase::StopSprint_Server_Implementation(const FInputActionValue& Value)
+void ANS_PlayerCharacterBase::Server_StopSprint_Implementation(const FInputActionValue& Value)
 {
-    IsSprint = false; 
-    if (GetCharacterMovement()) 
-        GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SpeedMultiAtStat;
+    // 클라이언트의 요청을 받아 서버에서 실행되는 실제 로직입니다.
+    IsSprint = false;
+    OnRep_IsSprint(); // 상태 변경 후 모든 클라이언트에 전파합니다.
 }
+
+
 
 void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputActionValue& Value)
 {
@@ -1395,46 +1362,63 @@ void ANS_PlayerCharacterBase::UpdateTurnInPlace(float DeltaTime)
     }
     
     // 서버에 업데이트된 CamYaw 전송
-    UpdateAim_Server(CamYaw, CamPitch);
+    RequestUpdateAim();
 }
 
 // 애니메이션 노티파이에서 호출할 함수 수정
 void ANS_PlayerCharacterBase::OnTurnInPlaceFinished()
 {
-    // 회전 완료 후 변수 초기화
+    // 서버에 회전 완료를 보고합니다.
+    Server_FinishTurn();
+
+    // 클라이언트 측에서는 즉시 리셋 상태로 전환합니다.
     bIsTurningInPlace = false;
-    
-    // 마지막 CamYaw 값 저장 (부드러운 리셋을 위해)
     if (!bIsResettingYaw)
     {
         LastTurnYaw = CamYaw;
         bIsResettingYaw = true;
     }
-    
-    // bUseControllerDesiredRotation 비활성화
     GetCharacterMovement()->bUseControllerDesiredRotation = false;
-    
-    // 서버에 상태 업데이트
-    if (HasAuthority())
+}
+
+
+void ANS_PlayerCharacterBase::Server_StartTurn_Implementation(bool bInTurnLeft, bool bInTurnRight)
+{
+    TurnLeft = bInTurnLeft;
+    TurnRight = bInTurnRight;
+
+    // 모든 클라이언트에 회전 상태를 전파합니다.
+    Multicast_UpdateTurnRotation(true);
+}
+
+void ANS_PlayerCharacterBase::Server_FinishTurn_Implementation()
+{
+    TurnLeft = false;
+    TurnRight = false;
+
+    // 모든 클라이언트에 회전 완료 상태를 전파합니다.
+    Multicast_UpdateTurnRotation(false);
+}
+
+void ANS_PlayerCharacterBase::Multicast_UpdateTurnRotation_Implementation(bool bIsTurning)
+{
+    if (GetCharacterMovement())
     {
-        // 서버에서 직접 설정하고 멀티캐스트
-        TurnLeft = false;
-        TurnRight = false;
+        GetCharacterMovement()->bUseControllerDesiredRotation = bIsTurning;
     }
-    else
+
+    // 로컬 플레이어가 아닌 클라이언트의 경우, 회전 시작/종료 시 시각적 상태를 동기화합니다.
+    if (!IsLocallyControlled())
     {
-        // 클라이언트에서는 서버에 요청
-        Server_UpdateTurnInPlaceState(false, false, false);
+        bIsTurningInPlace = bIsTurning;
+        if (!bIsTurning)
+        {
+            bIsResettingYaw = true; // 회전이 끝나면 Yaw 리셋을 시작합니다.
+        }
     }
 }
 
-void ANS_PlayerCharacterBase::Server_UpdateTurnInPlaceState_Implementation(bool bInTurnLeft, bool bInTurnRight, bool bInUseControllerDesiredRotation)
-{
-    // 서버에서 상태 업데이트
-    TurnLeft = bInTurnLeft;
-    TurnRight = bInTurnRight;
-    GetCharacterMovement()->bUseControllerDesiredRotation = bInUseControllerDesiredRotation;
-}
+
 
 void ANS_PlayerCharacterBase::UpdateYawReset(float DeltaTime)
 {
@@ -1451,7 +1435,52 @@ void ANS_PlayerCharacterBase::UpdateYawReset(float DeltaTime)
     }
     
     // 서버에 업데이트된 CamYaw 전송
-    UpdateAim_Server(CamYaw, CamPitch);
+    RequestUpdateAim();
+}
+
+void ANS_PlayerCharacterBase::OnRep_IsSprint()
+{
+    if (GetCharacterMovement())
+    {
+        if (IsSprint)
+        {
+            GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier * SpeedMultiAtStat;
+        }
+        else
+        {
+            GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SpeedMultiAtStat;
+        }
+    }
+}
+
+void ANS_PlayerCharacterBase::OnRep_TurnLeft()
+{
+    // 필요한 경우 클라이언트에서 추가 로직 처리
+}
+
+void ANS_PlayerCharacterBase::OnRep_TurnRight()
+{
+    // 필요한 경우 클라이언트에서 추가 로직 처리
+}
+
+void ANS_PlayerCharacterBase::RequestUpdateAim()
+{
+    // 로컬 컨트롤러가 아니면 실행하지 않음
+    if (!IsLocallyControlled()) return;
+
+    // 타이머가 설정되어 있지 않으면 새로 설정
+    if (!GetWorldTimerManager().IsTimerActive(AimUpdateTimerHandle))
+    {
+        GetWorldTimerManager().SetTimer(AimUpdateTimerHandle, this, &ANS_PlayerCharacterBase::RequestUpdateAim, 0.1f, true);
+    }
+
+    // 마지막으로 보낸 값과 현재 값이 다를 경우에만 서버로 전송
+    if (FMath::Abs(CamYaw - LastSentCamYaw) > 0.1f || FMath::Abs(CamPitch - LastSentCamPitch) > 0.1f)
+    {
+        LastSentCamYaw = CamYaw;
+        LastSentCamPitch = CamPitch;
+        UpdateAim_Server(CamYaw, CamPitch);
+    }
 }
 
 void ANS_PlayerCharacterBase::ActivateHallucinationEffect(float Duration)

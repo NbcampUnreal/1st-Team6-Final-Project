@@ -250,16 +250,16 @@ public:
 	float LookMagnification = 0.5f;
 
 	// 왼쪽으로 몸을 회전시키는 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_TurnLeft, Category = "Replicated Variables")
 	bool TurnLeft = false;
 	// 오른쪽으로 몸을 회전시키는 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_TurnRight, Category = "Replicated Variables")
 	bool TurnRight = false;
 	// 사격시 몸전체Mesh 사격 애니메이션 재생 용 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool NowFire = false;
 	// 달리고있는 상태인지 확인 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_IsSprint, Category = "Replicated Variables")
 	bool IsSprint = false;
 	// 재장전 실행 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
@@ -363,10 +363,10 @@ public:
 	// 달리기
 	void StartSprint(const FInputActionValue& Value);
 	void StopSprint(const FInputActionValue& Value);
-	UFUNCTION(server, Reliable)
-	void StartSprint_Server(const FInputActionValue& Value);
 	UFUNCTION(Server, Reliable)
-	void StopSprint_Server(const FInputActionValue& Value);
+	void Server_StartSprint(const FInputActionValue& Value);
+	UFUNCTION(Server, Reliable)
+	void Server_StopSprint(const FInputActionValue& Value);
 
 	// 아이템 줍기
 	UFUNCTION(Server, Reliable)
@@ -401,6 +401,21 @@ public:
 	// 현재 캐릭터가 바라보는 카메라 Yaw값 업데이트 함수
 	UFUNCTION(NetMulticast, Unreliable)
 	void UpdateAim_Multicast(float Yaw, float Pitch);
+
+	// 새로운 조준 업데이트 함수
+	void RequestUpdateAim();
+	FTimerHandle AimUpdateTimerHandle;
+	float LastSentCamYaw = 0.f;
+	float LastSentCamPitch = 0.f;
+
+	UFUNCTION()
+	void OnRep_IsSprint();
+
+	UFUNCTION()
+	void OnRep_TurnLeft();
+
+	UFUNCTION()
+	void OnRep_TurnRight();
 	
 	// 헤드램프 켜고 끄는 함수
 	UFUNCTION(BlueprintCallable, Category = "Flashlight")
@@ -425,9 +440,18 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Animation")
 	void OnTurnInPlaceFinished();
 
-	// Turn In Place 상태를 서버에 업데이트하는 함수
-	UFUNCTION(Server, unreliable)
-	void Server_UpdateTurnInPlaceState(bool bInTurnLeft, bool bInTurnRight, bool bInUseControllerDesiredRotation);
+	// 클라이언트가 서버에 회전 시작을 요청
+	UFUNCTION(Server, Reliable)
+	void Server_StartTurn(bool bInTurnLeft, bool bInTurnRight);
+
+	// 클라이언트가 서버에 회전 완료를 보고
+	UFUNCTION(Server, Reliable)
+	void Server_FinishTurn();
+
+	// 서버가 모든 클라이언트에 회전 상태를 전파
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_UpdateTurnRotation(bool bIsTurning);
+
 
 	// Yaw 리셋 관련 함수
 	void UpdateYawReset(float DeltaTime);
