@@ -53,7 +53,7 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Pickup | ItemReference")
 	UNS_InventoryBaseItem* ItemReference;
 
-	UPROPERTY(EditInstanceOnly, Category = "Pickup | ItemInitialization")
+		UPROPERTY(EditInstanceOnly, Category = "Pickup | ItemInitialization")
 	int32 ItemQuantity;
 
 	UPROPERTY(VisibleInstanceOnly, Category = "Pickup | Interaction")

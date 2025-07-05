@@ -463,7 +463,10 @@ public:
 	UPROPERTY()
 	UNS_OpenLevelMap* CurrentOpenMapWidget;
 
-	void OpenMapAction(const FInputActionValue& Value);
+		void OpenMapAction(const FInputActionValue& Value);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multicast_PlayPickupSound(USoundBase* SoundToPlay);
 	
 	//환각 관련
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PostProcess")

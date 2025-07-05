@@ -1506,3 +1506,11 @@ void ANS_PlayerCharacterBase::OpenMapAction(const FInputActionValue& Value)
         }
     }
 }
+
+void ANS_PlayerCharacterBase::Multicast_PlayPickupSound_Implementation(USoundBase* SoundToPlay)
+{
+    if (SoundToPlay)
+    {
+        UGameplayStatics::PlaySoundAtLocation(this, SoundToPlay, GetActorLocation());
+    }
+}

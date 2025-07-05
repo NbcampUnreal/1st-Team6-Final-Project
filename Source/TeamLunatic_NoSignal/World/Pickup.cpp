@@ -31,14 +31,6 @@ void APickup::BeginPlay()
 {
 	Super::BeginPlay();
 
-	/*FString LogMessage = FString::Printf(
-		TEXT("Pickup BeginPlay -> 이름: [ %s ], 월드 위치: [ %s ]"),
-		*GetName(),
-		*GetActorLocation().ToString()
-	);*/
-
-	//UE_LOG(LogTemp, Log, TEXT("%s"), *LogMessage);
-
 	if (HasAuthority())
 	{
 		InitializePickup(UNS_InventoryBaseItem::StaticClass(), ItemQuantity);
@@ -54,10 +46,6 @@ void APickup::InitializePickup(const TSubclassOf<UNS_InventoryBaseItem> BaseClas
 	if (ItemDataTable && !DesiredItemID.IsNone())
 	{
 		const FNS_ItemDataStruct* ItemData = ItemDataTable->FindRow<FNS_ItemDataStruct>(DesiredItemID, DesiredItemID.ToString());
-
-		/*UE_LOG(LogTemp, Warning, TEXT("[PickupInit] 아이템: %s | AmmoType: %d"),
-			*ItemData->ItemDataRowName.ToString(),
-			static_cast<uint8>(ItemData->WeaponData.AmmoType));*/
 
 		ReplicatedItemData = *ItemData;
 		ReplicatedItemData.Quantity = InQuantity > 0 ? InQuantity : 1;
@@ -189,6 +177,10 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 			// 아이템이 성공적으로 (전부 또는 부분적으로) 추가되었다면
 			if (AddResult.OperationResult == EItemAddResult::TAR_AllItemAdded || AddResult.OperationResult == EItemAddResult::TAR_PartialAmountItemAdded)
 			{
+                if (ItemReference && ItemReference->AssetData.GetSound)
+                {
+                    Taker->Multicast_PlayPickupSound(ItemReference->AssetData.GetSound);
+                }
 				// 아이템 추가 성공 시 장비 아이템인 경우 자동 퀵슬롯 할당 처리
 				if (AddResult.ActualAmountAdded > 0 &&
 					ItemReference->ItemType == EItemType::Equipment &&
