@@ -150,16 +150,6 @@ void APickup::EndFocus()
 
 void APickup::Interact_Implementation(AActor* InteractingActor)
 {
-	// IsPickUp 상태 체크 - 이미 아이템 획득 중이면 상호작용 차단
-	if (ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(InteractingActor))
-	{
-		if (PlayerCharacter->IsPickUp)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Interact: 이미 아이템 획득 중 - 상호작용 차단 (IsPickUp = true)"));
-			return;
-		}
-	}
-
 	if (!HasAuthority())
 	{
 		Server_TakePickup(InteractingActor);
@@ -182,6 +172,8 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 		UE_LOG(LogTemp, Warning, TEXT("TakePickup: 이미 아이템 획득 중 - 추가 획득 차단 (IsPickUp = true)"));
 		return;
 	}
+
+    Taker->IsPickUp = true;
 
 	if (!IsPendingKillPending())
 	{

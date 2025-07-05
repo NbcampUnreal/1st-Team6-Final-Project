@@ -206,23 +206,6 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                &ANS_PlayerCharacterBase::StopSprint);
         }
 
-        if (InteractAction)
-        {
-            EnhancedInput->BindAction(
-                InteractAction,
-                ETriggerEvent::Started,
-               InteractionComponent,
-                &UInteractionComponent::BeginInteract
-            );
-
-             EnhancedInput->BindAction(
-                 InteractAction,
-                 ETriggerEvent::Completed,
-                 InteractionComponent,
-                 &UInteractionComponent::EndInteract
-             );
-        }
-
         if (ToggleMenuAction)
         {
             EnhancedInput->BindAction(
@@ -236,13 +219,20 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
         if (InteractAction)
         {
             EnhancedInput->BindAction(
-            InteractAction,
-             ETriggerEvent::Triggered,
-              this,
-               &ANS_PlayerCharacterBase::PickUpAction_Server
-               );
-        }
+                InteractAction,
+                ETriggerEvent::Started,
+                this,
+                &ANS_PlayerCharacterBase::PickUpAction_Server
+            );
 
+             EnhancedInput->BindAction(
+                 InteractAction,
+                 ETriggerEvent::Completed,
+                 InteractionComponent,
+                 &UInteractionComponent::EndInteract
+             );
+        }
+        
         if (InputAimingAction)
         {
             EnhancedInput->BindAction(
@@ -613,64 +603,32 @@ void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputAct
 
     // 이미 아이템 줍기 중이면 무시 (중복 체크 강화)
     if (IsPickUp) {
-        UE_LOG(LogTemp, Warning, TEXT("PickUpAction_Server: 이미 아이템 획득 중 - 입력 무시 (IsPickUp = true)"));
         return;
     }
 
     // 재장전 중이면 무시
     if (IsReload) {
-        UE_LOG(LogTemp, Warning, TEXT("PickUpAction_Server: 재장전 중 - 입력 무시 (IsReload = true)"));
         return;
     }
 
     // 무기 교체 애니메이션 중이면 무시
     if (IsChangeAnim) {
-        UE_LOG(LogTemp, Warning, TEXT("PickUpAction_Server: 무기 교체 중 - 입력 무시 (IsChangeAnim = true)"));
         return;
     }
 
     // 공격 중이면 무시
     if (EquipedWeaponComp && EquipedWeaponComp->IsAttack) {
-        UE_LOG(LogTemp, Warning, TEXT("PickUpAction_Server: 공격 중 - 입력 무시 (IsAttack = true)"));
         return;
     }
 
     // 투척 중이면 무시
     if (IsThrow) {
-        UE_LOG(LogTemp, Warning, TEXT("PickUpAction_Server: 투척 중 - 입력 무시 (IsThrow = true)"));
         return;
     }
 
     if (UInteractionComponent* InteractComp = FindComponentByClass<UInteractionComponent>())
     {
-        const TScriptInterface<IInteractionInterface>& CurrentTarget = InteractComp->GetCurrentInteractable();
-
-        if (!CurrentTarget.GetObject())
-        {
-            UE_LOG(LogTemp, Warning, TEXT("상호작용 대상 없음"));
-            return;
-        }
-        
-        // 상호작용 시작 전에 IsPickUp 플래그를 true로 설정
-        IsPickUp = true;
-        
-        // 안전장치: 2초 후에 강제로 IsPickUp 플래그를 리셋
-        FTimerHandle SafetyTimerHandle;
-        GetWorldTimerManager().SetTimer(
-            SafetyTimerHandle,
-            FTimerDelegate::CreateLambda([this]() { 
-                if (IsPickUp)
-                {
-                    IsPickUp = false;
-                    UE_LOG(LogTemp, Warning, TEXT("안전장치: IsPickUp 플래그 강제 리셋 (IsPickUp = false)"));
-                }
-            }),
-            2.0f,
-            false
-        );
-        
-        // 상호작용 실행 (Pickup 클래스의 Interact 함수 호출)
-        IInteractionInterface::Execute_Interact(CurrentTarget.GetObject(), this);
+        InteractComp->BeginInteract();
     }
 }
 
