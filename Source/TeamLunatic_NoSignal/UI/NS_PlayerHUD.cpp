@@ -298,14 +298,6 @@ void UNS_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
                 // ProgressBarBG_Stamina->SetPercent(BGStPercent);
             }
         }
-
-        // 조준 상태에 따라 조준점 표시/숨김 처리
-        if (Crosshair)
-        {
-            // 캐릭터가 조준 중이면 조준점 숨김
-            bool bIsAiming = CachedPlayerCharacter->IsAimingChange();
-            SetCrosshairVisibility(!bIsAiming);
-        }
     }
 }
 

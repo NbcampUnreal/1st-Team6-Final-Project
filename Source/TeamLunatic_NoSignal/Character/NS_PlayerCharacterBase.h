@@ -72,25 +72,17 @@ public:
 
 
 // =========================================퀵슬롯 관련 변수 및 함수들=================================================
-	// 퀵슬롯 선택 함수들
-	UFUNCTION()
-	void QuickSlot1Selected();
-
-	UFUNCTION()
-	void QuickSlot2Selected();
-
-	UFUNCTION()
-	void QuickSlot3Selected();
-
-	UFUNCTION()
-	void QuickSlot4Selected();
-
-	UFUNCTION()
-	void QuickSlot5Selected();
+	// 현재 퀵슬롯 인덱스로 1번 슬롯부터 시작
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "QuickSlot", meta = (AllowPrivateAccess = "true"))
+	int32 CurrentQuickSlotIndex = 0;
 
 	// 키 입력에 따른 퀵슬롯 선택
 	UFUNCTION(BlueprintCallable, Category = "QuickSlot")
 	void HandleQuickSlotKeyInput(int32 KeyNumber);
+
+	// 퀵슬롯 입력 처리가 가능한지 확인 (중복 선택 방지)
+	UFUNCTION(BlueprintCallable, Category = "QuickSlot")
+	bool CanHandleQuickSlotInput(int32 SlotIndex);
 
 	// 서버에 퀵슬롯 사용 요청
 	UFUNCTION(BlueprintCallable, Server, Reliable)
@@ -103,10 +95,6 @@ public:
 	// 퀵슬롯 컴포넌트에 접근
 	UFUNCTION(BlueprintCallable, Category = "QuickSlot")
 	UNS_QuickSlotComponent* GetQuickSlotComponent() const { return QuickSlotComponent; }
-
-	// 현재 퀵슬롯 인덱스로 1번 슬롯부터 시작
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "QuickSlot", meta = (AllowPrivateAccess = "true"))
-	int32 CurrentQuickSlotIndex = 0;
 
 	// 현재 선택된 퀵슬롯 인덱스 반환 ====== 노티파이에서 호출
 	UFUNCTION(BlueprintCallable, Category = "QuickSlot")
@@ -250,10 +238,10 @@ public:
 	float LookMagnification = 0.5f;
 
 	// 왼쪽으로 몸을 회전시키는 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_TurnLeft, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool TurnLeft = false;
 	// 오른쪽으로 몸을 회전시키는 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_TurnRight, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool TurnRight = false;
 	// 사격시 몸전체Mesh 사격 애니메이션 재생 용 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
@@ -375,12 +363,6 @@ public:
 	// 아이템 버리기
 	UFUNCTION(Server, Reliable)
 	void DropItem_Server(UNS_InventoryBaseItem* ItemToDrop, int32 QuantityToDrop);
-
-	// 조준 
-	UFUNCTION(Server, Reliable)
-	void StartAimingAction_Server(const FInputActionValue& Value);
-	UFUNCTION(Server, Reliable)
-	void StopAimingAction_Server(const FInputActionValue& Value);
 	//////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
 
 	// 데미지 받으면 모든 클라이언트에 멀티캐스트
@@ -410,12 +392,6 @@ public:
 
 	UFUNCTION()
 	void OnRep_IsSprint();
-
-	UFUNCTION()
-	void OnRep_TurnLeft();
-
-	UFUNCTION()
-	void OnRep_TurnRight();
 	
 	// 헤드램프 켜고 끄는 함수
 	UFUNCTION(BlueprintCallable, Category = "Flashlight")
@@ -457,17 +433,21 @@ public:
 	void UpdateYawReset(float DeltaTime);
 	// ======================== Turn In Place 끝! =================================
 
+	//  ====================================== 맵 지도 관 =============================================== 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OpenLevelMap")
 	TSubclassOf<UNS_OpenLevelMap> OpenLevelMapWidgetClass;
 	
 	UPROPERTY()
 	UNS_OpenLevelMap* CurrentOpenMapWidget;
 
-		void OpenMapAction(const FInputActionValue& Value);
+	void OpenMapAction(const FInputActionValue& Value);
+	// =========================================맵 관련 끝 ======================================================
 
+	// ========================================== PcikUp 사운드 ================================================ 
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multicast_PlayPickupSound(USoundBase* SoundToPlay);
-	
+	// ========================================== PcikUp 사운드 끝============================================== 
+
 	//환각 관련
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PostProcess")
 	UMaterialInterface* HallucinationMaterial;
@@ -481,8 +461,4 @@ public:
 	// 사운드 멀티캐스트
 	UFUNCTION(NetMulticast, Reliable)
 	void PlaySoundOnCharacter_Multicast(USoundBase* SoundToPlay);
-	
-	// 캐릭터가 현재 조준 중인지 확인하는 함수
-	UFUNCTION(BlueprintCallable, Category = "Character")
-	bool IsAimingChange() const { return IsAiming; }
 };
