@@ -29,15 +29,15 @@
 
 ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), CurrentState(EZombieState::IDLE),
                                    BaseDamage(20.f),PatrolSpeed(20.f), ChaseSpeed(100.f),AccelerationSpeed(200.f),
-                                   ZombieType(EZombieType::BASIC), bIsDead(false), bIsGotHit(false), SafeBones({"clavicle_r","clavicle_l","upperarm_r","upperarm_r","lowerarm_r","lowerarm_r","neck_01","head","spine_02","spine_03"})
+                                   ZombieType(EZombieType::BASIC), bIsDead(false), SafeBones({"clavicle_r","clavicle_l","upperarm_r","upperarm_r","lowerarm_r","lowerarm_r","neck_01","head","spine_02","spine_03"})
 {
 	PrimaryActorTick.bCanEverTick = false;
 	bUseControllerRotationYaw = false;
-
+	
 	PhysicsComponent = CreateDefaultSubobject<UPhysicalAnimationComponent>(FName("PhysicsComponent"));
 	NavigationInvoker = CreateDefaultSubobject<UNavigationInvokerComponent>(TEXT("NavigationInvoker"));
 
-	NavigationInvoker->SetGenerationRadii(1500.f, 2000.f);
+	NavigationInvoker->SetGenerationRadii(1000.f, 1500.f);
 	NavigationInvoker->SetAutoActivate(false);
 	
 	GetCharacterMovement()->MaxWalkSpeed = 300.f;
@@ -62,6 +62,9 @@ ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), C
 	R_SphereComp->SetupAttachment(GetMesh(), FName("attack_r"));
 	R_SphereComp->OnComponentBeginOverlap.AddDynamic(this,&ANS_ZombieBase::OnOverlapSphere);
 	R_SphereComp->SetGenerateOverlapEvents(false);
+	R_SphereComp->bDrawOnlyIfSelected = true;
+	R_SphereComp->SetHiddenInGame(false);
+	R_SphereComp->SetVisibility(true);
 	
 	L_SphereComp = CreateDefaultSubobject<USphereComponent>("LeftAttack");
 	L_SphereComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -69,6 +72,9 @@ ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), C
 	L_SphereComp->OnComponentBeginOverlap.AddDynamic(this,&ANS_ZombieBase::OnOverlapSphere);
 	L_SphereComp->SetGenerateOverlapEvents(false);
 	
+	L_SphereComp->bDrawOnlyIfSelected = true;
+	L_SphereComp->SetHiddenInGame(false);
+	L_SphereComp->SetVisibility(true);
 	// bIsActive의 초기값은 false로 설정해서 처음부터 캐릭터가 활성화 거리 밖에있으면 안보이도록 설정
 	bIsActive = false;
 }
@@ -76,26 +82,28 @@ ANS_ZombieBase::ANS_ZombieBase() : MaxHealth(100.f), CurrentHealth(MaxHealth), C
 void ANS_ZombieBase::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// 멀티플레이에서 초기 상태를 명확히 설정
-	bIsActive = false;
-	SetActive_Multicast(false);
-	SetState(CurrentState);
-
-	// 멀티플레이에서 메쉬 초기화 지연 실행 (네트워크 동기화 보장)
-	if (GetWorld())
-	{
-		FTimerHandle InitMeshTimer;
-		GetWorld()->GetTimerManager().SetTimer(InitMeshTimer, [this]()
-		{
-			ForceUpdateMeshVisibility_Multicast(bIsActive);
-		}, 0.1f, false);
-	}
 	
+	//컴포넌트 캐싱
+	CacheComponents();
+	//물리 초기화
+	InitializePhysics();
+	// 멀티플레이에서 초기 상태를 명확히 설정
+	CurrentState = EZombieState::IDLE;
+	SetActive(bIsActive);
+
+	//루트모션 활성화.
 	GetMesh()->GetAnimInstance()->RootMotionMode = ERootMotionMode::RootMotionFromEverything;
 	
-	InitializePhysics();
-
+	// // 멀티플레이에서 메쉬 초기화 지연 실행 (네트워크 동기화 보장)
+	// if (GetWorld())
+	// {
+	// 	FTimerHandle InitMeshTimer;
+	// 	GetWorld()->GetTimerManager().SetTimer(InitMeshTimer, [this]()
+	// 	{
+	// 		ForceUpdateMeshVisibility_Multicast(bIsActive);
+	// 	}, 0.1f, false);
+	// }
+	
 	if (!Controller)
 	{
 		// AIController를 스폰
@@ -107,27 +115,19 @@ void ANS_ZombieBase::BeginPlay()
 			SpawnedController->Possess(this); // 이 캐릭터를 Possess
 		}
 	}
-	// 서버라면 AIController의 틱도 비활성화합니다.
-	if (HasAuthority())
-	{
-		if (AAIController* AIController = Cast<AAIController>(GetController()))
-		{
-			AIController->SetActorTickEnabled(false);
-			// 비헤이비어 트리가 있다면 여기서 Pause 또는 초기 상태로 리셋하는 로직 추가 가능
-			AIController->GetBrainComponent()->PauseLogic("Reason");
-		}
-	}
 }
 
-void ANS_ZombieBase::BeginDestroy()
+void ANS_ZombieBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	if (GetWorld())
-	{
-		GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
-		GetWorldTimerManager().ClearTimer(HitTimer);
-	}
-	Super::BeginDestroy();
+	Super::EndPlay(EndPlayReason);
+	GetWorldTimerManager().ClearAllTimersForObject(this);
 }
+
+void ANS_ZombieBase::CacheComponents()
+{
+	GetComponents(Components);
+}
+
 
 void ANS_ZombieBase::Multicast_PlayMontage_Implementation(UAnimMontage* MontageToPlay)
 {
@@ -136,7 +136,6 @@ void ANS_ZombieBase::Multicast_PlayMontage_Implementation(UAnimMontage* MontageT
 		PlayAnimMontage(MontageToPlay,1.f);
 	}
 }
-
 
 void ANS_ZombieBase::OnOverlapSphere(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
                                      UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -149,34 +148,37 @@ void ANS_ZombieBase::OnOverlapSphere(UPrimitiveComponent* OverlappedComp, AActor
 	}
 }
 
-void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
+void ANS_ZombieBase::SetActive(bool NewIsActive)
 {
-	bIsActive = setActive;
+	if (!HasAuthority())
+	{
+		Server_SetActive(NewIsActive);
+	}
+	bIsActive = NewIsActive;
+	
+	OnRep_bIsActive();
+}
 
+void ANS_ZombieBase::Server_SetActive_Implementation(bool NewIsActive)
+{
+	SetActive(NewIsActive);
+}
+
+void ANS_ZombieBase::OnRep_bIsActive()
+{
 	if (bIsActive) // 활성화 상태로 전환 (true)
 	{
 		if (NavigationInvoker)
 		{
 			NavigationInvoker->Activate(true);
 		}
-
-		// 메쉬 가시성 설정 (멀티플레이 호환)
-		SetActorHiddenInGame(false);
-		GetMesh()->SetVisibility(true, true);
-		GetMesh()->SetHiddenInGame(false, true); // 추가: 명시적으로 메쉬 표시
-
-		// 충돌 활성화
-		SetActorEnableCollision(true);
-
-		// 액터 틱 활성화
-		SetActorTickEnabled(true);
-
+		
 		// 스켈레탈 메쉬 컴포넌트만 선택적으로 활성화 (성능 최적화)
 		if (USkeletalMeshComponent* MeshComp = GetMesh())
 		{
 			MeshComp->SetComponentTickEnabled(true);
-			MeshComp->SetVisibility(true, true);
-			MeshComp->SetHiddenInGame(false, true);
+			MeshComp->SetVisibility(true, false);
+			MeshComp->SetHiddenInGame(false, false);
 
 			// 애니메이션 인스턴스 활성화
 			if (UAnimInstance* AnimInst = MeshComp->GetAnimInstance())
@@ -186,21 +188,13 @@ void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 		}
 
 		// 필수 컴포넌트들만 선택적으로 활성화
-		TArray<UActorComponent*> Components;
-		GetComponents(Components);
 		for (UActorComponent* Component : Components)
 		{
-			// 스켈레탈 메쉬, 콜리전, AI 관련 컴포넌트만 활성화
-			if (Component->IsA<USkeletalMeshComponent>() ||
-				Component->IsA<UCapsuleComponent>() ||
-				Component->IsA<USphereComponent>() ||
-				Component->GetName().Contains(TEXT("AI")) ||
-				Component->GetName().Contains(TEXT("Navigation")))
-			{
-				Component->SetComponentTickEnabled(true);
-			}
+			if (Component == GetMesh()|| Component->IsA<USphereComponent>()) continue;
+			Component->SetComponentTickEnabled(true);
 		}
-
+		
+		
 		// AI 컨트롤러 확인 및 재생성 로직
 		if (HasAuthority())
 		{
@@ -254,12 +248,12 @@ void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 		GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
 
 		// 메쉬 숨김 (멀티플레이 호환)
-		SetActorHiddenInGame(true);
+		// SetActorHiddenInGame(true);
 		GetMesh()->SetVisibility(false, true);
 		GetMesh()->SetHiddenInGame(true, true); // 추가: 명시적으로 메쉬 숨김
 
 		// 충돌 비활성화
-		SetActorEnableCollision(false);
+		SetActorEnableCollision(true);
 
 		// 액터 틱 비활성화 (단, 렌더링은 유지)
 		SetActorTickEnabled(false);
@@ -279,22 +273,13 @@ void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 		}
 
 		// 필수가 아닌 컴포넌트들만 비활성화
-		TArray<UActorComponent*> Components;
-		GetComponents(Components);
 		for (UActorComponent* Component : Components)
 		{
-			// 스켈레탈 메쉬 컴포넌트는 이미 위에서 처리했으므로 제외
-			if (!Component->IsA<USkeletalMeshComponent>())
+			if (Component->IsA<USkeletalMeshComponent>())
 			{
-				// AI, 네비게이션, 콜리전 관련 컴포넌트만 비활성화
-				if (Component->IsA<USphereComponent>() ||
-					Component->GetName().Contains(TEXT("AI")) ||
-					Component->GetName().Contains(TEXT("Navigation")) ||
-					Component->GetName().Contains(TEXT("Collision")))
-				{
-					Component->SetComponentTickEnabled(false);
-				}
+				continue;
 			}
+			Component->SetComponentTickEnabled(false);
 		}
 
 		// AI 컨트롤러가 있다면, 그 컨트롤러의 틱도 비활성화합니다.
@@ -317,29 +302,26 @@ void ANS_ZombieBase::SetActive_Multicast_Implementation(bool setActive)
 				
 			}
 		}
-		UE_LOG(LogTemp, Warning, TEXT("Zombie %s is now fully INACTIVE."), *GetName());
+
 	}
 
 	// 멀티플레이에서 메쉬 가시성 강제 업데이트
-	ForceUpdateMeshVisibility_Multicast(bIsActive);
+	// ForceUpdateMeshVisibility_Multicast(bIsActive);
 }
 
 // 메쉬 가시성 강제 업데이트 함수 (멀티플레이 문제 해결용)
-void ANS_ZombieBase::ForceUpdateMeshVisibility_Multicast_Implementation(bool bVisible)
-{
-	if (USkeletalMeshComponent* MeshComp = GetMesh())
-	{
-		// 모든 클라이언트에서 메쉬 가시성 강제 업데이트
-		MeshComp->SetVisibility(bVisible, true);
-		MeshComp->SetHiddenInGame(!bVisible, true);
-
-		// 렌더링 상태 강제 업데이트
-		MeshComp->MarkRenderStateDirty();
-
-		UE_LOG(LogTemp, Verbose, TEXT("[ForceUpdateMeshVisibility] 좀비 %s 메쉬 가시성: %s"),
-			*GetName(), bVisible ? TEXT("보임") : TEXT("숨김"));
-	}
-}
+// void ANS_ZombieBase::ForceUpdateMeshVisibility_Multicast_Implementation(bool bVisible)
+// {
+// 	if (USkeletalMeshComponent* MeshComp = GetMesh())
+// 	{
+// 		// 모든 클라이언트에서 메쉬 가시성 강제 업데이트
+// 		MeshComp->SetVisibility(bVisible, true);
+// 		MeshComp->SetHiddenInGame(!bVisible, true);
+//
+// 		// 렌더링 상태 강제 업데이트
+// 		MeshComp->MarkRenderStateDirty();
+// 	}
+// }
 
 float ANS_ZombieBase::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
                                  class AController* EventInstigator, AActor* DamageCauser)
@@ -399,28 +381,11 @@ void ANS_ZombieBase::ApplyPhysics_Implementation(FName Bone, FVector Impulse)
 	if (SafeBones.Contains(Bone))
 	{
 		USkeletalMeshComponent* MeshComp = GetMesh();
-		// FBodyInstance* BodyInstance = MeshComp->GetBodyInstance(Bone);
-		// if (BodyInstance)
-		// {
-		// 	BodyInstance->SetInstanceSimulatePhysics(true);
-		// 	BodyInstance->PhysicsBlendWeight = 1.f;
-		// 	BodyInstance->AddImpulse(Impulse,true);
-		// }
+
 		GetMesh()->SetAllBodiesBelowSimulatePhysics(Bone,true,true);
 		GetMesh()->SetAllBodiesBelowPhysicsBlendWeight(Bone, 1.f, false);
 	
 		GetMesh()->AddImpulse(Impulse, Bone, false);
-
-		// if (HitTimers.Contains(Bone))
-		// {
-		// 	GetWorldTimerManager().ClearTimer(HitTimers[Bone]);
-		// }
-
-		// FTimerHandle& NewTimer = HitTimers.FindOrAdd(Bone);
-		// GetWorldTimerManager().SetTimer(NewTimer, [this, Bone]()
-		// {
-		// 	ResetPhysics(Bone);
-		// }, 1.f, false);
 	}
 }
 
@@ -469,9 +434,9 @@ void ANS_ZombieBase::OnDeadState()
 		bIsDead = true;
 		Die_Multicast();
 	}
-
 	// 사운드 타이머핸들 초기화
 	GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
+	GetWorldTimerManager().ClearTimer(HitTimer);
 }
 
 void ANS_ZombieBase::OnFrozenState()
@@ -522,14 +487,19 @@ void ANS_ZombieBase::ScheduleSound(USoundCue* SoundCue)
 		return;
 	}
 	
+	TWeakObjectPtr<ANS_ZombieBase> WeakThis(this);
+	
 	float RandomTime = FMath::FRandRange(5.f,8.f);
-	GetWorldTimerManager().SetTimer(AmbientSoundTimer,[this, SoundCue]()
+	GetWorldTimerManager().SetTimer(AmbientSoundTimer,[WeakThis, SoundCue]()
 	{
-		float PlayPercent = 0.5f;
-		float ActualPercent = FMath::FRandRange(0.0f, 1.0f);
-		if (PlayPercent > ActualPercent)
+		if (WeakThis.IsValid())
 		{
-			Server_PlaySound(SoundCue);
+			float PlayPercent = 0.5f;
+			float ActualPercent = FMath::FRandRange(0.0f, 1.0f);
+			if (PlayPercent > ActualPercent)
+			{
+				WeakThis->Multicast_PlaySound(SoundCue);
+			}
 		}
 	}, RandomTime, true);
 }
@@ -563,8 +533,7 @@ void ANS_ZombieBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(ANS_ZombieBase, CurrentHealth);
 	DOREPLIFETIME(ANS_ZombieBase, CurrentAttackType);
 	DOREPLIFETIME(ANS_ZombieBase, CurrentState);
-	DOREPLIFETIME(ANS_ZombieBase, bGetHit);
-	DOREPLIFETIME(ANS_ZombieBase, bIsGotHit); // 누락된 속성 추가
+	DOREPLIFETIME(ANS_ZombieBase, bIsDead);
 }
 
 void ANS_ZombieBase::InitializePhysics()
@@ -589,23 +558,23 @@ void ANS_ZombieBase::InitializePhysics()
 
 void ANS_ZombieBase::SetState(EZombieState NewState)
 {
+
+	if (!HasAuthority())
+	{
+		Server_SetState(NewState);
+	}
 	if (CurrentState == NewState) return;
+
+	CurrentState = NewState;
+
+	OnStateChanged(CurrentState);
 	
-	GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
-	
-	if (HasAuthority())
-	{
-		CurrentState = NewState;
-		OnStateChanged(CurrentState);
-	}
-	else
-	{
-		Server_SetState(CurrentState);
-	}
 }
 
 void ANS_ZombieBase::OnStateChanged(EZombieState State)
 {
+	GetWorldTimerManager().ClearTimer(AmbientSoundTimer);
+	
 	switch (State)
 	{
 	case EZombieState::IDLE:
@@ -637,6 +606,11 @@ void ANS_ZombieBase::OnStateChanged(EZombieState State)
 	}
 }
 
+void ANS_ZombieBase::OnRep_CurrentState()
+{
+	OnStateChanged(CurrentState);
+}
+
 void ANS_ZombieBase::SetAttackType(EZombieAttackType NewAttackType)
 {
 	if (HasAuthority())
@@ -650,33 +624,10 @@ void ANS_ZombieBase::SetAttackType(EZombieAttackType NewAttackType)
 }
 
 
-// void ANS_ZombieBase::MontagePlay(ANS_AIController* NSController, UAnimMontage* MontageToPlay)
-// {
-// 	if (!NSController || !MontageToPlay) return;
-// 	NSController->PauseBT();
-// 	
-// 	float Duration = MontageToPlay->GetPlayLength();
-// 	GetMesh()->GetAnimInstance()->Montage_Play(MontageToPlay);
-// 	
-// 	FTimerDelegate MontageDelegate;
-// 	MontageDelegate.BindUFunction(this, FName("OnEndMontagePlay"), NSController);
-// 	GetWorldTimerManager().SetTimer(MontageTimerHandle,MontageDelegate, Duration,false);
-// }
-//
-// void ANS_ZombieBase::OnEndMontagePlay(ANS_AIController* NSController)
-// {
-// 	if (NSController)
-// 	{
-// 		NSController->ResumeBT();
-// 	}
-// }
 
 void ANS_ZombieBase::Server_SetState_Implementation(EZombieState NewState)
 {
-	if (CurrentState == NewState) return;
-
-	CurrentState = NewState;
-	OnStateChanged(CurrentState);
+	SetState(NewState);
 }
 
 void ANS_ZombieBase::Server_SetAttackType_Implementation(EZombieAttackType NewAttackType)

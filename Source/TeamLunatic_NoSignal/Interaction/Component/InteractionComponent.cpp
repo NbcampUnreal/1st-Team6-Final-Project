@@ -67,6 +67,7 @@ FRotator UInteractionComponent::GetViewRotation() const
 	}
 	return GetOwner()->GetActorRotation();
 }
+
 // 상호작용 대상 감지 (라인 트레이스 사용)
 void UInteractionComponent::PerformInteractionCheck()
 {
@@ -159,6 +160,7 @@ void UInteractionComponent::FoundInteractable(AActor* NewInteractable)
 	// 포커스 시작
 	TargetInteractable->BeginFocus();
 }
+
 // 상호작용 대상이 없는 경우 처리
 void UInteractionComponent::NoInteractableFound()
 {
@@ -207,33 +209,12 @@ void UInteractionComponent::BeginInteract()
 	if (const ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(GetOwner()))
 	{
 		// IsPickUp 플래그가 true이면 상호작용 안되도록 === 그러니까 한번 인터렉션동안은 아이템 1개만 줍을 수 있음
-		if (PlayerCharacter->IsPickUp)
+		if (PlayerCharacter->IsPickUp || PlayerCharacter->IsChangeAnim)
 		{
-			// 안전장치로 IsPickUp이 true인 상태로 2초가 지나면 자동으로 false로 변경
-			ANS_PlayerCharacterBase* MutablePlayerCharacter = const_cast<ANS_PlayerCharacterBase*>(PlayerCharacter);
-			if (MutablePlayerCharacter)
-			{
-				// 이미 타이머가 설정되어 있는지 확인
-				static FTimerHandle SafetyTimerHandle;
-				if (!GetWorld()->GetTimerManager().IsTimerActive(SafetyTimerHandle))
-				{
-					GetWorld()->GetTimerManager().SetTimer(
-						SafetyTimerHandle,
-						FTimerDelegate::CreateLambda([MutablePlayerCharacter]() {
-							if (MutablePlayerCharacter->IsPickUp)
-							{
-								MutablePlayerCharacter->IsPickUp = false;
-							}
-						}),
-						2.0f,
-						false
-					);
-				}
-			}
-			
 			return;
 		}
 	}
+	
 	// 대상 감지 시도
 	PerformInteractionCheck();
 
@@ -255,6 +236,7 @@ void UInteractionComponent::BeginInteract()
 		}
 	}
 }
+
 // 상호작용 종료
 void UInteractionComponent::EndInteract()
 {
@@ -267,6 +249,7 @@ void UInteractionComponent::EndInteract()
 
 	HideInteractionWidgetSafely();
 }
+
 // 실제 상호작용 실행
 void UInteractionComponent::Interact()
 {

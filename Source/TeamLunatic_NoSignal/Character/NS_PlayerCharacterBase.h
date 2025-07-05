@@ -72,25 +72,17 @@ public:
 
 
 // =========================================퀵슬롯 관련 변수 및 함수들=================================================
-	// 퀵슬롯 선택 함수들
-	UFUNCTION()
-	void QuickSlot1Selected();
-
-	UFUNCTION()
-	void QuickSlot2Selected();
-
-	UFUNCTION()
-	void QuickSlot3Selected();
-
-	UFUNCTION()
-	void QuickSlot4Selected();
-
-	UFUNCTION()
-	void QuickSlot5Selected();
+	// 현재 퀵슬롯 인덱스로 1번 슬롯부터 시작
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "QuickSlot", meta = (AllowPrivateAccess = "true"))
+	int32 CurrentQuickSlotIndex = 0;
 
 	// 키 입력에 따른 퀵슬롯 선택
 	UFUNCTION(BlueprintCallable, Category = "QuickSlot")
 	void HandleQuickSlotKeyInput(int32 KeyNumber);
+
+	// 퀵슬롯 입력 처리가 가능한지 확인 (중복 선택 방지)
+	UFUNCTION(BlueprintCallable, Category = "QuickSlot")
+	bool CanHandleQuickSlotInput(int32 SlotIndex);
 
 	// 서버에 퀵슬롯 사용 요청
 	UFUNCTION(BlueprintCallable, Server, Reliable)
@@ -103,10 +95,6 @@ public:
 	// 퀵슬롯 컴포넌트에 접근
 	UFUNCTION(BlueprintCallable, Category = "QuickSlot")
 	UNS_QuickSlotComponent* GetQuickSlotComponent() const { return QuickSlotComponent; }
-
-	// 현재 퀵슬롯 인덱스로 1번 슬롯부터 시작
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "QuickSlot", meta = (AllowPrivateAccess = "true"))
-	int32 CurrentQuickSlotIndex = 0;
 
 	// 현재 선택된 퀵슬롯 인덱스 반환 ====== 노티파이에서 호출
 	UFUNCTION(BlueprintCallable, Category = "QuickSlot")
@@ -154,7 +142,7 @@ public:
 	
 
 	// 스탯 컴포넌트
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "Components")
 	UNS_StatusComponent* StatusComp;
 
 	// 인터렉션 컴포넌트
@@ -259,7 +247,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
 	bool NowFire = false;
 	// 달리고있는 상태인지 확인 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_IsSprint, Category = "Replicated Variables")
 	bool IsSprint = false;
 	// 재장전 실행 변수
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
@@ -361,10 +349,12 @@ public:
 	//////////////CharacterMovmentComponent를 사용안함////////////////
 
 	// 달리기
-	UFUNCTION(server, Reliable)
-	void StartSprint_Server(const FInputActionValue& Value);
+	void StartSprint(const FInputActionValue& Value);
+	void StopSprint(const FInputActionValue& Value);
 	UFUNCTION(Server, Reliable)
-	void StopSprint_Server(const FInputActionValue& Value);
+	void Server_StartSprint(const FInputActionValue& Value);
+	UFUNCTION(Server, Reliable)
+	void Server_StopSprint(const FInputActionValue& Value);
 
 	// 아이템 줍기
 	UFUNCTION(Server, Reliable)
@@ -373,12 +363,6 @@ public:
 	// 아이템 버리기
 	UFUNCTION(Server, Reliable)
 	void DropItem_Server(UNS_InventoryBaseItem* ItemToDrop, int32 QuantityToDrop);
-
-	// 조준 
-	UFUNCTION(Server, Reliable)
-	void StartAimingAction_Server(const FInputActionValue& Value);
-	UFUNCTION(Server, Reliable)
-	void StopAimingAction_Server(const FInputActionValue& Value);
 	//////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
 
 	// 데미지 받으면 모든 클라이언트에 멀티캐스트
@@ -399,6 +383,15 @@ public:
 	// 현재 캐릭터가 바라보는 카메라 Yaw값 업데이트 함수
 	UFUNCTION(NetMulticast, Unreliable)
 	void UpdateAim_Multicast(float Yaw, float Pitch);
+
+	// 새로운 조준 업데이트 함수
+	void RequestUpdateAim();
+	FTimerHandle AimUpdateTimerHandle;
+	float LastSentCamYaw = 0.f;
+	float LastSentCamPitch = 0.f;
+
+	UFUNCTION()
+	void OnRep_IsSprint();
 	
 	// 헤드램프 켜고 끄는 함수
 	UFUNCTION(BlueprintCallable, Category = "Flashlight")
@@ -423,17 +416,24 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Animation")
 	void OnTurnInPlaceFinished();
 
-	// Turn In Place 상태를 서버에 업데이트하는 함수
-	UFUNCTION(Server, unreliable)
-	void Server_UpdateTurnInPlaceState(bool bInTurnLeft, bool bInTurnRight, bool bInUseControllerDesiredRotation);
-	// Turn In Place 상태를 모든 클라이언트에 멀티캐스트하는 함수
-	UFUNCTION(NetMulticast, unreliable)
-	void Multicast_UpdateTurnInPlaceState(bool bInTurnLeft, bool bInTurnRight, bool bInUseControllerDesiredRotation);
+	// 클라이언트가 서버에 회전 시작을 요청
+	UFUNCTION(Server, Reliable)
+	void Server_StartTurn(bool bInTurnLeft, bool bInTurnRight);
+
+	// 클라이언트가 서버에 회전 완료를 보고
+	UFUNCTION(Server, Reliable)
+	void Server_FinishTurn();
+
+	// 서버가 모든 클라이언트에 회전 상태를 전파
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_UpdateTurnRotation(bool bIsTurning);
+
 
 	// Yaw 리셋 관련 함수
 	void UpdateYawReset(float DeltaTime);
 	// ======================== Turn In Place 끝! =================================
 
+	//  ====================================== 맵 지도 관 =============================================== 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OpenLevelMap")
 	TSubclassOf<UNS_OpenLevelMap> OpenLevelMapWidgetClass;
 	
@@ -441,7 +441,13 @@ public:
 	UNS_OpenLevelMap* CurrentOpenMapWidget;
 
 	void OpenMapAction(const FInputActionValue& Value);
-	
+	// =========================================맵 관련 끝 ======================================================
+
+	// ========================================== PcikUp 사운드 ================================================ 
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multicast_PlayPickupSound(USoundBase* SoundToPlay);
+	// ========================================== PcikUp 사운드 끝============================================== 
+
 	//환각 관련
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PostProcess")
 	UMaterialInterface* HallucinationMaterial;
@@ -455,8 +461,4 @@ public:
 	// 사운드 멀티캐스트
 	UFUNCTION(NetMulticast, Reliable)
 	void PlaySoundOnCharacter_Multicast(USoundBase* SoundToPlay);
-	
-	// 캐릭터가 현재 조준 중인지 확인하는 함수
-	UFUNCTION(BlueprintCallable, Category = "Character")
-	bool IsAimingChange() const { return IsAiming; }
 };

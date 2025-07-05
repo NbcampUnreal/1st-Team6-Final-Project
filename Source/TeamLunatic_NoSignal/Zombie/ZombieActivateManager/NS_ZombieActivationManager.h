@@ -22,7 +22,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie Activation")
-	float ActivationDistance = 3000.f; // 활성화 반경
+	float ActivationDistance = 4000.f; // 활성화 반경
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie Activation")
 	float UpdateInterval = 2.0f; // 업데이트 주기 (초) - 최적화를 위해 증가
