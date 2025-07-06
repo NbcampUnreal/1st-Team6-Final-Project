@@ -620,17 +620,22 @@ void ANS_PlayerCharacterBase::Multicast_TakeDmage_Implementation(float DamageAmo
 
 void ANS_PlayerCharacterBase::PlayDeath_Server_Implementation()
 {
+    if (EquipedWeaponComp)
+    {
+        EquipedWeaponComp->UnequipWeapon();
+    }
+
     if (UWorld* World = GetWorld())
     {
         ANS_GameModeBase* BaseGameMode = Cast<ANS_GameModeBase>(UGameplayStatics::GetGameMode(World));
         if (BaseGameMode)
-        {
+        { 
             UE_LOG(LogTemp, Log, TEXT("[%s] GameMode('%s') 가져오기 및 캐스팅 성공."), *this->GetName(), *BaseGameMode->GetName());
 
             BaseGameMode->OnPlayerCharacterDied(this);
 
             if (AController* OwningController = GetController())
-            {
+            { 
                 if (ANS_MainGamePlayerState* PS = Cast<ANS_MainGamePlayerState>(OwningController->PlayerState))
                 {
                     PS->bIsAlive = false;

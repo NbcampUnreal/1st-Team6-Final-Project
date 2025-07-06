@@ -215,36 +215,34 @@ void UNS_EquipedWeaponComponent::Server_UnequipWeapon_Implementation()
 
 void UNS_EquipedWeaponComponent::Multicast_UnequipWeapon_Implementation()
 {
-    if (!OwnerCharacter || !CurrentWeapon)
+    if (!OwnerCharacter)
     {
-        UE_LOG(LogTemp, Warning, TEXT("[Unequip] 캐릭터 또는 무기 없음"));
+        UE_LOG(LogTemp, Warning, TEXT("[Unequip] 캐릭터 없음"));
         return;
     }
 
-    if (GetOwnerRole() == ROLE_Authority)
+    if (GetOwnerRole() == ROLE_Authority && CurrentWeapon)
     {
         if (auto* RangedWeapon = Cast<ANS_BaseRangedWeapon>(CurrentWeapon))
         {
             UE_LOG(LogTemp, Warning, TEXT("[Unequip] 현재 무기 탄약: %d"), RangedWeapon->CurrentAmmo);
-
             RangedWeapon->UpdateAmmoToInventory();
         }
     }
 
-    // 장착 중인 무기 파괴
+    // 캐릭터에 부착된 모든 BaseWeapon 액터를 찾아서 제거합니다.
     TArray<AActor*> AttachedWeapons;
     OwnerCharacter->GetAttachedActors(AttachedWeapons);
 
     for (AActor* Attached : AttachedWeapons)
     {
-        if (Attached == CurrentWeapon)
+        if (Attached && Attached->IsA<ANS_BaseWeapon>())
         {
             Attached->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
             Attached->Destroy();
+			UE_LOG(LogTemp, Warning, TEXT("[Unequip] 부착된 무기 제거: %s"), *Attached->GetName());
         }
     }
-
-    UE_LOG(LogTemp, Warning, TEXT("[Unequip] 무기 해제됨: %s"), *CurrentWeapon->GetName());
 
     // 상태 초기화
     CurrentWeapon = nullptr;
