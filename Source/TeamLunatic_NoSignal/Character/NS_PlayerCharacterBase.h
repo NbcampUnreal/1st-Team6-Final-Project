@@ -17,7 +17,7 @@ class UInputAction;
 class UCameraComponent;
 class UNS_StatusComponent;
 class UNS_InventoryBaseItem;
-class UInventoryComponent;
+class UNS_InventoryComponent;
 class ANS_BaseWeapon;
 class UNS_EquipedWeaponComponent;
 class UNS_QuickSlotPanel;
@@ -45,7 +45,7 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
 public:
 	ANS_PlayerCharacterBase();
 
-	FORCEINLINE UInventoryComponent* GetInventory() const { return PlayerInventory; };
+	FORCEINLINE UNS_InventoryComponent* GetInventory() const { return PlayerInventory; };
 
 	UInteractionComponent* GetInteractionComponent() const { return InteractionComponent; }
 
@@ -150,7 +150,7 @@ public:
 	UInteractionComponent* InteractionComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory", Replicated)
-	UInventoryComponent* PlayerInventory;
+	UNS_InventoryComponent* PlayerInventory;
 
 	UPROPERTY()
 	UNS_QuickSlotPanel* QuickSlotPanel;

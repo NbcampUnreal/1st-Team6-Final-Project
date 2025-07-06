@@ -1,5 +1,5 @@
 #include "Item/NS_BaseItem.h"
-#include "Inventory/InventoryComponent.h"
+#include "Character/Components/NS_InventoryComponent.h"
 
 ANS_BaseItem::ANS_BaseItem() : bisCopy(false), bisPickup(false)
 {

@@ -3,7 +3,7 @@
 #include "EnhancedInputSubsystems.H"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Inventory/InventoryComponent.h"
+#include "Character/Components/NS_InventoryComponent.h"
 #include "Item/NS_InventoryBaseItem.h"
 #include "Character/NS_PlayerController.h"
 #include "Components/NS_EquipedWeaponComponent.h"
@@ -17,7 +17,7 @@
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
 #include <Net/UnrealNetwork.h>
-#include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
+#include "Character/Components//NS_QuickSlotComponent.h"
 #include "Item/NS_BaseWeapon.h"
 #include "UI/NS_UIManager.h"
 #include "UI/NS_PlayerHUD.h"
@@ -70,7 +70,7 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
 
     BaseEyeHeight = 74.0f;
     // 인벤토리
-    PlayerInventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("PlayerInventory"));
+    PlayerInventory = CreateDefaultSubobject<UNS_InventoryComponent>(TEXT("PlayerInventory"));
     SetReplicates(true);
     PlayerInventory->SetSlotsCapacity(20);
     PlayerInventory->SetWeightCapacity(50.0f);

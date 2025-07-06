@@ -285,7 +285,7 @@ void UNS_EquipedWeaponComponent::Multicast_Reload_Implementation()
     const int32 NeededAmmo = RangedWeapon->MaxAmmo - RangedWeapon->CurrentAmmo;
 
     // 인벤토리에서 탄약 찾기
-    if (auto* Inventory = OwnerCharacter->FindComponentByClass<UInventoryComponent>())
+    if (auto* Inventory = OwnerCharacter->FindComponentByClass<UNS_InventoryComponent>())
     {
         bool bReloaded = false;
 

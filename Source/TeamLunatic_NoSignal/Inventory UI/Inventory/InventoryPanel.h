@@ -10,7 +10,7 @@
 
 
 class ANS_PlayerCharacterBase;
-class UInventoryComponent;
+class UNS_InventoryComponent;
 class UInventoryItemSlot;
 
 UCLASS()
@@ -36,7 +36,7 @@ public:
 	ANS_PlayerCharacterBase* PlayerCharacter;
 
 	UPROPERTY()
-	UInventoryComponent* InventoryReference;
+	UNS_InventoryComponent* InventoryReference;
 
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UInventoryItemSlot> InventorySlotClass;

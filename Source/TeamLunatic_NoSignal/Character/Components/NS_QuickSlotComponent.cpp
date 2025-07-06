@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
+#include "Character/Components/NS_QuickSlotComponent.h"
 #include <Net/UnrealNetwork.h>
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Item/NS_InventoryBaseItem.h"

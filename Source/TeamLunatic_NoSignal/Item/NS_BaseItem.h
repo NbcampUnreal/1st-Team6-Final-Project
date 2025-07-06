@@ -7,7 +7,7 @@
 #include "Interaction/InteractionInterface.h"
 #include "NS_BaseItem.generated.h"
 
-class UInventoryComponent;
+class UNS_InventoryComponent;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_BaseItem : public AActor, public IInteractionInterface
@@ -17,7 +17,7 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_BaseItem : public AActor, public IInteraction
 public:	
 	ANS_BaseItem();
 
-	UInventoryComponent* OwingInventory;
+	UNS_InventoryComponent* OwingInventory;
 
 	virtual void BeginPlay() override;
 

@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "Inventory/InventoryComponent.h"
+#include "Character/Components/NS_InventoryComponent.h"
 #include "Engine/DataTable.h"
 #include "Item/NS_ItemDataStruct.h"
 #include "NS_InventoryBaseItem.generated.h"
@@ -19,7 +19,7 @@ public:
 	UNS_InventoryBaseItem();
 
 	UPROPERTY(Replicated)
-	UInventoryComponent* OwingInventory;
+	UNS_InventoryComponent* OwingInventory;
 
 	AActor* OwningActor = nullptr;
 

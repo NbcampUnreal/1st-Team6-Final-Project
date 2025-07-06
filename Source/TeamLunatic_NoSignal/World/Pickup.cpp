@@ -4,10 +4,10 @@
 #include "Item/NS_BaseWeapon.h"
 #include "GameFlow/NS_GameState.h"
 #include "Item/NS_InventoryBaseItem.h"
-#include "Inventory/InventoryComponent.h"
+#include "Character/Components/NS_InventoryComponent.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Item/NS_BaseMagazine.h"
-#include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
+#include "Character/Components/NS_QuickSlotComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFlow/NS_GameInstance.h"
 #include "UI/NS_UIManager.h"
@@ -169,7 +169,7 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 		{
 			return;
 		}
-		if (UInventoryComponent* PlayerInventory = Taker->GetInventory())
+		if (UNS_InventoryComponent* PlayerInventory = Taker->GetInventory())
 		{
 			// 인벤토리에 아이템 추가 시도
 			const FItemAddResult AddResult = PlayerInventory->HandleAddItem(ItemReference);

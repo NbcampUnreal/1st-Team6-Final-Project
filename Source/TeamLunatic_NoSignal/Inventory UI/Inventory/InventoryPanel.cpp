@@ -3,7 +3,7 @@
 
 #include "Inventory UI/Inventory/InventoryPanel.h"
 #include "Character/NS_PlayerCharacterBase.h"
-#include "Inventory/InventoryComponent.h"
+#include "Character/Components/NS_InventoryComponent.h"
 #include "Inventory UI/Inventory/InventoryItemSlot.h"
 #include "Inventory UI/Inventory/ItemDragDropOperation.h"
 #include "Item/NS_InventoryBaseItem.h"
