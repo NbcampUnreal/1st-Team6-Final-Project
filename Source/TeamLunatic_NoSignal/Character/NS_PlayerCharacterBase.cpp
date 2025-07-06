@@ -34,6 +34,7 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     bReplicates = true;
 
     DefaultWalkSpeed = 500.f;
+	CurrentWalkSpeed = DefaultWalkSpeed;
 
     SprintSpeedMultiplier = 1.5f;
 
@@ -115,6 +116,11 @@ void ANS_PlayerCharacterBase::BeginPlay()
     {
         GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed;
     }
+
+	if (PlayerInventory)
+	{
+		PlayerInventory->OnInventoryWeightUpdated.AddDynamic(this, &ANS_PlayerCharacterBase::OnInventoryWeightUpdated);
+	}
     
     // 기본 퀵슬롯는 1번부터 시작되도록 
     CurrentQuickSlotIndex = 0;
@@ -1242,11 +1248,11 @@ void ANS_PlayerCharacterBase::OnRep_IsSprint()
     {
         if (IsSprint)
         {
-            GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier * SpeedMultiAtStat;
+            GetCharacterMovement()->MaxWalkSpeed = CurrentWalkSpeed * SprintSpeedMultiplier;
         }
         else
-        {
-            GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SpeedMultiAtStat;
+        { 
+            GetCharacterMovement()->MaxWalkSpeed = CurrentWalkSpeed;
         }
     }
 }
@@ -1343,4 +1349,28 @@ void ANS_PlayerCharacterBase::Multicast_PlayPickupSound_Implementation(USoundBas
     {
         UGameplayStatics::PlaySoundAtLocation(this, SoundToPlay, GetActorLocation());
     }
+}
+
+void ANS_PlayerCharacterBase::OnInventoryWeightUpdated(float CurrentWeight, float WeightCapacity)
+{
+	if (GetCharacterMovement())
+	{
+		if (WeightCapacity > 0)
+		{
+			// 현재 무게와 최대 무게의 비율을 계산합니다. (0.0 ~ 1.0 사이 값)
+			float WeightRatio = FMath::Clamp(CurrentWeight / WeightCapacity, 0.0f, 1.0f);
+			// 무게 비율에 따라 속도 감소량을 계산합니다. 최대 30%까지 감소합니다.
+			float SpeedReduction = DefaultWalkSpeed * 0.3f * WeightRatio;
+			// 기본 속도에서 감소량을 빼서 새로운 속도를 계산하고, 정수로 변환합니다.
+			CurrentWalkSpeed = FMath::RoundToInt(DefaultWalkSpeed - SpeedReduction);
+		}
+		else
+		{
+			// 무게 용량이 0 이하면 기본 속도로 설정합니다.
+			CurrentWalkSpeed = DefaultWalkSpeed;
+		}
+
+		// 현재 상태(걷기/달리기)에 맞춰 속도를 즉시 적용합니다.
+		OnRep_IsSprint();
+	}
 }

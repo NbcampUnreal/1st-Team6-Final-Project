@@ -8,6 +8,7 @@
 #include "NS_InventoryComponent.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnInventoryUpdated);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnInventoryWeightUpdated, float, CurrentWeight, float, WeightCapacity);
 
 class UNS_InventoryBaseItem;
 
@@ -70,8 +71,9 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_InventoryComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
-public:	
+public:
 	FOnInventoryUpdated OnInventoryUpdated;
+	FOnInventoryWeightUpdated OnInventoryWeightUpdated;
 
 	void BroadcastInventoryUpdate();
 	void CleanUpZeroQuantityItems();

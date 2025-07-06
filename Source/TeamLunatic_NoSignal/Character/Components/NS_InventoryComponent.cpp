@@ -57,7 +57,8 @@ void UNS_InventoryComponent::BeginPlay()
 void UNS_InventoryComponent::BroadcastInventoryUpdate()
 {
 	UE_LOG(LogTemp, Warning, TEXT(" BroadcastInventoryUpdate() called"));
-	OnInventoryUpdated.Broadcast(); // 서버용 UI 갱신
+	OnInventoryUpdated.Broadcast();
+	OnInventoryWeightUpdated.Broadcast(InventoryTotalWeight, InventoryWeightCapacity);
 
 	// 클라이언트에게도 알림
 	if (AController* Controller = Cast<AController>(GetOwner()->GetInstigatorController()))
