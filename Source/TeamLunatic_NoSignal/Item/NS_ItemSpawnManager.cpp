@@ -132,7 +132,8 @@ void ANS_ItemSpawnManager::SpawnRandomItemAt(const FTransform& SpawnTransform)
 
         if (SelectedItemID == "9mm" || SelectedItemID == "5.56mm")
         {
-            QuantityToSpawn = 10;
+            const int32 RandomBullet = FMath::RandRange(5, 15);
+            QuantityToSpawn = RandomBullet;
         }
 
         SpawnedPickup->ItemQuantity = QuantityToSpawn;
