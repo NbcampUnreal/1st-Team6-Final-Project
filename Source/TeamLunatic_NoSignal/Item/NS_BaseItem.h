@@ -4,13 +4,13 @@
 #include "GameFramework/Actor.h"
 #include "NS_ItemDataStruct.h"
 #include "Engine/DataTable.h"
-#include "Interaction/InteractionInterface.h"
+#include "Character/Interface/NS_InteractionInterface.h"
 #include "NS_BaseItem.generated.h"
 
 class UNS_InventoryComponent;
 
 UCLASS()
-class TEAMLUNATIC_NOSIGNAL_API ANS_BaseItem : public AActor, public IInteractionInterface
+class TEAMLUNATIC_NOSIGNAL_API ANS_BaseItem : public AActor, public INS_InteractionInterface
 {
 	GENERATED_BODY()
 	

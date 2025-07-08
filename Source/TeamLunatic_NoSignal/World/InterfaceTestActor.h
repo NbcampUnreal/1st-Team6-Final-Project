@@ -4,11 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Interaction/InteractionInterface.h"
+#include "Character/Interface/NS_InteractionInterface.h"
 #include "InterfaceTestActor.generated.h"
 
 UCLASS()
-class TEAMLUNATIC_NOSIGNAL_API AInterfaceTestActor : public AActor, public IInteractionInterface
+class TEAMLUNATIC_NOSIGNAL_API AInterfaceTestActor : public AActor, public INS_InteractionInterface
 {
 	GENERATED_BODY()
 	

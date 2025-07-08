@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
-#include "Interaction/Component/InteractionComponent.h"
+#include "Character/Components/NS_InteractionComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/SpotLightComponent.h"
 #include "GameFlow/NS_GameModeBase.h"
@@ -53,7 +53,7 @@ public:
 
 	FORCEINLINE UNS_InventoryComponent* GetInventory() const { return PlayerInventory; };
 
-	UInteractionComponent* GetInteractionComponent() const { return InteractionComponent; }
+	UNS_InteractionComponent* GetInteractionComponent() const { return InteractionComponent; }
 
 	FORCEINLINE void SetAvailableAiming(bool bAvailable) { IsAvaliableAiming = bAvailable; };
 
@@ -150,7 +150,7 @@ public:
 
 	// 인터렉션 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interaction", meta = (AllowPrivateAccess = "true"))
-	UInteractionComponent* InteractionComponent;
+	UNS_InteractionComponent* InteractionComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory", Replicated)
 	UNS_InventoryComponent* PlayerInventory;

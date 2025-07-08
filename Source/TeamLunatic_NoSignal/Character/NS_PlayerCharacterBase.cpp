@@ -11,7 +11,7 @@
 #include "Item/NS_BaseRangedWeapon.h"
 #include "Character/ThrowActor/NS_ThrowActor.h"
 #include "Materials/MaterialInstanceDynamic.h"
-#include "Interaction/Component/InteractionComponent.h"
+#include "Character/Components/NS_InteractionComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "World/Pickup.h"
 #include "TimerManager.h"
@@ -65,7 +65,7 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     // 스탯 컴포넌트
     StatusComp = CreateDefaultSubobject<UNS_StatusComponent>(TEXT("StatusComponent"));
     // 상호작용 컴포넌트
-    InteractionComponent = CreateDefaultSubobject<UInteractionComponent>(TEXT("InteractionComponent"));
+    InteractionComponent = CreateDefaultSubobject<UNS_InteractionComponent>(TEXT("InteractionComponent"));
     // 장착 무기 컴포넌트
     EquipedWeaponComp = CreateDefaultSubobject<UNS_EquipedWeaponComponent>(TEXT("EquipedWeaponComponent"));
 
@@ -218,7 +218,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                 ToggleMenuAction,
                 ETriggerEvent::Started,
                 InteractionComponent,
-                &UInteractionComponent::ToggleMenu
+                &UNS_InteractionComponent::ToggleInventoryMenu
             );
         }
 
@@ -235,7 +235,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                  InteractAction,
                  ETriggerEvent::Completed,
                  InteractionComponent,
-                 &UInteractionComponent::EndInteract
+                 &UNS_InteractionComponent::EndInteract
              );
         }
 
@@ -565,7 +565,7 @@ void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputAct
         return;
     }
 
-    if (UInteractionComponent* InteractComp = FindComponentByClass<UInteractionComponent>())
+    if (UNS_InteractionComponent* InteractComp = FindComponentByClass<UNS_InteractionComponent>())
     {
         InteractComp->BeginInteract();
     }

@@ -1,7 +1,6 @@
 ﻿#include "NS_StatusComponent.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "TimerManager.h"
-#include "Kismet/GameplayStatics.h" // 이 파일에서 사용되지 않으므로, 게임플레이 스태틱이 사용되지 않으면 제거를 고려하십시오.
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 

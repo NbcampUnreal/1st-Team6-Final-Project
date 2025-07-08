@@ -3,13 +3,15 @@
 
 #include "Inventory UI/NS_InventoryHUD.h"
 #include "Inventory UI/NS_InventoryMainMenu.h"
-#include "Interaction/InteractionInterface.h"
+#include "Character/Interface/NS_InteractionInterface.h"
 #include "Inventory UI/Interaction/NS_InteractionWidget.h"
 
+// 생성자
 ANS_InventoryHUD::ANS_InventoryHUD()
 {
 }
 
+// 게임이 시작될 때 호출되는 함수
 void ANS_InventoryHUD::BeginPlay()
 {
 	Super::BeginPlay();
@@ -69,6 +71,7 @@ void ANS_InventoryHUD::BeginPlay()
 	}
 }
 
+// 메뉴를 표시하는 함수
 void ANS_InventoryHUD::DisplayMenu()
 {
 	if (InventoryMainMenuWidget)
@@ -78,6 +81,7 @@ void ANS_InventoryHUD::DisplayMenu()
 	}
 }
 
+// 메뉴를 숨기는 함수
 void ANS_InventoryHUD::HideMenu()
 {
 	if (InventoryMainMenuWidget)
@@ -87,7 +91,8 @@ void ANS_InventoryHUD::HideMenu()
 	}
 }
 
-void ANS_InventoryHUD::ToggleMenu()
+// 인벤토리 위젯을 여는 함수
+void ANS_InventoryHUD::OpenInventoryWidget()
 {
 	if (bIsMenuVisible)
 	{
@@ -107,6 +112,7 @@ void ANS_InventoryHUD::ToggleMenu()
 	}
 }
 
+// 상호작용 위젯을 표시하는 함수
 void ANS_InventoryHUD::ShowInteractionWidget()
 {
 	if (InteractionWidget)
@@ -115,6 +121,7 @@ void ANS_InventoryHUD::ShowInteractionWidget()
 	}
 }
 
+// 상호작용 위젯을 숨기는 함수
 void ANS_InventoryHUD::HideInteractionWidget()
 {
 	if (!IsValid(InteractionWidget))
@@ -127,6 +134,7 @@ void ANS_InventoryHUD::HideInteractionWidget()
 	UE_LOG(LogTemp, Warning, TEXT("[HUD] Interaction 위젯 숨김 처리 완료"));
 }
 
+// 상호작용 위젯을 업데이트하는 함수
 void ANS_InventoryHUD::UpdateInteractionWidget(const FInteractableData* InteractableData) const
 {
 	if (!InteractionWidget)
