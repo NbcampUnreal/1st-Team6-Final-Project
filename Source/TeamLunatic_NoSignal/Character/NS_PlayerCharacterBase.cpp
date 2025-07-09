@@ -337,7 +337,6 @@ float ANS_PlayerCharacterBase::TakeDamage(
         if (DamageSound)
         {
             PlaySoundOnCharacter_Multicast(DamageSound);
-            UE_LOG(LogTemp, Warning, TEXT("TakeDamage: 데미지 사운드 재생 - %s"), *GetName());
         }
 
         // 모든 클라이언트에 데미지 처리 결과 전파
@@ -629,8 +628,6 @@ void ANS_PlayerCharacterBase::PlayDeath_Server_Implementation()
         ANS_GameModeBase* BaseGameMode = Cast<ANS_GameModeBase>(UGameplayStatics::GetGameMode(World));
         if (BaseGameMode)
         { 
-            UE_LOG(LogTemp, Log, TEXT("[%s] GameMode('%s') 가져오기 및 캐스팅 성공."), *this->GetName(), *BaseGameMode->GetName());
-
             BaseGameMode->OnPlayerCharacterDied(this);
 
             if (AController* OwningController = GetController())
@@ -692,17 +689,12 @@ void ANS_PlayerCharacterBase::DropItem_Server_Implementation(UNS_InventoryBaseIt
         const int32 RemovedQuantity = InventoryComp->RemoveAmountOfItem(ItemToDrop, QuantityToDrop);
         if (RemovedQuantity <= 0)
         {
-            UE_LOG(LogTemp, Warning, TEXT("DropItem_Server: 제거할 수량이 0 이하입니다."));
             return;
         }
 
         APickup* Pickup = GetWorld()->SpawnActor<APickup>(APickup::StaticClass(), SpawnTransform, SpawnParams);
 
         Pickup->InitializeDrop(ItemToDrop, RemovedQuantity);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Item to drop was somehow null"));
     }
 }
 
@@ -743,7 +735,6 @@ void ANS_PlayerCharacterBase::Server_UseThrowableItem_Implementation(int32 Index
     if (!IsThrow)
     {
         IsThrow = true;  // 애니메이션 실행 상태 플래그
-        UE_LOG(LogTemp, Warning, TEXT("[Server_UseThrowableItem] 슬롯 %d 애니메이션 시작 준비"), Index);
     }
 }
 
@@ -762,7 +753,6 @@ void ANS_PlayerCharacterBase::HandleUseThrowableItem(int32 Index)
             if (WeaponComp->GetCurrentWeaponItem())
             {
                 WeaponComp->UnequipWeapon();
-                UE_LOG(LogTemp, Warning, TEXT("슬롯 비어 있음 - 무기 해제 (슬롯: %d)"), Index);
             }
         }
 
@@ -781,11 +771,9 @@ void ANS_PlayerCharacterBase::HandleUseThrowableItem(int32 Index)
             if (WeaponComp->GetCurrentWeaponItem())
             {
                 WeaponComp->UnequipWeapon();
-                UE_LOG(LogTemp, Warning, TEXT("아이템 소진으로 무기 해제됨 (슬롯: %d)"), Index);
             }
         }
     }
-    UE_LOG(LogTemp, Warning, TEXT("HandleUseThrowableItem 실행됨 - NetMode: %d"), GetNetMode());
     Client_NotifyInventoryUpdated();
 }
 
@@ -985,23 +973,9 @@ void ANS_PlayerCharacterBase::Server_UseInventoryItem_Implementation(FName ItemR
         if (Item && Item->ItemDataRowName == ItemRowName)
         {
             Item->OnUseItem(this);
-
-            // 아래 코드 제거 또는 주석 처리 - Pickup.cpp에서 처리하므로 중복 방지
-            /*
-            // 장비 아이템일 경우 퀵슬롯 자동 등록
-            if (Item->ItemType == EItemType::Equipment &&
-                Item->WeaponType != EWeaponType::Ammo &&
-                QuickSlotComponent)
-            {
-                QuickSlotComponent->AssignToFirstEmptySlot(Item);
-                UE_LOG(LogTemp, Warning, TEXT("[Server] 퀵슬롯 자동 등록 완료: %s"), *Item->GetName());
-            }
-            */
             return;
         }
     }
-
-    UE_LOG(LogTemp, Error, TEXT("[Server] RowName으로 아이템 찾기 실패: %s"), *ItemRowName.ToString());
 }
 
 void ANS_PlayerCharacterBase::Client_NotifyInventoryUpdated_Implementation()
@@ -1012,7 +986,6 @@ void ANS_PlayerCharacterBase::Client_NotifyInventoryUpdated_Implementation()
         GetWorldTimerManager().SetTimer(DelayHandle, FTimerDelegate::CreateLambda([this]()
             {
                 InventoryComp->OnInventoryUpdated.Broadcast();
-                UE_LOG(LogTemp, Warning, TEXT("Client_NotifyInventoryUpdated - Inventory 갱신 (지연 호출)"));
 
                 if (QuickSlotComp)
                 {
@@ -1032,7 +1005,6 @@ void ANS_PlayerCharacterBase::Multicast_HideTipText_Implementation()
             if (UNS_PlayerHUD* PlayerHUD = UIManager->GetPlayerHUDWidget())
             {
                 PlayerHUD->HideTipText();
-                UE_LOG(LogTemp, Warning, TEXT("Multicast_HideTipText: 모든 클라이언트에서 TipText 숨김 처리 완료"));
             }
         }
     }
