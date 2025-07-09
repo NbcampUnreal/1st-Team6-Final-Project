@@ -428,9 +428,6 @@ public:
 	// Turn In Place 상태를 서버에 업데이트하는 함수
 	UFUNCTION(Server, unreliable)
 	void Server_UpdateTurnInPlaceState(bool bInTurnLeft, bool bInTurnRight, bool bInUseControllerDesiredRotation);
-	// Turn In Place 상태를 모든 클라이언트에 멀티캐스트하는 함수
-	UFUNCTION(NetMulticast, unreliable)
-	void Multicast_UpdateTurnInPlaceState(bool bInTurnLeft, bool bInTurnRight, bool bInUseControllerDesiredRotation);
 
 	// Yaw 리셋 관련 함수
 	void UpdateYawReset(float DeltaTime);
