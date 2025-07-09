@@ -11,5 +11,7 @@ public class TeamLunatic_NoSignalTarget : TargetRules
 		DefaultBuildSettings = BuildSettingsVersion.V5;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_5;
 		ExtraModuleNames.Add("TeamLunatic_NoSignal");
-	}
+
+        bUsesSteam = true;
+    }
 }

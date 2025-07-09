@@ -21,7 +21,7 @@ void UNS_HostLoadGameServerR::NativeConstruct()
 }
 void UNS_HostLoadGameServerR::OnCreateServerButtonClicked()
 {
-    FPlayerSaveData PlayerData;
+ /*   FPlayerSaveData PlayerData;
     FLevelSaveData LevelData;
     FString LoadMapName;
 
@@ -47,5 +47,5 @@ void UNS_HostLoadGameServerR::OnCreateServerButtonClicked()
     else
     {
         UE_LOG(LogTemp, Warning, TEXT("게임 인스턴스 없음"));
-    }
+    }*/
 }
