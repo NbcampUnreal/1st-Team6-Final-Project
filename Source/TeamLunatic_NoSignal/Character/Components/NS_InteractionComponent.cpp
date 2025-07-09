@@ -31,8 +31,32 @@ void UNS_InteractionComponent::UpdateInteractionWidget()
 // 인벤토리메뉴 오픈
 void UNS_InteractionComponent::ToggleInventoryMenu()
 {
-	// HUD에 인벤토리 위젯을 오픈함
-	HUD->OpenInventoryWidget();
+    
+	// HUD가 유효한지 확인하고, 없으면 다시 가져옵니다.
+	if (!HUD)
+	{
+		APlayerController* PC = Cast<APlayerController>(GetOwner()->GetInstigatorController());
+		if (PC)
+		{
+			if (PC->IsLocalController())
+			{
+			    
+				AHUD* BaseHUD = PC->GetHUD();
+				if (BaseHUD)
+				{
+				    
+					HUD = Cast<ANS_InventoryHUD>(BaseHUD);
+				}
+			}
+		}
+	}
+	
+	// HUD가 유효하면 인벤토리 위젯을 오픈합니다.
+	if (HUD)
+	{
+		HUD->OpenInventoryWidget();
+	}
+	
 }
 
 // 게임이 시작될 때 호출됩니다.
@@ -46,6 +70,19 @@ void UNS_InteractionComponent::BeginPlay()
 	{
 		// HUD를 가져와 멤버 변수에 저장합니다.
 		HUD = Cast<ANS_InventoryHUD>(PC->GetHUD());
+		
+		if (!HUD)
+		{
+			// HUD가 아직 생성되지 않았을 수 있으므로 약간의 지연 후 다시 시도합니다.
+			FTimerHandle TimerHandle_RetryGetHUD;
+			GetWorld()->GetTimerManager().SetTimer(TimerHandle_RetryGetHUD, [this, PC]()
+			{
+				if (PC && PC->IsLocalController())
+				{
+					HUD = Cast<ANS_InventoryHUD>(PC->GetHUD());
+				}
+			}, 1.0f, false);
+		}
 	}
 }
 

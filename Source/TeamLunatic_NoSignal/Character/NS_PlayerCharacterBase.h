@@ -51,9 +51,9 @@ public:
 	UFUNCTION()
 	void OnInventoryWeightUpdated(float CurrentWeight, float WeightCapacity);
 
-	FORCEINLINE UNS_InventoryComponent* GetInventory() const { return PlayerInventory; };
+	FORCEINLINE UNS_InventoryComponent* GetInventory() const { return InventoryComp; };
 
-	UNS_InteractionComponent* GetInteractionComponent() const { return InteractionComponent; }
+	UNS_InteractionComponent* GetInteractionComponent() const { return InteractionComp; }
 
 	FORCEINLINE void SetAvailableAiming(bool bAvailable) { IsAvaliableAiming = bAvailable; };
 
@@ -97,7 +97,7 @@ public:
 
 	// 퀵슬롯 컴포넌트에 접근
 	UFUNCTION(BlueprintCallable, Category = "QuickSlot")
-	UNS_QuickSlotComponent* GetQuickSlotComponent() const { return QuickSlotComponent; }
+	UNS_QuickSlotComponent* GetQuickSlotComponent() const { return QuickSlotComp; }
 
 	// 현재 선택된 퀵슬롯 인덱스 반환 ====== 노티파이에서 호출
 	UFUNCTION(BlueprintCallable, Category = "QuickSlot")
@@ -132,17 +132,18 @@ public:
 	// 스프링 암 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	USpringArmComponent* SpringArmComp;
+	
 	// 1인칭 카메라 컴포넌트 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	UCameraComponent* CameraComp;
+	
 	// 1인칭 팔 스켈레탈 메시 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "FirstPerson")
 	USkeletalMeshComponent* FirstPersonArms;
 
 	// 헤드램프 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Flashlight")
-	USpotLightComponent* FlashlightComponent;
-	
+	USpotLightComponent* FlashlightComp;
 
 	// 스탯 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "Components")
@@ -150,16 +151,19 @@ public:
 
 	// 인터렉션 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interaction", meta = (AllowPrivateAccess = "true"))
-	UNS_InteractionComponent* InteractionComponent;
+	UNS_InteractionComponent* InteractionComp;
 
+	// 인벤토리 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory", Replicated)
-	UNS_InventoryComponent* PlayerInventory;
+	UNS_InventoryComponent* InventoryComp;
 
+	// 퀵 슬롯 컴포넌트
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "QuickSlot", Replicated)
+	UNS_QuickSlotComponent* QuickSlotComp;
+	
+	// 퀵슬롯 패널
 	UPROPERTY()
 	UNS_QuickSlotPanel* QuickSlotPanel;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "QuickSlot", Replicated)
-	UNS_QuickSlotComponent* QuickSlotComponent;
 
 	// 장착 무기 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
