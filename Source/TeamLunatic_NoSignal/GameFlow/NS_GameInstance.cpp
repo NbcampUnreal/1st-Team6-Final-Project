@@ -96,7 +96,7 @@ void UNS_GameInstance::CreateDedicatedSessionViaHTTP(FName SessionName, int32 Ma
 		*SessionName.ToString(), MaxPlayers);
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("http://121.163.249.108:5000/create_session"));
+	Request->SetURL(TEXT("http://118.33.177.62:5000/create_session"));
 	Request->SetVerb(TEXT("POST"));
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 
@@ -161,7 +161,7 @@ void UNS_GameInstance::SendHeartbeat()
 		return;
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("http://121.163.249.108:5000/heartbeat"));
+	Request->SetURL(TEXT("http://118.33.177.62:5000/heartbeat"));
 	Request->SetVerb(TEXT("POST"));
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 	Request->SetTimeout(10.0f); // 타임아웃 시간 증가 (기본 5초 → 10초)
@@ -206,7 +206,7 @@ void UNS_GameInstance::RequestUpdateSessionStatus(int32 Port, FString Status)
 	UE_LOG(LogTemp, Log, TEXT("[RequestUpdateSessionStatus] Sending HTTP POST to update session status. Port: %d, Status: %s"), Port, *Status);
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("http://121.163.249.108:5000/update_session_status")); 
+	Request->SetURL(TEXT("http://118.33.177.62:5000/update_session_status")); 
 	Request->SetVerb(TEXT("POST"));
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 
@@ -242,7 +242,7 @@ void UNS_GameInstance::RequestSessionListFromServer()
 	UE_LOG(LogTemp, Log, TEXT("[RequestSessionListFromServer] 세션 리스트 요청 시작"));
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("http://121.163.249.108:5000/session_list"));
+	Request->SetURL(TEXT("http://118.33.177.62:5000/session_list"));
 	Request->SetVerb(TEXT("GET"));
 	Request->SetTimeout(10.0f); // 타임아웃 시간 설정
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));

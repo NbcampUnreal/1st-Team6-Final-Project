@@ -261,7 +261,7 @@ void ANS_MultiPlayMode::NotifyPlayerLogout()
             FHttpModule& HttpModule = FHttpModule::Get();
             TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = HttpModule.CreateRequest();
 
-            Request->SetURL(TEXT("http://121.163.249.108:5000/player_logout"));
+            Request->SetURL(TEXT("http://118.33.177.62:5000/player_logout"));
             Request->SetVerb(TEXT("POST"));
             Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 

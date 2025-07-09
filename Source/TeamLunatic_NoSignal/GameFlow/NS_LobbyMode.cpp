@@ -135,8 +135,9 @@ void ANS_LobbyMode::Logout(AController* Exiting)
 		}
 	}
 
-	// Flask 서버에 플레이어 로그아웃 알림
 	NotifyPlayerLogout();
+
+	GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ANS_LobbyMode::CheckPlayerCountAndEndSession);
 }
 
 AActor* ANS_LobbyMode::FindSpawnPointByIndex(int32 Index)
@@ -258,7 +259,7 @@ void ANS_LobbyMode::NotifyPlayerLogout()
 			FHttpModule& HttpModule = FHttpModule::Get();
 			TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = HttpModule.CreateRequest();
 
-			Request->SetURL(TEXT("http://121.163.249.108:5000/player_logout"));
+			Request->SetURL(TEXT("http://118.33.177.62:5000/player_logout"));
 			Request->SetVerb(TEXT("POST"));
 			Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 
@@ -285,6 +286,34 @@ void ANS_LobbyMode::NotifyPlayerLogout()
 			});
 
 			Request->ProcessRequest();
+		}
+	}
+}
+
+void ANS_LobbyMode::CheckPlayerCountAndEndSession()
+{
+	if (!HasAuthority()) return;
+
+	int32 ConnectedPlayerCount = 0;
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (APlayerController* PC = It->Get())
+		{
+			ConnectedPlayerCount++;
+		}
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("LobbyMode: Current connected players: %d"), ConnectedPlayerCount);
+
+	if (ConnectedPlayerCount == 0)
+	{
+		if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
+		{
+			if (GI->MyServerPort > 0)
+			{
+				GI->RequestUpdateSessionStatus(GI->MyServerPort, TEXT("closed"));
+				UE_LOG(LogTemp, Warning, TEXT("LobbyMode: All players left. Signaling Flask server to close session on port %d."), GI->MyServerPort);
+			}
 		}
 	}
 }
