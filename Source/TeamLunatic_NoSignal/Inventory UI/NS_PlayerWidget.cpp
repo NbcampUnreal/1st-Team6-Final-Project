@@ -18,6 +18,7 @@ void UNS_PlayerWidget::UpdateHealth(int32 CurrentHealth, int32 MaxHealth)
 {
     if (HealthText)
     {
+        // 현재 체력만 표시
         FText HealthDisplayText = FText::FromString(FString::Printf(TEXT("%d"), CurrentHealth));
         HealthText->SetText(HealthDisplayText);
     }

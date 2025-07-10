@@ -2,10 +2,9 @@
 #include "GameFlow/NS_GameInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "UI/NS_UIManager.h"
-#include "UI/NS_Msg_GameOver.h" 
-// #include "UI/NS_PlayerHUD.h" // 더 이상 자동으로 생성하지 않음
-#include "Blueprint/UserWidget.h" 
 #include "Inventory UI/NS_InventoryHUD.h"
+#include "Character/NS_PlayerCharacterBase.h"
+#include "Character/Components/NS_StatusComponent.h"
 
 /**
  * 플레이어 컨트롤러 생성자
@@ -172,6 +171,9 @@ void ANS_PlayerController::Client_ShowHitEffect_Implementation()
             UIManager->ShowHitEffectWidget(GetWorld());
         }
     }
+    
+    // 체력 UI 업데이트
+    UpdatePlayerHealthUI();
 }
 
 /**
@@ -184,4 +186,52 @@ void ANS_PlayerController::UpdateTipHUD(const FText& Message)
     // PlayerHUD는 더 이상 UIManager에서 관리하지 않음
     // 인벤토리 HUD에서 PlayerWidget을 통해 처리하도록 변경 필요
     UE_LOG(LogTemp, Warning, TEXT("UpdateTipHUD 호출됨 - 인벤토리 HUD에서 처리하도록 변경 필요"));
+}
+
+/**
+ * 플레이어 체력 UI 업데이트 함수
+ * 현재 체력을 PlayerWidget에 업데이트합니다.
+ */
+void ANS_PlayerController::UpdatePlayerHealthUI()
+{
+    // 인벤토리 HUD 가져오기
+    ANS_InventoryHUD* InventoryHUD = Cast<ANS_InventoryHUD>(GetHUD());
+    if (!InventoryHUD)
+    {
+        return;
+    }
+    
+    // 플레이어 캩0릭터 가져오기
+    ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(GetPawn());
+    if (!PlayerCharacter || !PlayerCharacter->StatusComp)
+    {
+        return;
+    }
+    
+    // 플레이어 체력 정보 업데이트
+    InventoryHUD->UpdatePlayerHealth(PlayerCharacter->StatusComp->Health, PlayerCharacter->StatusComp->MaxHealth);
+}
+
+/**
+ * 플레이어 스태미너 UI 업데이트 함수
+ * 현재 스태미너를 PlayerWidget에 업데이트합니다.
+ */
+void ANS_PlayerController::UpdatePlayerStaminaUI()
+{
+    // 인벤토리 HUD 가져오기
+    ANS_InventoryHUD* InventoryHUD = Cast<ANS_InventoryHUD>(GetHUD());
+    if (!InventoryHUD)
+    {
+        return;
+    }
+    
+    // 플레이어 캩0릭터 가져오기
+    ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(GetPawn());
+    if (!PlayerCharacter || !PlayerCharacter->StatusComp)
+    {
+        return;
+    }
+    
+    // 플레이어 스태미너 정보 업데이트
+    InventoryHUD->UpdatePlayerStamina(PlayerCharacter->StatusComp->Stamina, PlayerCharacter->StatusComp->MaxStamina);
 }

@@ -1,5 +1,6 @@
 ﻿#include "NS_StatusComponent.h"
 #include "Character/NS_PlayerCharacterBase.h"
+#include "Character/NS_PlayerController.h"
 #include "TimerManager.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -64,7 +65,18 @@ void UNS_StatusComponent::UpdateStamina(float DeltaTime)
 			ChangingStaminaValue = FMath::RoundToInt(CurrentStaminaRegenRate * DeltaTime);
 		}
 
-		AddStamina(ChangingStaminaValue); 
+		// 이전 스태미너 값 저장
+		int32 OldStamina = Stamina;
+		
+		// 스태미너 값 직접 변경
+		Stamina = FMath::Clamp(Stamina + ChangingStaminaValue, 0, MaxStamina);
+		
+		// 스태미너 값이 변경되었으면 이벤트 발생
+		if (OldStamina != Stamina)
+		{
+			// 스태미너 변경 이벤트 발생
+			OnStaminaChanged.Broadcast(Stamina, MaxStamina);
+		}
 
 		// 스프린트가 비활성화된 상태에서 스태미너가 10보다 크면 다시 활성화
 		if (bEnableSprint == false && Stamina > 10) // 변경된 조건
@@ -87,6 +99,7 @@ void UNS_StatusComponent::AddHealthGauge(float Value)
     
     if (OldHealth != Health)
     {
+        // 체력 변경 이벤트 발생
         OnHealthChanged.Broadcast(Health, MaxHealth);
     }
 }
@@ -98,6 +111,7 @@ void UNS_StatusComponent::AddStamina(float Value)
     
     if (OldStamina != Stamina)
     {
+        // 스태미너 변경 이벤트 발생
         OnStaminaChanged.Broadcast(Stamina, MaxStamina);
     }
 }

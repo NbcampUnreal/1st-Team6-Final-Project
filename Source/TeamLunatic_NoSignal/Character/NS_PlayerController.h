@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-// #include "UI/NS_PlayerHUD.h" // 더 이상 사용하지 않음
 #include "GameFramework/PlayerController.h"
 #include "NS_PlayerController.generated.h"
 
@@ -31,6 +30,12 @@ public:
 
 	// 플레이어 TipHUD 함수 
 	void UpdateTipHUD(const FText& Message);
+
+	// 플레이어 체력 UI 업데이트 함수
+	void UpdatePlayerHealthUI();
+
+	// 플레이어 스태미너 UI 업데이트 함수
+	void UpdatePlayerStaminaUI();
 
 
 protected:

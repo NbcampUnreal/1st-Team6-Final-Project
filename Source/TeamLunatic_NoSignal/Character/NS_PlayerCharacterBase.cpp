@@ -504,6 +504,15 @@ void ANS_PlayerCharacterBase::StartSprint(const FInputActionValue& Value)
         {
             IsSprint = true;
             OnRep_IsSprint(); // 서버에서도 OnRep을 수동으로 호출하여 즉시 적용합니다.
+            
+            // 스태미너 UI 업데이트
+            if (APlayerController* PC = Cast<APlayerController>(Controller))
+            {
+                if (ANS_PlayerController* NS_PC = Cast<ANS_PlayerController>(PC))
+                {
+                    NS_PC->UpdatePlayerStaminaUI();
+                }
+            }
         }
     }
 }
@@ -520,6 +529,15 @@ void ANS_PlayerCharacterBase::StopSprint(const FInputActionValue& Value)
     {
         IsSprint = false;
         OnRep_IsSprint(); // 서버에서도 OnRep을 수동으로 호출하여 즉시 적용합니다.
+        
+        // 스태미너 UI 업데이트
+        if (APlayerController* PC = Cast<APlayerController>(Controller))
+        {
+            if (ANS_PlayerController* NS_PC = Cast<ANS_PlayerController>(PC))
+            {
+                NS_PC->UpdatePlayerStaminaUI();
+            }
+        }
     }
 }
  
