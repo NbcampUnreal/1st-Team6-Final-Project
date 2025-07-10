@@ -7,10 +7,8 @@
 #include "Item/NS_InventoryBaseItem.h"
 #include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
 #include "Inventory UI/Inventory/NS_QuickSlotSlotWidget.h"
-
 #include "Engine/ActorChannel.h"
 
-// Sets default values for this component's properties
 UNS_QuickSlotComponent::UNS_QuickSlotComponent()
 {
 	// 기본값으로 0번 슬롯 설정
@@ -25,24 +23,18 @@ UNS_QuickSlotComponent::UNS_QuickSlotComponent()
 	{
 		QuickSlots[i] = nullptr;
 	}
-	
-	UE_LOG(LogTemp, Warning, TEXT("[QuickSlotComponent] 생성자 - 기본 슬롯 인덱스: %d, 슬롯 수: %d"), 
-		CurrentQuickSlotIndex, QuickSlots.Num());
 }
 
 void UNS_QuickSlotComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	UE_LOG(LogTemp, Warning, TEXT("[QuickSlotComponent] BeginPlay 실행됨"));
 
 	if (InitialSlotCount <= 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[QuickSlotComponent] InitialSlotCount 값이 0 또는 미설정! 기본값 5로 대체"));
 		InitialSlotCount = 5;
 	}
 
 	QuickSlots.SetNum(InitialSlotCount);
-	UE_LOG(LogTemp, Warning, TEXT("[QuickSlotComponent] 슬롯 초기화: %d개"), InitialSlotCount);
 	CleanInvalidSlots(); // 게임 시작 시 무효 슬롯 제거
 }
 
@@ -52,7 +44,6 @@ void UNS_QuickSlotComponent::AssignToSlot(int32 SlotIndex, UNS_InventoryBaseItem
 {
 	if (SlotIndex < 0 || SlotIndex >= QuickSlots.Num())
 	{
-		UE_LOG(LogTemp, Error, TEXT("[QuickSlot] 유효하지 않은 슬롯 인덱스: %d"), SlotIndex);
 		return;
 	}
 	
@@ -62,11 +53,7 @@ void UNS_QuickSlotComponent::AssignToSlot(int32 SlotIndex, UNS_InventoryBaseItem
 	if (CurrentQuickSlotIndex < 0)
 	{
 		CurrentQuickSlotIndex = SlotIndex;
-		UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 현재 슬롯 인덱스 업데이트: %d"), CurrentQuickSlotIndex);
 	}
-	
-	UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 아이템 할당됨 - 슬롯: %d, 아이템: %s"), 
-		SlotIndex, Item ? *Item->GetName() : TEXT("nullptr"));
 	
 	BroadcastSlotUpdate();
 }
@@ -78,7 +65,6 @@ bool UNS_QuickSlotComponent::AssignToFirstEmptySlot(UNS_InventoryBaseItem* Item)
 	// 이미 할당된 아이템인지 확인
 	if (IsItemAlreadyAssigned(Item))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 이미 할당된 아이템: %s"), *Item->GetName());
 		return false;
 	}
 	
@@ -93,16 +79,13 @@ bool UNS_QuickSlotComponent::AssignToFirstEmptySlot(UNS_InventoryBaseItem* Item)
 			if (CurrentQuickSlotIndex < 0)
 			{
 				CurrentQuickSlotIndex = i;
-				UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 현재 슬롯 인덱스 업데이트: %d"), CurrentQuickSlotIndex);
 			}
 			
-			UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 아이템 할당됨 - 슬롯: %d, 아이템: %s"), i, *Item->GetName());
 			BroadcastSlotUpdate();
 			return true;
 		}
 	}
 	
-	UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 빈 슬롯 없음 - 아이템 할당 실패: %s"), *Item->GetName());
 	return false;
 }
 
@@ -115,28 +98,14 @@ bool UNS_QuickSlotComponent::RemoveItem(UNS_InventoryBaseItem* Item)
 	{
 		if (QuickSlots[i] == Item)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 슬롯 %d에서 아이템 제거됨: %s"), i, *Item->GetName());
 			QuickSlots[i] = nullptr;
 			bRemoved = true;
-		}
-		else if (QuickSlots[i])
-		{
-			UE_LOG(LogTemp, Verbose, TEXT("[QuickSlot] 슬롯 %d: 다른 아이템 %s 존재"), i, *QuickSlots[i]->GetName());
-		}
-		else
-		{
-			UE_LOG(LogTemp, Verbose, TEXT("[QuickSlot] 슬롯 %d: 비어 있음"), i);
 		}
 	}
 
 	if (bRemoved)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 아이템 제거 후 슬롯 상태 갱신됨"));
 		BroadcastSlotUpdate();
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 대상 아이템을 슬롯에서 찾지 못함: %s"), *GetNameSafe(Item));
 	}
 
 	return bRemoved;
@@ -230,24 +199,18 @@ void UNS_QuickSlotComponent::SetCurrentSlotIndex(int32 NewIndex)
 	// 유효한 인덱스 범위 확인
 	if (NewIndex < 0 || NewIndex >= QuickSlots.Num())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 유효하지 않은 슬롯 인덱스 설정 시도: %d, 범위: 0-%d"), 
-			NewIndex, QuickSlots.Num() - 1);
-		
 		// 유효하지 않은 인덱스가 들어오면 0으로 설정
 		if (NewIndex < 0)
 		{
 			NewIndex = 0;
-			UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 인덱스가 음수여서 0으로 설정"));
 		}
 		else
 		{
 			NewIndex = QuickSlots.Num() - 1;
-			UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 인덱스가 범위를 초과하여 최대값으로 설정"));
 		}
 	}
 	
 	CurrentQuickSlotIndex = NewIndex;
-	UE_LOG(LogTemp, Warning, TEXT("[QuickSlot] 현재 슬롯 인덱스 설정: %d"), CurrentQuickSlotIndex);
 }
 
 int32 UNS_QuickSlotComponent::GetTotalAssignedItems() const

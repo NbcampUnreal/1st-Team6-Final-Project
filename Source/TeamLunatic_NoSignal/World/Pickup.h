@@ -6,7 +6,6 @@
 #include "GameFramework/Actor.h"
 #include "Character/Interface/NS_InteractionInterface.h"
 #include "Net/UnrealNetwork.h"
-#include "UI/NS_PlayerHUD.h"
 #include "Item/NS_ItemDataStruct.h"
 #include "Pickup.generated.h"
 
@@ -33,6 +32,8 @@ public:
 	void OnRep_ReplicatedItemData();
 
 	FORCEINLINE UNS_InventoryBaseItem* GetItemData() { return ItemReference; };
+	FORCEINLINE UNS_InventoryBaseItem* GetItem() { return ItemReference; };
+	FORCEINLINE int32 GetQuantity() const { return ItemQuantity; };
 
 	virtual void BeginFocus() override;
 	virtual void EndFocus() override;

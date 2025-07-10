@@ -13,7 +13,7 @@
 class UNS_BaseMainMenu;
 class UNS_Msg_GameOver;
 class UNS_InGameMsg;
-class UNS_PlayerHUD;
+class UNS_PlayerWidget;
 class UNS_CircleProgressBar;
 class UNS_InGameMenu;
 class UNS_QuickSlotPanel;
@@ -24,8 +24,8 @@ class UNS_GameInstanceClass;
 // 로딩 완료 시 호출될 델리게이트 선언
 DECLARE_DELEGATE(FOnLoadingFinished);
 
-// PlayerHUD가 준비되었을 때 호출될 멀티캐스트 델리게이트 선언
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerHUDReady, UNS_PlayerHUD*, PlayerHUD);
+// PlayerWidget이 준비되었을 때 호출될 멀티캐스트 델리게이트 선언
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerWidgetReady, UNS_PlayerWidget*, PlayerWidget);
 
 // UI 매니저 클래스 정의
 UCLASS(Blueprintable)
@@ -40,10 +40,7 @@ public:
     // UI 시스템 초기화 함수
     UFUNCTION(BlueprintCallable, Category = "UI")
     void InitUi(UWorld* World);
-
-    // 퀵슬롯 패널 위젯 반환
-    UNS_QuickSlotPanel* GetQuickSlotPanel();
-
+    
     // 인게임 메뉴 위젯이 뷰포트에 있는지 확인
     bool IsInViewportInGameMenuWidget();
 
@@ -51,8 +48,6 @@ public:
     UFUNCTION(BlueprintCallable, Category = "UI")
     UNS_InGameMenu* GetNS_MainMenuWidget()const { return InGameMenuWidget; }
     
-    // 플레이어 HUD 위젯 반환
-    UNS_PlayerHUD* GetPlayerHUDWidget() const { return NS_PlayerHUDWidget; }
 
     // 인게임 메뉴 위젯 표시
     UFUNCTION(BlueprintCallable, Category = "UI")
@@ -87,13 +82,9 @@ public:
     UFUNCTION(BlueprintCallable, Category = "UI")
     void HideGameMsgWidget(UWorld* World);
 
-    // 플레이어 HUD 위젯 표시
+    // 플레이어 위젯 표시 (더 이상 자동으로 표시하지 않음)
     UFUNCTION(BlueprintCallable, Category = "UI")
-    bool ShowPlayerHUDWidget(UWorld* World);
-    
-    // 플레이어 HUD 위젯 숨기기
-    UFUNCTION(BlueprintCallable, Category = "UI")
-    void HidePlayerHUDWidget(UWorld* World);
+    bool ShowPlayerWidget(UWorld* World);
 
     // 게임 및 UI 입력 모드 설정
     void SetFInputModeGameAndUI(APlayerController* PC, UUserWidget* Widget);
@@ -133,12 +124,12 @@ public:
     UFUNCTION(BlueprintCallable)
     bool ShowSpectatorWidget(UWorld* World);
 
-    // PlayerHUD 준비 완료 시 호출될 멀티캐스트 델리게이트
+    // PlayerWidget 준비 완료 시 호출될 멀티캐스트 델리게이트
     UPROPERTY(BlueprintAssignable, Category = "UI Events")
-    FOnPlayerHUDReady OnPlayerHUDReady;
+    FOnPlayerWidgetReady OnPlayerWidgetReady;
 
-    // 외부에서 생성된 PlayerHUD를 UIManager에 등록하는 함수
-    void SetPlayerHUDWidget(UNS_PlayerHUD* InHUD);
+    // 외부에서 생성된 PlayerWidget을 UIManager에 등록하는 함수 (더 이상 사용하지 않음)
+    void SetPlayerWidget(UNS_PlayerWidget* InWidget);
 
 protected:
     // 인게임 메뉴 위젯 인스턴스
@@ -154,8 +145,8 @@ protected:
     UNS_InGameMsg* NS_InGameMsgWidget;
     
     UPROPERTY()
-    // 플레이어 HUD 위젯 인스턴스
-    UNS_PlayerHUD* NS_PlayerHUDWidget;
+    // 플레이어 위젯 인스턴스 (더 이상 자동으로 생성하지 않음)
+    UNS_PlayerWidget* NS_PlayerWidget;
     
     UPROPERTY()
     // 로딩 화면 위젯 인스턴스
@@ -178,9 +169,9 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "UI")
     TSubclassOf<UNS_InGameMsg> NS_InGameMsgWidgetClass;
 
-    // 플레이어 HUD 위젯 클래스
+    // 플레이어 위젯 클래스 (더 이상 자동으로 생성하지 않음)
     UPROPERTY(EditDefaultsOnly, Category = "UI")
-    TSubclassOf<UNS_PlayerHUD> NS_PlayerHUDWidgetClass;
+    TSubclassOf<UNS_PlayerWidget> NS_PlayerWidgetClass;
 
     // 로딩 화면 위젯 클래스
     UPROPERTY(EditDefaultsOnly, Category = "UI")

@@ -5,7 +5,10 @@
 #include "Net/UnrealNetwork.h"
 #include "NS_StatusComponent.generated.h"
 
-class ANS_PlayerCharacterBase; // 플레이어 캐릭터 기본 클래스의 전방 선언
+class ANS_PlayerCharacterBase;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHealthChanged, int32, CurrentHealth, int32, MaxHealth);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnStaminaChanged, int32, CurrentStamina, int32, MaxStamina);
 
 
 
@@ -33,38 +36,41 @@ protected:
 public:
     // --- 체력 및 스태미너 ---
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category="Status|Health")
-    float MaxHealth = 100.f; // 캐릭터의 최대 체력
+    int32 MaxHealth = 100.f; // 캐릭터의 최대 체력
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category="Status|Health")
-    float Health; // 캐릭터의 현재 체력
+    int32 Health; // 캐릭터의 현재 체력
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Status|Stamina")
-    float MaxStamina = 100.f; // 캐릭터의 최대 스태미너
+    int32 MaxStamina = 100.f; // 캐릭터의 최대 스태미너
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category="Status|Stamina")
-    float Stamina; // 캐릭터의 현재 스태미너
+    int32 Stamina; // 캐릭터의 현재 스태미너
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status|Stamina")
-	float DefalutStaminaRegenRate = 10.f; // 스태미너 기본 재생 속도
+	int32 DefalutStaminaRegenRate = 10.f; // 스태미너 기본 재생 속도
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status|Stamina")
-	float CurrentStaminaRegenRate; // 현재 스태미너 재생 속도 (버프/디버프에 의해 변경될 수 있음)
+	int32 CurrentStaminaRegenRate; // 현재 스태미너 재생 속도 (버프/디버프에 의해 변경될 수 있음)
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status|Stamina")
-    float StaminaDereaseRate = -20.f; // 스프린트 시 스태미너 감소 속도
+    int32 StaminaDereaseRate = -20.f; // 스프린트 시 스태미너 감소 속도
 
 
 
     // 스탯 값 변경을 위한 함수
-    void AddHealthGauge(float Value); // 체력을 증가 또는 감소시킵니다.
-    void AddStamina(float Value); // 스태미너를 증가 또는 감소시킵니다.
-    void AddStaminaRegenRate(float Value); // 스태미너 재생 속도를 변경합니다.
-    bool CheckEnableSprint(); // 현재 스프린트가 가능한지 확인합니다.
+    void AddHealthGauge(float Value);
+    void AddStamina(float Value);
+    void AddStaminaRegenRate(float Value);
+    bool CheckEnableSprint();
+    
+    // 델리게이트
+    UPROPERTY(BlueprintAssignable)
+    FOnHealthChanged OnHealthChanged;
+    
+    UPROPERTY(BlueprintAssignable)
+    FOnStaminaChanged OnStaminaChanged;
 
     // 네트워크 복제 설정
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
     bool bEnableSprint = true; // 스프린트 허용 여부를 결정하는 플래그
-
-    // 틱 내부에서 업데이트되는 함수 모음
-    void UpdateAllStatus(float DeltaTime); // (현재 구현되지 않았거나 사용되지 않지만, 전체 상태 업데이트를 위해 의도된 것으로 보임)
-
+    
     void UpdateStamina(float DeltaTime); // 행동에 따라 스태미너를 업데이트합니다.
-    // void UpdateMaxStamina(); // 제거됨: 현재 체력에 따라 최대 스태미너를 업데이트하는 함수
 
 };

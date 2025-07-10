@@ -9,6 +9,10 @@
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Inventory UI/Interaction/NS_InteractionWidget.h"
 #include "Camera/CameraComponent.h"
+#include "World/Pickup.h"
+#include "Item/NS_InventoryBaseItem.h"
+#include "Character/Components/NS_InventoryComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 
 UNS_InteractionComponent::UNS_InteractionComponent()
@@ -31,8 +35,133 @@ void UNS_InteractionComponent::UpdateInteractionWidget()
 // 인벤토리메뉴 오픈
 void UNS_InteractionComponent::ToggleInventoryMenu()
 {
-	// HUD에 인벤토리 위젯을 오픈함
-	HUD->OpenInventoryWidget();
+    UE_LOG(LogTemp, Warning, TEXT("ToggleInventoryMenu 호출됨"));
+    
+    // HUD가 유효한지 확인하고, 없으면 다시 가져옵니다.
+	if (!HUD)
+	{
+	    UE_LOG(LogTemp, Warning, TEXT("HUD가 유효하지 않음, 다시 가져오기 시도"));
+		APlayerController* PC = Cast<APlayerController>(GetOwner()->GetInstigatorController());
+		if (PC)
+		{
+			if (PC->IsLocalController())
+			{
+				AHUD* BaseHUD = PC->GetHUD();
+				if (BaseHUD)
+				{
+				    UE_LOG(LogTemp, Warning, TEXT("BaseHUD 클래스: %s"), *BaseHUD->GetClass()->GetName());
+					HUD = Cast<ANS_InventoryHUD>(BaseHUD);
+					if (HUD)
+					{
+					    UE_LOG(LogTemp, Warning, TEXT("HUD 캐스팅 성공"));
+					}
+					else
+					{
+					    UE_LOG(LogTemp, Error, TEXT("HUD 캐스팅 실패! BaseHUD가 ANS_InventoryHUD 클래스가 아닙니다."));
+					}
+				}
+				else
+				{
+				    UE_LOG(LogTemp, Error, TEXT("BaseHUD가 유효하지 않음"));
+				}
+			}
+		}
+	}
+	
+	// HUD가 유효하면 인벤토리 위젯을 오픈합니다.
+	if (HUD)
+	{
+	    UE_LOG(LogTemp, Warning, TEXT("HUD가 유효함, 인벤토리 위젯 오픈 시도"));
+		// 인벤토리 위젯을 열고 주변 아이템 목록을 업데이트합니다.
+		HUD->OpenInventoryWidget();
+		
+		// 주변 아이템 감지 함수를 즉시 호출하여 최신 상태를 표시합니다.
+		DetectNearbyItems();
+	}
+	else
+	{
+	    UE_LOG(LogTemp, Error, TEXT("HUD가 여전히 유효하지 않음, 인벤토리 위젯 오픈 실패"));
+	}
+}
+
+// 주변 아이템 감지 함수
+void UNS_InteractionComponent::DetectNearbyItems()
+{
+	// 이전 목록 지우기
+	NearbyItems.Empty();
+	
+	// 오너가 유효한지 확인
+	AActor* Owner = GetOwner();
+	if (!Owner) return;
+	
+	// 오너 위치 가져오기
+	FVector OwnerLocation = Owner->GetActorLocation();
+	
+	// 주변에 있는 모든 Pickup 액터 검색
+	TArray<AActor*> FoundActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APickup::StaticClass(), FoundActors);
+	
+	// 감지 범위 내의 아이템만 필터링
+	for (AActor* Actor : FoundActors)
+	{
+		APickup* Pickup = Cast<APickup>(Actor);
+		if (!Pickup) continue;
+		
+		// 거리 계산
+		float Distance = FVector::Dist(OwnerLocation, Pickup->GetActorLocation());
+		if (Distance <= ItemDetectionRadius)
+		{
+			// 아이템 정보 가져오기
+			UNS_InventoryBaseItem* Item = Pickup->GetItem();
+			int32 Quantity = Pickup->GetQuantity();
+			
+			if (Item)
+			{
+				// 주변 아이템 목록에 추가
+				NearbyItems.Add(FNearbyItemInfo(Pickup, Item, Quantity));
+			}
+		}
+	}
+	
+	// 주변 아이템 목록이 업데이트되었음을 알림
+	OnNearbyItemsUpdated.Broadcast();
+}
+
+// 주변 아이템을 인벤토리로 이동
+void UNS_InteractionComponent::PickupNearbyItem(APickup* ItemActor)
+{
+	// 오너가 유효한지 확인
+	ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(GetOwner());
+	if (!PlayerCharacter) return;
+	
+	// 인벤토리 컴포넌트 확인
+	UNS_InventoryComponent* InventoryComp = PlayerCharacter->GetInventory();
+	if (!InventoryComp) return;
+	
+	// 아이템 액터가 유효한지 확인
+	if (!ItemActor) return;
+	
+	// 아이템 정보 가져오기
+	UNS_InventoryBaseItem* Item = ItemActor->GetItem();
+	int32 Quantity = ItemActor->GetQuantity();
+	
+	if (!Item) return;
+	
+	// 서버에서 실행해야 하는 로직이므로 상호작용 인터페이스를 통해 처리
+	if (ItemActor->GetClass()->ImplementsInterface(UNS_InteractionInterface::StaticClass()))
+	{
+		// 상호작용 시작
+		ItemActor->BeginInteract();
+		
+		// 상호작용 실행
+		INS_InteractionInterface::Execute_Interact(ItemActor, PlayerCharacter);
+		
+		// 상호작용 종료
+		ItemActor->EndInteract();
+	}
+	
+	// 주변 아이템 목록 업데이트
+	DetectNearbyItems();
 }
 
 // 게임이 시작될 때 호출됩니다.
@@ -46,7 +175,28 @@ void UNS_InteractionComponent::BeginPlay()
 	{
 		// HUD를 가져와 멤버 변수에 저장합니다.
 		HUD = Cast<ANS_InventoryHUD>(PC->GetHUD());
+		
+		if (!HUD)
+		{
+			// HUD가 아직 생성되지 않았을 수 있으므로 약간의 지연 후 다시 시도합니다.
+			FTimerHandle TimerHandle_RetryGetHUD;
+			GetWorld()->GetTimerManager().SetTimer(TimerHandle_RetryGetHUD, [this, PC]()
+			{
+				if (PC && PC->IsLocalController())
+				{
+					HUD = Cast<ANS_InventoryHUD>(PC->GetHUD());
+				}
+			}, 1.0f, false);
+		}
 	}
+	
+	// 주변 아이템 감지 타이머 설정
+	GetWorld()->GetTimerManager().SetTimer(
+		TimerHandle_ItemDetection,
+		this,
+		&UNS_InteractionComponent::DetectNearbyItems,
+		ItemDetectionFrequency,
+		true);
 }
 
 // 매 프레임 호출됩니다.
@@ -159,16 +309,6 @@ void UNS_InteractionComponent::FoundInteractable(AActor* NewInteractable)
 	if (TargetInteractable.GetObject())
 	{
 		const FInteractableData& Data = TargetInteractable->InteractableData;
-
-		UE_LOG(LogTemp, Warning, TEXT("[FoundInteractable] InteractableData status - Name: %s, Action: %s, Type: %s"),
-			*Data.Name.ToString(),
-			*Data.Action.ToString(),
-			*UEnum::GetValueAsString(Data.InteractableType));
-
-		if (Data.Name.IsEmpty() || Data.InteractableType == EInteractableType::None)
-		{
-			UE_LOG(LogTemp, Error, TEXT("[Warning] InteractableData is not replicated or initialized."));
-		}
 	}
 
 	if (HUD)
@@ -219,7 +359,6 @@ void UNS_InteractionComponent::HideInteractionWidgetSafely()
 	if (IsValid(MyHUD->GetInteractionWidget()))
 	{
 		MyHUD->HideInteractionWidget();
-		UE_LOG(LogTemp, Warning, TEXT("[InteractionComponent] Hide widget after interaction is complete"));
 	}
 }
 
@@ -242,10 +381,6 @@ void UNS_InteractionComponent::BeginInteract()
 	if (InteractionData.CurrentInteractable && IsValid(TargetInteractable.GetObject()))
 	{
 		TargetInteractable->BeginInteract();
-		if (TargetInteractable.GetObject()->GetClass()->ImplementsInterface(UNS_InteractionInterface::StaticClass()))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Interface implementation confirmed"));
-		}
 
 		// 상호작용 시간이 거의 0이면 즉시 실행하고, 그렇지 않으면 타이머를 설정합니다.
 		if (FMath::IsNearlyZero(TargetInteractable->InteractableData.InteractionDuration, 0.1f))

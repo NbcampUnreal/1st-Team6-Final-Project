@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UI/NS_PlayerHUD.h"
 #include "GameFramework/PlayerController.h"
 #include "NS_PlayerController.generated.h"
 
@@ -32,6 +31,12 @@ public:
 	// 플레이어 TipHUD 함수 
 	void UpdateTipHUD(const FText& Message);
 
+	// 플레이어 체력 UI 업데이트 함수
+	void UpdatePlayerHealthUI();
+
+	// 플레이어 스태미너 UI 업데이트 함수
+	void UpdatePlayerStaminaUI();
+
 
 protected:
 	virtual void BeginPlay() override;
@@ -45,11 +50,4 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Chase")
 	USoundBase* ChaseStartSoundCue;
-
-	UPROPERTY(EditDefaultsOnly, Category = "UI")
-	TSubclassOf<UNS_PlayerHUD> PlayerHUDClass;
-
-	UPROPERTY()
-	TObjectPtr<UNS_PlayerHUD> PlayerHUDWidget;
-
 };

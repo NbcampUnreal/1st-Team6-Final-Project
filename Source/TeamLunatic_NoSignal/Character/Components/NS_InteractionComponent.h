@@ -2,12 +2,15 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Components/SphereComponent.h"
 #include "NS_InteractionComponent.generated.h"
 
 class UInputAction;
 class UInputMappingContext;
 class UCameraComponent;
 class ANS_InventoryHUD;
+class UNS_InventoryBaseItem;
+class APickup;
 
 // 상호작용 데이터를 저장하는 구조체
 USTRUCT(BlueprintType)
@@ -28,6 +31,37 @@ struct FInteractionData
 	UPROPERTY()
 	float LastInteractionCheckTime;
 };
+
+// 주변 아이템 정보를 저장하는 구조체
+USTRUCT(BlueprintType)
+struct FNearbyItemInfo
+{
+	GENERATED_BODY()
+
+	FNearbyItemInfo()
+		: ItemActor(nullptr), Item(nullptr), Quantity(0)
+	{
+	}
+
+	FNearbyItemInfo(APickup* InItemActor, UNS_InventoryBaseItem* InItem, int32 InQuantity)
+		: ItemActor(InItemActor), Item(InItem), Quantity(InQuantity)
+	{
+	}
+
+	// 아이템 액터
+	UPROPERTY()
+	APickup* ItemActor;
+
+	// 아이템 데이터
+	UPROPERTY()
+	UNS_InventoryBaseItem* Item;
+
+	// 아이템 수량
+	UPROPERTY()
+	int32 Quantity;
+};
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnNearbyItemsUpdated);
 
 // 플레이어의 상호작용을 처리하는 컴포넌트
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
@@ -55,6 +89,18 @@ public:
 	void UpdateInteractionWidget();
 	// 인벤토리 위젯 오픈
 	void ToggleInventoryMenu();
+
+	// 주변 아이템 목록 가져오기
+	TArray<FNearbyItemInfo> GetNearbyItems() const { return NearbyItems; }
+
+	// 주변 아이템을 인벤토리로 이동
+	UFUNCTION(BlueprintCallable, Category = "Interaction")
+	void PickupNearbyItem(APickup* ItemActor);
+
+	// 주변 아이템 목록이 업데이트될 때 호출되는 델리게이트
+	UPROPERTY(BlueprintAssignable, Category = "Interaction")
+	FOnNearbyItemsUpdated OnNearbyItemsUpdated;
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -64,6 +110,24 @@ protected:
 	// HUD에 대한 참조
 	UPROPERTY()
 	ANS_InventoryHUD* HUD;
+
+	// 아이템 감지 범위
+	UPROPERTY(EditAnywhere, Category = "Interaction")
+	float ItemDetectionRadius = 300.0f;
+
+	// 주변 아이템 감지 주기
+	UPROPERTY(EditAnywhere, Category = "Interaction")
+	float ItemDetectionFrequency = 0.5f;
+
+	// 주변 아이템 감지 타이머 핸들
+	FTimerHandle TimerHandle_ItemDetection;
+
+	// 주변 아이템 목록
+	TArray<FNearbyItemInfo> NearbyItems;
+
+	// 주변 아이템 감지 함수
+	void DetectNearbyItems();
+
 private:
 	// 상호작용 데이터
 	FInteractionData InteractionData;

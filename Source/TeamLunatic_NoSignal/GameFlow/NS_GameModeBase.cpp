@@ -14,10 +14,16 @@
 #include "GameFramework/Character.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "GameFlow/NS_MainGamePlayerState.h"
+#include "GameFramework/HUD.h"
 
 
 ANS_GameModeBase::ANS_GameModeBase()
 {
+    // HUD 클래스 확인
+    UE_LOG(LogTemp, Warning, TEXT("GameMode HUD 클래스: %s"), 
+        HUDClass ? *HUDClass->GetName() : TEXT("None"));
+    
+    // 블루프린트에서 HUDClass를 ANS_InventoryHUD로 설정해야 합니다.
 }
 
 // 플레이어 위치 반환
