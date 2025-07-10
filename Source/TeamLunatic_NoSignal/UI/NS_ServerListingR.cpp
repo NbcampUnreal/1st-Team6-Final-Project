@@ -23,11 +23,6 @@ void UNS_ServerListingR::OnJoinButtonClicked()
     {
         if (!CustomAddress.IsEmpty())
         {
-            if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
-            {
-                GI->ShowWait(); 
-            }
-
             UE_LOG(LogTemp, Log, TEXT("[JoinButton] Connecting to %s"), *CustomAddress);
             PC->ClientTravel(CustomAddress, ETravelType::TRAVEL_Absolute);
         }

@@ -6,7 +6,6 @@
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Item/NS_InventoryBaseItem.h"
 #include "GameFlow/NS_GameInstance.h"
-#include "UI/NS_UIManager.h"
 #include "Character/Components/NS_QuickSlotComponent.h"
 #include "Engine/ActorChannel.h"
 

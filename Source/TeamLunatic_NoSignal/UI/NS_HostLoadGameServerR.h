@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UI/NS_MasterMenuPanel.h"
+#include "Blueprint/UserWidget.h"
 #include "NS_HostLoadGameServerR.generated.h"
 
 class UTextBlock;
@@ -15,7 +15,7 @@ class USpacer;
 class UBorder;
 
 UCLASS()
-class TEAMLUNATIC_NOSIGNAL_API UNS_HostLoadGameServerR : public UNS_MasterMenuPanel
+class TEAMLUNATIC_NOSIGNAL_API UNS_HostLoadGameServerR : public UUserWidget
 {
 	GENERATED_BODY()
     //슬랙에서 지우기 x

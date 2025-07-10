@@ -292,49 +292,6 @@ void ANS_MultiPlayMode::NotifyPlayerLogout()
     }
 }
 
-void ANS_MultiPlayMode::OnPlayerLoadingComplete(APlayerController* Player)
-{
-    if (!HasAuthority()) return;
-
-    // 이미 완료된 플레이어인지 확인
-    if (LoadingCompletedPlayers.Contains(Player))
-    {
-        return;
-    }
-
-    // 완료된 플레이어 목록에 추가
-    LoadingCompletedPlayers.Add(Player);
-    // 모든 플레이어가 완료되었는지 확인
-    CheckAllPlayersLoadingComplete();
-}
-
-void ANS_MultiPlayMode::CheckAllPlayersLoadingComplete()
-{
-    if (!HasAuthority()) return;
-
-    int32 TotalPlayers = GetNumPlayers();
-    int32 CompletedPlayers = LoadingCompletedPlayers.Num();
-
-    // 모든 플레이어가 로딩 완료되었으면
-    if (CompletedPlayers >= TotalPlayers && TotalPlayers > 0)
-    {
-        // 모든 클라이언트에게 로딩 스크린 숨기기 명령
-        for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-        {
-            if (APlayerController* PC = It->Get())
-            {
-                if (ANS_LobbyController* LC = Cast<ANS_LobbyController>(PC))
-                {
-                    LC->Client_HideLoadingScreen();
-                }
-            }
-        }
-
-        // 완료된 플레이어 목록 초기화
-        LoadingCompletedPlayers.Empty();
-    }
-}
-
 // 랜덤한 살아있는 플레이어의 위치를 반환하는 함수
 FVector ANS_MultiPlayMode::GetRandomPlayerLocation() const
 {

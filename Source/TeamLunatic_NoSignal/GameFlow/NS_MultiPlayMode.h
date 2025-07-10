@@ -25,16 +25,6 @@ public:
 
     UPROPERTY(BlueprintReadWrite, Category = "Game State")
     bool bIsGameOver = false;
-    
-    // 로딩 동기화 시스템
-    UPROPERTY()
-    TArray<APlayerController*> LoadingCompletedPlayers;
-
-    UFUNCTION()
-    void OnPlayerLoadingComplete(APlayerController* Player);
-
-    UFUNCTION()
-    void CheckAllPlayersLoadingComplete();
 
 protected:
     virtual void BeginPlay() override;

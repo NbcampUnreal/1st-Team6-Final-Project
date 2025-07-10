@@ -1,7 +1,6 @@
 #include "Character/NS_PlayerController.h"
 #include "GameFlow/NS_GameInstance.h"
 #include "Kismet/GameplayStatics.h"
-#include "UI/NS_UIManager.h"
 #include "Inventory UI/NS_InventoryHUD.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Character/Components/NS_StatusComponent.h"
@@ -42,60 +41,7 @@ void ANS_PlayerController::SetupInputComponent()
     Super::SetupInputComponent();
 
     // InputComponent가 유효한지 확인
-    if (InputComponent)
-    {
-        // 인게임 메뉴 토글 액션 바인딩 (M 또는 ESC 키)
-        InputComponent->BindAction("ToggleInGameMenu", IE_Pressed, this, &ANS_PlayerController::ToggleInGameMenu);
-    }
 }
-
-/**
- * 인게임 메뉴 토글 함수
- * J 키(에디터) 또는 ESC 키(패키징 버전)를 눌러 인게임 메뉴를 표시하거나 숨깁니다.
- * ProjectSetting>Input>입력매핑>추가 "ToggleInGameMenu" (단축키"J"설정)
- */
-void ANS_PlayerController::ToggleInGameMenu()
-{
-#if WITH_EDITOR
-    // 에디터에서는 J 키를 사용
-    if (!IsInputKeyDown(EKeys::J))
-        return;
-#else
-    // 패키징 버전에서는 ESC 키를 사용
-    if (!IsInputKeyDown(EKeys::Escape))
-        return;
-#endif
-
-    // 인벤토리 HUD가 표시 중인지 확인
-    if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
-    {
-        if (ANS_InventoryHUD* IvHUD = Cast<ANS_InventoryHUD>(PC->GetHUD()))
-        {
-            // 인벤토리 메뉴가 표시 중이면 숨기고 게임 모드로 전환
-            if (IvHUD && IvHUD->bIsMenuVisible)
-            {
-                IvHUD->HideMenu();
-                PC->SetInputMode(FInputModeGameOnly());
-                PC->SetShowMouseCursor(false);
-                return;
-            }
-        }
-    }
-
-    // 게임 인스턴스를 통해 UI 매니저 접근
-    if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
-    {
-        if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
-        {
-            // 인게임 메뉴가 표시되어 있지 않으면 표시, 아니면 숨김
-            if (!UIManager->IsInViewportInGameMenuWidget())
-                UIManager->ShowInGameMenuWidget(GetWorld());
-            else
-                UIManager->HideInGameMenuWidget(GetWorld());
-        }
-    }
-}
-
 /**
  * 추적 사운드 재생 함수
  * 플레이어가 적에게 추적당할 때 사운드를 재생합니다.
@@ -135,25 +81,6 @@ void ANS_PlayerController::HandleGameOver(bool bPlayerSurvived)
         UE_LOG(LogTemp, Warning, TEXT(">> 싱글플레이 - 글로벌 시간 정지"));
         UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 0.f);
     }
-
-    // 게임 인스턴스를 통해 UI 매니저 접근
-    if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
-    {
-        if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
-        {
-            UE_LOG(LogTemp, Warning, TEXT(">> UIManager 유효. 위젯 표시 요청"));
-            // 게임 오버 위젯 표시
-            UIManager->ShowGameOverWidget(GetWorld());
-        }
-        else
-        {
-            UE_LOG(LogTemp, Error, TEXT(">> UIManager is nullptr"));
-        }
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT(">> GameInstance 캐스팅 실패"));
-    }
 }
 
 /**
@@ -162,16 +89,6 @@ void ANS_PlayerController::HandleGameOver(bool bPlayerSurvived)
  */
 void ANS_PlayerController::Client_ShowHitEffect_Implementation()
 {
-    // 게임 인스턴스를 통해 UI 매니저 접근
-    if (UNS_GameInstance* NS_GameInstance = Cast<UNS_GameInstance>(GetGameInstance()))
-    {
-        if (UNS_UIManager* UIManager = NS_GameInstance->GetUIManager())
-        {
-            // 피격 효과 위젯 표시
-            UIManager->ShowHitEffectWidget(GetWorld());
-        }
-    }
-    
     // 체력 UI 업데이트
     UpdatePlayerHealthUI();
 }

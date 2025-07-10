@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UI/NS_MasterMenuPanel.h"
+#include "Blueprint/UserWidget.h"
 #include "NS_HostNewGameServerR.generated.h"
 
 class UTextBlock;
@@ -17,7 +17,7 @@ class UComboBoxString;
 class UNS_AreYouSureMenu;
 
 UCLASS()
-class TEAMLUNATIC_NOSIGNAL_API UNS_HostNewGameServerR : public UNS_MasterMenuPanel
+class TEAMLUNATIC_NOSIGNAL_API UNS_HostNewGameServerR : public UUserWidget
 {
 	GENERATED_BODY()
 	//슬랙에서 지우기 x
@@ -46,19 +46,12 @@ public:
     UButton* CreateServerButton;
 
 protected:
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "PopUp")
-    UNS_AreYouSureMenu* AreYouSureMenu;
-
     virtual void NativeConstruct() override;
 
     UFUNCTION()
     void OnYesSelected();
-    UFUNCTION()
-    void OnNoSelected();
 
     FString GetSaveSlotName() const;
-
-    void ShowConfirmationMenu();
 
     void StartGame();
 

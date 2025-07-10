@@ -11,7 +11,7 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_LogoHUD : public AHUD
 	GENERATED_BODY()
 
 	//로고 UI 위젯
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widget")
+	UPROPERTY(EditAnywhere, Category = "Widget")
 	TSubclassOf<UUserWidget> LogoWidgetclass;
 
 	//show hide

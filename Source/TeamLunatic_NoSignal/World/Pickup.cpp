@@ -10,7 +10,6 @@
 #include "Character/Components/NS_QuickSlotComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFlow/NS_GameInstance.h"
-#include "UI/NS_UIManager.h"
 #include "Character/NS_PlayerController.h"
 #include "Net/UnrealNetwork.h"
 

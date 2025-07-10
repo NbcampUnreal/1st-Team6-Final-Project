@@ -9,9 +9,6 @@
 #include "Components/Spacer.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFlow/NS_GameInstance.h"
-#include "UI/NS_SaveLoadHelper.h"
-#include "UI/NS_CommonType.h"
-#include "UI/NS_MainMenu.h"
 
 void UNS_HostLoadGameServerR::NativeConstruct()
 {
@@ -21,19 +18,7 @@ void UNS_HostLoadGameServerR::NativeConstruct()
 }
 void UNS_HostLoadGameServerR::OnCreateServerButtonClicked()
 {
-    FPlayerSaveData PlayerData;
-    FLevelSaveData LevelData;
     FString LoadMapName;
-
-    if (NS_SaveLoadHelper::LoadGame(LoadSlotName, PlayerData, LevelData))
-    {
-        LoadMapName = LevelData.LevelName;
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("세이브 파일 로드 실패"));
-        return;
-    }
 
     FName SessionName = FName(*LoadSlotName);
     int32 MaxPlayers = FCString::Atoi(*EditableTextBox_MaxPlayers->GetText().ToString());

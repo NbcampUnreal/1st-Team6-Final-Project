@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UI/NS_MasterMenuPanel.h"
 #include "Blueprint/UserWidget.h"
 #include "Interfaces/OnlineSessionInterface.h"
 #include "OnlineSessionSettings.h"
@@ -18,7 +17,7 @@ class UCircularThrobber;
 class UNS_ServerListingR;
 class UBorder;
 UCLASS()
-class TEAMLUNATIC_NOSIGNAL_API UNS_ServerBrowserR : public UNS_MasterMenuPanel
+class TEAMLUNATIC_NOSIGNAL_API UNS_ServerBrowserR : public UUserWidget
 {
 	GENERATED_BODY()
     //슬랙에서 지우기 x

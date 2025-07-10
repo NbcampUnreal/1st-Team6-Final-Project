@@ -42,12 +42,6 @@ protected:
 	virtual void BeginPlay() override;
 	void SetupInputComponent();
 
-	UFUNCTION()
-	void ToggleInGameMenu();
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
-	TSubclassOf<UNS_Msg_GameOver> GameOverWidgetClass;
-
 	UPROPERTY(EditDefaultsOnly, Category = "Chase")
 	USoundBase* ChaseStartSoundCue;
 };

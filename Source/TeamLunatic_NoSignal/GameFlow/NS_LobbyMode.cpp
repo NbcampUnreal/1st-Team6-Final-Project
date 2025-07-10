@@ -7,7 +7,6 @@
 #include "NS_LobbyController.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
-#include "UI/NS_UIManager.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerStart.h"
 #include "OnlineSubsystem.h"
@@ -174,19 +173,6 @@ void ANS_LobbyMode::CheckAllPlayersReady()
 			{
 				UE_LOG(LogTemp, Warning, TEXT("아직 준비 안된 플레이어 있음"));
 				return;
-			}
-		}
-	}
-
-	// 모든 플레이어에게 로딩 스크린 표시
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-	{
-		if (APlayerController* PC = It->Get())
-		{
-			if (ANS_LobbyController* LC = Cast<ANS_LobbyController>(PC))
-			{
-				// Client_ShowWait 제거 - 불필요한 호출 방지
-				LC->Client_ShowLoadingScreen(); // 로딩 스크린 표시
 			}
 		}
 	}
