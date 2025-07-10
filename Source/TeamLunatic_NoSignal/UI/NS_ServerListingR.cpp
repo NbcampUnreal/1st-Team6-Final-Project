@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "UI/NS_ServerListingR.h"
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
@@ -19,21 +16,13 @@ void UNS_ServerListingR::NativeConstruct()
 
 void UNS_ServerListingR::OnJoinButtonClicked()
 {
-    if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+    // 반드시 FOnlineSessionSearchResult 기반 Join
+    if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
-        if (!CustomAddress.IsEmpty())
-        {
-            if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
-            {
-                GI->ShowWait(); 
-            }
-
-            UE_LOG(LogTemp, Log, TEXT("[JoinButton] Connecting to %s"), *CustomAddress);
-            PC->ClientTravel(CustomAddress, ETravelType::TRAVEL_Absolute);
-        }
+        GI->JoinSession(SessionResult);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("[NS_ServerListingR] GameInstance 캐스팅 실패!"));
     }
 }
-
-
-
-
