@@ -21,7 +21,7 @@ UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UNS_ServerBrowserR : public UNS_MasterMenuPanel
 {
 	GENERATED_BODY()
-	
+    //슬랙에서 지우기 x
 public:
     virtual void NativeConstruct() override;
 

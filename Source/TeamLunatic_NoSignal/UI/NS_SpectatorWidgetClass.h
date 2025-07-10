@@ -13,7 +13,7 @@ UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UNS_SpectatorWidgetClass : public UUserWidget
 {
 	GENERATED_BODY()
-
+	//관전자 UI
 protected:
 	virtual void NativeConstruct() override;
 

@@ -9,6 +9,7 @@ class TEAMLUNATIC_NOSIGNAL_API UNS_OpenLevelMap : public UUserWidget
 {
 	GENERATED_BODY()
 
+	//삭제 X
 public:
 	// 플레이어 위치를 갱신할 이미지 위젯 참조
 	UPROPERTY(meta = (BindWidget))

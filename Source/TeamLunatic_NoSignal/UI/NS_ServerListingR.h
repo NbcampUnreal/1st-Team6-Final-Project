@@ -15,7 +15,7 @@ UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UNS_ServerListingR : public UUserWidget
 {
 	GENERATED_BODY()
-
+	//슬랙에서 지우기 x
 public:
 	virtual void NativeConstruct() override;
 
