@@ -2,84 +2,68 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+#include "OnlineSessionSettings.h"
+#include "OnlineSubsystem.h"
+#include "Interfaces/OnlineSessionInterface.h"
 #include "Engine/DataTable.h"
-#include "UObject/SoftObjectPtr.h" 
+#include "UObject/SoftObjectPtr.h"
 #include "EGameModeType.h"
 #include "NS_ReadyUI.h"
-#include "HttpModule.h"
-#include "Interfaces/IHttpRequest.h"
-#include "Interfaces/IHttpResponse.h"
-#include "Dom/JsonObject.h"
-#include "Serialization/JsonSerializer.h"
-#include "Serialization/JsonReader.h"
 #include "NS_GameInstance.generated.h"
 
-DECLARE_MULTICAST_DELEGATE(FOnCreateSessionSuccess);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnSessionListReceived, const TArray<TSharedPtr<FJsonObject>>&);
-
-class UNS_UIManager;
-
-
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnSessionSearchComplete, const TArray<FOnlineSessionSearchResult>&);
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UNS_GameInstance : public UGameInstance
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
-	UNS_GameInstance();
-	virtual void Init() override;
+    UNS_GameInstance();
+    virtual void Init() override;
+    void OnSessionUserInviteAccepted(const bool bWasSuccessful, const int32 LocalUserNum, TSharedPtr<const FUniqueNetId> UserId, const FOnlineSessionSearchResult& InviteResult);
 
-	//UFUNCTION()
-	//void OnLevelLoaded(UWorld* LoadedWorld);
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Inventory|Config")
+    UDataTable* GlobalItemDataTable;
 
-	void SetCurrentSaveSlot(FString SlotNameInfo);
+    void SetGameModeType(EGameModeType Type);
+    EGameModeType GetGameModeType() const { return GameModeType; }
 
-	UPROPERTY(BlueprintReadOnly, Category = "SaveGame")
-	FString CurrentSaveSlotName;
+    // ----- [Steam OnlineSubsystem 세션 관련 함수] -----
+    void CreateSession(FName SessionName, int32 MaxPlayers);
+    void FindSessions();
+    void JoinSession(const FOnlineSessionSearchResult& SearchResult);
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Inventory|Config")
-	UDataTable* GlobalItemDataTable;
+    void OnDestroySessionThenCreateSession(FName SessionName, bool bWasSuccessful);
 
-	void SetGameModeType(EGameModeType Type);
-	EGameModeType GetGameModeType() const { return GameModeType; }
 
-	void CreateDedicatedSessionViaHTTP(FName SessionName, int32 MaxPlayers);
-	void OnCreateSessionResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
+    // 검색 결과 UI에 전달
+    FOnSessionSearchComplete OnSessionSearchComplete;
 
-	// HTTP 세션 리스트 요청
-	void RequestSessionListFromServer();
-	void OnReceiveSessionList(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
+    // 세션 검색 객체
+    TSharedPtr<class FOnlineSessionSearch> SessionSearch;
 
-	// HTTP 세션 리스트 숨김
-	void RequestUpdateSessionStatus(int32 Port, FString Status); 
-	void OnUpdateSessionStatusResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
+    // 기존처럼 맵 소프트참조, UI매니저 등
+    UPROPERTY(EditAnywhere, Category = "Level")
+    TSoftObjectPtr<UWorld> WaitingRoom;
 
-	UPROPERTY(EditAnywhere, Category = "Level")
-	TSoftObjectPtr<UWorld> WaitingRoom;
+    bool bIsSinglePlayer = true;
 
-	// 세션 리스트 받아오면 UI에서 처리 가능하도록 이벤트 델리게이트
-	FOnSessionListReceived OnSessionListReceived;
+    UPROPERTY(EditDefaultsOnly, Category = "UI")
+    TSubclassOf<UUserWidget> ReadyUIClass;
+    UPROPERTY()
+    class UNS_ReadyUI* ReadyUIInstance;
 
-	bool bIsSinglePlayer = true;
+    void ShowReadyUI();
+    void HideReadyUI();
 
-	void SendHeartbeat();
-
-	UPROPERTY(EditDefaultsOnly, Category = "UI")
-	TSubclassOf<UUserWidget> ReadyUIClass;
-
-	UPROPERTY()
-	class UNS_ReadyUI* ReadyUIInstance;
-
-	void ShowReadyUI();
-	void HideReadyUI();
-
-	UFUNCTION(BlueprintCallable, Category = "Network")
-	void DestroyCurrentSession();
-
-	int32 MyServerPort = -1;
+    UFUNCTION(BlueprintCallable, Category = "Network")
+    void DestroyCurrentSession();
 
 private:
-	EGameModeType GameModeType = EGameModeType::SinglePlayMode;
-	FTimerHandle HeartbeatTimerHandle;
+    EGameModeType GameModeType = EGameModeType::SinglePlayMode;
+
+    void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
+    void OnFindSessionsComplete(bool bWasSuccessful);
+    void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 };

@@ -16,9 +16,9 @@ void UNS_HostLoadGameServerR::NativeConstruct()
 
     CreateServerButton->OnClicked.AddDynamic(this, &UNS_HostLoadGameServerR::OnCreateServerButtonClicked);
 }
+
 void UNS_HostLoadGameServerR::OnCreateServerButtonClicked()
 {
-    FString LoadMapName;
 
     FName SessionName = FName(*LoadSlotName);
     int32 MaxPlayers = FCString::Atoi(*EditableTextBox_MaxPlayers->GetText().ToString());
@@ -26,7 +26,6 @@ void UNS_HostLoadGameServerR::OnCreateServerButtonClicked()
     if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
     {
         GI->SetGameModeType(EGameModeType::MultiPlayMode);
-        GI->CreateDedicatedSessionViaHTTP(SessionName, MaxPlayers);
 
     }
     else
