@@ -20,7 +20,6 @@ class UNS_InventoryBaseItem;
 class UNS_InventoryComponent;
 class ANS_BaseWeapon;
 class UNS_EquipedWeaponComponent;
-class UNS_QuickSlotPanel;
 class UNS_QuickSlotComponent;
 class UNS_PlayerController;
 class UNS_OpenLevelMap;
@@ -29,21 +28,6 @@ UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
 {
 	GENERATED_BODY()
-	
-	// ========== 이동 관련 =============
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	float DefaultWalkSpeed;
-
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	float CurrentWalkSpeed;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true", UIMin = 0))
-	float SprintSpeedMultiplier;
-	
-
-
-	//조준이 가능한지 확인하는 변수
-	bool IsAvaliableAiming = true;
 
 public:
 	ANS_PlayerCharacterBase();
@@ -55,23 +39,11 @@ public:
 
 	UNS_InteractionComponent* GetInteractionComponent() const { return InteractionComp; }
 
-	FORCEINLINE void SetAvailableAiming(bool bAvailable) { IsAvaliableAiming = bAvailable; };
 
 	void DropItem(UNS_InventoryBaseItem* ItemToDrop, const int32 QuantityToDrop);
 
 	UFUNCTION(Client, Reliable)
 	void Client_NotifyQuickSlotUpdated();
-
-	UFUNCTION(BlueprintCallable)
-	void UseThrowableItem_Internal(int32 Index);
-
-	UFUNCTION(BlueprintCallable, Server, Reliable)
-	void Server_UseThrowableItem(int32 Index);
-
-	UFUNCTION(Server, Reliable)
-	void Server_AssignQuickSlot(int32 SlotIndex, UNS_InventoryBaseItem* Item);
-
-	void HandleUseThrowableItem(int32 Index);
 
 
 // =========================================퀵슬롯 관련 변수 및 함수들=================================================
@@ -113,9 +85,6 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void Client_NotifyInventoryUpdated();
-
-	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_HideTipText();
 
 	UFUNCTION(Server, Reliable)
 	void Server_UseInventoryItem(FName ItemRowName);
@@ -161,77 +130,11 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "QuickSlot", Replicated)
 	UNS_QuickSlotComponent* QuickSlotComp;
 	
-	// 퀵슬롯 패널
-	UPROPERTY()
-	UNS_QuickSlotPanel* QuickSlotPanel;
-
 	// 장착 무기 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UNS_EquipedWeaponComponent* EquipedWeaponComp;
 	////////////////////////////////////캐릭터 부착 컴포넌트들 끝!///////////////////////////////////////
-
-
-
-	/////////////////////////////////병투척 변수 + 병이 날아갈 소켓 위치 변수 //////////////////////////////
-	// 캐릭터가 던지는 병 액터 클래스변수 설정
-	UPROPERTY(EditDefaultsOnly, Category = "Throw")
-	TSubclassOf<class ANS_ThrowActor> BottleClass;
-
-	// 던질 때 기준이 되는 소켓 이름 == 캐릭터 블루프린트에서 설정해주면 됨
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Throw")
-	FName ThrowSocketName;
-	////////////////////////////////////////병투척 변수 끝!///////////////////////////////////////////////
-
-
-	// 죽음 애니메이션 몽타주
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Animation")
-	UAnimMontage* DeathMontage;
-
-
-	// LookAction에 카메라 회전값 보간 속도 ---> 8은 너무 느려서 10이상은 되어야할 듯
-	UPROPERTY(EditDefaultsOnly, Category = "Aim")
-	float AimSendInterpSpeed = 10.f;
-
-	// 점프가 가능하게 하는 변수 
-	bool IsCanJump = true;
 	
-	// 점프 타이머 핸들
-	FTimerHandle JumpTimerHandle;
-	// =================================================================================================
-	
-	// ==================================== 데미지 받을 때 재생할 사운드 =========================================
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
-	USoundBase* DamageSound;
-	// =================================================================================================
-
-	
-	// =================================Turn In Place관련 변수들 ===============================
-	// Turn In Place가 가능한 Yaw회전 값
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-	float TurnInPlaceThreshold = 90.0f; 
-	// 몸 회전 속도
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-	float TurnInPlaceSpeed = 5.0f;   
-	// 몸 회전이 완료된 후 Yaw값을 0으로 리셋하는 속도
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-	float TurnInPlaceResetThreshold = 10.0f;
-
-	// 현재 회전할 때 Yaw값
-	float CurrentTurnYaw = 0.0f;
-	// 현재 회전 중인지 여부
-	bool bIsTurningInPlace = false;
-	// CamYaw를 0으로 보간하는 속도
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-	float TurnInPlaceYawResetSpeed = 10.0f;
-	// 회전 후 Yaw 값을 리셋 중인지 여부
-	UPROPERTY(BlueprintReadOnly, Category = "Animation")
-	bool bIsResettingYaw = false;
-	// 마지막 회전 Yaw 값
-	UPROPERTY(BlueprintReadOnly, Category = "Animation")
-	float LastTurnYaw = 0.0f;
-	// ===============================Turn In Place변수 끝!===================================
-
-
 	
 	/////////////////////////////// 리플리케이션용 변수들////////////////////////////////
 	// 캐릭터가 바라보고있는 좌/우 값
@@ -333,7 +236,90 @@ public:
 	UInputAction* InputQuickSlot4;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputQuickSlot5;
+
+
 	
+	// ================================================= 이동 관련 ======================================================
+	// 기본 이동 속도
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
+	float DefaultWalkSpeed;
+
+	// 현재 이동 속도
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
+	float CurrentWalkSpeed;
+
+	// 달리기 배율 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true", UIMin = 0))
+	float SprintSpeedMultiplier;
+	// ============================================= 이동 관련 끝! =======================================================
+
+
+	
+	// =================================== 병투척 변수 + 병이 날아갈 소켓 위치 변수 ========================================
+	// 캐릭터가 던지는 병 액터 클래스변수 설정
+	UPROPERTY(EditDefaultsOnly, Category = "Throw")
+	TSubclassOf<class ANS_ThrowActor> BottleClass;
+
+	// 던질 때 기준이 되는 소켓 이름 == 캐릭터 블루프린트에서 설정해주면 됨
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Throw")
+	FName ThrowSocketName;
+	// ============================================== 병투척 변수 끝! ===================================================
+
+
+	
+	// 죽음 애니메이션 몽타주
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Animation")
+	UAnimMontage* DeathMontage;
+	
+	// LookAction에 카메라 회전값 보간 속도 ---> 8은 너무 느려서 10이상은 되어야할 듯
+	UPROPERTY(EditDefaultsOnly, Category = "Aim")
+	float AimSendInterpSpeed = 10.f;
+
+	
+	
+	// ============================================= 점프 관련 변수들 ============================================
+	// 점프가 가능하게 하는 변수 
+	bool IsCanJump = true;
+	
+	// 점프 타이머 핸들
+	FTimerHandle JumpTimerHandle;
+	// ===========================================점프 관련 변수 끝!===============================================
+
+
+	
+	// ==================================== 데미지 받을 때 재생할 사운드 =========================================
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	USoundBase* DamageSound;
+	// =================================================================================================
+
+
+	
+	// =================================Turn In Place관련 변수들 ===============================
+	// Turn In Place가 가능한 Yaw회전 값
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	float TurnInPlaceThreshold = 90.0f; 
+	// 몸 회전 속도
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	float TurnInPlaceSpeed = 5.0f;   
+	// 몸 회전이 완료된 후 Yaw값을 0으로 리셋하는 속도
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	float TurnInPlaceResetThreshold = 10.0f;
+
+	// 현재 회전할 때 Yaw값
+	float CurrentTurnYaw = 0.0f;
+	// 현재 회전 중인지 여부
+	bool bIsTurningInPlace = false;
+	// CamYaw를 0으로 보간하는 속도
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	float TurnInPlaceYawResetSpeed = 10.0f;
+	// 회전 후 Yaw 값을 리셋 중인지 여부
+	UPROPERTY(BlueprintReadOnly, Category = "Animation")
+	bool bIsResettingYaw = false;
+	// 마지막 회전 Yaw 값
+	UPROPERTY(BlueprintReadOnly, Category = "Animation")
+	float LastTurnYaw = 0.0f;
+	// ===============================Turn In Place변수 끝!===================================
+
 	
 
 	// 캐릭터 EnhancedInput을 없앴다가 다시 부착하는는 함수 IMC를 지워웠다가 다시 장착하게해서 AnimNotify로 발차기 공격동안 IMC없앰
@@ -468,4 +454,17 @@ public:
 	// 사운드 멀티캐스트
 	UFUNCTION(NetMulticast, Reliable)
 	void PlaySoundOnCharacter_Multicast(USoundBase* SoundToPlay);
+
+	// ====================================== 병 투척 관련 함수들 ============================================= 
+	UFUNCTION(BlueprintCallable)
+	void UseThrowableItem_Internal(int32 Index);
+
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void Server_UseThrowableItem(int32 Index);
+
+	UFUNCTION(Server, Reliable)
+	void Server_AssignQuickSlot(int32 SlotIndex, UNS_InventoryBaseItem* Item);
+
+	void HandleUseThrowableItem(int32 Index);
+	// ====================================== 병 투척 관련 함수 끝! ============================================ 
 };

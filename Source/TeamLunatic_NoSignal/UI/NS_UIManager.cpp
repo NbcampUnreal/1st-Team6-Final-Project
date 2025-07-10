@@ -7,7 +7,6 @@
 #include "UI/NS_MasterMenuPanel.h"
 #include "UI/NS_Msg_GameOver.h"
 #include "UI/NS_InGameMsg.h"
-#include "UI/NS_PlayerHUD.h"
 #include "UI/NS_LoadingScreen.h"
 #include "UI/NS_SpectatorWidgetClass.h"
 #include "GameFlow/NS_GameInstance.h"
@@ -48,14 +47,6 @@ UNS_UIManager::UNS_UIManager()
     else
         UE_LOG(LogTemp, Warning, TEXT("NS_InGameMsgWidgetClass: %s"), *GetNameSafe(NS_InGameMsgWidgetClass));
 
-    // 플레이어 HUD 위젯 클래스 찾기
-    static ConstructorHelpers::FClassFinder<UNS_PlayerHUD> WBP_PlayerHUD(TEXT("/Game/UI/Blueprints/WBP_PlayerHUD.WBP_PlayerHUD_C"));
-    if (WBP_PlayerHUD.Succeeded())
-        NS_PlayerHUDWidgetClass = WBP_PlayerHUD.Class;
-    else
-        UE_LOG(LogTemp, Warning, TEXT("NS_PlayerHUDWidgetClass: %s"), *GetNameSafe(NS_PlayerHUDWidgetClass));
-
-    // 히트 이펙트 위젯 클래스 찾기
     static ConstructorHelpers::FClassFinder<UUserWidget> WBP_HitEffect(TEXT("/Game/UI/Blueprints/WBP_HitEffect.WBP_HitEffect_C"));
     if (WBP_HitEffect.Succeeded())
         HitEffectWidgetClass = WBP_HitEffect.Class;
@@ -85,21 +76,6 @@ void UNS_UIManager::InitUi(UWorld* World)
 {
     // UI 시스템 초기화 함수
     // 현재는 비어있지만, 필요한 경우 여기에 초기화 코드 추가
-}
-
-UNS_QuickSlotPanel* UNS_UIManager::GetQuickSlotPanel()
-{
-    // 플레이어 HUD에서 퀵슬롯 패널 가져오기
-    if (NS_PlayerHUDWidget)
-        return NS_PlayerHUDWidget->NS_QuickSlotPanel;
-    return nullptr;
-}
-
-void UNS_UIManager::HidePlayerHUDWidget(UWorld* World)
-{
-    // 플레이어 HUD 위젯이 존재하고 뷰포트에 있으면 숨기기
-    if (NS_PlayerHUDWidget && NS_PlayerHUDWidget->IsInViewport())
-        NS_PlayerHUDWidget->HideWidget();
 }
 
 bool UNS_UIManager::ShowGameMsgWidget(FString& GameMsg, UWorld* World)
@@ -543,29 +519,19 @@ void UNS_UIManager::ShowHitEffectWidget(UWorld* World)
     }
 }
 
-// PlayerHUD 등록 함수
-void UNS_UIManager::SetPlayerHUDWidget(UNS_PlayerHUD* InHUD)
+// PlayerWidget 등록 함수 (더 이상 사용하지 않음 - 인벤토리 HUD에서 관리)
+void UNS_UIManager::SetPlayerWidget(UNS_PlayerWidget* InWidget)
 {
-    // 이미 등록되어 있다면 아무것도 하지 않음
-    if (NS_PlayerHUDWidget) return;
-
-    if (InHUD)
-    {
-        // HUD 등록 및 이벤트 방송
-        NS_PlayerHUDWidget = InHUD;
-        OnPlayerHUDReady.Broadcast(NS_PlayerHUDWidget);
-        UE_LOG(LogTemp, Log, TEXT("PlayerHUD가 UIManager에 등록되고, OnPlayerHUDReady 이벤트가 방송되었습니다."));
-    }
+    // 더 이상 자동으로 PlayerWidget을 생성하지 않음
+    // 인벤토리 HUD에서 관리하도록 변경
+    UE_LOG(LogTemp, Warning, TEXT("SetPlayerWidget 호출됨 - 더 이상 UIManager에서 PlayerWidget을 관리하지 않음"));
 }
 
-// 플레이어 HUD 위젯 표시 함수
-bool UNS_UIManager::ShowPlayerHUDWidget(UWorld* World)
+// 플레이어 위젯 표시 함수 (더 이상 사용하지 않음)
+bool UNS_UIManager::ShowPlayerWidget(UWorld* World)
 {
-    // HUD가 존재하면 표시하고 성공 반환
-    if (NS_PlayerHUDWidget)
-    {
-        NS_PlayerHUDWidget->ShowWidget();
-        return true;
-    }
+    // 더 이상 UIManager에서 PlayerWidget을 자동으로 표시하지 않음
+    // 인벤토리 HUD에서 관리하도록 변경
+    UE_LOG(LogTemp, Warning, TEXT("ShowPlayerWidget 호출됨 - 더 이상 UIManager에서 PlayerWidget을 관리하지 않음"));
     return false;
 }

@@ -6,7 +6,6 @@
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Item/NS_InventoryBaseItem.h"
 #include "GameFlow/NS_GameInstance.h"
-#include "UI/NS_PlayerHUD.h"
 #include "UI/NS_UIManager.h"
 #include "Character/Components/NS_QuickSlotComponent.h"
 #include "Engine/ActorChannel.h"
@@ -378,22 +377,6 @@ void UNS_InventoryComponent::AddNewItem(UNS_InventoryBaseItem* Item, const int32
 	BroadcastInventoryUpdate();
 	UE_LOG(LogTemp, Warning, TEXT("[Inventory] Added %s"), *NewItem->GetName());
 	UE_LOG(LogTemp, Warning, TEXT("[Inventory] NewItem OwingInventory: %s"), *GetNameSafe(NewItem->OwingInventory));
-
-	// 쪽지 아이템 획득 시 PlayerHUD의 TipText 숨기기 처리 (클라이언트 RPC 사용)
-    	if (NewItem->ItemType == EItemType::Misc)
-    	{
-    		AActor* OwnerActor = GetOwner();
-    		if (OwnerActor)
-    		{
-    			ANS_PlayerCharacterBase* Player = Cast<ANS_PlayerCharacterBase>(OwnerActor);
-    			if (Player)
-    			{
-    				// 클라이언트 RPC를 통해 TipText 숨기기 처리
-    				Player->Multicast_HideTipText();
-    				UE_LOG(LogTemp, Warning, TEXT("AddNewItem: Misc 아이템 획득으로 Client_HideTipText() 호출"));
-    			}
-    		}
-    	}
 }
 
 void UNS_InventoryComponent::CleanUpZeroQuantityItems()

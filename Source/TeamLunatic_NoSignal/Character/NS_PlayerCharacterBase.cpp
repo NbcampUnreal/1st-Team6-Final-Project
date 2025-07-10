@@ -19,13 +19,9 @@
 #include <Net/UnrealNetwork.h>
 #include "Character/Components//NS_QuickSlotComponent.h"
 #include "Item/NS_BaseWeapon.h"
-#include "UI/NS_UIManager.h"
-#include "UI/NS_PlayerHUD.h"
-#include "GameFlow/NS_GameInstance.h"
-#include "Blueprint/UserWidget.h"
 #include "UI/NS_OpenLevelMap.h"
-#include "Character/NS_PlayerController.h"
 #include "Sound/SoundBase.h"
+#include "Inventory UI/NS_InventoryHUD.h"
 
 ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
 {
@@ -107,6 +103,19 @@ void ANS_PlayerCharacterBase::BeginPlay()
         if (auto Sub = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
         {
             Sub->AddMappingContext(DefaultMappingContext, 0);
+        }
+        
+        // HUD 설정
+        if (PC->IsLocalController())
+        {
+            if (ANS_InventoryHUD* InventoryHUD = Cast<ANS_InventoryHUD>(PC->GetHUD()))
+            {
+                if (InteractionComp)
+                {
+                    InventoryHUD->SetInteractionComponent(InteractionComp);
+                }
+                InventoryHUD->SetPlayerCharacter(this);
+            }
         }
     }
 
@@ -369,7 +378,7 @@ float ANS_PlayerCharacterBase::TakeDamage(
         );
 
         // 캐릭터 체력이 0이면 죽음 애니메이션 실행
-        if (StatusComp->Health <= 0.f)
+        if (StatusComp->Health <= 0)
         {
             PlayDeath_Server();
         }
@@ -580,7 +589,7 @@ void ANS_PlayerCharacterBase::Multicast_TakeDmage_Implementation(float DamageAmo
         if (StatusComp)
         {
             // 체력 값 직접 업데이트 (서버에서 복제될 때까지 기다리지 않음)
-            StatusComp->Health = FMath::Clamp(StatusComp->Health - DamageAmount, 0.f, StatusComp->MaxHealth);
+            StatusComp->Health = FMath::Clamp(StatusComp->Health - FMath::RoundToInt(DamageAmount), 0, StatusComp->MaxHealth);
             
             // UI 업데이트
             if (APlayerController* PC = Cast<APlayerController>(GetController()))
@@ -992,21 +1001,6 @@ void ANS_PlayerCharacterBase::Client_NotifyInventoryUpdated_Implementation()
                     QuickSlotComp->BroadcastSlotUpdate();
                 }
             }), 0.05f, false);
-    }
-}
-
-void ANS_PlayerCharacterBase::Multicast_HideTipText_Implementation()
-{
-    // 모든 클라이언트에서 TipText 숨기기 처리
-    if (UNS_GameInstance* GI = GetGameInstance<UNS_GameInstance>())
-    {
-        if (UNS_UIManager* UIManager = GI->GetUIManager())
-        {
-            if (UNS_PlayerHUD* PlayerHUD = UIManager->GetPlayerHUDWidget())
-            {
-                PlayerHUD->HideTipText();
-            }
-        }
     }
 }
 

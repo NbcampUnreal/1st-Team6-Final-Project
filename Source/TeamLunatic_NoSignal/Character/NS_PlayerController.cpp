@@ -3,7 +3,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "UI/NS_UIManager.h"
 #include "UI/NS_Msg_GameOver.h" 
-#include "UI/NS_PlayerHUD.h"
+// #include "UI/NS_PlayerHUD.h" // 더 이상 자동으로 생성하지 않음
 #include "Blueprint/UserWidget.h" 
 #include "Inventory UI/NS_InventoryHUD.h"
 
@@ -31,36 +31,6 @@ void ANS_PlayerController::BeginPlay()
 {
     // 부모 클래스의 BeginPlay 호출
     Super::BeginPlay();
-
-    // 로컬 플레이어 컨트롤러인 경우에만 HUD 초기화
-    if (IsLocalPlayerController())
-    {
-        // PlayerHUDClass가 설정되어 있는지 확인
-        if (PlayerHUDClass)
-        {
-            // PlayerHUD 위젯 생성
-            PlayerHUDWidget = CreateWidget<UNS_PlayerHUD>(this, PlayerHUDClass);
-
-            if (PlayerHUDWidget)
-            {
-                // 뷰포트에 HUD 추가
-                PlayerHUDWidget->AddToViewport();
-                
-                // HUD 표시
-                PlayerHUDWidget->ShowWidget();
-
-                // 게임 인스턴스를 통해 UI 매니저 접근
-                if (UNS_GameInstance* GI = GetGameInstance<UNS_GameInstance>())
-                {
-                    if (UNS_UIManager* UIManager = GI->GetUIManager())
-                    {
-                        // UI 매니저에 플레이어 HUD 등록
-                        UIManager->SetPlayerHUDWidget(PlayerHUDWidget);
-                    }
-                }
-            }
-        }
-    }
 }
 
 /**
@@ -211,16 +181,7 @@ void ANS_PlayerController::Client_ShowHitEffect_Implementation()
  */
 void ANS_PlayerController::UpdateTipHUD(const FText& Message)
 {
-    // 게임 인스턴스를 통해 UI 매니저 접근
-    if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(GetGameInstance()))
-    {
-        if (UNS_UIManager* UIManager = GI->GetUIManager())
-        {
-            if (UNS_PlayerHUD* PlayerHUD = UIManager->GetPlayerHUDWidget())
-            {
-                // 팁 텍스트 설정
-                PlayerHUD->SetTipText(Message);
-            }
-        }
-    }
+    // PlayerHUD는 더 이상 UIManager에서 관리하지 않음
+    // 인벤토리 HUD에서 PlayerWidget을 통해 처리하도록 변경 필요
+    UE_LOG(LogTemp, Warning, TEXT("UpdateTipHUD 호출됨 - 인벤토리 HUD에서 처리하도록 변경 필요"));
 }

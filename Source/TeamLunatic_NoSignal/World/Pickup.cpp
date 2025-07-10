@@ -12,7 +12,6 @@
 #include "GameFlow/NS_GameInstance.h"
 #include "UI/NS_UIManager.h"
 #include "Character/NS_PlayerController.h"
-#include "UI/NS_PlayerHUD.h"
 #include "Net/UnrealNetwork.h"
 
 APickup::APickup()
