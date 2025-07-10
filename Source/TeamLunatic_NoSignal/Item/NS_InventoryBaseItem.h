@@ -106,9 +106,9 @@ public:
 public:
 	EItemType GetItemType() const { return ItemType; }
 	EWeaponType GetWeaponType() const { return WeaponType; }
-	FText GetItemName() const { return ItemName; }
-	float GetWeight() const { return Weight; }
-	UTexture2D* GetItemIcon() const { return Icon; }
+	FText GetItemName() const;
+	float GetWeight() const;
+	UTexture2D* GetItemIcon() const;
 	const FNS_ItemDataStruct* GetItemData() const;
 
 	virtual void OnUseItem(class ANS_PlayerCharacterBase* Character);

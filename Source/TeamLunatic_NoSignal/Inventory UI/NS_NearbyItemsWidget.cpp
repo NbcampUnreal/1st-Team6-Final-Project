@@ -54,26 +54,40 @@ void UNS_NearbyItemsWidget::UpdateItemsList(const TArray<FNearbyItemInfo>& Nearb
 	}
 	
 	// 각 아이템에 대한 항목 위젯 생성
+	int32 ItemCount = 0;
 	for (const FNearbyItemInfo& ItemInfo : NearbyItems)
 	{
 		// 아이템이 유효한지 확인
 		if (!ItemInfo.Item || !ItemInfo.ItemActor)
 		{
+			UE_LOG(LogTemp, Warning, TEXT("유효하지 않은 아이템 정보 건너뚼"));
 			continue;
 		}
+		
+		UE_LOG(LogTemp, Warning, TEXT("아이템 추가 중: %s, 수량: %d"), 
+			*ItemInfo.Item->GetName(), ItemInfo.Quantity);
 		
 		// 항목 위젯 생성
 		UNS_NearbyItemEntry* ItemEntry = CreateWidget<UNS_NearbyItemEntry>(this, ItemEntryClass);
 		if (ItemEntry)
 		{
+			UE_LOG(LogTemp, Warning, TEXT("항목 위젯 생성 성공"));
+			
 			// 항목 위젯 초기화
 			ItemEntry->SetItemInfo(ItemInfo);
 			ItemEntry->SetParentWidget(this);
 			
 			// 스크롤 박스에 추가
 			ItemsScrollBox->AddChild(ItemEntry);
+			ItemCount++;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("항목 위젯 생성 실패!"));
 		}
 	}
+	
+	UE_LOG(LogTemp, Warning, TEXT("총 %d개의 아이템 항목이 추가됨"), ItemCount);
 }
 
 void UNS_NearbyItemsWidget::RequestPickupItem(APickup* ItemActor)
