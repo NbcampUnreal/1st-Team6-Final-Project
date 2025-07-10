@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
-#include "Interaction/Component/InteractionComponent.h"
+#include "Character/Components/NS_InteractionComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/SpotLightComponent.h"
 #include "GameFlow/NS_GameModeBase.h"
@@ -17,7 +17,7 @@ class UInputAction;
 class UCameraComponent;
 class UNS_StatusComponent;
 class UNS_InventoryBaseItem;
-class UInventoryComponent;
+class UNS_InventoryComponent;
 class ANS_BaseWeapon;
 class UNS_EquipedWeaponComponent;
 class UNS_QuickSlotPanel;
@@ -33,10 +33,13 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
 	// ========== 이동 관련 =============
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	float DefaultWalkSpeed;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
+	float CurrentWalkSpeed;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true", UIMin = 0))
 	float SprintSpeedMultiplier;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true", UIMin = 0, UIMax = 2))
-	float SpeedMultiAtStat = 1.0f; //버프|디버프 때 조절될 속도 배율
+	
 
 
 	//조준이 가능한지 확인하는 변수
@@ -45,12 +48,12 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
 public:
 	ANS_PlayerCharacterBase();
 
-	FORCEINLINE UInventoryComponent* GetInventory() const { return PlayerInventory; };
+	UFUNCTION()
+	void OnInventoryWeightUpdated(float CurrentWeight, float WeightCapacity);
 
-	UInteractionComponent* GetInteractionComponent() const { return InteractionComponent; }
+	FORCEINLINE UNS_InventoryComponent* GetInventory() const { return PlayerInventory; };
 
-	//캐릭터의 스피드배율 변경용
-	FORCEINLINE void SetSpeedMultiply(float MultiplyValue) { SpeedMultiAtStat = MultiplyValue; };
+	UNS_InteractionComponent* GetInteractionComponent() const { return InteractionComponent; }
 
 	FORCEINLINE void SetAvailableAiming(bool bAvailable) { IsAvaliableAiming = bAvailable; };
 
@@ -147,10 +150,10 @@ public:
 
 	// 인터렉션 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interaction", meta = (AllowPrivateAccess = "true"))
-	UInteractionComponent* InteractionComponent;
+	UNS_InteractionComponent* InteractionComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory", Replicated)
-	UInventoryComponent* PlayerInventory;
+	UNS_InventoryComponent* PlayerInventory;
 
 	UPROPERTY()
 	UNS_QuickSlotPanel* QuickSlotPanel;

@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
-#include "InteractionInterface.generated.h"
+#include "NS_InteractionInterface.generated.h"
 
 UENUM()
 enum class EInteractableType : uint8
@@ -49,7 +49,7 @@ struct FInteractableData
 };
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
-class UInteractionInterface : public UInterface
+class UNS_InteractionInterface : public UInterface
 {
 	GENERATED_BODY()
 };
@@ -57,7 +57,7 @@ class UInteractionInterface : public UInterface
 /**
  * 
  */
-class TEAMLUNATIC_NOSIGNAL_API IInteractionInterface
+class TEAMLUNATIC_NOSIGNAL_API INS_InteractionInterface
 {
 	GENERATED_BODY()
 

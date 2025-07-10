@@ -3,7 +3,7 @@
 #include "EnhancedInputSubsystems.H"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Inventory/InventoryComponent.h"
+#include "Character/Components/NS_InventoryComponent.h"
 #include "Item/NS_InventoryBaseItem.h"
 #include "Character/NS_PlayerController.h"
 #include "Components/NS_EquipedWeaponComponent.h"
@@ -11,13 +11,13 @@
 #include "Item/NS_BaseRangedWeapon.h"
 #include "Character/ThrowActor/NS_ThrowActor.h"
 #include "Materials/MaterialInstanceDynamic.h"
-#include "Interaction/Component/InteractionComponent.h"
+#include "Character/Components/NS_InteractionComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "World/Pickup.h"
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
 #include <Net/UnrealNetwork.h>
-#include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
+#include "Character/Components//NS_QuickSlotComponent.h"
 #include "Item/NS_BaseWeapon.h"
 #include "UI/NS_UIManager.h"
 #include "UI/NS_PlayerHUD.h"
@@ -34,6 +34,7 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     bReplicates = true;
 
     DefaultWalkSpeed = 500.f;
+	CurrentWalkSpeed = DefaultWalkSpeed;
 
     SprintSpeedMultiplier = 1.5f;
 
@@ -64,13 +65,13 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     // 스탯 컴포넌트
     StatusComp = CreateDefaultSubobject<UNS_StatusComponent>(TEXT("StatusComponent"));
     // 상호작용 컴포넌트
-    InteractionComponent = CreateDefaultSubobject<UInteractionComponent>(TEXT("InteractionComponent"));
+    InteractionComponent = CreateDefaultSubobject<UNS_InteractionComponent>(TEXT("InteractionComponent"));
     // 장착 무기 컴포넌트
     EquipedWeaponComp = CreateDefaultSubobject<UNS_EquipedWeaponComponent>(TEXT("EquipedWeaponComponent"));
 
     BaseEyeHeight = 74.0f;
     // 인벤토리
-    PlayerInventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("PlayerInventory"));
+    PlayerInventory = CreateDefaultSubobject<UNS_InventoryComponent>(TEXT("PlayerInventory"));
     SetReplicates(true);
     PlayerInventory->SetSlotsCapacity(20);
     PlayerInventory->SetWeightCapacity(50.0f);
@@ -115,6 +116,11 @@ void ANS_PlayerCharacterBase::BeginPlay()
     {
         GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed;
     }
+
+	if (PlayerInventory)
+	{
+		PlayerInventory->OnInventoryWeightUpdated.AddDynamic(this, &ANS_PlayerCharacterBase::OnInventoryWeightUpdated);
+	}
     
     // 기본 퀵슬롯는 1번부터 시작되도록 
     CurrentQuickSlotIndex = 0;
@@ -212,7 +218,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                 ToggleMenuAction,
                 ETriggerEvent::Started,
                 InteractionComponent,
-                &UInteractionComponent::ToggleMenu
+                &UNS_InteractionComponent::ToggleInventoryMenu
             );
         }
 
@@ -229,7 +235,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                  InteractAction,
                  ETriggerEvent::Completed,
                  InteractionComponent,
-                 &UInteractionComponent::EndInteract
+                 &UNS_InteractionComponent::EndInteract
              );
         }
 
@@ -559,7 +565,7 @@ void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputAct
         return;
     }
 
-    if (UInteractionComponent* InteractComp = FindComponentByClass<UInteractionComponent>())
+    if (UNS_InteractionComponent* InteractComp = FindComponentByClass<UNS_InteractionComponent>())
     {
         InteractComp->BeginInteract();
     }
@@ -614,17 +620,22 @@ void ANS_PlayerCharacterBase::Multicast_TakeDmage_Implementation(float DamageAmo
 
 void ANS_PlayerCharacterBase::PlayDeath_Server_Implementation()
 {
+    if (EquipedWeaponComp)
+    {
+        EquipedWeaponComp->UnequipWeapon();
+    }
+
     if (UWorld* World = GetWorld())
     {
         ANS_GameModeBase* BaseGameMode = Cast<ANS_GameModeBase>(UGameplayStatics::GetGameMode(World));
         if (BaseGameMode)
-        {
+        { 
             UE_LOG(LogTemp, Log, TEXT("[%s] GameMode('%s') 가져오기 및 캐스팅 성공."), *this->GetName(), *BaseGameMode->GetName());
 
             BaseGameMode->OnPlayerCharacterDied(this);
 
             if (AController* OwningController = GetController())
-            {
+            { 
                 if (ANS_MainGamePlayerState* PS = Cast<ANS_MainGamePlayerState>(OwningController->PlayerState))
                 {
                     PS->bIsAlive = false;
@@ -1242,11 +1253,11 @@ void ANS_PlayerCharacterBase::OnRep_IsSprint()
     {
         if (IsSprint)
         {
-            GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SprintSpeedMultiplier * SpeedMultiAtStat;
+            GetCharacterMovement()->MaxWalkSpeed = CurrentWalkSpeed * SprintSpeedMultiplier;
         }
         else
-        {
-            GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed * SpeedMultiAtStat;
+        { 
+            GetCharacterMovement()->MaxWalkSpeed = CurrentWalkSpeed;
         }
     }
 }
@@ -1343,4 +1354,28 @@ void ANS_PlayerCharacterBase::Multicast_PlayPickupSound_Implementation(USoundBas
     {
         UGameplayStatics::PlaySoundAtLocation(this, SoundToPlay, GetActorLocation());
     }
+}
+
+void ANS_PlayerCharacterBase::OnInventoryWeightUpdated(float CurrentWeight, float WeightCapacity)
+{
+	if (GetCharacterMovement())
+	{
+		if (WeightCapacity > 0)
+		{
+			// 현재 무게와 최대 무게의 비율을 계산합니다. (0.0 ~ 1.0 사이 값)
+			float WeightRatio = FMath::Clamp(CurrentWeight / WeightCapacity, 0.0f, 1.0f);
+			// 무게 비율에 따라 속도 감소량을 계산합니다. 최대 30%까지 감소합니다.
+			float SpeedReduction = DefaultWalkSpeed * 0.3f * WeightRatio;
+			// 기본 속도에서 감소량을 빼서 새로운 속도를 계산하고, 정수로 변환합니다.
+			CurrentWalkSpeed = FMath::RoundToInt(DefaultWalkSpeed - SpeedReduction);
+		}
+		else
+		{
+			// 무게 용량이 0 이하면 기본 속도로 설정합니다.
+			CurrentWalkSpeed = DefaultWalkSpeed;
+		}
+
+		// 현재 상태(걷기/달리기)에 맞춰 속도를 즉시 적용합니다.
+		OnRep_IsSprint();
+	}
 }

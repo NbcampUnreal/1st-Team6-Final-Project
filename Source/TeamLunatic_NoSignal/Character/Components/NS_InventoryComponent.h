@@ -5,9 +5,10 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Item/NS_ItemDataStruct.h"
-#include "InventoryComponent.generated.h"
+#include "NS_InventoryComponent.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnInventoryUpdated);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnInventoryWeightUpdated, float, CurrentWeight, float, WeightCapacity);
 
 class UNS_InventoryBaseItem;
 
@@ -66,12 +67,13 @@ struct FItemAddResult
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class TEAMLUNATIC_NOSIGNAL_API UInventoryComponent : public UActorComponent
+class TEAMLUNATIC_NOSIGNAL_API UNS_InventoryComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
-public:	
+public:
 	FOnInventoryUpdated OnInventoryUpdated;
+	FOnInventoryWeightUpdated OnInventoryWeightUpdated;
 
 	void BroadcastInventoryUpdate();
 	void CleanUpZeroQuantityItems();
@@ -79,7 +81,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory|Ammo")
 	bool HasAmmoForWeapon(EAmmoType WeaponAmmoType) const;
 
-	UInventoryComponent();
+	UNS_InventoryComponent();
 	virtual void InitializeComponent() override;
 	virtual bool ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

@@ -4,7 +4,7 @@
 #include "World/NS_CarEndingTriggerZone.h"
 #include "Components/BoxComponent.h"
 #include "Character/NS_PlayerCharacterBase.h"
-#include "Inventory/InventoryComponent.h"
+#include "Character/Components/NS_InventoryComponent.h"
 #include "Item/NS_InventoryBaseItem.h"
 
 #include "World/EndingUI/NS_EndingStatusUI.h"
@@ -175,7 +175,7 @@ void ANS_CarEndingTriggerZone::CheckGroupEndingCondition()
 
         NumPlayersInZone++;
 
-        UInventoryComponent* Inventory = Player->FindComponentByClass<UInventoryComponent>();
+        UNS_InventoryComponent* Inventory = Player->FindComponentByClass<UNS_InventoryComponent>();
         if (!Inventory) continue;
 
         // 인벤토리 내 아이템들을 순회

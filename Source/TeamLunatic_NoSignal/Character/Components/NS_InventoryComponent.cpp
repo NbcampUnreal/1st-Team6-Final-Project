@@ -1,24 +1,24 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Inventory/InventoryComponent.h"
+#include "Character/Components/NS_InventoryComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Item/NS_InventoryBaseItem.h"
 #include "GameFlow/NS_GameInstance.h"
 #include "UI/NS_PlayerHUD.h"
 #include "UI/NS_UIManager.h"
-#include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
+#include "Character/Components/NS_QuickSlotComponent.h"
 #include "Engine/ActorChannel.h"
 
 
-UInventoryComponent::UInventoryComponent()
+UNS_InventoryComponent::UNS_InventoryComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	SetIsReplicatedByDefault(true);
 }
 
-void UInventoryComponent::InitializeComponent()
+void UNS_InventoryComponent::InitializeComponent()
 {
 	Super::InitializeComponent();
 
@@ -26,7 +26,7 @@ void UInventoryComponent::InitializeComponent()
 }
 
 // Subobject(UObject 기반 인벤토리 아이템) 복제 처리
-bool UInventoryComponent::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags)
+bool UNS_InventoryComponent::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags)
 {
 	bool bWroteSomething = Super::ReplicateSubobjects(Channel, Bunch, RepFlags);
 
@@ -47,17 +47,18 @@ bool UInventoryComponent::ReplicateSubobjects(UActorChannel* Channel, FOutBunch*
 	return bWroteSomething;
 }
 
-void UInventoryComponent::BeginPlay()
+void UNS_InventoryComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
 }
 
 // 서버와 클라이언트에게 인벤토리 UI 갱신 요청
-void UInventoryComponent::BroadcastInventoryUpdate()
+void UNS_InventoryComponent::BroadcastInventoryUpdate()
 {
 	UE_LOG(LogTemp, Warning, TEXT(" BroadcastInventoryUpdate() called"));
-	OnInventoryUpdated.Broadcast(); // 서버용 UI 갱신
+	OnInventoryUpdated.Broadcast();
+	OnInventoryWeightUpdated.Broadcast(InventoryTotalWeight, InventoryWeightCapacity);
 
 	// 클라이언트에게도 알림
 	if (AController* Controller = Cast<AController>(GetOwner()->GetInstigatorController()))
@@ -71,17 +72,17 @@ void UInventoryComponent::BroadcastInventoryUpdate()
 }
 
 // 인벤토리 관련 변수 복제 설정
-void UInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+void UNS_InventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(UInventoryComponent, InventoryContents);
-	DOREPLIFETIME(UInventoryComponent, InventoryTotalWeight);
+	DOREPLIFETIME(UNS_InventoryComponent, InventoryContents);
+	DOREPLIFETIME(UNS_InventoryComponent, InventoryTotalWeight);
 }
 
 
 //  인벤토리에 아이템을 추가하는 함수
-FItemAddResult UInventoryComponent::HandleAddItem(UNS_InventoryBaseItem* InputItem)
+FItemAddResult UNS_InventoryComponent::HandleAddItem(UNS_InventoryBaseItem* InputItem)
 {
 	if (GetOwner())
 	{
@@ -118,7 +119,7 @@ FItemAddResult UInventoryComponent::HandleAddItem(UNS_InventoryBaseItem* InputIt
 }
 
 // 인벤토리에 동일한 아이템이 있는지 확인
-UNS_InventoryBaseItem* UInventoryComponent::FindMatchingItem(UNS_InventoryBaseItem* ItemIn) const
+UNS_InventoryBaseItem* UNS_InventoryComponent::FindMatchingItem(UNS_InventoryBaseItem* ItemIn) const
 {
 	if (ItemIn)
 	{
@@ -131,7 +132,7 @@ UNS_InventoryBaseItem* UInventoryComponent::FindMatchingItem(UNS_InventoryBaseIt
 }
 
 // 동일한 ID를 가진 다음 아이템을 찾음
-UNS_InventoryBaseItem* UInventoryComponent::FindNextItemByID(UNS_InventoryBaseItem* ItemIn) const
+UNS_InventoryBaseItem* UNS_InventoryComponent::FindNextItemByID(UNS_InventoryBaseItem* ItemIn) const
 {
 	if (ItemIn)
 	{
@@ -144,7 +145,7 @@ UNS_InventoryBaseItem* UInventoryComponent::FindNextItemByID(UNS_InventoryBaseIt
 }
 
 // 스택이 가득 차지 않은 아이템 중 동일한 아이템 찾기
-UNS_InventoryBaseItem* UInventoryComponent::FindNextPartialStack(UNS_InventoryBaseItem* ItemIn) const
+UNS_InventoryBaseItem* UNS_InventoryComponent::FindNextPartialStack(UNS_InventoryBaseItem* ItemIn) const
 {
 	if (const TArray<TObjectPtr<UNS_InventoryBaseItem>>::ElementType* Result = InventoryContents.FindByPredicate([&ItemIn](const UNS_InventoryBaseItem* InventoryItem)
 		{
@@ -159,7 +160,7 @@ UNS_InventoryBaseItem* UInventoryComponent::FindNextPartialStack(UNS_InventoryBa
 }
 
 // 인벤토리에서 특정 아이템을 하나 제거
-void UInventoryComponent::RemoveSingleInstanceOfItem(UNS_InventoryBaseItem* ItemToRemove)
+void UNS_InventoryComponent::RemoveSingleInstanceOfItem(UNS_InventoryBaseItem* ItemToRemove)
 {
 	InventoryContents.RemoveSingle(ItemToRemove);
 
@@ -175,7 +176,7 @@ void UInventoryComponent::RemoveSingleInstanceOfItem(UNS_InventoryBaseItem* Item
 }
 
 // 특정 수량만큼 아이템 제거
-int32 UInventoryComponent::RemoveAmountOfItem(UNS_InventoryBaseItem* ItemIn, int32 DesiredAmountToRemove)
+int32 UNS_InventoryComponent::RemoveAmountOfItem(UNS_InventoryBaseItem* ItemIn, int32 DesiredAmountToRemove)
 {
 	if (!ItemIn || DesiredAmountToRemove <= 0)
 		return 0;
@@ -195,7 +196,7 @@ int32 UInventoryComponent::RemoveAmountOfItem(UNS_InventoryBaseItem* ItemIn, int
 }
 
 // 기존 스택을 분할해서 새로운 스택 생성
-void UInventoryComponent::SplitExistingStack(UNS_InventoryBaseItem* ItemIn, const int32 AmountToSplit)
+void UNS_InventoryComponent::SplitExistingStack(UNS_InventoryBaseItem* ItemIn, const int32 AmountToSplit)
 {
 	if (!(InventoryContents.Num() + 1 > InventorySlotsCapacity))
 	{
@@ -205,7 +206,7 @@ void UInventoryComponent::SplitExistingStack(UNS_InventoryBaseItem* ItemIn, cons
 }
 
 // 스택 불가능한 아이템 처리
-FItemAddResult UInventoryComponent::HandleNonStackableItems(UNS_InventoryBaseItem* InputItem)
+FItemAddResult UNS_InventoryComponent::HandleNonStackableItems(UNS_InventoryBaseItem* InputItem)
 {
 	// 유효하지 않은 무게
 	if (FMath::IsNearlyZero(InputItem->GetItemSingleWeight()) || InputItem->GetItemSingleWeight() < 0)
@@ -228,7 +229,7 @@ FItemAddResult UInventoryComponent::HandleNonStackableItems(UNS_InventoryBaseIte
 }
 
 // 스택 가능한 아이템 처리
-int32 UInventoryComponent::HandleStackableItems(UNS_InventoryBaseItem* ItemIn, int32 RequestedAddAmount)
+int32 UNS_InventoryComponent::HandleStackableItems(UNS_InventoryBaseItem* ItemIn, int32 RequestedAddAmount)
 {
 	if (!IsValid(ItemIn) || RequestedAddAmount <= 0 || FMath::IsNearlyZero(ItemIn->GetItemStackWeight()))
 	{
@@ -317,7 +318,7 @@ int32 UInventoryComponent::HandleStackableItems(UNS_InventoryBaseItem* ItemIn, i
 }
 
 // 무게 제한을 고려한 수량 계산
-int32 UInventoryComponent::CalculateWeightAddAmount(UNS_InventoryBaseItem* ItemIn, int32 RequestedAddAmount)
+int32 UNS_InventoryComponent::CalculateWeightAddAmount(UNS_InventoryBaseItem* ItemIn, int32 RequestedAddAmount)
 {
 	const int32 WeightMaxAddAmount = FMath::FloorToInt((GetWeightCapacity() - InventoryTotalWeight) / ItemIn->GetItemSingleWeight());
 	if (WeightMaxAddAmount >= RequestedAddAmount)
@@ -328,7 +329,7 @@ int32 UInventoryComponent::CalculateWeightAddAmount(UNS_InventoryBaseItem* ItemI
 }
 
 // 스택을 가득 채우기 위해 필요한 수량 계산
-int32 UInventoryComponent::CalculateNumberForFullStack(UNS_InventoryBaseItem* StackableItem, int32 InitialRequestedAddAmount)
+int32 UNS_InventoryComponent::CalculateNumberForFullStack(UNS_InventoryBaseItem* StackableItem, int32 InitialRequestedAddAmount)
 {
 	const int32 AddAmountToMakeFullStack = StackableItem->NumericData.MaxStack - StackableItem->Quantity;
 
@@ -336,7 +337,7 @@ int32 UInventoryComponent::CalculateNumberForFullStack(UNS_InventoryBaseItem* St
 }
 
 //  새 아이템 인벤토리에 추가
-void UInventoryComponent::AddNewItem(UNS_InventoryBaseItem* Item, const int32 AmountToAdd)
+void UNS_InventoryComponent::AddNewItem(UNS_InventoryBaseItem* Item, const int32 AmountToAdd)
 {
 	if (!Item)
 	{
@@ -395,7 +396,7 @@ void UInventoryComponent::AddNewItem(UNS_InventoryBaseItem* Item, const int32 Am
     	}
 }
 
-void UInventoryComponent::CleanUpZeroQuantityItems()
+void UNS_InventoryComponent::CleanUpZeroQuantityItems()
 {
 	int32 BeforeNum = InventoryContents.Num();
 	float WeightToRemove = 0.f;
@@ -430,7 +431,7 @@ void UInventoryComponent::CleanUpZeroQuantityItems()
 }
 
 // 해당 무기 유형에 맞는 탄약이 인벤토리에 존재하는지 확인하는 함수
-bool UInventoryComponent::HasAmmoForWeapon(EAmmoType WeaponAmmoType) const
+bool UNS_InventoryComponent::HasAmmoForWeapon(EAmmoType WeaponAmmoType) const
 {
 	// 인벤토리에 있는 모든 아이템을 조회
 	for (const auto& Item : InventoryContents)

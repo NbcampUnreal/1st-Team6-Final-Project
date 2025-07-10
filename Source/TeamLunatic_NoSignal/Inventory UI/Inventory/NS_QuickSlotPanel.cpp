@@ -6,7 +6,7 @@
 #include "Components/HorizontalBox.h"
 #include "Components/HorizontalBoxSlot.h"
 #include "Item/NS_InventoryBaseItem.h"
-#include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
+#include "Character/Components/NS_QuickSlotComponent.h"
 
 void UNS_QuickSlotPanel::NativeConstruct()
 {

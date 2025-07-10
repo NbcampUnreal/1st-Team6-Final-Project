@@ -11,7 +11,7 @@
 #include "Inventory UI/Inventory/DragItemVisual.h"
 #include "Inventory UI/Inventory/ItemDragDropOperation.h"
 #include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
-#include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
+#include "Character/Components/NS_QuickSlotComponent.h"
 #include "Item/NS_BaseRangedWeapon.h"
 #include "Item/NS_ItemDataStruct.h"
 

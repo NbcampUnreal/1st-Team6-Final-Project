@@ -2,7 +2,7 @@
 
 #include "Character/AnimNotify/NS_AN_EquipQuickSlotItem.h"
 #include "Character/NS_PlayerCharacterBase.h"
-#include "Inventory/QSlotCom/NS_QuickSlotComponent.h"
+#include "Character/Components/NS_QuickSlotComponent.h"
 #include "Item/NS_InventoryBaseItem.h"
 #include "Character/Components/NS_EquipedWeaponComponent.h"
 

@@ -4,7 +4,7 @@
 #include "Inventory UI/Interaction/NS_InteractionWidget.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
-#include "Interaction/InteractionInterface.h"
+#include "Character/Interface/NS_InteractionInterface.h"
 
 void UNS_InteractionWidget::NativeOnInitialized()
 {
