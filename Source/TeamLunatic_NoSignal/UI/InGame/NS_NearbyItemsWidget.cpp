@@ -1,6 +1,6 @@
-#include "Inventory UI/NS_NearbyItemsWidget.h"
+#include "UI/InGame/NS_NearbyItemsWidget.h"
 #include "Components/ScrollBox.h"
-#include "Inventory UI/NS_NearbyItemEntry.h"
+#include "UI/InGame/NS_NearbyItemEntry.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "World/Pickup.h"
 
@@ -63,9 +63,6 @@ void UNS_NearbyItemsWidget::UpdateItemsList(const TArray<FNearbyItemInfo>& Nearb
 			UE_LOG(LogTemp, Warning, TEXT("유효하지 않은 아이템 정보 건너뚼"));
 			continue;
 		}
-		
-		UE_LOG(LogTemp, Warning, TEXT("아이템 추가 중: %s, 수량: %d"), 
-			*ItemInfo.Item->GetName(), ItemInfo.Quantity);
 		
 		// 항목 위젯 생성
 		UNS_NearbyItemEntry* ItemEntry = CreateWidget<UNS_NearbyItemEntry>(this, ItemEntryClass);

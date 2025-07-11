@@ -3,11 +3,11 @@
 #include "TimerManager.h"
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
-#include "Inventory UI/NS_InventoryHUD.h"
+#include "UI/HUD/NS_InGmaeHUD.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/PlayerController.h"
 #include "Character/NS_PlayerCharacterBase.h"
-#include "Inventory UI/Interaction/NS_InteractionWidget.h"
+#include "UI/InGame/NS_InteractionWidget.h"
 #include "Camera/CameraComponent.h"
 #include "World/Pickup.h"
 #include "Item/NS_InventoryBaseItem.h"
@@ -50,7 +50,7 @@ void UNS_InteractionComponent::ToggleInventoryMenu()
 				if (BaseHUD)
 				{
 				    UE_LOG(LogTemp, Warning, TEXT("BaseHUD 클래스: %s"), *BaseHUD->GetClass()->GetName());
-					HUD = Cast<ANS_InventoryHUD>(BaseHUD);
+					HUD = Cast<ANS_InGmaeHUD>(BaseHUD);
 					if (HUD)
 					{
 					    UE_LOG(LogTemp, Warning, TEXT("HUD 캐스팅 성공"));
@@ -174,7 +174,7 @@ void UNS_InteractionComponent::BeginPlay()
 	if (PC && PC->IsLocalController())
 	{
 		// HUD를 가져와 멤버 변수에 저장합니다.
-		HUD = Cast<ANS_InventoryHUD>(PC->GetHUD());
+		HUD = Cast<ANS_InGmaeHUD>(PC->GetHUD());
 		
 		if (!HUD)
 		{
@@ -184,7 +184,7 @@ void UNS_InteractionComponent::BeginPlay()
 			{
 				if (PC && PC->IsLocalController())
 				{
-					HUD = Cast<ANS_InventoryHUD>(PC->GetHUD());
+					HUD = Cast<ANS_InGmaeHUD>(PC->GetHUD());
 				}
 			}, 1.0f, false);
 		}
@@ -353,7 +353,7 @@ void UNS_InteractionComponent::HideInteractionWidgetSafely()
 	APlayerController* PC = Cast<APlayerController>(GetOwner()->GetInstigatorController());
 	if (!PC || !PC->IsLocalController()) return;
 
-	ANS_InventoryHUD* MyHUD = Cast<ANS_InventoryHUD>(PC->GetHUD());
+	ANS_InGmaeHUD* MyHUD = Cast<ANS_InGmaeHUD>(PC->GetHUD());
 	if (!IsValid(MyHUD)) return;
 
 	if (IsValid(MyHUD->GetInteractionWidget()))

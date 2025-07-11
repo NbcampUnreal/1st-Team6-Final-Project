@@ -1,11 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Inventory UI/Inventory/InventoryPanel.h"
+#include "UI/InGame/InventoryPanel.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Character/Components/NS_InventoryComponent.h"
-#include "Inventory UI/Inventory/InventoryItemSlot.h"
-#include "Inventory UI/Inventory/ItemDragDropOperation.h"
+#include "UI/InGame/InventoryItemSlot.h"
+#include "UI/InGame/ItemDragDropOperation.h"
 #include "Item/NS_InventoryBaseItem.h"
 
 void UInventoryPanel::NativeOnInitialized()

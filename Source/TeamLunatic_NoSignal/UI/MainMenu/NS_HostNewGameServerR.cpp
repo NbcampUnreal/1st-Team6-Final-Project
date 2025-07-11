@@ -1,4 +1,4 @@
-#include "UI/NS_HostNewGameServerR.h"
+#include "UI/MainMenu/NS_HostNewGameServerR.h"
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
 #include "Components/EditableTextBox.h"

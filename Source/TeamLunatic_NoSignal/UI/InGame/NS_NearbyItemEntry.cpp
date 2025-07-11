@@ -1,8 +1,8 @@
-#include "Inventory UI/NS_NearbyItemEntry.h"
+#include "UI/InGame/NS_NearbyItemEntry.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
 #include "Components/Button.h"
-#include "Inventory UI/NS_NearbyItemsWidget.h"
+#include "UI/InGame/NS_NearbyItemsWidget.h"
 #include "Item/NS_InventoryBaseItem.h"
 #include "World/Pickup.h"
 

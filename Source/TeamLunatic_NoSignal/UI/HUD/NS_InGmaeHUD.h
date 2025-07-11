@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
-#include "NS_InventoryHUD.generated.h"
+#include "NS_InGmaeHUD.generated.h"
 
 struct FInteractableData;
 struct FNearbyItemInfo;
@@ -17,7 +17,7 @@ class ANS_PlayerCharacterBase;
 class UNS_QuickSlotPanel;
 
 UCLASS()
-class TEAMLUNATIC_NOSIGNAL_API ANS_InventoryHUD : public AHUD
+class TEAMLUNATIC_NOSIGNAL_API ANS_InGmaeHUD : public AHUD
 {
 	GENERATED_BODY()
 	
@@ -50,7 +50,7 @@ public:
 	// 메뉴가 보이는지 여부
 	bool bIsMenuVisible;
 
-	ANS_InventoryHUD();
+	ANS_InGmaeHUD();
 
 	// 메뉴를 표시하는 함수
 	void DisplayMenu();

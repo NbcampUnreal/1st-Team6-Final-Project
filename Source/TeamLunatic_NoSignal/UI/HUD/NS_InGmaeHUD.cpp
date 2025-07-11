@@ -1,19 +1,19 @@
-#include "Inventory UI/NS_InventoryHUD.h"
-#include "Inventory UI/NS_InventoryMainMenu.h"
+#include "UI/HUD/NS_InGmaeHUD.h"
+#include "UI/InGame/NS_InventoryMainMenu.h"
 #include "Character/Interface/NS_InteractionInterface.h"
-#include "Inventory UI/Interaction/NS_InteractionWidget.h"
-#include "Inventory UI/NS_NearbyItemsWidget.h"
+#include "UI/InGame/NS_InteractionWidget.h"
+#include "UI/InGame/NS_NearbyItemsWidget.h"
 #include "Character/Components/NS_InteractionComponent.h"
-#include "Inventory UI/NS_PlayerWidget.h"
-#include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
+#include "UI/InGame/NS_PlayerWidget.h"
+#include "UI/InGame/NS_QuickSlotPanel.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Character/Components/NS_StatusComponent.h"
 
-ANS_InventoryHUD::ANS_InventoryHUD()
+ANS_InGmaeHUD::ANS_InGmaeHUD()
 {
 }
 
-void ANS_InventoryHUD::BeginPlay()
+void ANS_InGmaeHUD::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -73,7 +73,7 @@ void ANS_InventoryHUD::BeginPlay()
 	}
 }
 
-void ANS_InventoryHUD::DisplayMenu()
+void ANS_InGmaeHUD::DisplayMenu()
 {
 	if (InventoryMainMenuWidget)
 	{
@@ -82,7 +82,7 @@ void ANS_InventoryHUD::DisplayMenu()
 	}
 }
 
-void ANS_InventoryHUD::HideMenu()
+void ANS_InGmaeHUD::HideMenu()
 {
 	if (InventoryMainMenuWidget)
 	{
@@ -91,7 +91,7 @@ void ANS_InventoryHUD::HideMenu()
 	}
 }
 
-void ANS_InventoryHUD::OpenInventoryWidget()
+void ANS_InGmaeHUD::OpenInventoryWidget()
 {
 	if (bIsMenuVisible)
 	{
@@ -113,7 +113,7 @@ void ANS_InventoryHUD::OpenInventoryWidget()
 	}
 }
 
-void ANS_InventoryHUD::ShowInteractionWidget()
+void ANS_InGmaeHUD::ShowInteractionWidget()
 {
 	if (InteractionWidget)
 	{
@@ -121,7 +121,7 @@ void ANS_InventoryHUD::ShowInteractionWidget()
 	}
 }
 
-void ANS_InventoryHUD::HideInteractionWidget()
+void ANS_InGmaeHUD::HideInteractionWidget()
 {
 	if (InteractionWidget)
 	{
@@ -129,7 +129,7 @@ void ANS_InventoryHUD::HideInteractionWidget()
 	}
 }
 
-void ANS_InventoryHUD::UpdateInteractionWidget(const FInteractableData* InteractableData) const
+void ANS_InGmaeHUD::UpdateInteractionWidget(const FInteractableData* InteractableData) const
 {
 	if (InteractionWidget)
 	{
@@ -141,7 +141,7 @@ void ANS_InventoryHUD::UpdateInteractionWidget(const FInteractableData* Interact
 	}
 }
 
-void ANS_InventoryHUD::ShowNearbyItemsWidget()
+void ANS_InGmaeHUD::ShowNearbyItemsWidget()
 {
 	if (NearbyItemsWidget)
 	{
@@ -161,7 +161,7 @@ void ANS_InventoryHUD::ShowNearbyItemsWidget()
 	}
 }
 
-void ANS_InventoryHUD::HideNearbyItemsWidget()
+void ANS_InGmaeHUD::HideNearbyItemsWidget()
 {
 	if (NearbyItemsWidget)
 	{
@@ -169,7 +169,7 @@ void ANS_InventoryHUD::HideNearbyItemsWidget()
 	}
 }
 
-void ANS_InventoryHUD::UpdateNearbyItemsWidget(const TArray<FNearbyItemInfo>& NearbyItems)
+void ANS_InGmaeHUD::UpdateNearbyItemsWidget(const TArray<FNearbyItemInfo>& NearbyItems)
 {
 	if (NearbyItemsWidget && NearbyItemsWidget->GetVisibility() == ESlateVisibility::Visible)
 	{
@@ -177,17 +177,17 @@ void ANS_InventoryHUD::UpdateNearbyItemsWidget(const TArray<FNearbyItemInfo>& Ne
 	}
 }
 
-void ANS_InventoryHUD::SetInteractionComponent(UNS_InteractionComponent* InInteractionComponent)
+void ANS_InGmaeHUD::SetInteractionComponent(UNS_InteractionComponent* InInteractionComponent)
 {
 	InteractionComponent = InInteractionComponent;
 	
 	if (InteractionComponent)
 	{
-		InteractionComponent->OnNearbyItemsUpdated.AddDynamic(this, &ANS_InventoryHUD::OnNearbyItemsUpdated);
+		InteractionComponent->OnNearbyItemsUpdated.AddDynamic(this, &ANS_InGmaeHUD::OnNearbyItemsUpdated);
 	}
 }
 
-void ANS_InventoryHUD::OnNearbyItemsUpdated()
+void ANS_InGmaeHUD::OnNearbyItemsUpdated()
 {
 	if (InteractionComponent && bIsMenuVisible)
 	{
@@ -195,7 +195,7 @@ void ANS_InventoryHUD::OnNearbyItemsUpdated()
 	}
 }
 
-void ANS_InventoryHUD::UpdatePlayerHealth(int32 CurrentHealth, int32 MaxHealth)
+void ANS_InGmaeHUD::UpdatePlayerHealth(int32 CurrentHealth, int32 MaxHealth)
 {
 	if (PlayerWidget)
 	{
@@ -203,7 +203,7 @@ void ANS_InventoryHUD::UpdatePlayerHealth(int32 CurrentHealth, int32 MaxHealth)
 	}
 }
 
-void ANS_InventoryHUD::UpdatePlayerStamina(int32 CurrentStamina, int32 MaxStamina)
+void ANS_InGmaeHUD::UpdatePlayerStamina(int32 CurrentStamina, int32 MaxStamina)
 {
 	if (PlayerWidget)
 	{
@@ -211,7 +211,7 @@ void ANS_InventoryHUD::UpdatePlayerStamina(int32 CurrentStamina, int32 MaxStamin
 	}
 }
 
-void ANS_InventoryHUD::SetCrosshairVisibility(bool bVisible)
+void ANS_InGmaeHUD::SetCrosshairVisibility(bool bVisible)
 {
 	if (PlayerWidget)
 	{
@@ -219,7 +219,7 @@ void ANS_InventoryHUD::SetCrosshairVisibility(bool bVisible)
 	}
 }
 
-void ANS_InventoryHUD::SetPlayerCharacter(ANS_PlayerCharacterBase* InPlayerCharacter)
+void ANS_InGmaeHUD::SetPlayerCharacter(ANS_PlayerCharacterBase* InPlayerCharacter)
 {
 	PlayerCharacter = InPlayerCharacter;
 	
@@ -228,7 +228,7 @@ void ANS_InventoryHUD::SetPlayerCharacter(ANS_PlayerCharacterBase* InPlayerChara
 		UpdatePlayerHealth(PlayerCharacter->StatusComp->Health, PlayerCharacter->StatusComp->MaxHealth);
 		UpdatePlayerStamina(PlayerCharacter->StatusComp->Stamina, PlayerCharacter->StatusComp->MaxStamina);
 		
-		PlayerCharacter->StatusComp->OnHealthChanged.AddDynamic(this, &ANS_InventoryHUD::UpdatePlayerHealth);
-		PlayerCharacter->StatusComp->OnStaminaChanged.AddDynamic(this, &ANS_InventoryHUD::UpdatePlayerStamina);
+		PlayerCharacter->StatusComp->OnHealthChanged.AddDynamic(this, &ANS_InGmaeHUD::UpdatePlayerHealth);
+		PlayerCharacter->StatusComp->OnStaminaChanged.AddDynamic(this, &ANS_InGmaeHUD::UpdatePlayerStamina);
 	}
 }

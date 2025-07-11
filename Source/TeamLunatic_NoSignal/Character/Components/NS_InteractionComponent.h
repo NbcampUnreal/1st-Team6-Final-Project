@@ -8,7 +8,7 @@
 class UInputAction;
 class UInputMappingContext;
 class UCameraComponent;
-class ANS_InventoryHUD;
+class ANS_InGmaeHUD;
 class UNS_InventoryBaseItem;
 class APickup;
 
@@ -109,7 +109,7 @@ protected:
 
 	// HUD에 대한 참조
 	UPROPERTY()
-	ANS_InventoryHUD* HUD;
+	ANS_InGmaeHUD* HUD;
 
 	// 아이템 감지 범위
 	UPROPERTY(EditAnywhere, Category = "Interaction")

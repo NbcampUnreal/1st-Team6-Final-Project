@@ -1,5 +1,5 @@
-#include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
-#include "Inventory UI/Inventory/NS_QuickSlotSlotWidget.h"
+#include "UI/InGame/NS_QuickSlotPanel.h"
+#include "UI/InGame/NS_QuickSlotSlotWidget.h"
 #include "Components/HorizontalBox.h"
 #include "Item/NS_InventoryBaseItem.h"
 #include "Character/Components/NS_QuickSlotComponent.h"

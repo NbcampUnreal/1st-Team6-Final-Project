@@ -1,4 +1,4 @@
-#include "Inventory UI/Inventory/NS_QuickSlotKey.h"
+#include "UI/InGame/NS_QuickSlotKey.h"
 #include "Components/TextBlock.h"
 
 void UNS_QuickSlotKey::SetSlotIndex(int32 Index)

@@ -1,6 +1,6 @@
 // NS_PlayerWidget.cpp - 단순화된 플레이어 UI 위젯
 
-#include "Inventory UI/NS_PlayerWidget.h"
+#include "UI/InGame/NS_PlayerWidget.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
 

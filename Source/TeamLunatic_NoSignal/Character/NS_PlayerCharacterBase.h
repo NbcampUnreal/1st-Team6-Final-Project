@@ -9,7 +9,7 @@
 #include "GameFlow/NS_GameModeBase.h"
 #include "GameFlow/NS_MainGamePlayerState.h"
 #include "Character/ThrowActor/NS_ThrowActor.h"
-#include "UI/NS_OpenLevelMap.h"
+#include "UI/InGame/NS_OpenLevelMap.h"
 #include "NS_PlayerCharacterBase.generated.h"
 
 class UInputMappingContext;
