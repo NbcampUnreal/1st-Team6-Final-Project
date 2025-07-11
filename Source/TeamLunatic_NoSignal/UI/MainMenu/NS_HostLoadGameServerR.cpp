@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "UI/NS_HostLoadGameServerR.h"
+#include "UI/MainMenu/NS_HostLoadGameServerR.h"
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
 #include "Components/CheckBox.h"

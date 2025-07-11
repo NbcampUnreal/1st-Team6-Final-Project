@@ -3,7 +3,7 @@
 
 #include "World/NS_Device.h"
 #include "Net/UnrealNetwork.h"
-#include "Inventory UI/NS_InventoryHUD.h"
+#include "UI/HUD/NS_InGmaeHUD.h"
 #include "Kismet/GameplayStatics.h"
 
 // Sets default values

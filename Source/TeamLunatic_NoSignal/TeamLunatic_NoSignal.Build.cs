@@ -36,6 +36,9 @@ public class TeamLunatic_NoSignal : ModuleRules
         //    DynamicallyLoadedModuleNames.Add("OnlineSubsystemSteam");
         //}
 
-        PublicIncludePaths.AddRange(new string[] { "TeamLunatic_NoSignal" });
+        PublicIncludePaths.AddRange(new string[]
+        {
+            "TeamLunatic_NoSignal"
+        });
     }
 }

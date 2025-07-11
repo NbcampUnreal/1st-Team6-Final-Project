@@ -19,9 +19,9 @@
 #include <Net/UnrealNetwork.h>
 #include "Character/Components//NS_QuickSlotComponent.h"
 #include "Item/NS_BaseWeapon.h"
-#include "UI/NS_OpenLevelMap.h"
+#include "UI/InGame/NS_OpenLevelMap.h"
 #include "Sound/SoundBase.h"
-#include "Inventory UI/NS_InventoryHUD.h"
+#include "UI/HUD/NS_InGmaeHUD.h"
 
 ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
 {
@@ -108,7 +108,7 @@ void ANS_PlayerCharacterBase::BeginPlay()
         // HUD 설정
         if (PC->IsLocalController())
         {
-            if (ANS_InventoryHUD* InventoryHUD = Cast<ANS_InventoryHUD>(PC->GetHUD()))
+            if (ANS_InGmaeHUD* InventoryHUD = Cast<ANS_InGmaeHUD>(PC->GetHUD()))
             {
                 if (InteractionComp)
                 {

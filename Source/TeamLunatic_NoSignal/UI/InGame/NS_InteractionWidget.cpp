@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Inventory UI/Interaction/NS_InteractionWidget.h"
+#include "UI/InGame/NS_InteractionWidget.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "Character/Interface/NS_InteractionInterface.h"

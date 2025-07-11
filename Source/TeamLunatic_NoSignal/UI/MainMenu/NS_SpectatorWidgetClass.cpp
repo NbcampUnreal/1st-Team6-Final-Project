@@ -1,4 +1,4 @@
-#include "UI/NS_SpectatorWidgetClass.h"
+#include "UI/MainMenu/NS_SpectatorWidgetClass.h"
 #include "GameFlow/NS_PlayerState.h"
 #include "Components/Button.h"
 #include "Components/TextBlock.h"

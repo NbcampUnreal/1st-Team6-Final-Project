@@ -1,6 +1,6 @@
-#include "UI/NS_ServerBrowserR.h"
+#include "UI/MainMenu/NS_ServerBrowserR.h"
 #include "GameFlow/NS_GameInstance.h"
-#include "UI/NS_ServerListingR.h"
+#include "UI/MainMenu/NS_ServerListingR.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
 #include "Components/CheckBox.h"

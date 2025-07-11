@@ -1,11 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Inventory UI/Inventory/InventoryItemSlot.h"
-#include "Inventory UI/Inventory/InventoryTooltip.h"
+#include "UI/InGame/InventoryItemSlot.h"
+#include "UI/InGame/InventoryTooltip.h"
 #include "Item/NS_InventoryBaseItem.h"
-#include "Inventory UI/Inventory/DragItemVisual.h"
-#include "Inventory UI/Inventory/ItemDragDropOperation.h"
+#include "UI/InGame/DragItemVisual.h"
+#include "UI/InGame/ItemDragDropOperation.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "GameFlow/NS_GameInstance.h"
 

@@ -5,8 +5,8 @@
 #include <Net/UnrealNetwork.h>
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Item/NS_InventoryBaseItem.h"
-#include "Inventory UI/Inventory/NS_QuickSlotPanel.h"
-#include "Inventory UI/Inventory/NS_QuickSlotSlotWidget.h"
+#include "UI/InGame/NS_QuickSlotPanel.h"
+#include "UI/InGame/NS_QuickSlotSlotWidget.h"
 #include "Engine/ActorChannel.h"
 
 UNS_QuickSlotComponent::UNS_QuickSlotComponent()

@@ -1,4 +1,4 @@
-#include "UI/NS_ServerListingR.h"
+#include "UI/MainMenu/NS_ServerListingR.h"
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
 #include "Kismet/GameplayStatics.h"

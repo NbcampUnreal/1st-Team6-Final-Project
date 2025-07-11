@@ -1,7 +1,7 @@
 #include "Character/NS_PlayerController.h"
 #include "GameFlow/NS_GameInstance.h"
 #include "Kismet/GameplayStatics.h"
-#include "Inventory UI/NS_InventoryHUD.h"
+#include "UI/HUD/NS_InGmaeHUD.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Character/Components/NS_StatusComponent.h"
 
@@ -112,7 +112,7 @@ void ANS_PlayerController::UpdateTipHUD(const FText& Message)
 void ANS_PlayerController::UpdatePlayerHealthUI()
 {
     // 인벤토리 HUD 가져오기
-    ANS_InventoryHUD* InventoryHUD = Cast<ANS_InventoryHUD>(GetHUD());
+    ANS_InGmaeHUD* InventoryHUD = Cast<ANS_InGmaeHUD>(GetHUD());
     if (!InventoryHUD)
     {
         return;
@@ -136,7 +136,7 @@ void ANS_PlayerController::UpdatePlayerHealthUI()
 void ANS_PlayerController::UpdatePlayerStaminaUI()
 {
     // 인벤토리 HUD 가져오기
-    ANS_InventoryHUD* InventoryHUD = Cast<ANS_InventoryHUD>(GetHUD());
+    ANS_InGmaeHUD* InventoryHUD = Cast<ANS_InGmaeHUD>(GetHUD());
     if (!InventoryHUD)
     {
         return;
