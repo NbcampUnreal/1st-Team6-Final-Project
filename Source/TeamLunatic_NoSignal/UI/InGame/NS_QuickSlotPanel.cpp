@@ -1,5 +1,5 @@
 #include "UI/InGame/NS_QuickSlotPanel.h"
-#include "UI/InGame/NS_QuickSlotSlotWidget.h"
+#include "UI/InGame/NS_QuickSlotBox.h"
 #include "Components/HorizontalBox.h"
 #include "Item/NS_InventoryBaseItem.h"
 #include "Character/Components/NS_QuickSlotComponent.h"
@@ -39,7 +39,7 @@ void UNS_QuickSlotPanel::InitializeSlots()
     for (int32 i = 0; i < SlotCount; ++i)
     {
         // 새로운 퀵 슬롯 슬롯 위젯을 생성합니다.
-        UNS_QuickSlotSlotWidget* NewSlot = CreateWidget<UNS_QuickSlotSlotWidget>(this, SlotWidgetClass);
+        UNS_QuickSlotBox* NewSlot = CreateWidget<UNS_QuickSlotBox>(this, SlotWidgetClass);
         if (NewSlot)
         {
             // 슬롯의 인덱스를 설정하고 HorizontalBox에 추가합니다.
@@ -124,7 +124,7 @@ void UNS_QuickSlotPanel::RefreshQuickSlots(const TArray<TObjectPtr<UNS_Inventory
         if (UWidget* Child = SlotBox->GetChildAt(i))
         {
             // 자식 위젯을 UNS_QuickSlotSlotWidget으로 캐스팅합니다.
-            if (UNS_QuickSlotSlotWidget* QSlot = Cast<UNS_QuickSlotSlotWidget>(Child))
+            if (UNS_QuickSlotBox* QSlot = Cast<UNS_QuickSlotBox>(Child))
             {
                 // 퀵 슬롯 배열에 유효한 인덱스이고 아이템이 존재하면 슬롯에 아이템을 설정합니다.
                 if (QuickSlots.IsValidIndex(i) && QuickSlots[i])

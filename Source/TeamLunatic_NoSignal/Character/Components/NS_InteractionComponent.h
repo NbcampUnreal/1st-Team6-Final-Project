@@ -8,7 +8,7 @@
 class UInputAction;
 class UInputMappingContext;
 class UCameraComponent;
-class ANS_InGmaeHUD;
+class ANS_InGameHUD;
 class UNS_InventoryBaseItem;
 class APickup;
 
@@ -87,8 +87,6 @@ public:
 	TScriptInterface<class INS_InteractionInterface> GetCurrentInteractable() const { return TargetInteractable; }
 	// 상호작용 위젯을 업데이트
 	void UpdateInteractionWidget();
-	// 인벤토리 위젯 오픈
-	void ToggleInventoryMenu();
 
 	// 주변 아이템 목록 가져오기
 	TArray<FNearbyItemInfo> GetNearbyItems() const { return NearbyItems; }
@@ -109,7 +107,7 @@ protected:
 
 	// HUD에 대한 참조
 	UPROPERTY()
-	ANS_InGmaeHUD* HUD;
+	ANS_InGameHUD* HUD;
 
 	// 아이템 감지 범위
 	UPROPERTY(EditAnywhere, Category = "Interaction")

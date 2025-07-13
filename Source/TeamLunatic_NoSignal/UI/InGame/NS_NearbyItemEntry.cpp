@@ -2,7 +2,7 @@
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
 #include "Components/Button.h"
-#include "UI/InGame/NS_NearbyItemsWidget.h"
+#include "UI/InGame/NS_NearbyItemsPanel.h"
 #include "Item/NS_InventoryBaseItem.h"
 #include "World/Pickup.h"
 
@@ -130,7 +130,7 @@ void UNS_NearbyItemEntry::SetItemInfo(const FNearbyItemInfo& InItemInfo)
  *        아이템 획득 요청 시 부모 위젯의 함수를 호출하기 위해 사용됩니다.
  * @param InParentWidget 부모 위젯에 대한 포인터입니다.
  */
-void UNS_NearbyItemEntry::SetParentWidget(UNS_NearbyItemsWidget* InParentWidget)
+void UNS_NearbyItemEntry::SetParentWidget(UNS_NearbyItemsPanel* InParentWidget)
 {
 	ParentWidget = InParentWidget;
 }

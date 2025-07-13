@@ -18,8 +18,4 @@ public:
     UPROPERTY(BlueprintReadOnly, Replicated)
     APawn* TrackingTarget;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
-    UFUNCTION(NetMulticast, Reliable)
-    void Multicast_UpdateAllTipTexts(const FText& Message);
-
 };

@@ -9,7 +9,7 @@
 #include "GameFlow/NS_GameModeBase.h"
 #include "GameFlow/NS_MainGamePlayerState.h"
 #include "Character/ThrowActor/NS_ThrowActor.h"
-#include "UI/InGame/NS_OpenLevelMap.h"
+#include "UI/InGame/NS_LevelMapWidget.h"
 #include "NS_PlayerCharacterBase.generated.h"
 
 class UInputMappingContext;
@@ -22,7 +22,7 @@ class ANS_BaseWeapon;
 class UNS_EquipedWeaponComponent;
 class UNS_QuickSlotComponent;
 class UNS_PlayerController;
-class UNS_OpenLevelMap;
+class UNS_LevelMapWidget;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
@@ -95,6 +95,10 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	// 피격
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
+	// 데미지 받으면 나오는 사운드, 애니메이션, 화면에 피효과 실행
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_HandleDamageEffects();
 
 public:
 	////////////////////////////////////캐릭터 부착 컴포넌트들///////////////////////////////////////
@@ -225,6 +229,9 @@ public:
 	UInputAction* InputFlashlightAction;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputOpenMapAction;
+
+	// 인벤토리 토글
+	void ToggleInventoryMenu();
 	//퀵슬롯 바인딩
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputQuickSlot1;
@@ -358,9 +365,7 @@ public:
 	void DropItem_Server(UNS_InventoryBaseItem* ItemToDrop, int32 QuantityToDrop);
 	//////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
 
-	// 데미지 받으면 모든 클라이언트에 멀티캐스트
-	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_TakeDmage(float DamageAmount);
+	
 
 	
 	// 캐릭터 죽는 애니메이션 멀티캐스트
@@ -428,10 +433,10 @@ public:
 
 	//  ====================================== 맵 지도 관 =============================================== 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OpenLevelMap")
-	TSubclassOf<UNS_OpenLevelMap> OpenLevelMapWidgetClass;
+	TSubclassOf<UNS_LevelMapWidget> OpenLevelMapWidgetClass;
 	
 	UPROPERTY()
-	UNS_OpenLevelMap* CurrentOpenMapWidget;
+	UNS_LevelMapWidget* CurrentOpenMapWidget;
 
 	void OpenMapAction(const FInputActionValue& Value);
 	// =========================================맵 관련 끝 ======================================================
@@ -449,7 +454,7 @@ public:
 	UMaterialInstanceDynamic* HallucinationMID;
 	
 	// 환각효과 켜기
-	void ActivateHallucinationEffect(float Duration);
+	void ActivateHallucinationEffect();
 
 	// 사운드 멀티캐스트
 	UFUNCTION(NetMulticast, Reliable)

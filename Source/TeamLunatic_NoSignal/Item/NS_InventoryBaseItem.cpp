@@ -198,8 +198,8 @@ void UNS_InventoryBaseItem::UseConsumableItem_Multicast_Implementation(ANS_Playe
 	// 상태 회복 처리
 	if (UNS_StatusComponent* State = Character->StatusComp)
 	{
-		State->AddHealthGauge(ItemData->ItemStates.HealAmount);
-		State->AddStamina(ItemData->ItemStates.StaminaRecovery);
+		State->UpdateHealthChange(ItemData->ItemStates.HealAmount);
+		State->UpdateStaminaChange(ItemData->ItemStates.StaminaRecovery);
 
 		UE_LOG(LogTemp, Log, TEXT("[UseConsumableItem] 체력 +%.1f, 스태미나 +%.1f"),
 			ItemData->ItemStates.HealAmount,

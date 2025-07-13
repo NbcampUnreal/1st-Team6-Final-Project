@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
@@ -7,33 +7,33 @@
 
 class ANS_PlayerCharacterBase;
 
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDamaged, float, DamageAmount);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHealthChanged, int32, CurrentHealth, int32, MaxHealth);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnStaminaChanged, int32, CurrentStamina, int32, MaxStamina);
-
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class TEAMLUNATIC_NOSIGNAL_API UNS_StatusComponent : public UActorComponent
 {
     GENERATED_BODY()
-
-private:
+	
     UPROPERTY()
     TObjectPtr<ANS_PlayerCharacterBase> PlayerCharacter; // 소유하고 있는 플레이어 캐릭터에 대한 참조
-
-public:
-    // 이 컴포넌트의 기본 속성들을 설정합니다.
+    
     UNS_StatusComponent();
-
 protected:
-    // 게임이 시작될 때 호출됩니다.
     virtual void BeginPlay() override;
-    // 매 프레임마다 호출됩니다.
-    virtual void TickComponent(float DeltaTime,
-                               ELevelTick TickType,
-                               FActorComponentTickFunction* ThisTickFunction) override;
+	
+	FTimerHandle StaminaTimerHandle;
 
-public:
+	void UpdateStamina();
+
+	bool bIsSprinting;
+
+    // 네트워크 복제 설정
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
     // --- 체력 및 스태미너 ---
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category="Status|Health")
     int32 MaxHealth = 100.f; // 캐릭터의 최대 체력
@@ -50,27 +50,31 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status|Stamina")
     int32 StaminaDereaseRate = -20.f; // 스프린트 시 스태미너 감소 속도
 
-
-
+public:
     // 스탯 값 변경을 위한 함수
-    void AddHealthGauge(float Value);
-    void AddStamina(float Value);
-    void AddStaminaRegenRate(float Value);
+    void UpdateHealthChange(float Value);
+    void UpdateStaminaChange(float Value);
     bool CheckEnableSprint();
+
+	void StartSprinting();
+	void StopSprinting();
     
     // 델리게이트
+    UPROPERTY(BlueprintAssignable)
+    FOnDamaged OnDamaged;
+
     UPROPERTY(BlueprintAssignable)
     FOnHealthChanged OnHealthChanged;
     
     UPROPERTY(BlueprintAssignable)
     FOnStaminaChanged OnStaminaChanged;
 
-    // 네트워크 복제 설정
-    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+    int32 GetCurrentHealth() const { return Health; }
+    int32 GetCurrentStmina() const { return Stamina; }
 
 private:
     bool bEnableSprint = true; // 스프린트 허용 여부를 결정하는 플래그
     
-    void UpdateStamina(float DeltaTime); // 행동에 따라 스태미너를 업데이트합니다.
+    
 
 };

@@ -3,11 +3,12 @@
 #include "TimerManager.h"
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
-#include "UI/HUD/NS_InGmaeHUD.h"
+#include "UI/HUD/NS_InGameHUD.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/PlayerController.h"
 #include "Character/NS_PlayerCharacterBase.h"
-#include "UI/InGame/NS_InteractionWidget.h"
+#include "UI/InGame/NS_InteractionPanel.h"
+#include "UI/InGame/NS_PlayerWidget.h"
 #include "Camera/CameraComponent.h"
 #include "World/Pickup.h"
 #include "Item/NS_InventoryBaseItem.h"
@@ -21,66 +22,64 @@ UNS_InteractionComponent::UNS_InteractionComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
+// 게임이 시작될 때 호출됩니다.
+void UNS_InteractionComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// 오너의 컨트롤러를 가져와 로컬 플레이어 컨트롤러인지 확인합니다.
+	APlayerController* PC = Cast<APlayerController>(GetOwner()->GetInstigatorController());
+	if (PC && PC->IsLocalController())
+	{
+		// HUD를 가져와 멤버 변수에 저장합니다.
+		HUD = Cast<ANS_InGameHUD>(PC->GetHUD());
+		
+		if (!HUD)
+		{
+			// HUD가 아직 생성되지 않았을 수 있으므로 약간의 지연 후 다시 시도합니다.
+			FTimerHandle TimerHandle_RetryGetHUD;
+			GetWorld()->GetTimerManager().SetTimer(TimerHandle_RetryGetHUD, [this, PC]()
+			{
+				if (PC && PC->IsLocalController())
+				{
+					HUD = Cast<ANS_InGameHUD>(PC->GetHUD());
+				}
+			}, 1.0f, false);
+		}
+	}
+	
+	// 주변 아이템 감지 타이머 설정
+	GetWorld()->GetTimerManager().SetTimer(
+		TimerHandle_ItemDetection,
+		this,
+		&UNS_InteractionComponent::DetectNearbyItems,
+		ItemDetectionFrequency,
+		true);
+}
+
+// 매 프레임 호출됩니다.
+void UNS_InteractionComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	// 일정 주기마다 상호작용 확인을 수행합니다.
+	if (GetWorld()->TimeSince(InteractionData.LastInteractionCheckTime) > InteractionCheckFrequency)
+	{
+		PerformInteractionCheck();
+	}
+}
+
 // 상호작용 위젯을 업데이트합니다.
 void UNS_InteractionComponent::UpdateInteractionWidget()
 {
 	// 대상 상호작용 객체가 유효한지 확인합니다.
 	if (IsValid(TargetInteractable.GetObject()))
 	{
-		// HUD의 상호작용 위젯을 대상의 데이터로 업데이트합니다.
-		HUD->UpdateInteractionWidget(&TargetInteractable->InteractableData);
-	}
-}
-
-// 인벤토리메뉴 오픈
-void UNS_InteractionComponent::ToggleInventoryMenu()
-{
-    UE_LOG(LogTemp, Warning, TEXT("ToggleInventoryMenu 호출됨"));
-    
-    // HUD가 유효한지 확인하고, 없으면 다시 가져옵니다.
-	if (!HUD)
-	{
-	    UE_LOG(LogTemp, Warning, TEXT("HUD가 유효하지 않음, 다시 가져오기 시도"));
-		APlayerController* PC = Cast<APlayerController>(GetOwner()->GetInstigatorController());
-		if (PC)
+		// HUD를 통해 PlayerWidget의 상호작용 위젯을 업데이트합니다.
+		if (HUD && HUD->GetPlayerWidget())
 		{
-			if (PC->IsLocalController())
-			{
-				AHUD* BaseHUD = PC->GetHUD();
-				if (BaseHUD)
-				{
-				    UE_LOG(LogTemp, Warning, TEXT("BaseHUD 클래스: %s"), *BaseHUD->GetClass()->GetName());
-					HUD = Cast<ANS_InGmaeHUD>(BaseHUD);
-					if (HUD)
-					{
-					    UE_LOG(LogTemp, Warning, TEXT("HUD 캐스팅 성공"));
-					}
-					else
-					{
-					    UE_LOG(LogTemp, Error, TEXT("HUD 캐스팅 실패! BaseHUD가 ANS_InventoryHUD 클래스가 아닙니다."));
-					}
-				}
-				else
-				{
-				    UE_LOG(LogTemp, Error, TEXT("BaseHUD가 유효하지 않음"));
-				}
-			}
+			HUD->GetPlayerWidget()->UpdateInteractionWidget(&TargetInteractable->InteractableData);
 		}
-	}
-	
-	// HUD가 유효하면 인벤토리 위젯을 오픈합니다.
-	if (HUD)
-	{
-	    UE_LOG(LogTemp, Warning, TEXT("HUD가 유효함, 인벤토리 위젯 오픈 시도"));
-		// 인벤토리 위젯을 열고 주변 아이템 목록을 업데이트합니다.
-		HUD->OpenInventoryWidget();
-		
-		// 주변 아이템 감지 함수를 즉시 호출하여 최신 상태를 표시합니다.
-		DetectNearbyItems();
-	}
-	else
-	{
-	    UE_LOG(LogTemp, Error, TEXT("HUD가 여전히 유효하지 않음, 인벤토리 위젯 오픈 실패"));
 	}
 }
 
@@ -162,53 +161,6 @@ void UNS_InteractionComponent::PickupNearbyItem(APickup* ItemActor)
 	
 	// 주변 아이템 목록 업데이트
 	DetectNearbyItems();
-}
-
-// 게임이 시작될 때 호출됩니다.
-void UNS_InteractionComponent::BeginPlay()
-{
-	Super::BeginPlay();
-
-	// 오너의 컨트롤러를 가져와 로컬 플레이어 컨트롤러인지 확인합니다.
-	APlayerController* PC = Cast<APlayerController>(GetOwner()->GetInstigatorController());
-	if (PC && PC->IsLocalController())
-	{
-		// HUD를 가져와 멤버 변수에 저장합니다.
-		HUD = Cast<ANS_InGmaeHUD>(PC->GetHUD());
-		
-		if (!HUD)
-		{
-			// HUD가 아직 생성되지 않았을 수 있으므로 약간의 지연 후 다시 시도합니다.
-			FTimerHandle TimerHandle_RetryGetHUD;
-			GetWorld()->GetTimerManager().SetTimer(TimerHandle_RetryGetHUD, [this, PC]()
-			{
-				if (PC && PC->IsLocalController())
-				{
-					HUD = Cast<ANS_InGmaeHUD>(PC->GetHUD());
-				}
-			}, 1.0f, false);
-		}
-	}
-	
-	// 주변 아이템 감지 타이머 설정
-	GetWorld()->GetTimerManager().SetTimer(
-		TimerHandle_ItemDetection,
-		this,
-		&UNS_InteractionComponent::DetectNearbyItems,
-		ItemDetectionFrequency,
-		true);
-}
-
-// 매 프레임 호출됩니다.
-void UNS_InteractionComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	// 일정 주기마다 상호작용 확인을 수행합니다.
-	if (GetWorld()->TimeSince(InteractionData.LastInteractionCheckTime) > InteractionCheckFrequency)
-	{
-		PerformInteractionCheck();
-	}
 }
 
 // 플레이어의 시점 위치를 가져옵니다.
@@ -311,9 +263,12 @@ void UNS_InteractionComponent::FoundInteractable(AActor* NewInteractable)
 		const FInteractableData& Data = TargetInteractable->InteractableData;
 	}
 
-	if (HUD)
+	if (HUD && HUD->GetPlayerWidget())
 	{
-		HUD->UpdateInteractionWidget(&TargetInteractable->InteractableData);
+		// PlayerWidget을 통해 상호작용 위젯을 표시하고 업데이트합니다.
+		UNS_PlayerWidget* PlayerWidget = HUD->GetPlayerWidget();
+		PlayerWidget->ShowInteractionWidget();
+		PlayerWidget->UpdateInteractionWidget(&TargetInteractable->InteractableData);
 	}
 	
 	// 새로운 대상에 포커스를 시작합니다.
@@ -353,12 +308,25 @@ void UNS_InteractionComponent::HideInteractionWidgetSafely()
 	APlayerController* PC = Cast<APlayerController>(GetOwner()->GetInstigatorController());
 	if (!PC || !PC->IsLocalController()) return;
 
-	ANS_InGmaeHUD* MyHUD = Cast<ANS_InGmaeHUD>(PC->GetHUD());
-	if (!IsValid(MyHUD)) return;
-
-	if (IsValid(MyHUD->GetInteractionWidget()))
+	// HUD를 통해 PlayerWidget 찾기
+	if (HUD && HUD->GetPlayerWidget())
 	{
-		MyHUD->HideInteractionWidget();
+		UNS_PlayerWidget* PlayerWidget = HUD->GetPlayerWidget();
+		PlayerWidget->HideInteractionWidget();
+		return;
+	}
+
+	// HUD가 없으면 새로 찾기
+	ANS_InGameHUD* MyHUD = Cast<ANS_InGameHUD>(PC->GetHUD());
+	if (!IsValid(MyHUD))
+	{
+		return;
+	}
+
+	UNS_PlayerWidget* PlayerWidget = MyHUD->GetPlayerWidget();
+	if (PlayerWidget)
+	{
+		PlayerWidget->HideInteractionWidget();
 	}
 }
 

@@ -6,7 +6,7 @@
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Item/NS_InventoryBaseItem.h"
 #include "UI/InGame/NS_QuickSlotPanel.h"
-#include "UI/InGame/NS_QuickSlotSlotWidget.h"
+#include "UI/InGame/NS_QuickSlotBox.h"
 #include "Engine/ActorChannel.h"
 
 UNS_QuickSlotComponent::UNS_QuickSlotComponent()

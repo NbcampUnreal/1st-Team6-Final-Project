@@ -24,23 +24,8 @@ public:
 	// 플레이어가 사망 게임이 종료될때 호출
 	void HandleGameOver(bool bPlayerSurvived);
 
-	// 데미지 받으면 화면에 피격 효과 표시
-	UFUNCTION(Client, Reliable)
-	void Client_ShowHitEffect();
-
-	// 플레이어 TipHUD 함수 
-	void UpdateTipHUD(const FText& Message);
-
-	// 플레이어 체력 UI 업데이트 함수
-	void UpdatePlayerHealthUI();
-
-	// 플레이어 스태미너 UI 업데이트 함수
-	void UpdatePlayerStaminaUI();
-
-
 protected:
 	virtual void BeginPlay() override;
-	void SetupInputComponent();
 
 	UPROPERTY(EditDefaultsOnly, Category = "Chase")
 	USoundBase* ChaseStartSoundCue;

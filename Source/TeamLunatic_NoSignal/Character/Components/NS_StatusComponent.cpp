@@ -1,110 +1,113 @@
 ﻿#include "NS_StatusComponent.h"
 #include "Character/NS_PlayerCharacterBase.h"
-#include "Character/NS_PlayerController.h"
 #include "TimerManager.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 
 // 이 컴포넌트의 기본 속성들을 설정합니다.
 UNS_StatusComponent::UNS_StatusComponent()
 {
-    PrimaryComponentTick.bCanEverTick = true;
-    PrimaryComponentTick.bStartWithTickEnabled = true;
+    PrimaryComponentTick.bCanEverTick = false;
 
     // 네트워크 복제 활성화
     SetIsReplicatedByDefault(true);
 }
 
-// 게임이 시작될 때 호출됩니다.
 void UNS_StatusComponent::BeginPlay()
 {
     Super::BeginPlay();
 
     // 값 초기화
-    Health  = MaxHealth; // 현재 체력을 최대 체력으로
+    Health = MaxHealth; // 현재 체력을 최대 체력으로
     Stamina = MaxStamina; // 현재 스태미너를 최대 스태미너로
-	AddStaminaRegenRate(1.f); // 기본 스태미너 재생 속도를 설정 (배율 1.0)
 	PlayerCharacter = Cast<ANS_PlayerCharacterBase>(GetOwner()); 
 }
 
-
-void UNS_StatusComponent::TickComponent(float DeltaTime,
-                                       ELevelTick TickType,
-                                       FActorComponentTickFunction* ThisTickFunction)
+void UNS_StatusComponent::StartSprinting()
 {
-    Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	UpdateStamina(DeltaTime); // 매 프레임마다 스태미너를 업데이트
+	bIsSprinting = true;
+	GetWorld()->GetTimerManager().ClearTimer(StaminaTimerHandle);
+	GetWorld()->GetTimerManager().SetTimer(StaminaTimerHandle, this, &UNS_StatusComponent::UpdateStamina, 0.1f, true);
 }
 
-// 스태미너 업데이트 함수
-// 스프린트 중일 때는 감소하고, 아닐 때는 재생
-// 달리고 있거나 점프중일때는 스태미너 안참
-void UNS_StatusComponent::UpdateStamina(float DeltaTime)
+void UNS_StatusComponent::StopSprinting()
 {
-	if (ANS_PlayerCharacterBase* PlayChar = Cast<ANS_PlayerCharacterBase>(GetOwner()))
-	{
-		int32 ChangingStaminaValue = 0; // 스태미너를 변경할 값
-		// 이동을 확인하기 위해 수평 속도의 절대값 합계를 계산
-		float SumVelocity = FMath::Abs(PlayChar->GetMovementComponent()->Velocity.X) + FMath::Abs(PlayChar->GetMovementComponent()->Velocity.Y);
+	bIsSprinting = false;
+}
 
-		// 점프 중이면 스태미너 변화가 없음
-		if (!PlayChar->GetMovementComponent()->IsMovingOnGround())
+void UNS_StatusComponent::UpdateStamina()
+{
+	const int32 OldStamina = Stamina;
+
+	if (bIsSprinting)
+	{
+		if (Stamina > 0)
 		{
-			ChangingStaminaValue = 0;
+			Stamina = FMath::Max(0, Stamina + FMath::RoundToInt(StaminaDereaseRate * 0.1f));
 		}
-		// 스프린트 중이고 실제로 움직이고 있다면 스태미너를 감소
-		else if (PlayChar->IsSprint && !FMath::IsNearlyZero(SumVelocity))
-		{
-			ChangingStaminaValue = FMath::RoundToInt(StaminaDereaseRate * DeltaTime);
-		}
-		// 그 외 서 있거나 걷고 있을 때스태미너를 재생
 		else
 		{
-			// 스프린트 중이 아닐 때 재생 속도를 적용합니다.
-			ChangingStaminaValue = FMath::RoundToInt(CurrentStaminaRegenRate * DeltaTime);
+			StopSprinting();
+			if (PlayerCharacter)
+			{
+				PlayerCharacter->StopSprint(FInputActionValue());
+			}
 		}
-
-		// 이전 스태미너 값 저장
-		int32 OldStamina = Stamina;
-		
-		// 스태미너 값 직접 변경
-		Stamina = FMath::Clamp(Stamina + ChangingStaminaValue, 0, MaxStamina);
-		
-		// 스태미너 값이 변경되었으면 이벤트 발생
-		if (OldStamina != Stamina)
+	}
+	else
+	{
+		if (Stamina < MaxStamina)
 		{
-			// 스태미너 변경 이벤트 발생
-			OnStaminaChanged.Broadcast(Stamina, MaxStamina);
+			Stamina = FMath::Min(MaxStamina, Stamina + FMath::RoundToInt(CurrentStaminaRegenRate * 0.1f));
 		}
-
-		// 스프린트가 비활성화된 상태에서 스태미너가 10보다 크면 다시 활성화
-		if (bEnableSprint == false && Stamina > 10) // 변경된 조건
+		else
 		{
-			bEnableSprint = true;
+			GetWorld()->GetTimerManager().ClearTimer(StaminaTimerHandle);
 		}
+	}
 
-		// 스프린트 중 스태미너가 0 이하로 떨어지면 스프린트를 비활성화
-		if (PlayChar->IsSprint && Stamina <= 0)
-		{
-			bEnableSprint = false;
-		}
+	if (OldStamina != Stamina)
+	{
+		OnStaminaChanged.Broadcast(Stamina, MaxStamina);
+	}
+
+	if (bEnableSprint == false && Stamina > 10)
+	{
+		bEnableSprint = true;
+	}
+
+	if (bIsSprinting && Stamina <= 0)
+	{
+		bEnableSprint = false;
 	}
 }
 
-void UNS_StatusComponent::AddHealthGauge(float Value)
+void UNS_StatusComponent::UpdateHealthChange(float Value)
 {
-    int32 OldHealth = Health;
+    const int32 OldHealth = Health;
     Health = FMath::Clamp(Health + FMath::RoundToInt(Value), 0, MaxHealth);
-    
+
+    // 체력이 실제로 변경되었다면
     if (OldHealth != Health)
     {
-        // 체력 변경 이벤트 발생
+        //  체력 변경 델리게이트 방송 (UI 업데이트용)
         OnHealthChanged.Broadcast(Health, MaxHealth);
+
+        // 피격 이벤트 델리게이트 방송 (사운드, 이펙트용)
+        // Delta는 음수 값이므로 -를 붙여 양수 데미지 값으로 전달
+        OnDamaged.Broadcast(-Value); 
+    }
+
+    // 사망 판정
+    if (Health <= 0 && OldHealth > 0) // 이전 체력은 0보다 컸을 때만 
+    {
+        if (PlayerCharacter)
+        {
+            PlayerCharacter->PlayDeath_Server();
+        }
     }
 }
 
-void UNS_StatusComponent::AddStamina(float Value)
+void UNS_StatusComponent::UpdateStaminaChange(float Value)
 {
     int32 OldStamina = Stamina;
     Stamina = FMath::Clamp(Stamina + FMath::RoundToInt(Value), 0, MaxStamina);
@@ -116,13 +119,6 @@ void UNS_StatusComponent::AddStamina(float Value)
     }
 }
 
-// 주어진 배율로 현재 스태미너 재생 속도를 변경합니다.
-void UNS_StatusComponent::AddStaminaRegenRate(float Value)
-{
-	CurrentStaminaRegenRate = DefalutStaminaRegenRate * Value; // 기본 재생 속도에 배율을 적용
-}
-
-// 현재 스프린트가 활성화되어 있는지 반환합니다.
 bool UNS_StatusComponent::CheckEnableSprint()
 {
 	return bEnableSprint;

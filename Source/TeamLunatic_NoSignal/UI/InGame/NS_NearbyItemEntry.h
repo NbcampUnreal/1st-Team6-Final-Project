@@ -9,7 +9,7 @@
 class UTextBlock;           // UMG 텍스트 블록 위젯
 class UImage;               // UMG 이미지 위젯
 class UButton;              // UMG 버튼 위젯
-class UNS_NearbyItemsWidget; // 주변 아이템 목록 위젯 (부모 위젯)
+class UNS_NearbyItemsPanel; // 주변 아이템 목록 위젯 (부모 위젯)
 class APickup;              // 픽업 가능한 아이템 액터
 
 /**
@@ -34,7 +34,7 @@ public:
 	 *        아이템 획득 요청 시 부모 위젯의 함수를 호출하기 위해 사용됩니다.
 	 * @param InParentWidget 부모 위젯에 대한 포인터입니다.
 	 */
-	void SetParentWidget(UNS_NearbyItemsWidget* InParentWidget);
+	void SetParentWidget(UNS_NearbyItemsPanel* InParentWidget);
 	
 protected:
 	/**
@@ -88,5 +88,5 @@ private:
 	 * @brief 이 항목 위젯의 부모 위젯(UNS_NearbyItemsWidget)에 대한 참조입니다.
 	 */
 	UPROPERTY()
-	UNS_NearbyItemsWidget* ParentWidget;
+	UNS_NearbyItemsPanel* ParentWidget;
 };

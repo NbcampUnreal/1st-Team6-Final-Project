@@ -8,6 +8,7 @@
 #include "Character/NS_PlayerController.h"
 #include "Components/NS_EquipedWeaponComponent.h"
 #include "Character/Components/NS_StatusComponent.h"
+#include "UI/InGame/NS_InventoryMainWidget.h"
 #include "Item/NS_BaseRangedWeapon.h"
 #include "Character/ThrowActor/NS_ThrowActor.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -19,9 +20,10 @@
 #include <Net/UnrealNetwork.h>
 #include "Character/Components//NS_QuickSlotComponent.h"
 #include "Item/NS_BaseWeapon.h"
-#include "UI/InGame/NS_OpenLevelMap.h"
+#include "UI/InGame/NS_LevelMapWidget.h"
 #include "Sound/SoundBase.h"
-#include "UI/HUD/NS_InGmaeHUD.h"
+#include "UI/HUD/NS_InGameHUD.h"
+#include "UI/InGame/NS_PlayerWidget.h"
 
 ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
 {
@@ -103,19 +105,6 @@ void ANS_PlayerCharacterBase::BeginPlay()
         if (auto Sub = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
         {
             Sub->AddMappingContext(DefaultMappingContext, 0);
-        }
-        
-        // HUD 설정
-        if (PC->IsLocalController())
-        {
-            if (ANS_InGmaeHUD* InventoryHUD = Cast<ANS_InGmaeHUD>(PC->GetHUD()))
-            {
-                if (InteractionComp)
-                {
-                    InventoryHUD->SetInteractionComponent(InteractionComp);
-                }
-                InventoryHUD->SetPlayerCharacter(this);
-            }
         }
     }
 
@@ -220,13 +209,13 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                &ANS_PlayerCharacterBase::StopSprint);
         }
 
-        if (ToggleMenuAction && InteractionComp)
+        if (ToggleMenuAction)
         {
             EnhancedInput->BindAction(
                 ToggleMenuAction,
                 ETriggerEvent::Started,
-                InteractionComp,
-                &UNS_InteractionComponent::ToggleInventoryMenu
+                this,
+                &ANS_PlayerCharacterBase::ToggleInventoryMenu
             );
         }
 
@@ -334,57 +323,44 @@ float ANS_PlayerCharacterBase::TakeDamage(
         return 0.f;
     }
 
-    float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+    const float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
     
     // 서버에서만 실제 데미지 처리 및 멀티캐스트 전송
     if (HasAuthority() && ActualDamage > 0.f)
     {
         // 캐릭터 체력 감소
-        StatusComp->AddHealthGauge(-ActualDamage);
-
-        // 데미지 사운드 재생 (모든 클라이언트에서)
-        if (DamageSound)
-        {
-            PlaySoundOnCharacter_Multicast(DamageSound);
-        }
-
-        // 모든 클라이언트에 데미지 처리 결과 전파
-        Multicast_TakeDmage(ActualDamage);
-        
-        if (AController* PC = GetController())
-        {
-            if (ANS_PlayerController* NS_PC = Cast<ANS_PlayerController>(PC))
-            {
-                NS_PC->Client_ShowHitEffect();
-            }
-        }
-
-        IsHit = true;
-
-        // IsHit 타이머핸들 람다로 0.5초간 실행
-        FTimerHandle ResetHitTime;
-        GetWorldTimerManager().SetTimer(
-            ResetHitTime,
-            [this]()
-        {
-            // 캐릭터가 있다면 IsHit을 false로 설정
-            if (IsValid(this))
-            {
-                IsHit = false;
-            }
-        },
-            0.5f,
-            false
-        );
-
-        // 캐릭터 체력이 0이면 죽음 애니메이션 실행
-        if (StatusComp->Health <= 0)
-        {
-            PlayDeath_Server();
-        }
+        StatusComp->UpdateHealthChange(-ActualDamage);
     }
 
+    Multicast_HandleDamageEffects();
+
     return ActualDamage;
+}
+
+
+void ANS_PlayerCharacterBase::Multicast_HandleDamageEffects_Implementation()
+{
+    // 데미지 사운드 재생
+    if (DamageSound)
+    {
+        UGameplayStatics::PlaySoundAtLocation(this, DamageSound, GetActorLocation());
+    }
+
+    // 로컬 플레이어 컨트롤러에만 히트 이펙트 표시
+    if (IsLocallyControlled())
+    {
+       ActivateHallucinationEffect();
+    }
+
+    // 피격 애니메이션을 위한 IsHit 플래그 설정 및 리셋 타이머
+    IsHit = true;
+    FTimerHandle ResetHitTimer;
+    GetWorldTimerManager().SetTimer(ResetHitTimer, [this]() {
+        if (IsValid(this))
+        { 
+            IsHit = false;
+        }
+    }, 0.5f, false);
 }
 
 //////////////////////////////////액션 처리 함수들///////////////////////////////////
@@ -492,27 +468,19 @@ void ANS_PlayerCharacterBase::StopCrouch(const FInputActionValue& Value)
 
 void ANS_PlayerCharacterBase::StartSprint(const FInputActionValue& Value)
 {
-    // 서버 권한이 없으면(클라이언트이면) 서버에 RPC를 호출합니다.
+    // 서버 권한이 없으면(클라이언트이면) 서버에 RPC를 호출
     if (!HasAuthority())
     {
         Server_StartSprint(Value);
     }
-    // 서버 권한이 있으면 직접 로직을 실행합니다.
+    // 서버 권한이 있으면 직접 로직을 실행
     else
     {
         if (StatusComp->CheckEnableSprint())
         {
             IsSprint = true;
-            OnRep_IsSprint(); // 서버에서도 OnRep을 수동으로 호출하여 즉시 적용합니다.
-            
-            // 스태미너 UI 업데이트
-            if (APlayerController* PC = Cast<APlayerController>(Controller))
-            {
-                if (ANS_PlayerController* NS_PC = Cast<ANS_PlayerController>(PC))
-                {
-                    NS_PC->UpdatePlayerStaminaUI();
-                }
-            }
+            OnRep_IsSprint(); // 서버에서도 OnRep을 수동으로 호출하여 즉시 적용
+			StatusComp->StartSprinting();
         }
     }
 }
@@ -529,15 +497,7 @@ void ANS_PlayerCharacterBase::StopSprint(const FInputActionValue& Value)
     {
         IsSprint = false;
         OnRep_IsSprint(); // 서버에서도 OnRep을 수동으로 호출하여 즉시 적용합니다.
-        
-        // 스태미너 UI 업데이트
-        if (APlayerController* PC = Cast<APlayerController>(Controller))
-        {
-            if (ANS_PlayerController* NS_PC = Cast<ANS_PlayerController>(PC))
-            {
-                NS_PC->UpdatePlayerStaminaUI();
-            }
-        }
+		StatusComp->StopSprinting();
     }
 }
  
@@ -598,50 +558,7 @@ void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputAct
 //////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
 
 
-void ANS_PlayerCharacterBase::Multicast_TakeDmage_Implementation(float DamageAmount)
-{
-    // 서버에서는 이미 처리했으므로 클라이언트에서만 실행
-    if (!HasAuthority())
-    {
-        // 클라이언트에서 시각적 효과 처리
-        if (StatusComp)
-        {
-            // 체력 값 직접 업데이트 (서버에서 복제될 때까지 기다리지 않음)
-            StatusComp->Health = FMath::Clamp(StatusComp->Health - FMath::RoundToInt(DamageAmount), 0, StatusComp->MaxHealth);
-            
-            // UI 업데이트
-            if (APlayerController* PC = Cast<APlayerController>(GetController()))
-            {
-                if (ANS_PlayerController* NS_PC = Cast<ANS_PlayerController>(PC))
-                {
-                    // 피격 효과 표시 (이미 Client_ShowHitEffect가 있다면 중복 호출 방지)
-                    if (IsLocallyControlled())
-                    {
-                        NS_PC->Client_ShowHitEffect();
-                    }
-                }
-            }
-        }
-        
-        // 피격 상태 설정
-        IsHit = true;
-        
-        // 0.5초 후 피격 상태 해제
-        FTimerHandle ResetHitTime;
-        GetWorldTimerManager().SetTimer(
-            ResetHitTime,
-            [this]()
-        {
-            if (IsValid(this))
-            {
-                IsHit = false;
-            }
-        },
-            0.5f,
-            false
-        );
-    }
-}
+
 
 void ANS_PlayerCharacterBase::PlayDeath_Server_Implementation()
 {
@@ -666,9 +583,7 @@ void ANS_PlayerCharacterBase::PlayDeath_Server_Implementation()
             }
 
         }
-
     }
-
     PlayDeath_Multicast();
 }
 
@@ -1265,7 +1180,7 @@ void ANS_PlayerCharacterBase::RequestUpdateAim()
     }
 }
 
-void ANS_PlayerCharacterBase::ActivateHallucinationEffect(float Duration)
+void ANS_PlayerCharacterBase::ActivateHallucinationEffect()
 {
     if (CameraComp && HallucinationMID)
     {
@@ -1276,7 +1191,7 @@ void ANS_PlayerCharacterBase::ActivateHallucinationEffect(float Duration)
         GetWorldTimerManager().SetTimer(TimerHandle, [this]()
         {
             CameraComp->AddOrUpdateBlendable(HallucinationMID, 0.f); // 비활성화
-        }, Duration, false);
+        }, 2.0f, false);
     }
 }
 
@@ -1311,11 +1226,11 @@ void ANS_PlayerCharacterBase::OpenMapAction(const FInputActionValue& Value)
     // 맵 위젯 새로 생성하여 열기
     if (OpenLevelMapWidgetClass)
     {
-        CurrentOpenMapWidget = CreateWidget<UNS_OpenLevelMap>(GetWorld(), OpenLevelMapWidgetClass);
+        CurrentOpenMapWidget = CreateWidget<UNS_LevelMapWidget>(GetWorld(), OpenLevelMapWidgetClass);
     }
     else
     {
-        CurrentOpenMapWidget = CreateWidget<UNS_OpenLevelMap>(GetWorld(), UNS_OpenLevelMap::StaticClass());
+        CurrentOpenMapWidget = CreateWidget<UNS_LevelMapWidget>(GetWorld(), UNS_LevelMapWidget::StaticClass());
     }
     
     if (CurrentOpenMapWidget)
@@ -1361,4 +1276,29 @@ void ANS_PlayerCharacterBase::OnInventoryWeightUpdated(float CurrentWeight, floa
 		// 현재 상태(걷기/달리기)에 맞춰 속도를 즉시 적용합니다.
 		OnRep_IsSprint();
 	}
+}
+
+void ANS_PlayerCharacterBase::ToggleInventoryMenu()
+{
+    if (!IsLocallyControlled()) return;
+
+    APlayerController* PC = Cast<APlayerController>(GetController());
+    if (!IsValid(PC)) return;
+
+    ANS_InGameHUD* InGameHUD = Cast<ANS_InGameHUD>(PC->GetHUD());
+    if (!IsValid(InGameHUD)) return;
+
+    UNS_InventoryMainWidget* InventoryMainWidget = InGameHUD->GetInventoryMainWidget();
+    if (!IsValid(InventoryMainWidget)) return;
+
+    UNS_PlayerWidget* PlayerWidget = InGameHUD->GetPlayerWidget();
+
+    if (InventoryMainWidget->IsVisible())
+    {
+        InGameHUD->ShowWidget(PlayerWidget);
+    }
+    else
+    {
+        InGameHUD->ShowWidget(InventoryMainWidget);
+    }
 }

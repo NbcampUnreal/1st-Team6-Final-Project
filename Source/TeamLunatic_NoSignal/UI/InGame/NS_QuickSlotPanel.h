@@ -8,7 +8,7 @@
 
 // 전방 선언: 클래스 정의 전에 미리 선언하여 컴파일러에게 존재를 알립니다.
 class UHorizontalBox;         // UMG 수평 박스 위젯
-class UNS_QuickSlotSlotWidget; // 퀵 슬롯 개별 슬롯 위젯
+class UNS_QuickSlotBox; // 퀵 슬롯 개별 슬롯 위젯
 class UNS_InventoryBaseItem;  // 인벤토리 기본 아이템 클래스
 class UNS_QuickSlotComponent; // 퀵 슬롯 컴포넌트
 
@@ -65,7 +65,7 @@ public:
      *        이 클래스를 기반으로 슬롯 위젯 인스턴스를 생성합니다.
      */
     UPROPERTY(EditDefaultsOnly, Category = "QuickSlot")
-    TSubclassOf<UNS_QuickSlotSlotWidget> SlotWidgetClass;
+    TSubclassOf<UNS_QuickSlotBox> SlotWidgetClass;
 
     /**
      * @brief 이 패널과 연동되는 퀵 슬롯 컴포넌트입니다.
