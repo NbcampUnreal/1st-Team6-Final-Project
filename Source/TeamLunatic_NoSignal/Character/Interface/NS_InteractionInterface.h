@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// NS_InteractionInterface.h - 상호작용 가능한 객체를 위한 인터페이스
 
 #pragma once
 
@@ -6,7 +6,10 @@
 #include "UObject/Interface.h"
 #include "NS_InteractionInterface.generated.h"
 
-UENUM()
+/**
+ * 상호작용 가능한 객체의 유형을 정의하는 열거형
+ */
+UENUM(BlueprintType)
 enum class EInteractableType : uint8
 {
 	None UMETA(DisplayName = "None"),
@@ -17,7 +20,10 @@ enum class EInteractableType : uint8
 	Container UMETA(DisplayName = "Container")
 };
 
-USTRUCT()
+/**
+ * 상호작용 가능한 객체의 데이터를 저장하는 구조체
+ */
+USTRUCT(BlueprintType)
 struct FInteractableData
 {
 	GENERATED_USTRUCT_BODY()
@@ -29,25 +35,30 @@ struct FInteractableData
 		Quantity(0),
 		InteractionDuration(0.0f)
 	{
-
 	};
 
-	UPROPERTY(EditInstanceOnly)
+	// 상호작용 객체의 유형
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Interaction")
 	EInteractableType InteractableType;
 
-	UPROPERTY(EditInstanceOnly)
+	// 상호작용 객체의 이름
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Interaction")
 	FText Name;
 
-	UPROPERTY(EditInstanceOnly)
+	// 상호작용 시 표시할 액션 텍스트
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Interaction")
 	FText Action;
 
-	UPROPERTY(EditInstanceOnly)
+	// 아이템의 수량 (해당되는 경우)
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Interaction")
 	int32 Quantity;
 
-	UPROPERTY(EditInstanceOnly)
+	// 상호작용 완료까지 필요한 시간 (0이면 즉시 완료)
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Interaction")
 	float InteractionDuration;
 };
-// This class does not need to be modified.
+
+// 인터페이스 선언
 UINTERFACE(MinimalAPI)
 class UNS_InteractionInterface : public UInterface
 {
@@ -55,20 +66,29 @@ class UNS_InteractionInterface : public UInterface
 };
 
 /**
- * 
+ * 상호작용 가능한 객체가 구현해야 하는 인터페이스
  */
 class TEAMLUNATIC_NOSIGNAL_API INS_InteractionInterface
 {
 	GENERATED_BODY()
 
-	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
+	// 플레이어가 이 객체에 포커스를 시작할 때 호출
 	virtual void BeginFocus();
+	
+	// 플레이어가 이 객체에서 포커스를 해제할 때 호출
 	virtual void EndFocus();
+	
+	// 플레이어가 이 객체와 상호작용을 시작할 때 호출
 	virtual void BeginInteract();
+	
+	// 플레이어가 이 객체와 상호작용을 종료할 때 호출
 	virtual void EndInteract();
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	
+	// 상호작용이 완료될 때 호출
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interaction")
 	void Interact(AActor* InteractingActor);
 
+	// 이 객체의 상호작용 데이터
 	FInteractableData InteractableData;
 };

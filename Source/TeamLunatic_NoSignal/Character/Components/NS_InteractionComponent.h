@@ -12,7 +12,9 @@ class ANS_InGameHUD;
 class UNS_InventoryBaseItem;
 class APickup;
 
-// 상호작용 데이터를 저장하는 구조체
+/**
+ * 상호작용 데이터를 저장하는 구조체
+ */
 USTRUCT(BlueprintType)
 struct FInteractionData
 {
@@ -32,7 +34,9 @@ struct FInteractionData
 	float LastInteractionCheckTime;
 };
 
-// 주변 아이템 정보를 저장하는 구조체
+/**
+ * 주변 아이템 정보를 저장하는 구조체
+ */
 USTRUCT(BlueprintType)
 struct FNearbyItemInfo
 {
@@ -61,22 +65,27 @@ struct FNearbyItemInfo
 	int32 Quantity;
 };
 
+// 주변 아이템 목록이 업데이트될 때 호출되는 델리게이트
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnNearbyItemsUpdated);
 
-// 플레이어의 상호작용을 처리하는 컴포넌트
+/**
+ * 플레이어의 상호작용을 처리하는 컴포넌트
+ */
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class TEAMLUNATIC_NOSIGNAL_API UNS_InteractionComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this component's properties
+	// 기본 값 설정
 	UNS_InteractionComponent();
 
 	// 상호작용 가능한 오브젝트를 확인
 	void PerformInteractionCheck();
+	
 	// 상호작용 시작
 	void BeginInteract();
+	
 	// 상호작용 종료
 	void EndInteract();
 
@@ -85,6 +94,7 @@ public:
 
 	// 현재 상호작용 가능한 액터를 가져옴
 	TScriptInterface<class INS_InteractionInterface> GetCurrentInteractable() const { return TargetInteractable; }
+	
 	// 상호작용 위젯을 업데이트
 	void UpdateInteractionWidget();
 
@@ -100,9 +110,10 @@ public:
 	FOnNearbyItemsUpdated OnNearbyItemsUpdated;
 
 protected:
-	// Called when the game starts
+	// 게임 시작 시 호출
 	virtual void BeginPlay() override;
-	// Called every frame
+	
+	// 매 프레임 호출
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	// HUD에 대한 참조
@@ -146,18 +157,23 @@ private:
 
 	// 상호작용 가능한 액터를 찾았을 때 호출
 	void FoundInteractable(AActor* NewInteractable);
+	
 	// 상호작용 가능한 액터를 찾지 못했을 때 호출
 	void NoInteractableFound();
+	
 	// 상호작용 위젯을 안전하게 숨김
 	void HideInteractionWidgetSafely();
+	
 	// 상호작용 실행
 	void Interact();
+	
 	// 서버에서 상호작용을 처리하는 함수
 	UFUNCTION(Server, Reliable)
 	void Interact_Server(AActor* Target);
 
 	// 플레이어의 시점 위치를 가져옴
 	FVector GetViewLocation() const;
+	
 	// 플레이어의 시점 회전값을 가져옴
 	FRotator GetViewRotation() const;
 };

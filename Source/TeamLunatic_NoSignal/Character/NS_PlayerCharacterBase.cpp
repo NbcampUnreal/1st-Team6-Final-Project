@@ -32,8 +32,7 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     bReplicates = true;
 
     DefaultWalkSpeed = 500.f;
-	CurrentWalkSpeed = DefaultWalkSpeed;
-
+    
     SprintSpeedMultiplier = 1.5f;
 
     // 스프링 암 설정
@@ -67,7 +66,6 @@ ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
     // 장착 무기 컴포넌트
     EquipedWeaponComp = CreateDefaultSubobject<UNS_EquipedWeaponComponent>(TEXT("EquipedWeaponComponent"));
 
-    // BaseEyeHeight = 74.0f;
     // 인벤토리
     InventoryComp = CreateDefaultSubobject<UNS_InventoryComponent>(TEXT("PlayerInventory"));
     SetReplicates(true);
@@ -113,11 +111,6 @@ void ANS_PlayerCharacterBase::BeginPlay()
     {
         GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed;
     }
-
-	if (InventoryComp)
-	{
-		InventoryComp->OnInventoryWeightUpdated.AddDynamic(this, &ANS_PlayerCharacterBase::OnInventoryWeightUpdated);
-	}
     
     // 기본 퀵슬롯는 1번부터 시작되도록 
     CurrentQuickSlotIndex = 0;
@@ -176,7 +169,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
         {
             EnhancedInput->BindAction(
                 InputJumpAction,
-             ETriggerEvent::Triggered,
+             ETriggerEvent::Started,
               this,
                &ANS_PlayerCharacterBase::JumpAction);
         }
@@ -185,7 +178,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
         {
             EnhancedInput->BindAction(
             InputCrouchAction,
-             ETriggerEvent::Triggered,
+             ETriggerEvent::Started,
               this,
                &ANS_PlayerCharacterBase::StartCrouch);
             EnhancedInput->BindAction(
@@ -199,7 +192,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
         {
             EnhancedInput->BindAction(
             InputSprintAction,
-             ETriggerEvent::Triggered,
+             ETriggerEvent::Started,
               this,
                &ANS_PlayerCharacterBase::StartSprint);
             EnhancedInput->BindAction(
@@ -225,7 +218,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                 InteractAction,
                 ETriggerEvent::Started,
                 this,
-                &ANS_PlayerCharacterBase::PickUpAction_Server
+                &ANS_PlayerCharacterBase::StartInteraction_Server
             );
 
              EnhancedInput->BindAction(
@@ -468,88 +461,28 @@ void ANS_PlayerCharacterBase::StopCrouch(const FInputActionValue& Value)
 
 void ANS_PlayerCharacterBase::StartSprint(const FInputActionValue& Value)
 {
-    // 서버 권한이 없으면(클라이언트이면) 서버에 RPC를 호출
-    if (!HasAuthority())
-    {
-        Server_StartSprint(Value);
-    }
-    // 서버 권한이 있으면 직접 로직을 실행
-    else
-    {
-        if (StatusComp->CheckEnableSprint())
-        {
-            IsSprint = true;
-            OnRep_IsSprint(); // 서버에서도 OnRep을 수동으로 호출하여 즉시 적용
-			StatusComp->StartSprinting();
-        }
-    }
+       Server_SetSprinting(true);
 }
 
 void ANS_PlayerCharacterBase::StopSprint(const FInputActionValue& Value)
 {
-    // 서버 권한이 없으면(클라이언트이면) 서버에 RPC를 호출합니다.
-    if (!HasAuthority())
-    {
-        Server_StopSprint(Value);
-    }
-    // 서버 권한이 있으면 직접 로직을 실행합니다.
-    else
-    {
-        IsSprint = false;
-        OnRep_IsSprint(); // 서버에서도 OnRep을 수동으로 호출하여 즉시 적용합니다.
-		StatusComp->StopSprinting();
-    }
-}
- 
-void ANS_PlayerCharacterBase::Server_StartSprint_Implementation(const FInputActionValue& Value)
-{
-    // 클라이언트의 요청을 받아 서버에서 실행되는 실제 로직입니다.
-    if (StatusComp->CheckEnableSprint())
-    {
-        IsSprint = true;
-        OnRep_IsSprint(); // 상태 변경 후 모든 클라이언트에 전파합니다.
-    }
+       Server_SetSprinting(false);
 }
 
-void ANS_PlayerCharacterBase::Server_StopSprint_Implementation(const FInputActionValue& Value)
+void ANS_PlayerCharacterBase::StartInteraction_Server_Implementation(const FInputActionValue& Value)
 {
-    // 클라이언트의 요청을 받아 서버에서 실행되는 실제 로직입니다.
-    IsSprint = false;
-    OnRep_IsSprint(); // 상태 변경 후 모든 클라이언트에 전파합니다.
-}
-
-
-
-void ANS_PlayerCharacterBase::PickUpAction_Server_Implementation(const FInputActionValue& Value)
-{
-    // 낙하 중에는 아이템 줍기 불가
-    if (GetCharacterMovement()->IsFalling()) { return; }
-
-    // 이미 아이템 줍기 중이면 무시 (중복 체크 강화)
-    if (IsPickUp) {
+    // 상호작용이 불가능한 상태인지 확인
+    if (GetCharacterMovement()->IsFalling() || // 낙하 중
+        IsPickUp ||                           // 이미 아이템 줍기 중
+        IsReload ||                           // 재장전 중
+        IsChangeAnim ||                       // 무기 교체 애니메이션 중
+        (EquipedWeaponComp && EquipedWeaponComp->IsAttack) || // 공격 중
+        IsThrow)                              // 투척 중
+    {
         return;
     }
 
-    // 재장전 중이면 무시
-    if (IsReload) {
-        return;
-    }
-
-    // 무기 교체 애니메이션 중이면 무시
-    if (IsChangeAnim) {
-        return;
-    }
-
-    // 공격 중이면 무시
-    if (EquipedWeaponComp && EquipedWeaponComp->IsAttack) {
-        return;
-    }
-
-    // 투척 중이면 무시
-    if (IsThrow) {
-        return;
-    }
-
+    // 상호작용 컴포넌트를 통해 상호작용 시작
     if (UNS_InteractionComponent* InteractComp = FindComponentByClass<UNS_InteractionComponent>())
     {
         InteractComp->BeginInteract();
@@ -1145,21 +1078,6 @@ void ANS_PlayerCharacterBase::UpdateYawReset(float DeltaTime)
     RequestUpdateAim();
 }
 
-void ANS_PlayerCharacterBase::OnRep_IsSprint()
-{
-    if (GetCharacterMovement())
-    {
-        if (IsSprint)
-        {
-            GetCharacterMovement()->MaxWalkSpeed = CurrentWalkSpeed * SprintSpeedMultiplier;
-        }
-        else
-        { 
-            GetCharacterMovement()->MaxWalkSpeed = CurrentWalkSpeed;
-        }
-    }
-}
-
 void ANS_PlayerCharacterBase::RequestUpdateAim()
 {
     // 로컬 컨트롤러가 아니면 실행하지 않음
@@ -1254,30 +1172,6 @@ void ANS_PlayerCharacterBase::Multicast_PlayPickupSound_Implementation(USoundBas
     }
 }
 
-void ANS_PlayerCharacterBase::OnInventoryWeightUpdated(float CurrentWeight, float WeightCapacity)
-{
-	if (GetCharacterMovement())
-	{
-		if (WeightCapacity > 0)
-		{
-			// 현재 무게와 최대 무게의 비율을 계산합니다. (0.0 ~ 1.0 사이 값)
-			float WeightRatio = FMath::Clamp(CurrentWeight / WeightCapacity, 0.0f, 1.0f);
-			// 무게 비율에 따라 속도 감소량을 계산합니다. 최대 30%까지 감소합니다.
-			float SpeedReduction = DefaultWalkSpeed * 0.3f * WeightRatio;
-			// 기본 속도에서 감소량을 빼서 새로운 속도를 계산하고, 정수로 변환합니다.
-			CurrentWalkSpeed = FMath::RoundToInt(DefaultWalkSpeed - SpeedReduction);
-		}
-		else
-		{
-			// 무게 용량이 0 이하면 기본 속도로 설정합니다.
-			CurrentWalkSpeed = DefaultWalkSpeed;
-		}
-
-		// 현재 상태(걷기/달리기)에 맞춰 속도를 즉시 적용합니다.
-		OnRep_IsSprint();
-	}
-}
-
 void ANS_PlayerCharacterBase::ToggleInventoryMenu()
 {
     if (!IsLocallyControlled()) return;
@@ -1300,5 +1194,20 @@ void ANS_PlayerCharacterBase::ToggleInventoryMenu()
     else
     {
         InGameHUD->ShowWidget(InventoryMainWidget);
+    }
+}
+
+void ANS_PlayerCharacterBase::Server_SetSprinting_Implementation(bool IsSprinting)
+{
+    if (StatusComp)
+    {
+        if (IsSprinting)
+        {
+            StatusComp->StartSprinting();
+        }
+        else
+        {
+            StatusComp->StopSprinting();
+        }
     }
 }

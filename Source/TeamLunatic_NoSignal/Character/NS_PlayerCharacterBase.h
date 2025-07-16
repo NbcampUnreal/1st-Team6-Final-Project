@@ -12,6 +12,7 @@
 #include "UI/InGame/NS_LevelMapWidget.h"
 #include "NS_PlayerCharacterBase.generated.h"
 
+class ANS_StatusComponent;
 class UInputMappingContext;
 class UInputAction;
 class UCameraComponent;
@@ -31,9 +32,6 @@ class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
 
 public:
 	ANS_PlayerCharacterBase();
-
-	UFUNCTION()
-	void OnInventoryWeightUpdated(float CurrentWeight, float WeightCapacity);
 
 	FORCEINLINE UNS_InventoryComponent* GetInventory() const { return InventoryComp; };
 
@@ -122,7 +120,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "Components")
 	UNS_StatusComponent* StatusComp;
 
-	// 인터렉션 컴포넌트
+	// 상호작용 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interaction", meta = (AllowPrivateAccess = "true"))
 	UNS_InteractionComponent* InteractionComp;
 
@@ -142,56 +140,56 @@ public:
 	
 	/////////////////////////////// 리플리케이션용 변수들////////////////////////////////
 	// 캐릭터가 바라보고있는 좌/우 값
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Camera")
 	float CamYaw;
 	// 캐릭터가 바라보고있는 상/하 값
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Camera")
 	float CamPitch;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Look|Assist")
 	float LookMagnification = 0.5f;
 
 	// 왼쪽으로 몸을 회전시키는 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Animation")
 	bool TurnLeft = false;
 	// 오른쪽으로 몸을 회전시키는 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Animation")
 	bool TurnRight = false;
 	// 사격시 몸전체Mesh 사격 애니메이션 재생 용 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Animation")
 	bool NowFire = false;
 	// 달리고있는 상태인지 확인 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_IsSprint, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Movement")
 	bool IsSprint = false;
 	// 재장전 실행 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Weapon")
 	bool IsReload = false;
 	// 아이템을 줍고있는지 확인 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Interaction")
 	bool IsPickUp = false;
 	// 캐릭터가 맞고있는지 확인 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Combat")
 	bool IsHit = false;
 	// 조준중인지 확인 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Weapon")
 	bool IsAiming = false;
 	// 헤드램프 키고 끄는 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Flashlight")
 	bool bFlashlightOnOff = true;
 	// 무기 교체중인지 확인 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Weapon")
 	bool IsChangingWeapon = false;
 	// 퀵슬롯을 누르면 퀵슬롯에 있는 무기를 장착하는 애니메이션 재생용 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Animation")
 	bool IsChangeAnim = false;
 	// 캐릭터가 죽었는지 확인 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Character")
 	bool IsDead = false;
 	// 한번만 던져지도록 실행하는 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Throw")
 	bool bHasThrown = false;
 	// 병 던질 수 있는지 확인 변수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Replicated Variables")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Throw")
 	bool IsThrow = false;
 	//////////////////////////////////////////////////////////////////////////////////////
 
@@ -248,16 +246,15 @@ public:
 	
 	// ================================================= 이동 관련 ======================================================
 	// 기본 이동 속도
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float DefaultWalkSpeed;
-
-	// 현재 이동 속도
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	float CurrentWalkSpeed;
-
+	
 	// 달리기 배율 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true", UIMin = 0))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float SprintSpeedMultiplier;
+
+	UFUNCTION(Server, Reliable)
+	void Server_SetSprinting(bool isSprinting);
 	// ============================================= 이동 관련 끝! =======================================================
 
 
@@ -327,9 +324,7 @@ public:
 	float LastTurnYaw = 0.0f;
 	// ===============================Turn In Place변수 끝!===================================
 
-	
-
-	// 캐릭터 EnhancedInput을 없앴다가 다시 부착하는는 함수 IMC를 지워웠다가 다시 장착하게해서 AnimNotify로 발차기 공격동안 IMC없앰
+	// 캐릭터 EnhancedInput을 없앴다가 다시 부착하는는 함수 IMC를 지워웠다가 다시 장착
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category = "Input")
 	void SetMovementLockState_Server(bool bLock);
 	UFUNCTION(NetMulticast, Reliable)
@@ -346,19 +341,15 @@ public:
 	// 앉기
 	void StartCrouch(const FInputActionValue& Value);
 	void StopCrouch(const FInputActionValue& Value);
-	//////////////CharacterMovmentComponent를 사용안함////////////////
 
 	// 달리기
 	void StartSprint(const FInputActionValue& Value);
 	void StopSprint(const FInputActionValue& Value);
-	UFUNCTION(Server, Reliable)
-	void Server_StartSprint(const FInputActionValue& Value);
-	UFUNCTION(Server, Reliable)
-	void Server_StopSprint(const FInputActionValue& Value);
+	//////////////CharacterMovmentComponent를 사용안함////////////////
 
-	// 아이템 줍기
+	// 상호작용 시작
 	UFUNCTION(Server, Reliable)
-	void PickUpAction_Server(const FInputActionValue& Value);
+	void StartInteraction_Server(const FInputActionValue& Value);
 
 	// 아이템 버리기
 	UFUNCTION(Server, Reliable)
@@ -387,9 +378,6 @@ public:
 	FTimerHandle AimUpdateTimerHandle;
 	float LastSentCamYaw = 0.f;
 	float LastSentCamPitch = 0.f;
-
-	UFUNCTION()
-	void OnRep_IsSprint();
 	
 	// 헤드램프 켜고 끄는 함수
 	UFUNCTION(BlueprintCallable, Category = "Flashlight")
