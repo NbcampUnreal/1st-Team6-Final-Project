@@ -76,5 +76,5 @@ public:
     int32 GetCurrentStmina() const { return Stamina; }
 
 private:
-    bool bEnableSprint = true; // 스프린트 허용 여부를 결정하는 플래그
+    bool EnableSprint = true; // 스프린트 허용 여부를 결정하는 플래그
 };

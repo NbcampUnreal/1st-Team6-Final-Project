@@ -169,7 +169,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
         {
             EnhancedInput->BindAction(
                 InputJumpAction,
-             ETriggerEvent::Started,
+             ETriggerEvent::Triggered,
               this,
                &ANS_PlayerCharacterBase::JumpAction);
         }

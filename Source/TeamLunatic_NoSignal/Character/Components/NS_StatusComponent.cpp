@@ -49,9 +49,12 @@ void UNS_StatusComponent::BeginPlay()
 // 달리기 상태를 시작합니다.
 void UNS_StatusComponent::StartSprinting()
 {
-	bIsSprinting = true;
-
-	PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = PlayerCharacter->DefaultWalkSpeed * SprintMultiply;
+	// 스태미나가 10 이상이고 달리기가 가능할 때만 시작
+	if (Stamina >= 10 && EnableSprint)
+	{
+		bIsSprinting = true;
+		PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = PlayerCharacter->DefaultWalkSpeed * SprintMultiply;
+	}
 }
 
 // 달리기 상태를 중지합니다.
@@ -59,60 +62,36 @@ void UNS_StatusComponent::StopSprinting()
 {
 	bIsSprinting = false;
 
-	PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed =  PlayerCharacter->DefaultWalkSpeed;
+	PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = PlayerCharacter->DefaultWalkSpeed;
 }
 
-// 0.1초마다 호출되어 스태미나를 지속적으로 업데이트합니다. (서버에서만 실행)
 void UNS_StatusComponent::UpdateStamina()
 {
-	const int32 OldStamina = Stamina;
-
-	if (bIsSprinting) // 달리고 있는 경우
+	if (bIsSprinting)
 	{
-		if (Stamina > 0)
+		// 달리는 중 스태미나 감소
+		Stamina = FMath::Max(0, Stamina - FMath::RoundToInt(FMath::Abs(StaminaDereaseRate) * 0.1f));
+		
+		// 스태미나가 0이 되면 달리기 중지
+		if (Stamina <= 0)
 		{
-			// 스태미나를 감소시킵니다. (StaminaDereaseRate는 음수 값이어야 함)
-			// 0.1초마다 호출되므로, 초당 감소량에 0.1을 곱하여 적용합니다.
-			Stamina = FMath::Clamp(Stamina + FMath::RoundToInt(StaminaDereaseRate * 0.1f), 0, MaxStamina);
-		}
-		else // 스태미나가 0 이하면
-		{
-			// 달리기 상태를 강제로 중지합니다.
 			StopSprinting();
-			if (PlayerCharacter)
-			{
-				// 캐릭터에게도 달리기 중지를 통지합니다.
-				PlayerCharacter->StopSprint(FInputActionValue());
-			}
+			EnableSprint = false;
 		}
 	}
-	else // 달리고 있지 않은 경우
+	else
 	{
+		// 달리지 않을 때 스태미나 회복
 		if (Stamina < MaxStamina)
 		{
-			// 스태미나를 회복합니다.
 			Stamina = FMath::Min(MaxStamina, Stamina + FMath::RoundToInt(CurrentStaminaRegenRate * 0.1f));
 		}
-	}
-
-	// 스태미나 값에 실제 변경이 있었는지 확인합니다.
-	if (OldStamina != Stamina)
-	{
-		// UI 업데이트 등을 위해 스태미나 변경 델리게이트를 호출(Broadcast)합니다.
-		OnStaminaChanged.Broadcast(Stamina, MaxStamina);
-	}
-
-	// 달리기가 불가능한 상태였다가, 스태미나가 10 이상으로 회복되면 다시 달리기가 가능하도록 설정합니다.
-	// 이는 스태미나가 바닥났을 때 바로 다시 뛸 수 없도록 하는 약간의 지연 효과를 줍니다.
-	if (bEnableSprint == false && Stamina > 10)
-	{
-		bEnableSprint = true;
-	}
-
-	// 달리는 도중 스태미나가 0 이하로 떨어지면, 달리기를 불가능한 상태로 만듭니다.
-	if (bIsSprinting && Stamina <= 0)
-	{
-		bEnableSprint = false;
+		
+		// 스태미나가 10 이상이 되면 다시 달릴 수 있음
+		if (Stamina >= 10)
+		{
+			EnableSprint = true;
+		}
 	}
 }
 

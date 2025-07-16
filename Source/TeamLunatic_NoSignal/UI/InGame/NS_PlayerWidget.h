@@ -20,15 +20,6 @@ public:
 
     virtual void NativeConstruct() override;
     
-    // 플레이어의 현재 체력과 최대 체력을 업데이트하여 UI에 표시
-    void UpdateHealth(int32 CurrentHealth);
-
-    // 플레이어의 현재 스태미나와 최대 스태미나를 업데이트하여 UI에 표시
-    void UpdateStamina(int32 CurrentStamina);
-
-    // 크로스헤어를 보이게 할지(true) 숨기게 할지(false) 여부
-    void SetCrosshairVisibility(bool bVisible); 
-    
     // 상호작용 위젯을 표시
     void ShowInteractionWidget();
     
@@ -37,9 +28,6 @@ public:
     
     // 상호작용 위젯을 업데이트
     void UpdateInteractionWidget(const FInteractableData* InteractableData);
-    
-    // 상호작용 위젯 클래스를 설정.
-    void SetInteractionWidgetClass(TSubclassOf<class UNS_InteractionPanel> InWidgetClass);
 
     // 플레이어의 체력을 표시하는 텍스트 블록 위젯
     UPROPERTY(meta = (BindWidget))

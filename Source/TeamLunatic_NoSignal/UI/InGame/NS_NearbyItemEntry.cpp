@@ -55,74 +55,72 @@ void UNS_NearbyItemEntry::SetItemInfo(const FNearbyItemInfo& InItemInfo)
 	UE_LOG(LogTemp, Warning, TEXT("SetItemInfo 호출 - 아이템: %s"), 
 		ItemInfo.Item ? *ItemInfo.Item->GetName() : TEXT("None"));
 	
-	// 위젯에 바인딩된 컴포넌트들이 유효한지 다시 확인합니다.
+	// 위젯 컴포넌트들의 바인딩 상태를 확인
+	bool bAllWidgetsValid = true;
 	if (!ItemNameText)
 	{
-		UE_LOG(LogTemp, Error, TEXT("ItemNameText가 유효하지 않습니다. 블루프린트에서 이름이 정확한지 확인하세요."));
+		UE_LOG(LogTemp, Error, TEXT("[NS_NearbyItemEntry] ItemNameText가 바인딩되지 않음! 블루프린트에서 'ItemNameText' 이름으로 TextBlock이 바인딩되어 있는지 확인하세요."));
+		bAllWidgetsValid = false;
 	}
 	
 	if (!ItemQuantityText)
 	{
-		UE_LOG(LogTemp, Error, TEXT("ItemQuantityText가 유효하지 않습니다. 블루프린트에서 이름이 정확한지 확인하세요."));
+		UE_LOG(LogTemp, Error, TEXT("[NS_NearbyItemEntry] ItemQuantityText가 바인딩되지 않음! 블루프린트에서 'ItemQuantityText' 이름으로 TextBlock이 바인딩되어 있는지 확인하세요."));
+		bAllWidgetsValid = false;
 	}
 	
 	if (!ItemIcon)
 	{
-		UE_LOG(LogTemp, Error, TEXT("ItemIcon이 유효하지 않습니다. 블루프린트에서 이름이 정확한지 확인하세요."));
+		UE_LOG(LogTemp, Error, TEXT("[NS_NearbyItemEntry] ItemIcon이 바인딩되지 않음! 블루프린트에서 'ItemIcon' 이름으로 Image가 바인딩되어 있는지 확인하세요."));
+		bAllWidgetsValid = false;
 	}
 	
-	// ItemNameText가 유효하고 아이템 정보가 있으면 아이템 이름을 설정합니다.
-	if (ItemNameText && ItemInfo.Item)
+	if (!PickupButton)
 	{
-		FText ItemName = ItemInfo.Item->GetItemName();
-		UE_LOG(LogTemp, Warning, TEXT("아이템 이름: %s"), *ItemName.ToString());
-		ItemNameText->SetText(ItemName);
+		UE_LOG(LogTemp, Error, TEXT("[NS_NearbyItemEntry] PickupButton이 바인딩되지 않음! 블루프린트에서 'PickupButton' 이름으로 Button이 바인딩되어 있는지 확인하세요."));
+		bAllWidgetsValid = false;
 	}
 	
-	// ItemQuantityText가 유효하면 아이템 수량을 설정합니다.
-	if (ItemQuantityText)
+	if (!bAllWidgetsValid)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("아이템 수량: %d"), ItemInfo.Quantity);
-		ItemQuantityText->SetText(FText::AsNumber(ItemInfo.Quantity));
+		UE_LOG(LogTemp, Error, TEXT("[NS_NearbyItemEntry] 위젯 바인딩 실패! 블루프린트에서 위젯 이름들을 다시 확인하세요."));
+		return;
 	}
 	
-	// ItemIcon이 유효하고 아이템 정보가 있으면 아이템 아이콘을 설정합니다.
-	if (ItemIcon && ItemInfo.Item)
+	// 아이템 정보가 유효한지 확인
+	if (!ItemInfo.Item)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("아이템 아이콘 설정 시도 - 아이템: %s, RowName: %s"), 
-			*ItemInfo.Item->GetName(), 
-			*ItemInfo.Item->ItemDataRowName.ToString());
+		UE_LOG(LogTemp, Error, TEXT("[NS_NearbyItemEntry] 아이템 정보가 null입니다!"));
+		return;
+	}
+	
+	// 아이템 이름 설정
+	FText ItemName = ItemInfo.Item->GetItemName();
+	UE_LOG(LogTemp, Log, TEXT("[NS_NearbyItemEntry] 아이템 이름 설정: %s"), *ItemName.ToString());
+	ItemNameText->SetText(ItemName);
+	
+	// 아이템 수량 설정
+	UE_LOG(LogTemp, Log, TEXT("[NS_NearbyItemEntry] 아이템 수량 설정: %d"), ItemInfo.Quantity);
+	ItemQuantityText->SetText(FText::AsNumber(ItemInfo.Quantity));
+	
+	// 아이템 아이콘 설정
+	UTexture2D* IconTexture = ItemInfo.Item->GetItemIcon();
+	if (IconTexture)
+	{
+		UE_LOG(LogTemp, Log, TEXT("[NS_NearbyItemEntry] 아이콘 설정 성공: %s"), *IconTexture->GetName());
+		ItemIcon->SetBrushFromTexture(IconTexture);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[NS_NearbyItemEntry] 아이콘이 없어 기본 이미지 사용 - 아이템: %s"), *ItemInfo.Item->GetName());
 		
-		UTexture2D* IconTexture = ItemInfo.Item->GetItemIcon();
-		if (IconTexture)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("아이콘 텍스처 설정 성공: %s"), *IconTexture->GetName());
-			ItemIcon->SetBrushFromTexture(IconTexture);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("아이콘 텍스처가 null입니다! 아이템: %s, RowName: %s"), 
-				*ItemInfo.Item->GetName(), 
-				*ItemInfo.Item->ItemDataRowName.ToString());
-			
-			// 아이콘이 없을 경우 기본 회색 브러시를 설정합니다.
-			FSlateBrush DefaultBrush;
-			DefaultBrush.TintColor = FLinearColor(0.5f, 0.5f, 0.5f, 1.0f);
-			ItemIcon->SetBrush(DefaultBrush);
-			
-			// 아이템 데이터를 직접 확인하여 아이콘 유무를 로깅합니다.
-			const FNS_ItemDataStruct* ItemData = ItemInfo.Item->GetItemData();
-			if (ItemData)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("아이템 데이터 확인: 아이콘 %s"), 
-					ItemData->ItemAssetData.Icon ? TEXT("있음") : TEXT("없음"));
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("아이템 데이터를 가져올 수 없음"));
-			}
-		}
+		// 기본 회색 브러시 설정
+		FSlateBrush DefaultBrush;
+		DefaultBrush.TintColor = FLinearColor(0.5f, 0.5f, 0.5f, 1.0f);
+		ItemIcon->SetBrush(DefaultBrush);
 	}
+	
+	UE_LOG(LogTemp, Log, TEXT("[NS_NearbyItemEntry] SetItemInfo 완료 - %s"), *ItemName.ToString());
 }
 
 /**
