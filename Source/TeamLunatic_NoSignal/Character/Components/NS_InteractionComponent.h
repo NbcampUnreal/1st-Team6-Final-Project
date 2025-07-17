@@ -170,6 +170,10 @@ private:
 	// 서버에서 상호작용을 처리하는 함수
 	UFUNCTION(Server, Reliable)
 	void Interact_Server(AActor* Target);
+	
+	// 서버에서 주변 아이템 획득을 처리하는 함수
+	UFUNCTION(Server, Reliable)
+	void PickupNearbyItem_Server(APickup* ItemActor);
 
 	// 플레이어의 시점 위치를 가져옴
 	FVector GetViewLocation() const;

@@ -45,14 +45,7 @@ public:
      *        아이템 아이콘, 수량 텍스트 등을 업데이트합니다.
      */
     void SetAssignedItem(const FNS_ItemDataStruct* ItemData, int32 Quantity);
-
-    /**
-     * @brief 슬롯의 인덱스를 설정합니다.
-     * @param Index 슬롯의 고유 인덱스입니다.
-     *        주로 퀵 슬롯 키와 연동하여 사용됩니다.
-     */
-    void SetSlotIndex(int32 Index);
-
+	
     /**
      * @brief 슬롯에 할당된 아이템 정보를 지웁니다.
      *        슬롯을 비활성화 상태로 만들고 표시되는 정보를 초기화합니다.
@@ -93,13 +86,6 @@ public:
      */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
     UTextBlock* WeaponShotTypeText;
-
-    /**
-     * @brief 이 슬롯에 연결된 퀵 슬롯 키 위젯입니다.
-     *        블루프린트에서 바인딩됩니다.
-     */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
-    class UNS_QuickSlotKey* QuickSlotKey;
 
     /**
      * @brief 현재 슬롯에 할당된 인벤토리 아이템 객체입니다.

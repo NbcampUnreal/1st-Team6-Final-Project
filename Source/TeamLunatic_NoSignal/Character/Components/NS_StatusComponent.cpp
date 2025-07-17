@@ -46,23 +46,91 @@ void UNS_StatusComponent::BeginPlay()
 	}
 }
 
+// 캐릭터 이동 속도를 설정하는 함수
+void UNS_StatusComponent::SetMovementSpeed(bool bSprinting)
+{
+	if (!PlayerCharacter) return;
+	
+	if (bSprinting)
+	{
+		PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = PlayerCharacter->DefaultWalkSpeed * SprintMultiply;
+	}
+	else
+	{
+		PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = PlayerCharacter->DefaultWalkSpeed;
+	}
+}
+
 // 달리기 상태를 시작합니다.
 void UNS_StatusComponent::StartSprinting()
 {
+	// 클라이언트에서 호출된 경우 서버에 요청
+	if (!GetOwner()->HasAuthority())
+	{
+		// 클라이언트 예측 - 즉시 속도 변경
+		SetMovementSpeed(true);
+		// 서버에 요청
+		Server_SetSprinting(true);
+		return;
+	}
+	
+	// 서버에서만 실행되는 코드
 	// 스태미나가 10 이상이고 달리기가 가능할 때만 시작
 	if (Stamina >= 10 && EnableSprint)
 	{
 		bIsSprinting = true;
-		PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = PlayerCharacter->DefaultWalkSpeed * SprintMultiply;
+		SetMovementSpeed(true);
 	}
 }
 
 // 달리기 상태를 중지합니다.
 void UNS_StatusComponent::StopSprinting()
 {
+	// 클라이언트에서 호출된 경우 서버에 요청
+	if (!GetOwner()->HasAuthority())
+	{
+		// 클라이언트 예측 - 즉시 속도 변경
+		SetMovementSpeed(false);
+		// 서버에 요청
+		Server_SetSprinting(false);
+		return;
+	}
+	
+	// 서버에서만 실행되는 코드
 	bIsSprinting = false;
+	SetMovementSpeed(false);
+}
 
-	PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = PlayerCharacter->DefaultWalkSpeed;
+// 서버에서 달리기 상태를 설정하는 RPC 함수
+void UNS_StatusComponent::Server_SetSprinting_Implementation(bool bShouldSprint)
+{
+	// 이미 원하는 상태인 경우 중복 호출 방지
+	if (bIsSprinting == bShouldSprint)
+		return;
+	
+	if (bShouldSprint)
+	{
+		// 서버에서 스태미나 검사 후 달리기 상태 설정
+		if (Stamina >= 10 && EnableSprint)
+		{
+			bIsSprinting = true;
+			SetMovementSpeed(true);
+		}
+	}
+	else
+	{
+		bIsSprinting = false;
+		SetMovementSpeed(false);
+	}
+}
+
+// bIsSprinting 변수가 복제될 때 호출되는 함수
+void UNS_StatusComponent::OnRep_IsSprinting()
+{
+	// 서버에서는 이미 처리되었으므로 클라이언트에서만 실행
+	if (GetOwner()->HasAuthority()) return;
+	
+	SetMovementSpeed(bIsSprinting);
 }
 
 void UNS_StatusComponent::UpdateStamina()
@@ -70,7 +138,14 @@ void UNS_StatusComponent::UpdateStamina()
 	if (bIsSprinting)
 	{
 		// 달리는 중 스태미나 감소
+		int32 OldStamina = Stamina;
 		Stamina = FMath::Max(0, Stamina - FMath::RoundToInt(FMath::Abs(StaminaDereaseRate) * 0.1f));
+		
+		// 스태미나 변경 이벤트 발생
+		if (OldStamina != Stamina)
+		{
+			OnStaminaChanged.Broadcast(Stamina, MaxStamina);
+		}
 		
 		// 스태미나가 0이 되면 달리기 중지
 		if (Stamina <= 0)
@@ -84,7 +159,14 @@ void UNS_StatusComponent::UpdateStamina()
 		// 달리지 않을 때 스태미나 회복
 		if (Stamina < MaxStamina)
 		{
+			int32 OldStamina = Stamina;
 			Stamina = FMath::Min(MaxStamina, Stamina + FMath::RoundToInt(CurrentStaminaRegenRate * 0.1f));
+			
+			// 스태미나 변경 이벤트 발생
+			if (OldStamina != Stamina)
+			{
+				OnStaminaChanged.Broadcast(Stamina, MaxStamina);
+			}
 		}
 		
 		// 스태미나가 10 이상이 되면 다시 달릴 수 있음
@@ -138,6 +220,12 @@ void UNS_StatusComponent::UpdateStaminaChange(float Value)
 	{
 		// 스태미너 변경 이벤트 델리게이트를 방송합니다.
 		OnStaminaChanged.Broadcast(Stamina, MaxStamina);
+		
+		// 스태미나가 10 이상이 되면 다시 달릴 수 있음
+		if (Stamina >= 10 && !EnableSprint)
+		{
+			EnableSprint = true;
+		}
 	}
 }
 
@@ -147,9 +235,11 @@ void UNS_StatusComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	// 아래 변수들은 서버에서 값이 변경되면 모든 클라이언트로 자동으로 전송됩니다.
-	DOREPLIFETIME(UNS_StatusComponent, Health);       // 현재 체력
+	// 빠른 네트워크 보간을 위해 RepNotify 조건 설정
+	DOREPLIFETIME_CONDITION(UNS_StatusComponent, Health, COND_SkipOwner);       // 현재 체력
 	DOREPLIFETIME(UNS_StatusComponent, MaxHealth);    // 최대 체력
-	DOREPLIFETIME(UNS_StatusComponent, Stamina);      // 현재 스태미나
+	DOREPLIFETIME_CONDITION(UNS_StatusComponent, Stamina, COND_SkipOwner);      // 현재 스태미나
 	DOREPLIFETIME(UNS_StatusComponent, MaxStamina);   // 최대 스태미나
-	DOREPLIFETIME(UNS_StatusComponent, bIsSprinting); // 달리기 상태 (애니메이션 동기화 등에 사용될 수 있음)
+	// 달리기 상태는 RepNotify를 통해 복제 - 네트워크 보간 최적화
+	DOREPLIFETIME_CONDITION_NOTIFY(UNS_StatusComponent, bIsSprinting, COND_None, REPNOTIFY_OnChanged); // 달리기 상태
 }

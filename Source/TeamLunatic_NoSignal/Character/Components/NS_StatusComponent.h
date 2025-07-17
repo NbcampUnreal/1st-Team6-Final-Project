@@ -30,8 +30,15 @@ protected:
 	void UpdateStamina();
 
 	// 스프린트 상태를 복제하도록 변경
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_IsSprinting)
 	bool bIsSprinting;
+	
+	UFUNCTION()
+	void OnRep_IsSprinting();
+	
+	// 서버에서 달리기 상태를 설정하는 RPC 함수
+	UFUNCTION(Server, Reliable)
+	void Server_SetSprinting(bool bShouldSprint);
 
     // 네트워크 복제 설정
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -61,6 +68,9 @@ public:
 
 	void StartSprinting();
 	void StopSprinting();
+	
+	// 캐릭터 이동 속도를 설정하는 함수
+	void SetMovementSpeed(bool bSprinting);
     
     // 델리게이트
     UPROPERTY(BlueprintAssignable)

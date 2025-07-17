@@ -129,33 +129,31 @@ void UNS_InteractionComponent::DetectNearbyItems()
 // 주변 아이템을 인벤토리로 이동
 void UNS_InteractionComponent::PickupNearbyItem(APickup* ItemActor)
 {
-	// 오너가 유효한지 확인
-	ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(GetOwner());
-	if (!PlayerCharacter) return;
-	
-	// 인벤토리 컴포넌트 확인
-	UNS_InventoryComponent* InventoryComp = PlayerCharacter->GetInventory();
-	if (!InventoryComp) return;
-	
-	// 아이템 액터가 유효한지 확인
 	if (!ItemActor) return;
 	
-	// 아이템 정보 가져오기
-	UNS_InventoryBaseItem* Item = ItemActor->GetItem();
-	int32 Quantity = ItemActor->GetQuantity();
+	// 서버에서 실행하거나 서버로 RPC 전송
+	if (GetOwner()->HasAuthority())
+	{
+		PickupNearbyItem_Server(ItemActor);
+	}
+	else
+	{
+		PickupNearbyItem_Server(ItemActor);
+	}
+}
+
+// 서버에서 아이템 획득 처리
+void UNS_InteractionComponent::PickupNearbyItem_Server_Implementation(APickup* ItemActor)
+{
+	// 오너가 유효한지 확인
+	ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(GetOwner());
+	if (!PlayerCharacter || !ItemActor) return;
 	
-	if (!Item) return;
-	
-	// 서버에서 실행해야 하는 로직이므로 상호작용 인터페이스를 통해 처리
+	// 상호작용 인터페이스를 통해 처리
 	if (ItemActor->GetClass()->ImplementsInterface(UNS_InteractionInterface::StaticClass()))
 	{
-		// 상호작용 시작
 		ItemActor->BeginInteract();
-		
-		// 상호작용 실행
 		INS_InteractionInterface::Execute_Interact(ItemActor, PlayerCharacter);
-		
-		// 상호작용 종료
 		ItemActor->EndInteract();
 	}
 	
