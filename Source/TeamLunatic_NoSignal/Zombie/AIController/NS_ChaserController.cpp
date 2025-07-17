@@ -297,15 +297,6 @@ void ANS_ChaserController::ApplyDamageToTarget()
     {
         // 데미지 적용
         UGameplayStatics::ApplyDamage(PlayerChar, 10.0f, this, GetPawn(), nullptr);
-
-        // 환각 효과 발동
-        if (ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(DamageTarget))
-        {
-            UGameplayStatics::ApplyDamage(PlayerCharacter, 10.0f, this, GetPawn(), nullptr);
-
-            PlayerCharacter->ActivateHallucinationEffect(3.0f); // 3초간 환각
-        }
-
     }
 }
 

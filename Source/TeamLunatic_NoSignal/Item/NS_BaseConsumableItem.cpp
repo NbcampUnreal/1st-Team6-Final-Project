@@ -16,8 +16,8 @@ void UNS_BaseConsumableItem::OnUseItem(ANS_PlayerCharacterBase* Character)
 	UNS_StatusComponent* State = Character->StatusComp;
 	if (State)
 	{
-		State->AddHealthGauge(ItemStates.HealAmount);
-		State->AddStamina(ItemStates.StaminaRecovery);
+		State->UpdateHealthChange(ItemStates.HealAmount);
+		State->UpdateStaminaChange(ItemStates.StaminaRecovery);
 	}
 
 	

@@ -4,20 +4,20 @@
 #include "GameFramework/Actor.h"
 #include "NS_ItemDataStruct.h"
 #include "Engine/DataTable.h"
-#include "Interaction/InteractionInterface.h"
+#include "Character/Interface/NS_InteractionInterface.h"
 #include "NS_BaseItem.generated.h"
 
-class UInventoryComponent;
+class UNS_InventoryComponent;
 
 UCLASS()
-class TEAMLUNATIC_NOSIGNAL_API ANS_BaseItem : public AActor, public IInteractionInterface
+class TEAMLUNATIC_NOSIGNAL_API ANS_BaseItem : public AActor, public INS_InteractionInterface
 {
 	GENERATED_BODY()
 	
 public:	
 	ANS_BaseItem();
 
-	UInventoryComponent* OwingInventory;
+	UNS_InventoryComponent* OwingInventory;
 
 	virtual void BeginPlay() override;
 

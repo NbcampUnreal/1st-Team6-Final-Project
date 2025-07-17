@@ -18,14 +18,3 @@ void ANS_GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
     DOREPLIFETIME(ANS_GameState, TrackingTarget);
 }
 
-void ANS_GameState::Multicast_UpdateAllTipTexts_Implementation(const FText& Message)
-{
-    if (GetWorld())
-    {
-        ANS_PlayerController* PC = Cast<ANS_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-        if (PC)
-        {
-            PC->UpdateTipHUD(Message);
-        }
-    }
-}

@@ -2,149 +2,68 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+#include "OnlineSessionSettings.h"
+#include "OnlineSubsystem.h"
+#include "Interfaces/OnlineSessionInterface.h"
 #include "Engine/DataTable.h"
-#include "UObject/SoftObjectPtr.h" 
+#include "UObject/SoftObjectPtr.h"
 #include "EGameModeType.h"
 #include "NS_ReadyUI.h"
-#include "HttpModule.h"
-#include "UI/NS_BaseMainMenu.h"
-#include "Interfaces/IHttpRequest.h"
-#include "Interfaces/IHttpResponse.h"
-#include "Dom/JsonObject.h"
-#include "Serialization/JsonSerializer.h"
-#include "Serialization/JsonReader.h"
 #include "NS_GameInstance.generated.h"
 
-DECLARE_MULTICAST_DELEGATE(FOnCreateSessionSuccess);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnSessionListReceived, const TArray<TSharedPtr<FJsonObject>>&);
-
-class UNS_UIManager;
-
-
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnSessionSearchComplete, const TArray<FOnlineSessionSearchResult>&);
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API UNS_GameInstance : public UGameInstance
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
-	UNS_GameInstance();
-	virtual void Init() override;
-	virtual void Shutdown() override;
+    UNS_GameInstance();
+    virtual void Init() override;
+    void OnSessionUserInviteAccepted(const bool bWasSuccessful, const int32 LocalUserNum, TSharedPtr<const FUniqueNetId> UserId, const FOnlineSessionSearchResult& InviteResult);
 
-	//UFUNCTION()
-	//void OnLevelLoaded(UWorld* LoadedWorld);
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Inventory|Config")
+    UDataTable* GlobalItemDataTable;
 
-	void SetCurrentSaveSlot(FString SlotNameInfo);
+    void SetGameModeType(EGameModeType Type);
+    EGameModeType GetGameModeType() const { return GameModeType; }
 
-	UPROPERTY(BlueprintReadOnly, Category = "SaveGame")
-	FString CurrentSaveSlotName;
+    // ----- [Steam OnlineSubsystem 세션 관련 함수] -----
+    void CreateSession(FName SessionName, int32 MaxPlayers);
+    void FindSessions();
+    void JoinSession(const FOnlineSessionSearchResult& SearchResult);
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Inventory|Config")
-	UDataTable* GlobalItemDataTable;
+    void OnDestroySessionThenCreateSession(FName SessionName, bool bWasSuccessful);
 
-	UFUNCTION(BlueprintCallable, Category = "UI")
-	UNS_UIManager* GetUIManager() const { return NS_UIManager; };
 
-	// 레벨 로드 완료 후 프레임률 체크 시작
-	UFUNCTION(BlueprintCallable, Category = "Loading")
-	void StartPostLevelLoadFrameRateCheck();
+    // 검색 결과 UI에 전달
+    FOnSessionSearchComplete OnSessionSearchComplete;
 
-	// 영구 로딩 스크린 생성 (레벨 전환에도 살아남음)
-	UFUNCTION(BlueprintCallable, Category = "Loading")
-	void CreatePersistentLoadingScreen();
+    // 세션 검색 객체
+    TSharedPtr<class FOnlineSessionSearch> SessionSearch;
 
-	// 레벨 로드 완료 감지를 위한 타이머 핸들
-	FTimerHandle LevelLoadCheckTimer;
+    // 기존처럼 맵 소프트참조, UI매니저 등
+    UPROPERTY(EditAnywhere, Category = "Level")
+    TSoftObjectPtr<UWorld> WaitingRoom;
 
-	// 레벨 로드 완료 체크 함수
-	void CheckForLevelLoadComplete();
+    bool bIsSinglePlayer = true;
 
-	// 레벨 전환 시작 전 호출 (인게임 화면 숨기기)
-	void OnPreLoadMap(const FString& MapName);
+    UPROPERTY(EditDefaultsOnly, Category = "UI")
+    TSubclassOf<UUserWidget> ReadyUIClass;
+    UPROPERTY()
+    class UNS_ReadyUI* ReadyUIInstance;
 
-	// 레벨 전환 완료 후 호출
-	void OnPostLoadMapWithWorld(UWorld* LoadedWorld);
+    void ShowReadyUI();
+    void HideReadyUI();
 
-	// 프레임률 체크가 이미 시작되었는지 플래그
-	bool bFrameRateCheckStarted = false;
-
-	// 레벨 전환에도 살아남는 로딩 스크린 (GameInstance에서 관리)
-	UPROPERTY()
-	class UNS_LoadingScreen* PersistentLoadingScreen = nullptr;
-
-	void SetGameModeType(EGameModeType Type);
-	EGameModeType GetGameModeType() const { return GameModeType; }
-
-	void CreateDedicatedSessionViaHTTP(FName SessionName, int32 MaxPlayers);
-	void OnCreateSessionResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
-
-	// HTTP 세션 리스트 요청
-	void RequestSessionListFromServer();
-	void OnReceiveSessionList(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
-
-	// HTTP 세션 리스트 숨김
-	void RequestUpdateSessionStatus(int32 Port, FString Status); 
-	void OnUpdateSessionStatusResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
-
-	UPROPERTY(EditAnywhere, Category = "Level")
-	TSoftObjectPtr<UWorld> WaitingRoom;
-
-	// 세션 리스트 받아오면 UI에서 처리 가능하도록 이벤트 델리게이트
-	FOnSessionListReceived OnSessionListReceived;
-
-	UPROPERTY()
-	UNS_UIManager* NS_UIManager;
-
-	UPROPERTY()
-	TSubclassOf<UNS_UIManager> UIManagerClass;
-
-	bool bIsSinglePlayer = true;
-
-	void SendHeartbeat();
-
-	UPROPERTY(EditDefaultsOnly, Category = "UI")
-	TSubclassOf<UUserWidget> ReadyUIClass;
-
-	UPROPERTY()
-	class UNS_ReadyUI* ReadyUIInstance;
-
-	void ShowReadyUI();
-	void HideReadyUI();
-
-	UPROPERTY(EditDefaultsOnly, Category = "UI")
-	TSubclassOf<UUserWidget> WaitClass;
-
-	UPROPERTY()
-	UUserWidget* WaitWidget;
-
-	UFUNCTION(BlueprintCallable)
-	void ShowWait();
-
-	UFUNCTION(BlueprintCallable)
-	void HideWait();
-
-	UFUNCTION(BlueprintCallable, Category = "Network")
-	void DestroyCurrentSession();
-
-	int32 MyServerPort = -1;
-	// 메인 메뉴 위젯 인스턴스
-	UPROPERTY(BlueprintReadOnly, Category = "UI")
-	UNS_BaseMainMenu* MainMenu;
-
-	// 메인 메뉴 위젯 클래스
-	UPROPERTY(EditDefaultsOnly, Category = "UI")
-	TSubclassOf<UNS_BaseMainMenu> MainMenuClass;
-
-	// 메인 메뉴 참조 반환 함수 (동적 생성 기능 포함)
-	UFUNCTION(BlueprintCallable, Category = "UI")
-	UNS_BaseMainMenu* GetMainMenu();
-
-	// MainMenu 설정 함수 추가
-	UFUNCTION(BlueprintCallable, Category = "Game")
-	void SetMainMenu(UNS_BaseMainMenu* NewMainMenu) { MainMenu = NewMainMenu; }
+    UFUNCTION(BlueprintCallable, Category = "Network")
+    void DestroyCurrentSession();
 
 private:
-	EGameModeType GameModeType = EGameModeType::SinglePlayMode;
-	FTimerHandle HeartbeatTimerHandle;
+    EGameModeType GameModeType = EGameModeType::SinglePlayMode;
+
+    void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
+    void OnFindSessionsComplete(bool bWasSuccessful);
+    void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 };

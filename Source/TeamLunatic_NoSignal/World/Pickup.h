@@ -4,9 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Interaction/InteractionInterface.h"
+#include "Character/Interface/NS_InteractionInterface.h"
 #include "Net/UnrealNetwork.h"
-#include "UI/NS_PlayerHUD.h"
 #include "Item/NS_ItemDataStruct.h"
 #include "Pickup.generated.h"
 
@@ -15,7 +14,7 @@ class UNS_InventoryBaseItem;
 class ANS_PlayerCharacterBase;
 
 UCLASS()
-class TEAMLUNATIC_NOSIGNAL_API APickup : public AActor, public IInteractionInterface
+class TEAMLUNATIC_NOSIGNAL_API APickup : public AActor, public INS_InteractionInterface
 {
 	GENERATED_BODY()
 
@@ -33,6 +32,8 @@ public:
 	void OnRep_ReplicatedItemData();
 
 	FORCEINLINE UNS_InventoryBaseItem* GetItemData() { return ItemReference; };
+	FORCEINLINE UNS_InventoryBaseItem* GetItem() { return ItemReference; };
+	FORCEINLINE int32 GetQuantity() const { return ItemQuantity; };
 
 	virtual void BeginFocus() override;
 	virtual void EndFocus() override;
@@ -53,7 +54,7 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Pickup | ItemReference")
 	UNS_InventoryBaseItem* ItemReference;
 
-	UPROPERTY(EditInstanceOnly, Category = "Pickup | ItemInitialization")
+		UPROPERTY(EditInstanceOnly, Category = "Pickup | ItemInitialization")
 	int32 ItemQuantity;
 
 	UPROPERTY(VisibleInstanceOnly, Category = "Pickup | Interaction")

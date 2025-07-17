@@ -95,22 +95,50 @@ const FNS_ItemDataStruct* UNS_InventoryBaseItem::GetItemData() const
 {
 	if (!ItemsDataTable)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("GetItemData: 데이터 테이블이 없어서 GameInstance에서 가져오기 시도"));
 		if (const UWorld* World = GetWorld())
 		{
 			if (const UNS_GameInstance* GI = Cast<UNS_GameInstance>(World->GetGameInstance()))
 			{
 				ItemsDataTable = GI->GlobalItemDataTable;
+				UE_LOG(LogTemp, Warning, TEXT("GetItemData: GameInstance에서 데이터 테이블 가져옴 - %s"), 
+					ItemsDataTable ? TEXT("성공") : TEXT("실패"));
 			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("GetItemData: GameInstance를 찾을 수 없음"));
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("GetItemData: World를 찾을 수 없음"));
 		}
 	}
 
-	if (!ItemsDataTable || ItemDataRowName.IsNone())
+	if (!ItemsDataTable)
 	{
-		UE_LOG(LogTemp, Error, TEXT("데이터 테이블 또는 RowName 없음"));
+		UE_LOG(LogTemp, Error, TEXT("GetItemData: 데이터 테이블이 없음"));
 		return nullptr;
 	}
 
-	return ItemsDataTable->FindRow<FNS_ItemDataStruct>(ItemDataRowName, TEXT(""));
+	if (ItemDataRowName.IsNone())
+	{
+		UE_LOG(LogTemp, Error, TEXT("GetItemData: ItemDataRowName이 None임"));
+		return nullptr;
+	}
+
+	const FNS_ItemDataStruct* ItemData = ItemsDataTable->FindRow<FNS_ItemDataStruct>(ItemDataRowName, TEXT(""));
+	if (!ItemData)
+	{
+		UE_LOG(LogTemp, Error, TEXT("GetItemData: 데이터 테이블에서 '%s' 항목을 찾을 수 없음"), *ItemDataRowName.ToString());
+		return nullptr;
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("GetItemData: '%s' 항목 찾음, 아이콘 유무: %s"), 
+		*ItemDataRowName.ToString(), 
+		ItemData->ItemAssetData.Icon ? TEXT("있음") : TEXT("없음"));
+
+	return ItemData;
 }
 // 아이템 사용 시 타입에 따라 분기 처리
 void UNS_InventoryBaseItem::OnUseItem(ANS_PlayerCharacterBase* Character)
@@ -132,13 +160,7 @@ void UNS_InventoryBaseItem::OnUseItem(ANS_PlayerCharacterBase* Character)
 	// 아이템 타입에 따른 처리
 	switch (ItemData->ItemType)
 	{
-	case EItemType::Misc: // 기타 아이템 처리 - TipText 숨기기
-		if (Character)
-		{
-			Character->Multicast_HideTipText();
-			UE_LOG(LogTemp, Warning, TEXT("[OnUseItem] 기타 아이템 사용 - TipText 숨김 처리"));
-		}
-		break;
+	case EItemType::Misc: 
 	case EItemType::Consumable:
 	case EItemType::Medical:
 	case EItemType::Utility: // 소모품 처리
@@ -176,8 +198,8 @@ void UNS_InventoryBaseItem::UseConsumableItem_Multicast_Implementation(ANS_Playe
 	// 상태 회복 처리
 	if (UNS_StatusComponent* State = Character->StatusComp)
 	{
-		State->AddHealthGauge(ItemData->ItemStates.HealAmount);
-		State->AddStamina(ItemData->ItemStates.StaminaRecovery);
+		State->UpdateHealthChange(ItemData->ItemStates.HealAmount);
+		State->UpdateStaminaChange(ItemData->ItemStates.StaminaRecovery);
 
 		UE_LOG(LogTemp, Log, TEXT("[UseConsumableItem] 체력 +%.1f, 스태미나 +%.1f"),
 			ItemData->ItemStates.HealAmount,
@@ -230,4 +252,52 @@ AActor* UNS_InventoryBaseItem::GetOwningActor() const
 int32 UNS_InventoryBaseItem::GetQuantity() const
 {
 	return Quantity;
+}
+
+FText UNS_InventoryBaseItem::GetItemName() const
+{
+	// 데이터 테이블에서 아이템 정보 가져오기
+	const FNS_ItemDataStruct* ItemData = GetItemData();
+	if (ItemData)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("GetItemName: 데이터 테이블에서 이름 가져옴 - %s"), *ItemData->ItemTextData.ItemName.ToString());
+		return ItemData->ItemTextData.ItemName;
+	}
+	
+	UE_LOG(LogTemp, Warning, TEXT("GetItemName: 데이터 테이블에서 이름을 가져올 수 없음, 기본값 사용 - %s"), *ItemName.ToString());
+	return ItemName;
+}
+
+float UNS_InventoryBaseItem::GetWeight() const
+{
+	// 데이터 테이블에서 무게 정보 가져오기
+	const FNS_ItemDataStruct* ItemData = GetItemData();
+	if (ItemData)
+	{
+		return ItemData->ItemNumericData.Weight;
+	}
+	return Weight;
+}
+
+UTexture2D* UNS_InventoryBaseItem::GetItemIcon() const
+{
+	// 데이터 테이블에서 아이콘 정보 가져오기
+	const FNS_ItemDataStruct* ItemData = GetItemData();
+	if (ItemData && ItemData->ItemAssetData.Icon)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("GetItemIcon: 데이터 테이블에서 아이콘 가져옴 - %s"), 
+			ItemData->ItemAssetData.Icon ? *ItemData->ItemAssetData.Icon->GetName() : TEXT("NULL"));
+		return ItemData->ItemAssetData.Icon;
+	}
+	
+	// 데이터 테이블에 아이콘이 없으면 인스턴스 변수 사용
+	if (Icon)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("GetItemIcon: 인스턴스 아이콘 사용 - %s"), *Icon->GetName());
+		return Icon;
+	}
+	
+	// 아이콘이 없는 경우
+	UE_LOG(LogTemp, Error, TEXT("GetItemIcon: 아이콘을 찾을 수 없음 - ItemDataRowName: %s"), *ItemDataRowName.ToString());
+	return nullptr;
 }

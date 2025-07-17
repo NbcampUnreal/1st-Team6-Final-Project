@@ -1,6 +1,5 @@
 #include "GameFlow/NS_MainGamePlayerState.h"
 #include "Net/UnrealNetwork.h"
-#include "UI/NS_UIManager.h"
 #include "NS_GameInstance.h"
 
 ANS_MainGamePlayerState::ANS_MainGamePlayerState()
@@ -29,21 +28,7 @@ void ANS_MainGamePlayerState::OnRep_IsAlive()
 
                 if (UNS_GameInstance* GI = Cast<UNS_GameInstance>(PC->GetGameInstance()))
                 {
-                    if (UNS_UIManager* UIManager = GI->GetUIManager())
-                    {
-                        UWorld* World = PC->GetWorld();
-
-                        if (World)
-                        {
-                            UE_LOG(LogTemp, Warning, TEXT(" World 유효. NetMode: %d"), static_cast<int32>(World->GetNetMode()));
-                        }
-                        else
-                        {
-                            UE_LOG(LogTemp, Error, TEXT("World is NULL"));
-                        }
-
-                        UIManager->ShowGameOverWidget(World);
-                    }
+                    // 캐릭터가 사망한 뒤에 게임 오버 UI 창 띄우기
                 }
             }
         }

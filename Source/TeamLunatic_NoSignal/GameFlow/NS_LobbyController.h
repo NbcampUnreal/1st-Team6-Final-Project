@@ -16,19 +16,4 @@ protected:
 public:
 	UFUNCTION(Client, Reliable)
 	void Client_ShowWait();
-
-	UFUNCTION(Client, Reliable)
-	void Client_ShowLoadingScreen();
-
-	// 동기화된 로딩 시스템
-	UFUNCTION(Server, Reliable)
-	void Server_NotifyLoadingComplete();
-
-	UFUNCTION(Client, Reliable)
-	void Client_HideLoadingScreen();
-
-	FTimerHandle CheckLoadingHandle;
-
-
-
 };
