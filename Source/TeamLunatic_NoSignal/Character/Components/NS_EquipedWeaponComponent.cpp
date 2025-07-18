@@ -183,12 +183,11 @@ void UNS_EquipedWeaponComponent::MulticastEquipWeapon_Implementation(TSubclassOf
 
     // 현재 무기 설정
     CurrentWeapon = NewWpn;
-    // 무기타입 갱신
+
+    // 무기 타입 설정
     WeaponType = NewWpn->GetWeaponType();
-    
-    UE_LOG(LogTemp, Warning, TEXT("[MulticastEquipWeapon] 무기 장착 완료: %s, 타입: %d"), 
-        *NewWpn->GetName(), static_cast<int32>(WeaponType));
 }
+
 void UNS_EquipedWeaponComponent::UnequipWeapon()
 {
     // 네트워크 모드에 따라 적절한 함수 호출
@@ -264,7 +263,7 @@ void UNS_EquipedWeaponComponent::Multicast_Reload_Implementation()
 
     // 원거리 무기 또는 권총이 아니면 재장전 불가
     const EWeaponType CurrentType = CurrentWeapon->GetWeaponType();
-    if (CurrentType != EWeaponType::Ranged && CurrentType != EWeaponType::Pistol)
+    if (CurrentType != EWeaponType::Rifle && CurrentType != EWeaponType::Pistol)
         return;
 
     // 원거리 무기로 캐스팅 시도

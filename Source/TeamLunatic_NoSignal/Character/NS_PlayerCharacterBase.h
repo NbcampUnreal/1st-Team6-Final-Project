@@ -37,6 +37,8 @@ public:
 
 	UNS_InteractionComponent* GetInteractionComponent() const { return InteractionComp; }
 
+	UNS_EquipedWeaponComponent* GetEquipedWeaponComponent() const { return EquipedWeaponComp; }
+
 
 	void DropItem(UNS_InventoryBaseItem* ItemToDrop, const int32 QuantityToDrop);
 
@@ -198,39 +200,55 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputMappingContext* DefaultMappingContext;
 
-	// IA(입력 액션들) 
+	// 캐릭터 이동 (C++)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputMoveAction;
+
+	// 캐릭터 회전 (C++)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputLookAction;
+
+	// 점프 (C++)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputJumpAction;
+
+	// 앉기 (C++)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputCrouchAction;
+
+	// 달리기 (C++)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputSprintAction;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-	UInputAction* InputKickAction;
+
+	// 공격 (BP)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputAttackAction;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-	UInputAction* InputPickUpAction;
+
+	// 조준 (BP)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputAimingAction;
+
+	// 재장전(BP)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputReloadAction;
+
+	// 상호작용(C++)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InteractAction;
+
+	// 위젯 여는 키 관련 (C++)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-	UInputAction* ToggleMenuAction;
+	UInputAction* ToggleInventoryWidgetAction;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* ToggleOpenMapWidgetAction;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	UInputAction* ToggleESCWidgetAction;
+
+	// 플래시라이트 On/Off (C++)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputFlashlightAction;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-	UInputAction* InputOpenMapAction;
 
-	// 인벤토리 토글
-	void ToggleInventoryMenu();
-	//퀵슬롯 바인딩
+	// 퀵슬롯 1 ~ 5 (C++ / BP)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* InputQuickSlot1;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
@@ -354,6 +372,15 @@ public:
 	// 아이템 버리기
 	UFUNCTION(Server, Reliable)
 	void DropItem_Server(UNS_InventoryBaseItem* ItemToDrop, int32 QuantityToDrop);
+
+	// 레벨지도 열기
+	void ToggleOpenMapWidget();
+
+	// 인벤토리 토글
+	void ToggleInventoryWidget();
+
+	// ESC키 누르면 나오는 설정
+	void ToggleESCWidget();
 	//////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
 
 	
@@ -418,17 +445,7 @@ public:
 	// Yaw 리셋 관련 함수
 	void UpdateYawReset(float DeltaTime);
 	// ======================== Turn In Place 끝! =================================
-
-	//  ====================================== 맵 지도 관 =============================================== 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OpenLevelMap")
-	TSubclassOf<UNS_LevelMapWidget> OpenLevelMapWidgetClass;
 	
-	UPROPERTY()
-	UNS_LevelMapWidget* CurrentOpenMapWidget;
-
-	void OpenMapAction(const FInputActionValue& Value);
-	// =========================================맵 관련 끝 ======================================================
-
 	// ========================================== PcikUp 사운드 ================================================ 
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multicast_PlayPickupSound(USoundBase* SoundToPlay);

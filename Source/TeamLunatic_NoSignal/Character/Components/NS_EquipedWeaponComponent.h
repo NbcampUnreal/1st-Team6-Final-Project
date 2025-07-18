@@ -39,7 +39,6 @@ public:
 	// 현재 장착 중인 무기 액터 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Replicated, Category="Replicated Variables")
 	ANS_BaseWeapon* CurrentWeapon;
-	///////////////////////////////////////////////////////////////////////////////////////////
 
 	// 서버-클라이언트 복제 설정
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -72,7 +71,6 @@ public:
 	// 재장전 멀티캐스트
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_Reload();
-
 	
 	// 현재 플레이하는 캐릭터 변수
 	UPROPERTY()

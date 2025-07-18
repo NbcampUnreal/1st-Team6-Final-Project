@@ -1,10 +1,11 @@
-// NS_PlayerWidget.cpp - 단순화된 플레이어 UI 위젯
-
 #include "UI/InGame/NS_PlayerWidget.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
 #include "UI/InGame/NS_InteractionPanel.h"
 #include "Character/Interface/NS_InteractionInterface.h"
+#include "Character/NS_PlayerCharacterBase.h"
+#include "Character/Components/NS_StatusComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 /**
  * @brief 위젯이 생성될 때 호출되는 초기화 함수입니다.
@@ -13,11 +14,12 @@
 void UNS_PlayerWidget::NativeConstruct()
 {
     Super::NativeConstruct();
-    
-    // 크로스헤어 이미지가 존재하면 초기에는 보이도록 설정합니다.
-    if (Crosshair)
+
+    // 플레이어 캐릭터 찾기
+    APlayerController* PC = GetOwningPlayer();
+    if (PC)
     {
-        Crosshair->SetVisibility(ESlateVisibility::Visible);
+        PlayerCharacter = Cast<ANS_PlayerCharacterBase>(PC->GetPawn());
     }
 }
 

@@ -6,13 +6,13 @@ UENUM(BlueprintType)
 enum class EWeaponType : uint8
 {
 	Unarmed UMETA(DisplayName = "Unarmed"),
-	Melee UMETA(DisplayName = "Knife"),
+	Knife UMETA(DisplayName = "Knife"),
 	Pistol UMETA(DisplayName = "P1911"),
-	Ranged UMETA(DisplayName = "M4A4"),
+	Rifle UMETA(DisplayName = "M4A4"),
+	BaseBallBat UMETA(DisplayName = "BaseBallBat"),
 	ThrowActor UMETA(DisplayName = "Bottle"),
 	Ammo UMETA(DisplayName = "Ammo"),
 	Magazine UMETA(DisplayName = "Magazine"),
-	BaseBallBat UMETA(DisplayName = "BaseBallBat")
 };
 
 UENUM(BlueprintType)

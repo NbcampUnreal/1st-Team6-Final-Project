@@ -146,6 +146,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
 
     if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(PlayerInputComponent))
     {
+        // 캐릭터 이동
         if (InputMoveAction)
         {
             EnhancedInput->BindAction(
@@ -155,7 +156,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                 &ANS_PlayerCharacterBase::MoveAction);
         }
         
-
+        // 캐릭터 회전
         if (InputLookAction)
         {
             EnhancedInput->BindAction(
@@ -165,6 +166,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                &ANS_PlayerCharacterBase::LookAction);
         }
 
+        // 점프
         if (InputJumpAction)
         {
             EnhancedInput->BindAction(
@@ -174,6 +176,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                &ANS_PlayerCharacterBase::JumpAction);
         }
 
+        // 앉기
         if (InputCrouchAction)
         {
             EnhancedInput->BindAction(
@@ -187,7 +190,8 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
               this,
                &ANS_PlayerCharacterBase::StopCrouch);
         }
-        
+
+        // 달리기
         if (InputSprintAction)
         {
             EnhancedInput->BindAction(
@@ -202,16 +206,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                &ANS_PlayerCharacterBase::StopSprint);
         }
 
-        if (ToggleMenuAction)
-        {
-            EnhancedInput->BindAction(
-                ToggleMenuAction,
-                ETriggerEvent::Started,
-                this,
-                &ANS_PlayerCharacterBase::ToggleInventoryMenu
-            );
-        }
-
+        // 상호작용
         if (InteractAction)
         {
             EnhancedInput->BindAction(
@@ -229,6 +224,7 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
              );
         }
 
+        // 헤드라이트 On/Off
         if (InputFlashlightAction)
         {
             EnhancedInput->BindAction(
@@ -239,13 +235,36 @@ void ANS_PlayerCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerI
                 );
         }
 
-        if (InputOpenMapAction)
+        // 인벤토리 위젯 열고/닫기
+        if (ToggleInventoryWidgetAction)
         {
             EnhancedInput->BindAction(
-                InputOpenMapAction,
+                ToggleInventoryWidgetAction,
                 ETriggerEvent::Started,
                 this,
-                &ANS_PlayerCharacterBase::OpenMapAction
+                &ANS_PlayerCharacterBase::ToggleInventoryWidget
+            );
+        }
+
+        // 레벨지도 위젯 열고/닫기
+        if (ToggleOpenMapWidgetAction)
+        {
+            EnhancedInput->BindAction(
+                ToggleOpenMapWidgetAction,
+                ETriggerEvent::Started,
+                this,
+                &ANS_PlayerCharacterBase::ToggleOpenMapWidget
+                );
+        }
+
+        // ESC키로 설정 위젯 열고/닫기
+        if (ToggleESCWidgetAction)
+        {
+            EnhancedInput->BindAction(
+                ToggleESCWidgetAction,
+                ETriggerEvent::Started,
+                this,
+                &ANS_PlayerCharacterBase::ToggleESCWidget
                 );
         }
     }
@@ -486,6 +505,88 @@ void ANS_PlayerCharacterBase::StartInteraction_Server_Implementation(const FInpu
     if (UNS_InteractionComponent* InteractComp = FindComponentByClass<UNS_InteractionComponent>())
     {
         InteractComp->BeginInteract();
+    }
+}
+
+void ANS_PlayerCharacterBase::ToggleOpenMapWidget()
+{
+    if (!IsLocallyControlled()) return;
+
+    APlayerController* PC = Cast<APlayerController>(GetController());
+    if (!IsValid(PC)) return;
+
+    ANS_InGameHUD* InGameHUD = Cast<ANS_InGameHUD>(PC->GetHUD());
+    if (!IsValid(InGameHUD)) return;
+
+    UNS_LevelMapWidget* OpenLevelWidget = InGameHUD->GetLevelMapWidget();
+    if (!IsValid(OpenLevelWidget)) return;
+
+    UNS_PlayerWidget* PlayerWidget = InGameHUD->GetPlayerWidget();
+    if (!IsValid(PlayerWidget)) return;
+
+    UNS_InventoryMainWidget* InventoryWidget = InGameHUD->GetInventoryMainWidget();
+    if (!IsValid(PlayerWidget)) return;
+    
+    if (InGameHUD->GetCurrentWidget() != OpenLevelWidget)
+    {
+        InGameHUD->ShowWidget(OpenLevelWidget);
+    }
+    else if (InGameHUD->GetCurrentWidget() == OpenLevelWidget)
+    {
+        InGameHUD->ShowWidget(PlayerWidget);
+    }
+}
+
+void ANS_PlayerCharacterBase::ToggleInventoryWidget()
+{
+    if (!IsLocallyControlled()) return;
+
+    APlayerController* PC = Cast<APlayerController>(GetController());
+    if (!IsValid(PC)) return;
+
+    ANS_InGameHUD* InGameHUD = Cast<ANS_InGameHUD>(PC->GetHUD());
+    if (!IsValid(InGameHUD)) return;
+
+    UNS_InventoryMainWidget* InventoryMainWidget = InGameHUD->GetInventoryMainWidget();
+    if (!IsValid(InventoryMainWidget)) return;
+
+    UNS_PlayerWidget* PlayerWidget = InGameHUD->GetPlayerWidget();
+
+    if (InventoryMainWidget->IsVisible())
+    {
+        InGameHUD->ShowWidget(PlayerWidget);
+    }
+    else
+    {
+        InGameHUD->ShowWidget(InventoryMainWidget);
+    }
+}
+
+void ANS_PlayerCharacterBase::ToggleESCWidget()
+{
+    if (!IsLocallyControlled()) return;
+
+    APlayerController* PC = Cast<APlayerController>(GetController());
+    if (!IsValid(PC)) return;
+
+    ANS_InGameHUD* InGameHUD = Cast<ANS_InGameHUD>(PC->GetHUD());
+    if (!IsValid(InGameHUD)) return;
+
+    UNS_PlayerWidget* PlayerWidget = InGameHUD->GetPlayerWidget();
+    if (!IsValid(PlayerWidget)) return;
+
+    UUserWidget* ESCWidget = InGameHUD->GetESCWidget();
+    if (!IsValid(ESCWidget)) return;
+
+    if (ESCWidget->IsVisible())
+    {
+        InGameHUD->ShowWidget(PlayerWidget);
+        UE_LOG(LogTemp, Warning, TEXT("플레이어 위젯 오픈"))
+    }
+    else
+    {
+        InGameHUD->ShowWidget(ESCWidget);
+        UE_LOG(LogTemp, Warning, TEXT("ESC위젯 오픈"))
     }
 }
 //////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
@@ -1121,79 +1222,11 @@ void ANS_PlayerCharacterBase::PlaySoundOnCharacter_Multicast_Implementation(USou
     }
 }
 
-
-void ANS_PlayerCharacterBase::OpenMapAction(const FInputActionValue& Value)
-{
-    if (!IsLocallyControlled()) return;
-    
-    // 맵 위젯이 이미 열려있으면 닫기
-    if (CurrentOpenMapWidget && CurrentOpenMapWidget->IsInViewport())
-    {
-        CurrentOpenMapWidget->RemoveFromParent();
-        CurrentOpenMapWidget = nullptr;
-        
-        // 마우스 커서 숨기기 및 입력 모드 복원
-        if (APlayerController* PC = Cast<APlayerController>(GetController()))
-        {
-            PC->SetInputMode(FInputModeGameOnly());
-            PC->SetShowMouseCursor(false);
-        }
-        return;
-    }
-    
-    // 맵 위젯 새로 생성하여 열기
-    if (OpenLevelMapWidgetClass)
-    {
-        CurrentOpenMapWidget = CreateWidget<UNS_LevelMapWidget>(GetWorld(), OpenLevelMapWidgetClass);
-    }
-    else
-    {
-        CurrentOpenMapWidget = CreateWidget<UNS_LevelMapWidget>(GetWorld(), UNS_LevelMapWidget::StaticClass());
-    }
-    
-    if (CurrentOpenMapWidget)
-    {
-        CurrentOpenMapWidget->AddToViewport();
-        
-        // 마우스 커서 표시 및 입력 모드 변경
-        if (APlayerController* PC = Cast<APlayerController>(GetController()))
-        {
-            PC->SetInputMode(FInputModeGameAndUI());
-            PC->SetShowMouseCursor(false);
-        }
-    }
-}
-
 void ANS_PlayerCharacterBase::Multicast_PlayPickupSound_Implementation(USoundBase* SoundToPlay)
 {
     if (SoundToPlay)
     {
         UGameplayStatics::PlaySoundAtLocation(this, SoundToPlay, GetActorLocation());
-    }
-}
-
-void ANS_PlayerCharacterBase::ToggleInventoryMenu()
-{
-    if (!IsLocallyControlled()) return;
-
-    APlayerController* PC = Cast<APlayerController>(GetController());
-    if (!IsValid(PC)) return;
-
-    ANS_InGameHUD* InGameHUD = Cast<ANS_InGameHUD>(PC->GetHUD());
-    if (!IsValid(InGameHUD)) return;
-
-    UNS_InventoryMainWidget* InventoryMainWidget = InGameHUD->GetInventoryMainWidget();
-    if (!IsValid(InventoryMainWidget)) return;
-
-    UNS_PlayerWidget* PlayerWidget = InGameHUD->GetPlayerWidget();
-
-    if (InventoryMainWidget->IsVisible())
-    {
-        InGameHUD->ShowWidget(PlayerWidget);
-    }
-    else
-    {
-        InGameHUD->ShowWidget(InventoryMainWidget);
     }
 }
 

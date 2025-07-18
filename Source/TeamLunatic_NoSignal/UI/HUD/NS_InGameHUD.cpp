@@ -26,8 +26,10 @@ void ANS_InGameHUD::BeginPlay()
 		PlayerWidget = CreateWidget<UNS_PlayerWidget>(PC, PlayerWidgetClass);
 		if (PlayerWidget)
 		{
-			PlayerWidget->AddToViewport(1);
+			PlayerWidget->AddToViewport();
 			PlayerWidget->SetVisibility(ESlateVisibility::Visible);
+			// 초기 활성화 위젯을 플레이어 위젯으로 설정
+			CurrentWidget = PlayerWidget;
 		}
 	}
 	
@@ -37,7 +39,7 @@ void ANS_InGameHUD::BeginPlay()
 		InventoryMainWidget = CreateWidget<UNS_InventoryMainWidget>(PC, InventoryMainClass);
 		if (InventoryMainWidget)
 		{
-			InventoryMainWidget->AddToViewport(5);
+			InventoryMainWidget->AddToViewport();
 			InventoryMainWidget->SetVisibility(ESlateVisibility::Collapsed);
 		}
 	}
@@ -48,8 +50,19 @@ void ANS_InGameHUD::BeginPlay()
 		LevelMapWidget = CreateWidget<UNS_LevelMapWidget>(PC, LevelMapWidgetClass);
 		if (LevelMapWidget)
 		{
-			LevelMapWidget->AddToViewport(2);
+			LevelMapWidget->AddToViewport();
 			LevelMapWidget->SetVisibility(ESlateVisibility::Collapsed);
+		}
+	}
+
+	// ESC 위젯 생성
+	if (ESCWidgetClass)
+	{
+		ESCWidget = CreateWidget<UUserWidget>(PC, ESCWidgetClass);
+		if (ESCWidget)
+		{
+			ESCWidget->AddToViewport();
+			ESCWidget->SetVisibility(ESlateVisibility::Collapsed);
 		}
 	}
 }
@@ -77,8 +90,15 @@ void ANS_InGameHUD::ShowWidget(UUserWidget* OpenWidget)
 		if (LevelMapWidget)
 		{
 			LevelMapWidget->SetVisibility(ESlateVisibility::Collapsed);
-		}	
+		}
+		if (ESCWidget)
+		{
+			ESCWidget->SetVisibility(ESlateVisibility::Collapsed);
+		}
 	}
+
+	// 현재 활성화된 위젯 업데이트
+	CurrentWidget = OpenWidget;
 
 	if (OpenWidget->IsA(UNS_PlayerWidget::StaticClass()))
 	{
@@ -87,7 +107,6 @@ void ANS_InGameHUD::ShowWidget(UUserWidget* OpenWidget)
 			PlayerWidget->SetVisibility(ESlateVisibility::Visible);
 			PC->SetInputMode(FInputModeGameOnly());
 			PC->SetShowMouseCursor(false);
-
 		}
 	}
 	else if (OpenWidget->IsA(UNS_InventoryMainWidget::StaticClass()))
@@ -104,6 +123,15 @@ void ANS_InGameHUD::ShowWidget(UUserWidget* OpenWidget)
 		if (LevelMapWidget)
 		{
 			LevelMapWidget->SetVisibility(ESlateVisibility::Visible);
+			PC->SetInputMode(FInputModeGameAndUI());
+			PC->SetShowMouseCursor(true);
+		}
+	}
+	else // ESC 위젯 또는 기타 위젯인 경우
+	{
+		if (OpenWidget == ESCWidget)
+		{
+			ESCWidget->SetVisibility(ESlateVisibility::Visible);
 			PC->SetInputMode(FInputModeGameAndUI());
 			PC->SetShowMouseCursor(true);
 		}

@@ -8,6 +8,7 @@
 
 struct FInteractableData;
 struct FNearbyItemInfo;
+class UUSerWidget;
 class UNS_InventoryMainWidget;
 class UNS_InteractionPanel;
 class UNS_NearbyItemsPanel;
@@ -56,12 +57,27 @@ protected:
 	// 레벨지도 위젯
 	UPROPERTY()
 	UNS_LevelMapWidget* LevelMapWidget;
+
+
+	// ESC키 위젯 클래스
+	UPROPERTY(EditDefaultsOnly, Category = "Widgets")
+	TSubclassOf<UUserWidget> ESCWidgetClass;
+	// ESC키 위젯
+	UPROPERTY()
+	UUserWidget* ESCWidget;
+
+	
+	// 현재 열려있는 위젯 변수값
+	UPROPERTY()
+	UUserWidget* CurrentWidget;
 	
 public:
 
 	UNS_PlayerWidget* GetPlayerWidget() const { return PlayerWidget; }
 	UNS_InventoryMainWidget* GetInventoryMainWidget() const { return InventoryMainWidget; }
 	UNS_LevelMapWidget* GetLevelMapWidget() const { return LevelMapWidget; }
+	UUserWidget* GetESCWidget() const { return ESCWidget; }
+	UUserWidget* GetCurrentWidget() const { return CurrentWidget; }
 	
 	// 해당하는 위젯은 열고 나머지 위젯들은 닫아주는 함수
 	void ShowWidget(UUserWidget* OpenWidget);

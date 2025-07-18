@@ -44,11 +44,11 @@ void UNS_InventoryTooltip::NativeConstruct()
 		// 무기 타입에 따라 추가 정보 표시
 		switch (ItemBeingHovered->WeaponType)
 		{
-		case EWeaponType::Melee:
+		case EWeaponType::Knife:
 			WeaponType->SetText(FText::FromString(TEXT("근접 무기"))); // 무기 타입 텍스트 설정
 			DamageValue->SetVisibility(ESlateVisibility::Visible);      // 피해량 값 표시
 			break;
-		case EWeaponType::Ranged:
+		case EWeaponType::Rifle:
 			WeaponType->SetText(FText::FromString(TEXT("원거리 무기"))); // 무기 타입 텍스트 설정
 			DamageValue->SetVisibility(ESlateVisibility::Visible);      // 피해량 값 표시
 			break;
