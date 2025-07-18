@@ -73,3 +73,73 @@ void ANS_MainMenuHUD::HideSingleUI()
 		SinglePlayWidget->SetVisibility(ESlateVisibility::Collapsed);
 	}
 }
+
+void ANS_MainMenuHUD::ShowMultiUI()
+{
+	if (!MultiPlayWidget)
+	{
+		if (MultiPlayWidgetclass)
+		{
+			MultiPlayWidget = CreateWidget<UUserWidget>(GetWorld(), MultiPlayWidgetclass);
+			if (MultiPlayWidget)
+			{
+				MultiPlayWidget->AddToViewport();
+			}
+		}
+	}
+	
+	if (MultiPlayWidget)
+	{
+		if (MultiPlayWidget->GetVisibility() == ESlateVisibility::Collapsed)
+		{
+			MultiPlayWidget->SetVisibility(ESlateVisibility::Visible);
+			if (MultiPlayWidget->GetClass()->ImplementsInterface(UNS_AnimateWidgetInterface::StaticClass()))
+			{
+				INS_AnimateWidgetInterface::Execute_ShowWidget(MultiPlayWidget);
+			}
+		}
+	}
+}
+
+void ANS_MainMenuHUD::HideMultiUI()
+{
+	if (MultiPlayWidget)
+	{
+		MultiPlayWidget->SetVisibility(ESlateVisibility::Collapsed);
+	}
+}
+
+void ANS_MainMenuHUD::ShowSettingUI()
+{
+	if (!SettingWidget)
+	{
+		if (SettingWidgetclass)
+		{
+			SettingWidget = CreateWidget<UUserWidget>(GetWorld(), SettingWidgetclass);
+			if (SettingWidget)
+			{
+				SinglePlayWidget->AddToViewport();
+			}
+		}
+	}
+
+	if (SettingWidget)
+	{
+		if (SettingWidget->GetVisibility() == ESlateVisibility::Collapsed)
+		{
+			SettingWidget->SetVisibility(ESlateVisibility::Visible);
+			if (SettingWidget->GetClass()->ImplementsInterface(UNS_AnimateWidgetInterface::StaticClass()))
+			{
+				INS_AnimateWidgetInterface::Execute_ShowWidget(SettingWidget);
+			}
+		}
+	}
+}
+
+void ANS_MainMenuHUD::HideSettingUI()
+{
+	if (SettingWidget)
+	{
+		SettingWidget->SetVisibility(ESlateVisibility::Collapsed);
+	}
+}

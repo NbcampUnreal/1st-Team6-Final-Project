@@ -16,12 +16,24 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Widgets")
 	TSubclassOf<UUserWidget> SinglePlayWidgetclass;
 	
+	UPROPERTY(EditAnywhere, Category = "Widgets")
+	TSubclassOf<UUserWidget> MultiPlayWidgetclass;
+
+	UPROPERTY(EditAnywhere, Category = "Widgets")
+	TSubclassOf<UUserWidget> SettingWidgetclass;
+	
 	//UI
 	UPROPERTY()
 	UUserWidget* MainMenuWidget = nullptr;
 
 	UPROPERTY()
 	UUserWidget* SinglePlayWidget = nullptr;
+
+	UPROPERTY()
+	UUserWidget* MultiPlayWidget = nullptr;
+
+	UPROPERTY()
+	UUserWidget* SettingWidget = nullptr;
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "Widgets")
@@ -35,4 +47,16 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Widgets")
 	void HideSingleUI();
+
+	UFUNCTION(BlueprintCallable, Category = "Widgets")
+	void ShowMultiUI();
+
+	UFUNCTION(BlueprintCallable, Category = "Widgets")
+	void HideMultiUI();
+
+	UFUNCTION(BlueprintCallable, Category = "Widgets")
+	void ShowSettingUI();
+
+	UFUNCTION(BlueprintCallable, Category = "Widgets")
+	void HideSettingUI();
 };
