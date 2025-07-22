@@ -82,6 +82,7 @@ void APickup::InitializeDrop(UNS_InventoryBaseItem* ItemToDrop, const int32 InQu
 	ReplicatedItemData.WeaponType = ItemToDrop->WeaponType;
 	ReplicatedItemData.ItemType = ItemToDrop->ItemType;
 	ReplicatedItemData.CurrentAmmo = ItemToDrop->CurrentAmmo;
+	ReplicatedItemData.Quantity = InQuantity;
 
 	UpdateInteractableData();
 }
@@ -105,6 +106,7 @@ void APickup::OnRep_ReplicatedItemData()
 
 	PickupMesh->SetStaticMesh(ReplicatedItemData.ItemAssetData.StaticMesh);
 	ItemReference->SetQuantity(ReplicatedItemData.Quantity);
+	ItemQuantity = ReplicatedItemData.Quantity;
 
 	UpdateInteractableData();
 }
@@ -115,6 +117,7 @@ void APickup::UpdateInteractableData()
 	InstanceInteractableData.Action = ItemReference->TextData.InteractionText;
 	InstanceInteractableData.Name = ItemReference->TextData.ItemName;
 	InstanceInteractableData.Quantity = ItemReference->Quantity;
+	InstanceInteractableData.InteractionDuration = 0.0f; // 즉시 상호작용
 	InteractableData = InstanceInteractableData;
 }
 
@@ -136,12 +139,14 @@ void APickup::EndFocus()
 
 void APickup::Interact_Implementation(AActor* InteractingActor)
 {
+	// 클라이언트에서는 서버에 요청
 	if (!HasAuthority())
 	{
 		Server_TakePickup(InteractingActor);
 		return;
 	}
 
+	// 서버에서는 직접 처리
 	if (ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(InteractingActor))
 	{
 		TakePickup(PlayerCharacter);
@@ -150,36 +155,44 @@ void APickup::Interact_Implementation(AActor* InteractingActor)
 
 void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 {
+	// 서버 권한 확인
 	if (!HasAuthority()) return;
 
-	// IsPickUp 상태 체크 - 이미 아이템 획득 중이면 추가 획득 차단
+	// 이미 아이템 획득 중이면 추가 획득 차단
 	if (Taker->IsPickUp)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("TakePickup: 이미 아이템 획득 중 - 추가 획득 차단 (IsPickUp = true)"));
 		return;
 	}
 
+	// 아이템 획득 상태 설정
     Taker->IsPickUp = true;
 
+	// 액터가 유효한지 확인
 	if (!IsPendingKillPending())
 	{
+		// 아이템 참조가 유효한지 확인
 		if (!ItemReference || !IsValid(ItemReference))
 		{
 			return;
 		}
+		
+		// 인벤토리 컴포넌트 확인
 		if (UNS_InventoryComponent* PlayerInventory = Taker->GetInventory())
 		{
 			// 인벤토리에 아이템 추가 시도
 			const FItemAddResult AddResult = PlayerInventory->HandleAddItem(ItemReference);
 
 			// 아이템이 성공적으로 (전부 또는 부분적으로) 추가되었다면
-			if (AddResult.OperationResult == EItemAddResult::TAR_AllItemAdded || AddResult.OperationResult == EItemAddResult::TAR_PartialAmountItemAdded)
+			if (AddResult.OperationResult == EItemAddResult::TAR_AllItemAdded || 
+				AddResult.OperationResult == EItemAddResult::TAR_PartialAmountItemAdded)
 			{
+				// 아이템 획득 사운드 재생
                 if (ItemReference && ItemReference->AssetData.GetSound)
                 {
                     Taker->Multicast_PlayPickupSound(ItemReference->AssetData.GetSound);
                 }
-				// 아이템 추가 성공 시 장비 아이템인 경우 자동 퀵슬롯 할당 처리
+				
+				// 장비 아이템인 경우 자동 퀵슬롯 할당 처리
 				if (AddResult.ActualAmountAdded > 0 &&
 					ItemReference->ItemType == EItemType::Equipment &&
 					ItemReference->WeaponType != EWeaponType::Ammo)
@@ -200,6 +213,7 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 							}
 						}
 
+						// 아이템을 찾았으면 퀵슬롯에 할당
 						if (AddedItem)
 						{
 							// 현재 선택된 퀵슬롯 인덱스 가져오기
@@ -227,8 +241,6 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 										{
 											QuickSlotComp->AssignToSlot(i, AddedItem);
 											AssignedSlot = i;
-											UE_LOG(LogTemp, Warning, TEXT("TakePickup: 빈 퀵슬롯 %d번에 아이템 할당: %s"),
-												AssignedSlot + 1, *AddedItem->GetName());
 											break;
 										}
 									}
@@ -250,9 +262,6 @@ void APickup::TakePickup(ANS_PlayerCharacterBase* Taker)
 						}
 					}
 				}
-
-				// IsPickUp은 이미 PickUpAction_Server에서 설정되므로 여기서는 제거
-				// Taker->IsPickUp = true; // 중복 설정 제거
 			}
 
 			// 전부 추가 성공 시에만 액터 파괴
@@ -268,10 +277,9 @@ void APickup::Server_TakePickup_Implementation(AActor* InteractingActor)
 {
 	if (ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(InteractingActor))
 	{
-		// IsPickUp 상태 체크 - 이미 아이템 획득 중이면 추가 획득 차단
+		// 이미 아이템 획득 중이면 추가 획득 차단
 		if (PlayerCharacter->IsPickUp)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Server_TakePickup: 이미 아이템 획득 중 - 추가 획득 차단 (IsPickUp = true)"));
 			return;
 		}
 
@@ -297,7 +305,6 @@ void APickup::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent
 		}
 	}
 }
-
 #endif
 
 void APickup::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

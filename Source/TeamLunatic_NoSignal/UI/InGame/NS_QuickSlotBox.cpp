@@ -6,7 +6,6 @@
 #include "Components/TextBlock.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Character/Components/NS_EquipedWeaponComponent.h"
-#include "UI/InGame/NS_QuickSlotKey.h"
 #include "UI/InGame/NS_DragItemVisual.h"
 #include "UI/InGame/NS_ItemDragDropOperation.h"
 #include "UI/InGame/NS_QuickSlotPanel.h"
@@ -143,21 +142,6 @@ void UNS_QuickSlotBox::SetAssignedItem(const FNS_ItemDataStruct* ItemData, int32
             AmountText->SetText(FText::GetEmpty());
             AmountText->SetVisibility(ESlateVisibility::Collapsed);
         }
-    }
-}
-
-/**
- * @brief 슬롯의 인덱스를 설정합니다.
- * @param Index 슬롯의 고유 인덱스입니다.
- *        주로 퀵 슬롯 키와 연동하여 사용됩니다.
- */
-void UNS_QuickSlotBox::SetSlotIndex(int32 Index)
-{
-    SlotIndex = Index;
-    // 퀵 슬롯 키가 유효하면 해당 키 위젯의 인덱스를 설정합니다.
-    if (QuickSlotKey)
-    {
-        QuickSlotKey->SetSlotIndex(Index);
     }
 }
 

@@ -95,15 +95,49 @@ void UNS_NearbyItemsPanel::FindInteractionComponent()
 	APlayerController* PC = GetOwningPlayer();
 	if (!PC)
 	{
+		UE_LOG(LogTemp, Error, TEXT("[NS_NearbyItemsPanel] PlayerController를 찾을 수 없음"));
 		return;
 	}
 	
 	ANS_PlayerCharacterBase* PlayerCharacter = Cast<ANS_PlayerCharacterBase>(PC->GetPawn());
 	if (!PlayerCharacter)
 	{
+		UE_LOG(LogTemp, Error, TEXT("[NS_NearbyItemsPanel] PlayerCharacter를 찾을 수 없음"));
 		return;
 	}
 	
 	// 플레이어 캐릭터로부터 상호작용 컴포넌트를 가져와 할당
 	InteractionComponent = PlayerCharacter->GetInteractionComponent();
+	if (InteractionComponent)
+	{
+		UE_LOG(LogTemp, Log, TEXT("[NS_NearbyItemsPanel] InteractionComponent 찾기 성공"));
+		
+		// 델리게이트 바인딩
+		InteractionComponent->OnNearbyItemsUpdated.AddDynamic(this, &UNS_NearbyItemsPanel::OnNearbyItemsUpdated);
+		UE_LOG(LogTemp, Log, TEXT("[NS_NearbyItemsPanel] OnNearbyItemsUpdated 델리게이트 바인딩 완료"));
+		
+		// 초기 아이템 목록 업데이트
+		TArray<FNearbyItemInfo> CurrentItems = InteractionComponent->GetNearbyItems();
+		UpdateItemsList(CurrentItems);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("[NS_NearbyItemsPanel] InteractionComponent를 찾을 수 없음"));
+	}
+}
+
+// 주변 아이템이 업데이트될 때 호출되는 함수
+void UNS_NearbyItemsPanel::OnNearbyItemsUpdated()
+{
+	UE_LOG(LogTemp, Warning, TEXT("[NS_NearbyItemsPanel] OnNearbyItemsUpdated 델리게이트 호출됨!"));
+	
+	if (InteractionComponent)
+	{
+		TArray<FNearbyItemInfo> CurrentItems = InteractionComponent->GetNearbyItems();
+		UpdateItemsList(CurrentItems);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("[NS_NearbyItemsPanel] InteractionComponent가 null입니다!"));
+	}
 }

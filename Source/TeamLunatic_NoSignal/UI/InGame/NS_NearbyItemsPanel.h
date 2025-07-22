@@ -69,4 +69,16 @@ private:
 	 *        NativeConstruct에서 호출되어 InteractionComponent를 초기화합니다.
 	 */
 	void FindInteractionComponent();
+	
+	/**
+	 * @brief 주변 아이템이 업데이트될 때 호출되는 함수입니다.
+	 *        InteractionComponent의 OnNearbyItemsUpdated 델리게이트에 바인딩됩니다.
+	 */
+	UFUNCTION()
+	void OnNearbyItemsUpdated();
+	
+	/**
+	 * @brief 주변 아이템이 업데이트될 때 호출되는 함수입니다.
+	 *        InteractionComponent의 OnNearbyItemsUpdated 델리게이트에 바인딩됩니다.
+	 */
 };

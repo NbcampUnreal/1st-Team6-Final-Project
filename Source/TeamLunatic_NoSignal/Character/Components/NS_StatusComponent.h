@@ -29,7 +29,16 @@ protected:
 
 	void UpdateStamina();
 
+	// 스프린트 상태를 복제하도록 변경
+	UPROPERTY(ReplicatedUsing = OnRep_IsSprinting)
 	bool bIsSprinting;
+	
+	UFUNCTION()
+	void OnRep_IsSprinting();
+	
+	// 서버에서 달리기 상태를 설정하는 RPC 함수
+	UFUNCTION(Server, Reliable)
+	void Server_SetSprinting(bool bShouldSprint);
 
     // 네트워크 복제 설정
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -43,21 +52,25 @@ protected:
     int32 MaxStamina = 100.f; // 캐릭터의 최대 스태미너
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category="Status|Stamina")
     int32 Stamina; // 캐릭터의 현재 스태미너
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status|Stamina")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status|Stamina")
 	int32 DefalutStaminaRegenRate = 10.f; // 스태미너 기본 재생 속도
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status|Stamina")
 	int32 CurrentStaminaRegenRate; // 현재 스태미너 재생 속도 (버프/디버프에 의해 변경될 수 있음)
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status|Stamina")
-    int32 StaminaDereaseRate = -20.f; // 스프린트 시 스태미너 감소 속도
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status|Stamina")
+    int32 StaminaDereaseRate = -10.f; // 스프린트 시 스태미너 감소 속도
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SprintMultifly")
+	float SprintMultiply = 1.5f;// 캐릭터 달리기 배율 속도
 
 public:
     // 스탯 값 변경을 위한 함수
     void UpdateHealthChange(float Value);
     void UpdateStaminaChange(float Value);
-    bool CheckEnableSprint();
 
 	void StartSprinting();
 	void StopSprinting();
+	
+	// 캐릭터 이동 속도를 설정하는 함수
+	void SetMovementSpeed(bool bSprinting);
     
     // 델리게이트
     UPROPERTY(BlueprintAssignable)
@@ -73,8 +86,5 @@ public:
     int32 GetCurrentStmina() const { return Stamina; }
 
 private:
-    bool bEnableSprint = true; // 스프린트 허용 여부를 결정하는 플래그
-    
-    
-
+    bool EnableSprint = true; // 스프린트 허용 여부를 결정하는 플래그
 };
