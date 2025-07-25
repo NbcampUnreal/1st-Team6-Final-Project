@@ -29,65 +29,9 @@ UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
 {
 	GENERATED_BODY()
-
-public:
+	
 	ANS_PlayerCharacterBase();
 
-	FORCEINLINE UNS_InventoryComponent* GetInventory() const { return InventoryComp; };
-
-	UNS_InteractionComponent* GetInteractionComponent() const { return InteractionComp; }
-
-	UNS_EquipedWeaponComponent* GetEquipedWeaponComponent() const { return EquipedWeaponComp; }
-
-
-	void DropItem(UNS_InventoryBaseItem* ItemToDrop, const int32 QuantityToDrop);
-
-	UFUNCTION(Client, Reliable)
-	void Client_NotifyQuickSlotUpdated();
-
-
-// =========================================퀵슬롯 관련 변수 및 함수들=================================================
-	// 현재 퀵슬롯 인덱스로 1번 슬롯부터 시작
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "QuickSlot", meta = (AllowPrivateAccess = "true"))
-	int32 CurrentQuickSlotIndex = 0;
-
-	// 키 입력에 따른 퀵슬롯 선택
-	UFUNCTION(BlueprintCallable, Category = "QuickSlot")
-	void HandleQuickSlotKeyInput(int32 KeyNumber);
-
-	// 퀵슬롯 입력 처리가 가능한지 확인 (중복 선택 방지)
-	UFUNCTION(BlueprintCallable, Category = "QuickSlot")
-	bool CanHandleQuickSlotInput(int32 SlotIndex);
-
-	// 서버에 퀵슬롯 사용 요청
-	UFUNCTION(BlueprintCallable, Server, Reliable)
-	void Server_UseQuickSlotByIndex(int32 Index);
-
-	// 모든 클라이언트에 퀵슬롯 사용 알림
-	UFUNCTION(BlueprintCallable, NetMulticast, Reliable)
-	void Multicast_UseQuickSlotByIndex(int32 Index);
-
-	// 퀵슬롯 컴포넌트에 접근
-	UFUNCTION(BlueprintCallable, Category = "QuickSlot")
-	UNS_QuickSlotComponent* GetQuickSlotComponent() const { return QuickSlotComp; }
-
-	// 현재 선택된 퀵슬롯 인덱스 반환 ====== 노티파이에서 호출
-	UFUNCTION(BlueprintCallable, Category = "QuickSlot")
-	int32 GetCurrentQuickSlotIndex() const { return CurrentQuickSlotIndex; }
-
-	// 아이템 획득 시 자동으로 퀵슬롯에 할당하고 장착 애니메이션 실행
-	UFUNCTION(BlueprintCallable, Category = "Inventory|QuickSlot")
-	void AutoEquipPickedUpItem(UNS_InventoryBaseItem* NewItem);
-// ===============================================================================================================================
-	
-	UPROPERTY(BlueprintReadWrite, Category = "Inventory")
-	UNS_InventoryBaseItem* AssignedItem;
-
-	UFUNCTION(Client, Reliable)
-	void Client_NotifyInventoryUpdated();
-
-	UFUNCTION(Server, Reliable)
-	void Server_UseInventoryItem(FName ItemRowName);
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
@@ -138,7 +82,25 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UNS_EquipedWeaponComponent* EquipedWeaponComp;
 	////////////////////////////////////캐릭터 부착 컴포넌트들 끝!///////////////////////////////////////
+
 	
+	////////////////////////////////////////// getter함수들 ////////////////////////////////////////////
+	UNS_InventoryComponent* GetInventory() const { return InventoryComp; };
+
+	UNS_InteractionComponent* GetInteractionComponent() const { return InteractionComp; }
+
+	UNS_EquipedWeaponComponent* GetEquipedWeaponComponent() const { return EquipedWeaponComp; }
+
+	UNS_StatusComponent* GetStatusComponent() const { return StatusComp; }
+
+	// 퀵슬롯 컴포넌트에 접근
+	UFUNCTION(BlueprintCallable, Category = "QuickSlot")
+	UNS_QuickSlotComponent* GetQuickSlotComponent() const { return QuickSlotComp; }
+
+	// 현재 선택된 퀵슬롯 인덱스 반환 ====== 노티파이에서 호출
+	UFUNCTION(BlueprintCallable, Category = "QuickSlot")
+	int32 GetCurrentQuickSlotIndex() const { return CurrentQuickSlotIndex; }
+	///////////////////////////////////////// getter함수 끝! /////////////////////////////////////////
 	
 	/////////////////////////////// 리플리케이션용 변수들////////////////////////////////
 	// 캐릭터가 바라보고있는 좌/우 값
@@ -482,5 +444,46 @@ public:
 	void Server_AssignQuickSlot(int32 SlotIndex, UNS_InventoryBaseItem* Item);
 
 	void HandleUseThrowableItem(int32 Index);
-	// ====================================== 병 투척 관련 함수 끝! ============================================ 
+	// ====================================== 병 투척 관련 함수 끝! ============================================
+
+	
+	// =========================================퀵슬롯 관련 변수 및 함수들=================================================
+	// 현재 퀵슬롯 인덱스로 1번 슬롯부터 시작
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "QuickSlot", meta = (AllowPrivateAccess = "true"))
+	int32 CurrentQuickSlotIndex = 0;
+	
+	UPROPERTY(BlueprintReadWrite, Category = "Inventory")
+	UNS_InventoryBaseItem* AssignedItem;
+	
+	// 키 입력에 따른 퀵슬롯 선택
+	UFUNCTION(BlueprintCallable, Category = "QuickSlot")
+	void HandleQuickSlotKeyInput(int32 KeyNumber);
+
+	// 퀵슬롯 입력 처리가 가능한지 확인 (중복 선택 방지)
+	UFUNCTION(BlueprintCallable, Category = "QuickSlot")
+	bool CanHandleQuickSlotInput(int32 SlotIndex);
+
+	// 서버에 퀵슬롯 사용 요청
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void Server_UseQuickSlotByIndex(int32 Index);
+
+	// 모든 클라이언트에 퀵슬롯 사용 알림
+	UFUNCTION(BlueprintCallable, NetMulticast, Reliable)
+	void Multicast_UseQuickSlotByIndex(int32 Index);
+
+	// 아이템 획득 시 자동으로 퀵슬롯에 할당하고 장착 애니메이션 실행
+	UFUNCTION(BlueprintCallable, Category = "Inventory|QuickSlot")
+	void AutoEquipPickedUpItem(UNS_InventoryBaseItem* NewItem);
+
+	void DropItem(UNS_InventoryBaseItem* ItemToDrop, const int32 QuantityToDrop);
+
+	UFUNCTION(Client, Reliable)
+	void Client_NotifyQuickSlotUpdated();
+
+	UFUNCTION(Client, Reliable)
+	void Client_NotifyInventoryUpdated();
+
+	UFUNCTION(Server, Reliable)
+	void Server_UseInventoryItem(FName ItemRowName);
+	// ===============================================================================================================================
 };
