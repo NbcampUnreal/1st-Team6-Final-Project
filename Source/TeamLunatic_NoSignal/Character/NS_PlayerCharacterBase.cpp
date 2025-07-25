@@ -24,7 +24,6 @@
 #include "Sound/SoundBase.h"
 #include "UI/HUD/NS_InGameHUD.h"
 #include "UI/InGame/NS_PlayerWidget.h"
-#include "Character/DeathBox/NS_DeathBox.h"
 
 ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
 {
@@ -679,8 +678,18 @@ void ANS_PlayerCharacterBase::PlayDeath_Server_Implementation()
         EquipedWeaponComp->UnequipWeapon();
     }
 
-    // 죽을 때 데스 박스 생성
-    CreateDeathBox();
+    // Drop all items from inventory
+    if (InventoryComp)
+    {
+        TArray<UNS_InventoryBaseItem*> ItemsToDrop = InventoryComp->GetInventoryContents();
+        for (UNS_InventoryBaseItem* Item : ItemsToDrop)
+        {
+            if (Item)
+            {
+                DropItem_Server_Implementation(Item, Item->Quantity);
+            }
+        }
+    }
 
     if (UWorld* World = GetWorld())
     {
@@ -740,7 +749,8 @@ void ANS_PlayerCharacterBase::DropItem_Server_Implementation(UNS_InventoryBaseIt
         SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
         const FVector ForwardOffset = GetActorForwardVector() * 100.0f; // 플레이어 앞 100cm
-        const FVector SpawnLocation = GetActorLocation() + ForwardOffset + FVector(0.f, 0.f, 50.f); // 약간 위로 올림
+        const FVector RandomOffset = FVector(FMath::RandRange(-50.f, 50.f), FMath::RandRange(-50.f, 50.f), 0.f);
+        const FVector SpawnLocation = GetActorLocation() + ForwardOffset + RandomOffset + FVector(0.f, 0.f, 50.f); // 약간 위로 올림
         const FTransform SpawnTransform(GetActorRotation(), SpawnLocation);
 
         const int32 RemovedQuantity = InventoryComp->RemoveAmountOfItem(ItemToDrop, QuantityToDrop);
@@ -1323,35 +1333,5 @@ void ANS_PlayerCharacterBase::Server_SetSprinting_Implementation(bool IsSprintin
         {
             StatusComp->StopSprinting();
         }
-    }
-}
-
-void ANS_PlayerCharacterBase::CreateDeathBox()
-{
-    if (!HasAuthority() || !DeathBoxClass || !InventoryComp) return;
-
-    // 인벤토리에서 모든 아이템 드롭
-    TArray<UNS_InventoryBaseItem*> DroppedItems = InventoryComp->DropAllItems();
-    
-    // 아이템이 없으면 데스 박스 생성하지 않음
-    if (DroppedItems.Num() == 0) return;
-
-    // 데스 박스 생성 위치 (플레이어 발 밑)
-    FVector SpawnLocation = GetActorLocation();
-    FRotator SpawnRotation = GetActorRotation();
-    
-    FActorSpawnParameters SpawnParams;
-    SpawnParams.Owner = this;
-    SpawnParams.bNoFail = true;
-    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-    
-    // 데스 박스 생성
-    ANS_DeathBox* DeathBox = GetWorld()->SpawnActor<ANS_DeathBox>(DeathBoxClass, SpawnLocation, SpawnRotation, SpawnParams);
-    
-    if (DeathBox)
-    {
-        // 아이템들을 데스 박스에 저장
-        DeathBox->StoreItems(DroppedItems);
-        UE_LOG(LogTemp, Warning, TEXT("[DeathBox] Created with %d items"), DroppedItems.Num());
     }
 }

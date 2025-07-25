@@ -24,7 +24,6 @@ class UNS_EquipedWeaponComponent;
 class UNS_QuickSlotComponent;
 class UNS_PlayerController;
 class UNS_LevelMapWidget;
-class ANS_DeathBox;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
@@ -398,15 +397,7 @@ public:
 	void PlayDeath_Server();
 	UFUNCTION(BlueprintCallable, NetMulticast, Reliable)
 	void PlayDeath_Multicast();
-
-	// 죽을 때 데스 박스 생성
-	UFUNCTION(BlueprintCallable)
-	void CreateDeathBox();
-
-	// 데스 박스 클래스
-	UPROPERTY(EditDefaultsOnly, Category = "Death")
-	TSubclassOf<class ANS_DeathBox> DeathBoxClass;
-
+	
 	// 카메라 Yaw값, Pitch값 서버로 전송
 	UFUNCTION(BlueprintCallable, Server, Unreliable)
 	void UpdateAim_Server(float NewCamYaw, float NewCamPitch);
