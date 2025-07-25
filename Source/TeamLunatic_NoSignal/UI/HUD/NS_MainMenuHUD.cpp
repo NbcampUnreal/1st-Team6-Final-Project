@@ -118,7 +118,7 @@ void ANS_MainMenuHUD::ShowSettingUI()
 			SettingWidget = CreateWidget<UUserWidget>(GetWorld(), SettingWidgetclass);
 			if (SettingWidget)
 			{
-				SinglePlayWidget->AddToViewport();
+				SettingWidget->AddToViewport();
 			}
 		}
 	}
