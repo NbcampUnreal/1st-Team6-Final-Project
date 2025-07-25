@@ -107,6 +107,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void AddNewItem(UNS_InventoryBaseItem* Item, const int32 AmountToAdd);
 
+	// 모든 아이템을 드롭하고 인벤토리 비우기
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	TArray<UNS_InventoryBaseItem*> DropAllItems();
+
 	UFUNCTION(Category = "Inventory")
 	FORCEINLINE float GetInventoryTotalWeight() const { return InventoryTotalWeight; };
 	UFUNCTION(Category = "Inventory")
@@ -130,7 +134,7 @@ protected:
 	UPROPERTY(EditInstanceOnly, Category = "Inventory")
 	float InventoryWeightCapacity;
 
-	UPROPERTY(VisibleAnywhere, Category = "Inventory", Replicated)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory", Replicated)
 	TArray<TObjectPtr<UNS_InventoryBaseItem>> InventoryContents;
 
 	FItemAddResult HandleNonStackableItems(UNS_InventoryBaseItem* InputItem);

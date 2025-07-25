@@ -49,6 +49,18 @@ void UNS_InventoryComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
+	UE_LOG(LogTemp, Warning, TEXT("[Inventory] BeginPlay - Initial InventoryContents size: %d"), InventoryContents.Num());
+	for (int32 i = 0; i < InventoryContents.Num(); i++)
+	{
+		if (InventoryContents[i])
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[Inventory] BeginPlay - Item at index %d: %s"), i, *InventoryContents[i]->GetName());
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[Inventory] BeginPlay - Null item at index %d"), i);
+		}
+	}
 }
 
 // 서버와 클라이언트에게 인벤토리 UI 갱신 요청
@@ -371,10 +383,10 @@ void UNS_InventoryComponent::AddNewItem(UNS_InventoryBaseItem* Item, const int32
 	NewItem->OwingInventory = this;
 	NewItem->SetQuantity(AmountToAdd);
 
-	InventoryContents.Add(NewItem);
+	int32 AddedIndex = InventoryContents.Add(NewItem);
 	InventoryTotalWeight += NewItem->GetItemStackWeight();
 	BroadcastInventoryUpdate();
-	UE_LOG(LogTemp, Warning, TEXT("[Inventory] Added %s"), *NewItem->GetName());
+	UE_LOG(LogTemp, Warning, TEXT("[Inventory] Added %s at index %d, Total items: %d"), *NewItem->GetName(), AddedIndex, InventoryContents.Num());
 	UE_LOG(LogTemp, Warning, TEXT("[Inventory] NewItem OwingInventory: %s"), *GetNameSafe(NewItem->OwingInventory));
 }
 
@@ -435,6 +447,29 @@ bool UNS_InventoryComponent::HasAmmoForWeapon(EAmmoType WeaponAmmoType) const
 	}
 	// 조건을 만족하는 탄약을 찾지 못했으므로 false 반환
 	return false;
+}
+
+// 모든 아이템을 드롭하고 인벤토리 비우기
+TArray<UNS_InventoryBaseItem*> UNS_InventoryComponent::DropAllItems()
+{
+	TArray<UNS_InventoryBaseItem*> DroppedItems;
+	
+	// 현재 인벤토리의 모든 아이템을 복사
+	for (UNS_InventoryBaseItem* Item : InventoryContents)
+	{
+		if (IsValid(Item) && Item->Quantity > 0)
+		{
+			DroppedItems.Add(Item);
+		}
+	}
+	
+	// 인벤토리 완전히 비우기
+	InventoryContents.Empty();
+	InventoryTotalWeight = 0.0f;
+	
+	BroadcastInventoryUpdate();
+	
+	return DroppedItems;
 }
 
 

@@ -114,7 +114,13 @@ void ANS_InGameHUD::ShowWidget(UUserWidget* OpenWidget)
 		if (InventoryMainWidget)
 		{
 			InventoryMainWidget->SetVisibility(ESlateVisibility::Visible);
-			PC->SetInputMode(FInputModeGameAndUI());
+			
+			// UI에 포커스를 주면서도 특정 키 입력은 가능하게 설정
+			FInputModeGameAndUI InputMode;
+			InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+			InputMode.SetWidgetToFocus(InventoryMainWidget->TakeWidget());
+			PC->SetInputMode(InputMode);
+			
 			PC->SetShowMouseCursor(true);
 		}
 	}
@@ -123,7 +129,13 @@ void ANS_InGameHUD::ShowWidget(UUserWidget* OpenWidget)
 		if (LevelMapWidget)
 		{
 			LevelMapWidget->SetVisibility(ESlateVisibility::Visible);
-			PC->SetInputMode(FInputModeGameAndUI());
+			
+			// UI에 포커스를 주면서도 특정 키 입력은 가능하게 설정
+			FInputModeGameAndUI InputMode;
+			InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+			InputMode.SetWidgetToFocus(LevelMapWidget->TakeWidget());
+			PC->SetInputMode(InputMode);
+			
 			PC->SetShowMouseCursor(true);
 		}
 	}
@@ -132,7 +144,13 @@ void ANS_InGameHUD::ShowWidget(UUserWidget* OpenWidget)
 		if (OpenWidget == ESCWidget)
 		{
 			ESCWidget->SetVisibility(ESlateVisibility::Visible);
-			PC->SetInputMode(FInputModeGameAndUI());
+			
+			// UI에 포커스를 주면서도 특정 키 입력은 가능하게 설정
+			FInputModeGameAndUI InputMode;
+			InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+			InputMode.SetWidgetToFocus(ESCWidget->TakeWidget());
+			PC->SetInputMode(InputMode);
+			
 			PC->SetShowMouseCursor(true);
 		}
 	}

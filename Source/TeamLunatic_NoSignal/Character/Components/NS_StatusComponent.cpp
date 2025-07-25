@@ -23,9 +23,9 @@ void UNS_StatusComponent::BeginPlay()
 
 
 	// 값 초기화
-	Health = MaxHealth;   // 현재 체력을 최대 체력으로 설정
-	Stamina = MaxStamina; // 현재 스태미너를 최대 스태미너로 설정
-	CurrentStaminaRegenRate = DefalutStaminaRegenRate; // 스태미너 재생 속도를 기본값으로 초기화
+	CurrentHealth = MaxHealth;   // 현재 체력을 최대 체력으로 설정
+	CurrentStamina = MaxStamina; // 현재 스태미너를 최대 스태미너로 설정
+	CurrentStaminaRegenRate = DefaultStaminaRegenRate; // 스태미너 재생 속도를 기본값으로 초기화
 	SprintMultiply = 1.5f;
 
 
@@ -44,6 +44,46 @@ void UNS_StatusComponent::BeginPlay()
 			0.1f,
 			true);
 	}
+}
+
+void UNS_StatusComponent::UpdateStamina()
+{
+	if (bIsSprinting)
+	{
+		// 달리는 중 스태미나 감소
+		int32 OldStamina = CurrentStamina;
+		CurrentStamina = FMath::Max(0, CurrentStamina - FMath::RoundToInt(FMath::Abs(StaminaDereaseRate) * 0.1f));
+		
+		// 스태미나가 0이 되면 달리기 중지
+		if (CurrentStamina <= 0)
+		{
+			StopSprinting();
+			EnableSprint = false;
+		}
+	}
+	else
+	{
+		// 달리지 않을 때 스태미나 회복
+		if (CurrentStamina < MaxStamina)
+		{
+			int32 OldStamina = CurrentStamina;
+			CurrentStamina = FMath::Min(MaxStamina, CurrentStamina + FMath::RoundToInt(CurrentStaminaRegenRate * 0.1f));
+		}
+		
+		// 스태미나가 10 이상이 되면 다시 달릴 수 있음
+		if (CurrentStamina >= 10)
+		{
+			EnableSprint = true;
+		}
+	}
+}
+
+void UNS_StatusComponent::OnRep_IsSprinting()
+{
+	// 서버에서는 이미 처리되었으므로 클라이언트에서만 실행
+	if (GetOwner()->HasAuthority()) return;
+	
+	SetMovementSpeed(bIsSprinting);
 }
 
 // 캐릭터 이동 속도를 설정하는 함수
@@ -76,7 +116,7 @@ void UNS_StatusComponent::StartSprinting()
 	
 	// 서버에서만 실행되는 코드
 	// 스태미나가 10 이상이고 달리기가 가능할 때만 시작
-	if (Stamina >= 10 && EnableSprint)
+	if (CurrentStamina >= 10 && EnableSprint)
 	{
 		bIsSprinting = true;
 		SetMovementSpeed(true);
@@ -111,7 +151,7 @@ void UNS_StatusComponent::Server_SetSprinting_Implementation(bool bShouldSprint)
 	if (bShouldSprint)
 	{
 		// 서버에서 스태미나 검사 후 달리기 상태 설정
-		if (Stamina >= 10 && EnableSprint)
+		if (CurrentStamina >= 10 && EnableSprint)
 		{
 			bIsSprinting = true;
 			SetMovementSpeed(true);
@@ -124,122 +164,42 @@ void UNS_StatusComponent::Server_SetSprinting_Implementation(bool bShouldSprint)
 	}
 }
 
-// bIsSprinting 변수가 복제될 때 호출되는 함수
-void UNS_StatusComponent::OnRep_IsSprinting()
+// CurrentHealth 변수가 복제될 때 호출되는 함수
+void UNS_StatusComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	// 서버에서는 이미 처리되었으므로 클라이언트에서만 실행
-	if (GetOwner()->HasAuthority()) return;
-	
-	SetMovementSpeed(bIsSprinting);
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UNS_StatusComponent, MaxHealth);
+	DOREPLIFETIME(UNS_StatusComponent, CurrentHealth);
+	DOREPLIFETIME(UNS_StatusComponent, MaxStamina);
+	DOREPLIFETIME(UNS_StatusComponent, CurrentStamina);
+	DOREPLIFETIME(UNS_StatusComponent, bIsSprinting);
 }
 
-void UNS_StatusComponent::UpdateStamina()
-{
-	if (bIsSprinting)
-	{
-		// 달리는 중 스태미나 감소
-		int32 OldStamina = Stamina;
-		Stamina = FMath::Max(0, Stamina - FMath::RoundToInt(FMath::Abs(StaminaDereaseRate) * 0.1f));
-		
-		// 스태미나 변경 이벤트 발생
-		if (OldStamina != Stamina)
-		{
-			OnStaminaChanged.Broadcast(Stamina, MaxStamina);
-		}
-		
-		// 스태미나가 0이 되면 달리기 중지
-		if (Stamina <= 0)
-		{
-			StopSprinting();
-			EnableSprint = false;
-		}
-	}
-	else
-	{
-		// 달리지 않을 때 스태미나 회복
-		if (Stamina < MaxStamina)
-		{
-			int32 OldStamina = Stamina;
-			Stamina = FMath::Min(MaxStamina, Stamina + FMath::RoundToInt(CurrentStaminaRegenRate * 0.1f));
-			
-			// 스태미나 변경 이벤트 발생
-			if (OldStamina != Stamina)
-			{
-				OnStaminaChanged.Broadcast(Stamina, MaxStamina);
-			}
-		}
-		
-		// 스태미나가 10 이상이 되면 다시 달릴 수 있음
-		if (Stamina >= 10)
-		{
-			EnableSprint = true;
-		}
-	}
-}
-
-// 외부 요인(데미지, 힐)에 의해 체력을 변경합니다. 서버에서 호출되어야 합니다.
 void UNS_StatusComponent::UpdateHealthChange(float Value)
 {
-	const int32 OldHealth = Health;
-	// Value는 양수(힐) 또는 음수(데미지)일 수 있습니다. 체력은 0과 MaxHealth 사이로 제한됩니다.
-	Health = FMath::Clamp(Health + FMath::RoundToInt(Value), 0, MaxHealth);
+	if (!GetOwner()->HasAuthority()) return;
 
-	// 체력이 실제로 변경되었다면
-	if (OldHealth != Health)
-	{
-		// UI 업데이트 등을 위해 체력 변경 델리게이트를 방송합니다.
-		OnHealthChanged.Broadcast(Health, MaxHealth);
+	const int32 OldHealth = CurrentHealth;
+	CurrentHealth = FMath::Clamp(CurrentHealth + FMath::RoundToInt(Value), 0, MaxHealth);
 
-		// 데미지를 입은 경우 (Value가 음수일 때)
-		if (Value < 0.0f)
-		{
-			// 피격 이벤트 델리게이트를 방송합니다. (사운드, 이펙트용)
-			// Delta는 음수 값이므로 -를 붙여 양수인 순수 데미지 값으로 전달합니다.
-			OnDamaged.Broadcast(-Value);
-		}
-	}
-
-	// 사망 판정: 이전 체력은 0보다 컸는데, 현재 체력이 0 이하일 때만 사망 로직을 실행합니다. (중복 실행 방지)
-	if (Health <= 0 && OldHealth > 0)
+	if (CurrentHealth <= 0 && OldHealth > 0)
 	{
 		if (PlayerCharacter)
 		{
-			// 캐릭터에게 사망 처리를 요청합니다. 서버에서 실행되어야 합니다.
 			PlayerCharacter->PlayDeath_Server();
 		}
 	}
 }
 
-// 외부 요인(아이템 사용 등)에 의해 스태미나를 즉시 변경합니다.
 void UNS_StatusComponent::UpdateStaminaChange(float Value)
 {
-	int32 OldStamina = Stamina;
-	Stamina = FMath::Clamp(Stamina + FMath::RoundToInt(Value), 0, MaxStamina);
+	if (!GetOwner()->HasAuthority()) return;
 
-	if (OldStamina != Stamina)
+	CurrentStamina = FMath::Clamp(CurrentStamina + FMath::RoundToInt(Value), 0, MaxStamina);
+
+	if (CurrentStamina >= 10 && !EnableSprint)
 	{
-		// 스태미너 변경 이벤트 델리게이트를 방송합니다.
-		OnStaminaChanged.Broadcast(Stamina, MaxStamina);
-		
-		// 스태미나가 10 이상이 되면 다시 달릴 수 있음
-		if (Stamina >= 10 && !EnableSprint)
-		{
-			EnableSprint = true;
-		}
+		EnableSprint = true;
 	}
-}
-
-// 네트워크를 통해 복제(Replicate)할 변수들을 정의합니다.
-void UNS_StatusComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	// 아래 변수들은 서버에서 값이 변경되면 모든 클라이언트로 자동으로 전송됩니다.
-	// 빠른 네트워크 보간을 위해 RepNotify 조건 설정
-	DOREPLIFETIME_CONDITION(UNS_StatusComponent, Health, COND_SkipOwner);       // 현재 체력
-	DOREPLIFETIME(UNS_StatusComponent, MaxHealth);    // 최대 체력
-	DOREPLIFETIME_CONDITION(UNS_StatusComponent, Stamina, COND_SkipOwner);      // 현재 스태미나
-	DOREPLIFETIME(UNS_StatusComponent, MaxStamina);   // 최대 스태미나
-	// 달리기 상태는 RepNotify를 통해 복제 - 네트워크 보간 최적화
-	DOREPLIFETIME_CONDITION_NOTIFY(UNS_StatusComponent, bIsSprinting, COND_None, REPNOTIFY_OnChanged); // 달리기 상태
 }

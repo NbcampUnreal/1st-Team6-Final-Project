@@ -3,14 +3,11 @@
 #include "Components/Image.h"
 #include "UI/InGame/NS_InteractionPanel.h"
 #include "Character/Interface/NS_InteractionInterface.h"
+#include "Character/Components/NS_StatusComponent.h"
 #include "Character/NS_PlayerCharacterBase.h"
 #include "Character/Components/NS_StatusComponent.h"
 #include "Kismet/GameplayStatics.h"
 
-/**
- * @brief 위젯이 생성될 때 호출되는 초기화 함수입니다.
- *        주로 위젯의 초기 상태 설정 및 바인딩에 사용됩니다.
- */
 void UNS_PlayerWidget::NativeConstruct()
 {
     Super::NativeConstruct();
@@ -40,7 +37,7 @@ void UNS_PlayerWidget::ShowInteractionWidget()
         InteractionWidget = CreateWidget<UNS_InteractionPanel>(this, InteractionWidgetClass);
         if (InteractionWidget)
         {
-            InteractionWidget->AddToViewport(100); // 높은 Z-Order로 변경하여 확인
+            InteractionWidget->AddToViewport(1); // 높은 Z-Order로 변경하여 확인
         }
         else
         {

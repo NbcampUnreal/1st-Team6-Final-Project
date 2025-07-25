@@ -24,6 +24,7 @@
 #include "Sound/SoundBase.h"
 #include "UI/HUD/NS_InGameHUD.h"
 #include "UI/InGame/NS_PlayerWidget.h"
+#include "Character/DeathBox/NS_DeathBox.h"
 
 ANS_PlayerCharacterBase::ANS_PlayerCharacterBase()
 {
@@ -102,7 +103,15 @@ void ANS_PlayerCharacterBase::BeginPlay()
     {
         if (auto Sub = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
         {
+            // 기본 매핑 컨텍스트 추가 (우선순위 0)
             Sub->AddMappingContext(DefaultMappingContext, 0);
+            
+            // UI 매핑 컨텍스트가 있으면 추가하지만 기본적으로 비활성화 상태
+            // UI 모드에서만 활성화되도록 우선순위를 높게 설정하지 않음
+            if (UIMappingContext)
+            {
+                // UI 매핑 컨텍스트는 추가하지 않고 필요할 때만 추가함
+            }
         }
     }
 
@@ -311,11 +320,33 @@ void ANS_PlayerCharacterBase::SetMovementLockState_Multicast_Implementation(bool
             {
                 if (bLock)
                 {
+                    // 기존 매핑 컨텍스트를 완전히 제거
                     Subsystem->RemoveMappingContext(DefaultMappingContext);
+                    
+                    // UI 매핑 컨텍스트가 있으면 높은 우선순위로 추가
+                    if (UIMappingContext)
+                    {
+                        Subsystem->AddMappingContext(UIMappingContext, 0); // 높은 우선순위로 추가
+                    }
+                    
+                    // 마우스 커서 표시 및 UI 모드 설정
+                    PC->SetShowMouseCursor(true);
+                    PC->SetInputMode(FInputModeGameAndUI());
                 }
                 else
                 {
-                    Subsystem->AddMappingContext(DefaultMappingContext, 0);
+                    // 게임 모드일 때는 UI 매핑 컨텍스트를 제거하고 기본 매핑 컨텍스트의 우선순위를 높임
+                    if (UIMappingContext)
+                    {
+                        Subsystem->RemoveMappingContext(UIMappingContext);
+                    }
+                    
+                    // 기존 매핑 컨텍스트를 제거했다가 다시 기본 우선순위로 추가
+                    Subsystem->RemoveMappingContext(DefaultMappingContext);
+                    Subsystem->AddMappingContext(DefaultMappingContext, 0); // 기본 우선순위로 추가
+                    
+                    PC->SetShowMouseCursor(false);
+                    PC->SetInputMode(FInputModeGameOnly());
                 }
             }
         }
@@ -526,14 +557,34 @@ void ANS_PlayerCharacterBase::ToggleOpenMapWidget()
 
     UNS_InventoryMainWidget* InventoryWidget = InGameHUD->GetInventoryMainWidget();
     if (!IsValid(PlayerWidget)) return;
-    
-    if (InGameHUD->GetCurrentWidget() != OpenLevelWidget)
+
+    UUserWidget* ESCWidget = InGameHUD->GetESCWidget();
+    if (!IsValid(ESCWidget)) return;
+
+    // ESC 메뉴가 열려 있을 때도 맵 키가 작동하도록 함
+    if (InGameHUD->GetCurrentWidget() == ESCWidget)
     {
+        // ESC 메뉴 닫고 맵 열기
         InGameHUD->ShowWidget(OpenLevelWidget);
+        
+        // 맵 열릴 때 이동 기능 비활성화
+        SetMovementLockState_Server(true);
     }
     else if (InGameHUD->GetCurrentWidget() == OpenLevelWidget)
     {
+        // 맵이 열려 있으면 닫기
         InGameHUD->ShowWidget(PlayerWidget);
+        
+        // 맵 닫을 때 이동 기능 활성화
+        SetMovementLockState_Server(false);
+    }
+    else
+    {
+        // 다른 위젯이 열려 있으면 맵 열기
+        InGameHUD->ShowWidget(OpenLevelWidget);
+        
+        // 맵 열릴 때 이동 기능 비활성화
+        SetMovementLockState_Server(true);
     }
 }
 
@@ -551,14 +602,35 @@ void ANS_PlayerCharacterBase::ToggleInventoryWidget()
     if (!IsValid(InventoryMainWidget)) return;
 
     UNS_PlayerWidget* PlayerWidget = InGameHUD->GetPlayerWidget();
+    if (!IsValid(PlayerWidget)) return;
 
-    if (InventoryMainWidget->IsVisible())
+    UUserWidget* ESCWidget = InGameHUD->GetESCWidget();
+    if (!IsValid((ESCWidget))) return;
+
+    // ESC 메뉴가 열려 있을 때도 인벤토리 키가 작동하도록 함
+    if (InGameHUD->GetCurrentWidget() == ESCWidget)
     {
+        // ESC 메뉴 닫고 인벤토리 열기
+        InGameHUD->ShowWidget(InventoryMainWidget);
+        
+        // 인벤토리 열릴 때 이동 기능 비활성화
+        SetMovementLockState_Server(true);
+    }
+    else if (InGameHUD->GetCurrentWidget() == InventoryMainWidget)
+    {
+        // 인벤토리가 열려 있으면 닫기
         InGameHUD->ShowWidget(PlayerWidget);
+        
+        // 인벤토리 닫을 때 이동 기능 활성화
+        SetMovementLockState_Server(false);
     }
     else
     {
+        // 다른 위젯이 열려 있으면 인벤토리 열기
         InGameHUD->ShowWidget(InventoryMainWidget);
+        
+        // 인벤토리 열릴 때 이동 기능 비활성화
+        SetMovementLockState_Server(true);
     }
 }
 
@@ -578,15 +650,21 @@ void ANS_PlayerCharacterBase::ToggleESCWidget()
     UUserWidget* ESCWidget = InGameHUD->GetESCWidget();
     if (!IsValid(ESCWidget)) return;
 
-    if (ESCWidget->IsVisible())
+    if (InGameHUD->GetCurrentWidget() == ESCWidget)
     {
+        // ESC메뉴위젯이 열려 있으면 닫기
         InGameHUD->ShowWidget(PlayerWidget);
-        UE_LOG(LogTemp, Warning, TEXT("플레이어 위젯 오픈"))
+        
+        // ESC 메뉴 닫을 때 이동 기능 활성화
+        SetMovementLockState_Server(false);
     }
     else
     {
+        // 다른 위젯이 열려 있으면 ESC메뉴 열기
         InGameHUD->ShowWidget(ESCWidget);
-        UE_LOG(LogTemp, Warning, TEXT("ESC위젯 오픈"))
+        
+        // ESC 메뉴 열릴 때 이동 기능 비활성화
+        SetMovementLockState_Server(true);
     }
 }
 //////////////////////////////////액션 처리 함수들 끝!///////////////////////////////////
@@ -600,6 +678,9 @@ void ANS_PlayerCharacterBase::PlayDeath_Server_Implementation()
     {
         EquipedWeaponComp->UnequipWeapon();
     }
+
+    // 죽을 때 데스 박스 생성
+    CreateDeathBox();
 
     if (UWorld* World = GetWorld())
     {
@@ -1242,5 +1323,35 @@ void ANS_PlayerCharacterBase::Server_SetSprinting_Implementation(bool IsSprintin
         {
             StatusComp->StopSprinting();
         }
+    }
+}
+
+void ANS_PlayerCharacterBase::CreateDeathBox()
+{
+    if (!HasAuthority() || !DeathBoxClass || !InventoryComp) return;
+
+    // 인벤토리에서 모든 아이템 드롭
+    TArray<UNS_InventoryBaseItem*> DroppedItems = InventoryComp->DropAllItems();
+    
+    // 아이템이 없으면 데스 박스 생성하지 않음
+    if (DroppedItems.Num() == 0) return;
+
+    // 데스 박스 생성 위치 (플레이어 발 밑)
+    FVector SpawnLocation = GetActorLocation();
+    FRotator SpawnRotation = GetActorRotation();
+    
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.Owner = this;
+    SpawnParams.bNoFail = true;
+    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+    
+    // 데스 박스 생성
+    ANS_DeathBox* DeathBox = GetWorld()->SpawnActor<ANS_DeathBox>(DeathBoxClass, SpawnLocation, SpawnRotation, SpawnParams);
+    
+    if (DeathBox)
+    {
+        // 아이템들을 데스 박스에 저장
+        DeathBox->StoreItems(DroppedItems);
+        UE_LOG(LogTemp, Warning, TEXT("[DeathBox] Created with %d items"), DroppedItems.Num());
     }
 }

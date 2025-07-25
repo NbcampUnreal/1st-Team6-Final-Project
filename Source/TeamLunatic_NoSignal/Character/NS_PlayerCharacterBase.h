@@ -24,6 +24,7 @@ class UNS_EquipedWeaponComponent;
 class UNS_QuickSlotComponent;
 class UNS_PlayerController;
 class UNS_LevelMapWidget;
+class ANS_DeathBox;
 
 UCLASS()
 class TEAMLUNATIC_NOSIGNAL_API ANS_PlayerCharacterBase : public ACharacter
@@ -199,6 +200,12 @@ public:
 	// IMC(입력 매핑 컨텍스트)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputMappingContext* DefaultMappingContext;
+	
+	// UI 관련 입력 매핑 컨텍스트 (우선순위 높음)
+	// 이 매핑 컨텍스트에는 위젯 토글 버튼과 같은 UI 관련 입력만 포함해야 함
+	// 이동, 점프, 달리기 등의 입력은 포함하지 않아야 함
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input", meta = (ToolTip = "UI 모드에서 사용할 입력 매핑 컨텍스트. 위젯 토글 버튼과 같은 UI 관련 입력만 포함해야 함."))
+	UInputMappingContext* UIMappingContext;
 
 	// 캐릭터 이동 (C++)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
@@ -391,6 +398,14 @@ public:
 	void PlayDeath_Server();
 	UFUNCTION(BlueprintCallable, NetMulticast, Reliable)
 	void PlayDeath_Multicast();
+
+	// 죽을 때 데스 박스 생성
+	UFUNCTION(BlueprintCallable)
+	void CreateDeathBox();
+
+	// 데스 박스 클래스
+	UPROPERTY(EditDefaultsOnly, Category = "Death")
+	TSubclassOf<class ANS_DeathBox> DeathBoxClass;
 
 	// 카메라 Yaw값, Pitch값 서버로 전송
 	UFUNCTION(BlueprintCallable, Server, Unreliable)
